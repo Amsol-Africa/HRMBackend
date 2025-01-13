@@ -1,52 +1,83 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
-        @csrf
+<x-auth-layout>
 
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+    <div class="authentication-wrapper basic-authentication">
+        <div class="authentication-inner">
+            <div class="card__wrapper">
+
+                <div class="authentication-top text-center mb-20">
+                    <a href="javascript:;" class="authentication-logo logo-black">
+                        <img src="{{ asset('media/amsol-logo.png') }}" alt="{{ config('app.name') }}">
+                    </a>
+                    <a href="javascript:;" class="authentication-logo logo-white">
+                        <img src="{{ asset('media/amsol-logo.png') }}" alt="{{ config('app.name') }}">
+                    </a>
+                    <h4 class="mb-15">Welcome to {{ config('app.name') }}</h4>
+                    <p class="mb-15">Please create your account to get started..!</p>
+                </div>
+
+                <form class="" id="registerForm">
+
+                    @csrf
+
+                    <div class="from__input-box">
+                        <div class="form__input-title">
+                            <label for="name">Full Name</label>
+                        </div>
+                        <div class="form__input">
+                            <input class="form-control" placeholder="Full Name" name="name" id="name" :value="old('name')" type="text" required autocomplete="name">
+                        </div>
+                    </div>
+                    <div class="from__input-box">
+                        <div class="form__input-title">
+                            <label for="email">Email</label>
+                        </div>
+                        <div class="form__input">
+                            <input class="form-control" placeholder="Email" name="email" id="email" type="email" required autocomplete="email">
+                        </div>
+                    </div>
+                    <div class="from__input-box">
+                        <div class="form__input-title">
+                            <label for="phone">Phone</label>
+                        </div>
+                        <div class="form__input">
+                            <input class="phone-input-control" name="phone" id="phone" type="text" required autocomplete="phone">
+                        </div>
+                    </div>
+                    <div class="from__input-box">
+                        <div class="form__input-title d-flex justify-content-between">
+                            <label for="passwordInput">Password</label>
+                        </div>
+                        <div class="form__input">
+                            <input class="form-control" placeholder="Password" type="password" name="password" required id="passwordInput">
+                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <a class="btn btn-primary w-100" href="{{ route('setup.business') }}"> Create account <i class="ms-2 bi bi-check-circle"></i> </a>
+
+                        {{-- <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle"></i> Sign Up</button> --}}
+                    </div>
+                </form>
+
+                <p class="text-center">
+                    <span>Have an account?</span>
+                    <a href="{{ route('login') }}">
+                        <span>Login</span>
+                    </a>
+                </p>
+
+                <div class="divider mb-10 text-center">
+                    <div class="divider-text">or</div>
+                </div>
+
+                <div class="common-social">
+                    <a href="javascript:;"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="javascript:;"><i class="fa-brands fa-google"></i></a>
+                </div>
+
+            </div>
         </div>
+    </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+</x-auth-layout>
