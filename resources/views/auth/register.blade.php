@@ -41,21 +41,21 @@
                         </div>
                         <div class="form__input">
                             <input class="phone-input-control" name="phone" id="phone" type="text" required autocomplete="phone">
+                            <input name="code" id="code" type="text" hidden required autocomplete="code">
+                            <input name="country" id="country" type="text" hidden required autocomplete="country">
                         </div>
                     </div>
                     <div class="from__input-box">
                         <div class="form__input-title d-flex justify-content-between">
-                            <label for="passwordInput">Password</label>
+                            <label for="password">Password</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Password" type="password" name="password" required id="passwordInput">
+                            <input class="form-control" placeholder="Password" type="password" name="password" required id="password">
                             <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <a class="btn btn-primary w-100" href="{{ route('setup.business') }}"> Create account <i class="ms-2 bi bi-check-circle"></i> </a>
-
-                        {{-- <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle"></i> Sign Up</button> --}}
+                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle"></i> Sign Up</button>
                     </div>
                 </form>
 

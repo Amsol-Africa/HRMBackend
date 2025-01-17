@@ -1,4 +1,4 @@
-export const BASE_URL = 'http://tourgramreps.local';
+export const BASE_URL = document.querySelector('meta[name="base-url"]').getAttribute('content');
 export const applicationServerKey = "BMBlr6YznhYMX3NgcWIDRxZXs0sh7tCv7_YCsWcww0ZCv9WGg-tRCXfMEHTiBPCksSqeve1twlbmVAZFv7GSuj0";
 
 export function btn_loader(btn, isLoading) {

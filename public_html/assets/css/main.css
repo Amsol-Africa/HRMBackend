@@ -3326,11 +3326,11 @@ input[type=file] {
 }
 
 .gap-sm {
-  gap: 30px;
+  gap: 15px;
 }
 @media only screen and (min-width: 576px) and (max-width: 767px) {
   .gap-sm {
-    gap: 10px;
+    gap: 5px;
   }
 }
 

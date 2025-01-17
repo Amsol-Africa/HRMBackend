@@ -10,5 +10,6 @@ enum Status
     const CANCELLED = 'cancelled';
     const APPROVED = 'approved';
     const DECLINED = 'declined';
-    const UNREAD = 'unread';
+    const SETUP = 'setup';
+    const MODULE = 'module';
 }

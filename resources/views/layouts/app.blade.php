@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="base-url" content="{{ config('app.url') }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -41,6 +42,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 
     </head>
 
@@ -129,11 +131,12 @@
         <script src="{{ asset('assets/js/main.js') }}"></script>
         <script src="{{ asset('assets/js/vendor/sidebar.js') }}"></script>
 
+        <script src="{{ asset('js/init.js') }}"></script>
+        <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
 
         <script type="text/javascript">
-
             document.addEventListener('DOMContentLoaded', function() {
-                const toggleButtons = document.querySelectorAll('[id^="togglePassword"]');
+                const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
 
                 toggleButtons.forEach(button => {
                     button.addEventListener('click', function() {
@@ -149,20 +152,25 @@
                 });
             });
 
-            const phoneInputField = document.querySelector(".phone-input-control");
+            // Select all phone input fields
+            const phoneInputFields = document.querySelectorAll(".phone-input-control");
 
-            if (phoneInputField) {
-                initializePhoneInput();
+            // Initialize each phone input with country code
+            phoneInputFields.forEach((phoneInputField, index) => {
+                initializePhoneInput(phoneInputField, index);
 
                 phoneInputField.addEventListener("countrychange", function() {
                     const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
                     const selectedCountryData = phoneInput.getSelectedCountryData();
-                    document.querySelector("#code").value = selectedCountryData.dialCode;
-                    document.querySelector("#country").value = selectedCountryData.name;
-                });
-            }
+                    const codeField = document.querySelector(`#code${index}`);
+                    const countryField = document.querySelector(`#country${index}`);
 
-            function initializePhoneInput() {
+                    if (codeField) codeField.value = selectedCountryData.dialCode;
+                    if (countryField) countryField.value = selectedCountryData.name;
+                });
+            });
+
+            function initializePhoneInput(phoneInputField, index) {
                 const phoneInput = window.intlTelInput(phoneInputField, {
                     preferredCountries: ["ke", "us", "ca"],
                     initialCountry: "auto",
@@ -174,8 +182,11 @@
 
                 phoneInputField.addEventListener("countrychange", function() {
                     const selectedCountryData = phoneInput.getSelectedCountryData();
-                    document.querySelector("#code").value = selectedCountryData.dialCode;
-                    document.querySelector("#COUNTRY").value = selectedCountryData.dialCode;
+                    const codeField = document.querySelector(`#code${index}`);
+                    const countryField = document.querySelector(`#country${index}`);
+
+                    if (codeField) codeField.value = selectedCountryData.dialCode;
+                    if (countryField) countryField.value = selectedCountryData.name;
                 });
             }
 

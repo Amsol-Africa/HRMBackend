@@ -1,4 +1,5 @@
 <x-auth-layout>
+
     <div class="row justify-content-center align-items-center min-vh-100">
         <div class="col-md-12 mx-auto">
 
@@ -17,6 +18,9 @@
 
             <form id="modulesForm">
                 @csrf
+
+                <input hidden type="text" value="{{ $business->slug }}" id="business_slug" name="business_slug">
+
                 <div class="row g-2 p-3" style="height: 60vh; overflow-y: auto;">
                     @foreach ($modules as $module)
                         <div class="col-md-4">
@@ -52,7 +56,7 @@
                                                 id="module-{{ $module->slug }}"
                                                 name="modules[]"
                                                 value="{{ $module->slug }}"
-                                                @if ($module->is_core) checked @endif>
+                                                @if ($module->is_core) checked readonly @endif>
                                             <label class="form-check-label" for="module-{{ $module->slug }}">
                                                 Enable {{ $module->name }}
                                             </label>
@@ -63,12 +67,22 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="mt-4 text-center">
-                    <a class="btn btn-primary w-100" href="{{ route('dashboard') }}"> Activate Selected Modules <i class="ms-2 bi bi-check-circle"></i> </a>
 
-                    {{-- <button type="button" onclick="activateModules(this)" class="btn btn-primary px-5">Activate Selected Modules</button> --}}
+                <div class="row g-2">
+                    <div class="col-md-10">
+                        <button type="button" onclick="saveModules(this)" class="btn btn-primary px-5 w-100"> <i class="bi bi-check-circle"></i> Activate Selected Modules</button>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" onclick="logout(this)" class="btn btn-danger px-5 w-100"> <i class="fa-solid fa-sign-out"></i> Logout</button>
+                    </div>
                 </div>
+
             </form>
         </div>
     </div>
+
+    @push('scripts')
+        <script src="{{ asset('js/main/businesses.js') }}" type="module"></script>
+    @endpush
+
 </x-auth-layout>

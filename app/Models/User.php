@@ -52,4 +52,10 @@ class User extends Authenticatable implements HasMedia
         }
         return asset('media/avatar.png');
     }
+
+    //rships
+    public function business()
+    {
+        return $this->hasOne(Business::class);
+    }
 }

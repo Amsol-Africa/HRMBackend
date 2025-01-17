@@ -1,4 +1,5 @@
 <x-app-layout>
+
     <div class="row g-20">
         @foreach ($cards as $card)
             <div class="col-xxl-3 col-xl-6 col-lg-6 col-md-6 col-sm-6">

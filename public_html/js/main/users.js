@@ -1,6 +1,6 @@
-import { btn_loader } from "/js/client/config.js";
-import RequestClient from "/js/client/RequestClient.js";
-import UsersService from "/js/client/UsersService.js";
+import { btn_loader } from "https://amsol.anzar.co.ke/public_html/js/client/config.js";
+import RequestClient from "https://amsol.anzar.co.ke/public_html/js/client/RequestClient.js";
+import UsersService from "https://amsol.anzar.co.ke/public_html/js/client/UsersService.js";
 
 const requestClient = new RequestClient();
 const usersService = new UsersService(requestClient);

@@ -4,6 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="base-url" content="{{ config('app.url') }}">
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
@@ -41,6 +42,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
 
     </head>
 
@@ -109,6 +111,10 @@
         <script src="{{ asset('assets/js/vendor/rating-script.js') }}"></script>
         <script src="{{ asset('assets/js/main.js') }}"></script>
         <script src="{{ asset('assets/js/vendor/sidebar.js') }}"></script>
+
+        <script src="{{ asset('js/init.js') }}"></script>
+        <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
+        <script src="{{ asset('js/main/businesses.js') }}" type="module"></script>
 
 
         <script type="text/javascript">

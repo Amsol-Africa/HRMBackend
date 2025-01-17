@@ -17,10 +17,10 @@ return new class extends Migration
             $table->string('company_name');
             $table->string('slug')->unique();
             $table->string('industry');
-            $table->integer('company_size');
-            $table->integer('country');
-            $table->integer('code');
-            $table->integer('address');
+            $table->string('company_size');
+            $table->string('phone');
+            $table->string('country');
+            $table->string('code');
             $table->timestamps();
         });
     }

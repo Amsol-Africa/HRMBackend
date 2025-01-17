@@ -10,7 +10,23 @@
                     </div>
                 </a>
             </div>
-            <h2 class="header__title">Hello John <span><img src="/assets/images/shape/hand.png" alt="image"></span></h2>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center ms-3">
+                    <img src="{{ $currentBusiness->getImageUrl() }}" style="height: 20px" alt="">
+                    <h2 class="header__title ms-1">{{ $currentBusiness->company_name }}. <span> </h2>
+                </div>
+                <div>
+                    <form action="">
+                        <select name="active_business" class="form-select" id="active_business">
+                            <option value="">Switch</option>
+                            <option value="">Anzar KE</option>
+                            <option value="">Ongod Designs</option>
+                            <option value="">KRA</option>
+                        </select>
+                    </form>
+                </div>
+
+            </div>
         </div>
         <div class="app__header-right">
             <div class="app__herader-input p-relative">
@@ -160,10 +176,10 @@
                 <a id="userportfolio" href="#">
                     <div class="user__portfolio">
                         <div class="user__portfolio-thumb">
-                            <img src="/assets/images/avatar/avatar.png" alt="img not found">
+                            <img src="{{ auth()->user()->getImageUrl() }}" alt="User {{ auth()->user()->name }}">
                         </div>
                         <div class="user__content">
-                            <h5>John Smith</h5>
+                            <h5>{{ auth()->user()->name }}</h5>
                             <span>online</span>
                         </div>
                     </div>
@@ -171,16 +187,16 @@
                 <div class="user__dropdown">
                     <ul>
                         <li>
-                            <a href="employee-employee-profile.html"> <i class="fa-solid fa-user-circle"></i> Profile</a>
+                            <a href=""> <i class="fa-solid fa-user-circle"></i> Profile</a>
                         </li>
                         <li>
-                            <a href="app-chat.html"> <i class="fa-solid fa-message"></i> messages</a>
+                            <a href=""> <i class="fa-solid fa-message"></i> messages</a>
                         </li>
                         <li>
-                            <a href="app-chat.html"> <i class="fa-solid fa-folder-open"></i> documents</a>
+                            <a href=""> <i class="fa-solid fa-folder-open"></i> documents</a>
                         </li>
                         <li>
-                            <a href="signin-basic.html"> <i class="fa-solid fa-sign-out-alt"></i> Log Out</a>
+                            <a href="" onclick="event.preventDefault(); logout(this)"> <i class="fa-solid fa-sign-out-alt"></i> Log Out</a>
                         </li>
                     </ul>
                 </div>

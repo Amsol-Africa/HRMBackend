@@ -9,7 +9,9 @@ use App\Models\Business;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Http\RequestResponse;
 use Illuminate\Validation\Rules;
+use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -23,36 +25,26 @@ use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
+    use HandleTransactions;
     public function create(): View
     {
-        return view('auth.register');
-    }
-    public function setup(): View
-    {
-        return view('auth.business-setup');
-    }
-    public function modules(): View
-    {
-        $modules = Module::all();
-        return view('auth.modules-setup', compact('modules'));
+        $page = "Create an Account";
+        $description = "Register to access your personalized dashboard and services.";
+        return view('auth.register', compact('page', 'description'));
     }
 
-    public function register(Request $request)
+    public function store(Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8',
             'phone' => 'required|string|max:15',
             'code' => 'required|string|max:15',
             'country' => 'required|string',
         ]);
 
-        try {
-            DB::beginTransaction();
+        return $this->handleTransaction(function () use ($request, $validatedData) {
 
             $countryCode = $request->code;
             $phoneNumber = "+{$countryCode}{$request->phone}";
@@ -69,38 +61,28 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($validatedData['password']),
                 'phone' => $phoneNumber,
                 'code' => $validatedData['code'],
+                'country' => $validatedData['country'],
             ]);
 
             // Assign business_owner role
             $user->assignRole('business_owner');
 
-            $user->setStatus(Status::ACTIVE);
+            $user->setStatus(Status::SETUP);
 
             $request->hasFile('image')
                 ? $user->addMediaFromRequest('image')->toMediaCollection('avatars')
                 : $user->addMediaFromBase64(createAvatarImageFromName($request->name))->toMediaCollection('avatars');
 
-            DB::commit();
-
             $user->sendEmailVerificationNotification();
 
-            auth()->login($user);
+            Auth::login($user);
 
-            $redirect_url = route('setup.modules');
+            $redirect_url = route('setup.business');
 
             return RequestResponse::created('Account created successfully.', ['redirect_url' => $redirect_url]);
 
-        } catch (ValidationException $e) {
-            DB::rollBack();
-            report($e);
-            Log::error($e->getCode() . " " . $e->getMessage() . " " . $e->getFile() . " " . $e->getLine());
-            return back()->withErrors($validator)->withInput();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            report($e);
-            Log::error($e->getCode() . " " . $e->getMessage() . " " . $e->getFile() . " " . $e->getLine());
-            return back()->with('error', 'An unexpected error occurred. Please try again.')->withInput();
-        }
+        });
+
     }
 
     public function setupModules(Request $request)
@@ -199,7 +181,7 @@ class RegisteredUserController extends Controller
             auth()->login($user);
 
             return redirect()->route('dashboard')
-                           ->with('success', 'Welcome to ' . $user->business->name);
+                ->with('success', 'Welcome to ' . $user->business->name);
 
         } catch (\Exception $e) {
             DB::rollBack();

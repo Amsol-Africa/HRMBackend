@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Spatie\ModelStatus\HasStatuses;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Module extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory, HasSlug ,HasStatuses;
     protected $fillable = [
         'name',
         'slug',
@@ -25,14 +26,17 @@ class Module extends Model
         'features' => 'array',
         'is_core' => 'boolean'
     ];
+    public function getSlugOptions(): SlugOptions
+    {
+        return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
+    }
 
     public function businesses()
     {
         return $this->belongsToMany(Business::class, 'business_modules')->withPivot('is_active', 'subscription_ends_at')->withTimestamps();
     }
-
-    public function getSlugOptions(): SlugOptions
+    public function activeBusinesses()
     {
-        return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
+        return $this->businesses()->wherePivot('is_active', true);
     }
 }

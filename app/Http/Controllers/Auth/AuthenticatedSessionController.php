@@ -2,46 +2,80 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Auth\LoginRequest;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Illuminate\Http\Request;
+use App\Http\RequestResponse;
+use App\Traits\HandleTransactions;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
+    use HandleTransactions;
+
     public function create(): View
     {
-        return view('auth.login');
+        $page = "Welcome Back!";
+        $description = "Enter your credentials to log into your account";
+        return view('auth.login', compact('page', 'description'));
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request)
     {
-        $request->authenticate();
+        return $this->handleTransaction(function () use ($request) {
+            $credentials = $request->only('email', 'password');
+            $remember = $request->boolean('remember');
 
-        $request->session()->regenerate();
+            if (Auth::attempt($credentials, $remember)) {
+                $user = Auth::user();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+                //get users business
+                $business = $user->business;
+                session(['active_business_slug' => $business->slug]);
+
+                $redirectUrl = $this->getRedirectUrlForRole($user);
+                return RequestResponse::ok('Welcome back.', ['redirect_url' => $redirectUrl]);
+            }
+
+            throw ValidationException::withMessages([
+                'email' => [trans('auth.failed')],
+            ]);
+        });
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
-    public function destroy(Request $request): RedirectResponse
+    private function getRedirectUrlForRole($user)
     {
-        Auth::guard('web')->logout();
+        if ($user->hasRole('business_owner')) {
 
-        $request->session()->invalidate();
+            $business = $user->business;
 
-        $request->session()->regenerateToken();
+            if($user->status === "setup") {
+                return route('setup.business');
+            }elseif($user->status === "module") {
+                return route('setup.modules');
+            }else{
+                return route('business.index', $business->slug);
+            }
 
-        return redirect('/');
+        } else {
+            return route('myaccount.index');
+        }
+    }
+
+    public function destroy(Request $request)
+    {
+        return $this->handleTransaction(function () use ($request) {
+            $name = explode(" ", $request->user()->name)[0];
+            Auth::guard('web')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            $redirect_url = route('login');
+
+            return RequestResponse::ok('Come back soon ' . $name, ['redirect_url' => $redirect_url]);
+        });
     }
 }

@@ -1,0 +1,51 @@
+import { btn_loader } from "https://amsol.anzar.co.ke/public_html/js/client/config.js";
+import RequestClient from "https://amsol.anzar.co.ke/public_html/js/client/RequestClient.js";
+import AuthService from "https://amsol.anzar.co.ke/public_html/js/client/AuthService.js";
+
+const requestClient = new RequestClient();
+const authService = new AuthService(requestClient);
+
+window.login = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const loginData = {
+        email: $('#email').val(),
+        password: $('#password').val(),
+        remember: $('#remember').is(':checked')
+    };
+
+    try {
+        await authService.login(loginData);
+        $('#email, #password').val('');
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+window.register = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData();
+
+    formData.append("name", $("#name").val());
+    formData.append("email", $("#email").val());
+    formData.append("phone", $("#phone").val());
+    formData.append("country", $("#country").val());
+    formData.append("code", $("#code").val());
+    formData.append("password", $("#password").val());
+
+    try {
+        await authService.register(formData);
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+window.logout = async function(btn) {
+    const data = { };
+    try {
+        await authService.logout(data);
+    } finally {
+
+    }
+}

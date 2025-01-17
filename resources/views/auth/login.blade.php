@@ -1,6 +1,6 @@
 <x-auth-layout>
 
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    {{-- <x-auth-session-status class="mb-4" :stat/us="session('status')" /> --}}
 
 
     <div class="authentication-wrapper basic-authentication">
@@ -33,16 +33,15 @@
 
                     <div class="from__input-box">
                         <div class="form__input-title d-flex justify-content-between">
-                            <label for="passwordInput">Password</label>
+                            <label for="password">Password</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Password" type="password" name="password" required id="passwordInput">
+                            <input class="form-control" placeholder="Password" type="password" name="password" required id="password">
                             <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <a class="btn btn-primary w-100" href="{{ route('dashboard') }}"> <i class="bi bi-check-circle"></i> Login </a>
-                        {{-- <button class="btn btn-primary w-100" type="button" onclick="login(this)"> <i class="bi bi-check-circle"></i> Login</button> --}}
+                        <button class="btn btn-primary w-100" type="button" onclick="login(this)"> <i class="bi bi-check-circle"></i> Login</button>
                     </div>
                 </form>
 

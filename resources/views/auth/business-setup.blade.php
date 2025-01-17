@@ -33,9 +33,10 @@
                             <input class="form-control" placeholder="Company / organization Name" name="name" id="name" :value="old('name')" type="text" required autocomplete="name">
                         </div>
                     </div>
+
                     <div class="from__input-box">
                         <div class="form__input-title">
-                            <label for="size">Company size</label>
+                            <label for="company_size">Company size</label>
                         </div>
                         <div class="form__input">
                             <select id="company_size" name="company_size" required class="form-select">
@@ -48,6 +49,7 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="from__input-box">
                         <div class="form__input-title">
                             <label for="industry">Industry</label>
@@ -63,14 +65,18 @@
                             </select>
                         </div>
                     </div>
+
                     <div class="from__input-box">
                         <div class="form__input-title">
                             <label for="phone">Contact phone</label>
                         </div>
                         <div class="form__input">
                             <input class="phone-input-control" name="phone" id="phone" type="text" required autocomplete="phone">
+                            <input name="code" hidden id="code" type="text" required autocomplete="code">
+                            <input name="country" hidden id="country" type="text" required autocomplete="country">
                         </div>
                     </div>
+
                     <div class="from__input-box">
                         <div class="form__input-title">
                             <label for="logo">Upload your logo (Optional) </label>
@@ -79,9 +85,9 @@
                             <input class="form-control" type="file" name="logo" required id="logo">
                         </div>
                     </div>
+
                     <div class="mb-3">
-                        <a class="btn btn-primary w-100" href="{{ route('setup.modules') }}"> Complete Setup <i class="ms-2 bi bi-check-circle"></i> </a>
-                        {{-- <button class="btn btn-primary w-100" onclick="setup(this)" type="button"> Complete Setup <i class="ms-2 bi bi-check-circle"></i> </button> --}}
+                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> Complete Setup <i class="ms-2 bi bi-check-circle"></i> </button>
                     </div>
                 </form>
 
