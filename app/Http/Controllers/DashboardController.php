@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JobCategory;
 use App\Models\User;
 use App\Models\Business;
 use App\Models\Department;
@@ -91,6 +92,11 @@ class DashboardController extends Controller
         return view('business.index', compact('cards'));
     }
 
+    function clients(Request $request) {
+        $page = 'CLients';
+        $description = '';
+        return view('clients.index', compact('page', 'description'));
+    }
     function departments(Request $request) {
         $page = 'Departments';
         $description = 'Manage and organize all departments within your business. View, create, and update departmental information to streamline operations.';
@@ -182,6 +188,47 @@ class DashboardController extends Controller
         $description = '';
         $formulas = PayrollFormula::all();
         return view('deductions.create', compact('page', 'description', 'formulas'));
+    }
+
+
+    //Leave management
+    public function leaveApplications(Request $request)
+    {
+        $page = 'Leave Applications';
+        $description = '';
+        return view('leave.index', compact('page', 'description'));
+    }
+    public function leaveTypes(Request $request)
+    {
+        $page = 'Leave Types';
+        $description = '';
+        $departments = Department::all();
+        $job_categories = JobCategory::all();
+        return view('leave.types', compact('page', 'description', 'departments', 'job_categories'));
+    }
+    public function leavePeriods(Request $request)
+    {
+        $page = 'Leave Periods';
+        $description = '';
+        return view('leave.periods', compact('page', 'description'));
+    }
+    public function leaveEntitlement(Request $request)
+    {
+        $page = 'Leave Entitlement';
+        $description = '';
+        return view('leave.entitlement', compact('page', 'description'));
+    }
+    public function leaveSettings(Request $request)
+    {
+        $page = 'Leave Settings';
+        $description = '';
+        return view('leave.settings', compact('page', 'description'));
+    }
+    public function leaveReports(Request $request)
+    {
+        $page = 'Leave Reports';
+        $description = '';
+        return view('leave.reports', compact('page', 'description'));
     }
 
 

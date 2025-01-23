@@ -1,6 +1,6 @@
-import { btn_loader } from "https://amsol.anzar.co.ke/public_html/js/client/config.js";
-import RequestClient from "https://amsol.anzar.co.ke/public_html/js/client/RequestClient.js";
-import EmployeesService from "https://amsol.anzar.co.ke/public_html/js/client/EmployeesService.js";
+import { btn_loader } from "/js/client/config.js";
+import RequestClient from "/js/client/RequestClient.js";
+import EmployeesService from "/js/client/EmployeesService.js";
 
 const requestClient = new RequestClient();
 const employeesService = new EmployeesService(requestClient);

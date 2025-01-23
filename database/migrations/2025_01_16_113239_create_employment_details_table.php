@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('probation_end_date')->nullable();
             $table->date('contract_end_date')->nullable();
             $table->date('retirement_date')->nullable();
-            $table->enum('employment_status', ['contract', 'fulltime', 'permanent']);
+            $table->enum('employment_term', ['contract', 'fulltime', 'permanent']);
             $table->text('job_description')->nullable();
             $table->timestamps();
         });

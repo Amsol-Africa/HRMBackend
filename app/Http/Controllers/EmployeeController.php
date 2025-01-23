@@ -32,37 +32,43 @@ class EmployeeController extends Controller
     {
         $validatedData = $request->validate([
             // Personal Information
+            'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string|max:20',
+            'phone_code' => 'required|string|max:10',
+            'alternate_phone' => 'required|string|max:20',
+            'alternate_phone_code' => 'required|string|max:10',
             'date_of_birth' => 'required|date|before:today',
+            'place_of_birth' => 'required|string',
             'marital_status' => 'required|in:single,married,divorced,widowed',
             'national_id' => 'required|string|unique:employees,national_id',
+            'place_of_issue' => 'required|string',
             'tax_no' => 'required|string|max:20',
             'nhif_no' => 'required|string|max:20',
             'nssf_no' => 'required|string|max:20',
             'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-
-            // Contact Information
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'phone_code' => 'required|string|max:10',
-            'address' => 'required|string|max:255',
-            'city' => 'required|string|max:100',
-            'postal_code' => 'required|string|max:20',
-            'country' => 'required|string|max:100',
-
-            // Next of Kin
-            'next_of_kin' => 'required|string|max:255',
-            'next_of_kin_relationship' => 'required|string|max:100',
-            'next_of_kin_phone' => 'required|string|max:20',
-            'next_of_kin_phone_code' => 'required|string|max:10',
-
-            // Passport Information
             'passport_no' => 'nullable|string|max:20',
             'passport_issue_date' => 'nullable|date|before:today',
             'passport_expiry_date' => 'nullable|date|after:passport_issue_date',
+            'address' => 'required|string|max:255',
+            'permanent_address' => 'required|string|max:255',
+
+            // Spouse Information
+            'spouse_surname_name' => 'required|string|max:255',
+            'spouse_first_name' => 'required|string|max:100',
+            'spouse_middle_name' => 'required|string|max:20',
+            'spouse_date_of_birth' => 'required|string|max:10',
+            'spouse_national_id' => 'required|string|max:10',
+            'spouse_phone' => 'required|string|max:10',
+            'spouse_phone_code' => 'required|string|max:10',
+            'spouse_current_employer' => 'required|string|max:10',
+            'spouse_postal_address' => 'required|string|max:10',
+            'spouse_physical_address' => 'required|string|max:10',
+
+            // Passport Information
 
             // Work Information
             'employee_code' => 'required|string|unique:employees,employee_code|max:50',

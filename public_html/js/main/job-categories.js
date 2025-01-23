@@ -1,6 +1,6 @@
-import { btn_loader } from "https://amsol.anzar.co.ke/public_html/js/client/config.js";
-import RequestClient from "https://amsol.anzar.co.ke/public_html/js/client/RequestClient.js";
-import JobCategoriesService from "https://amsol.anzar.co.ke/public_html/js/client/JobCategoriesService.js";
+import { btn_loader } from "/js/client/config.js";
+import RequestClient from "/js/client/RequestClient.js";
+import JobCategoriesService from "/js/client/JobCategoriesService.js";
 
 const requestClient = new RequestClient();
 const jobCategoriesService = new JobCategoriesService(requestClient);

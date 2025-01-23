@@ -32,7 +32,7 @@
                             <a class="sidebar__menu-item" href="{{ route('business.employees.create', $currentBusiness->slug) }}">Configure Organization</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.index', $currentBusiness->slug) }}">Clients</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.clients.index', $currentBusiness->slug) }}">Clients</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="recruitment.html">Holidays</a>
@@ -136,22 +136,22 @@
                     </a>
                     <ul class="sidebar-menu child1">
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.create', $currentBusiness->slug) }}">Leave Applications</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.index', $currentBusiness->slug) }}">Leave Applications</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.index', $currentBusiness->slug) }}">Leave Types</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.types', $currentBusiness->slug) }}">Leave Types</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Leave Periods</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.periods', $currentBusiness->slug) }}">Leave Periods</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Leave Entitlement</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.entitlement', $currentBusiness->slug) }}">Leave Entitlement</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Settings</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.settings', $currentBusiness->slug) }}">Settings</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Leave Reports</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.reports', $currentBusiness->slug) }}">Leave Reports</a>
                         </li>
                     </ul>
                 </li>

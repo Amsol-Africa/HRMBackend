@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\JobCategoryController;
 use App\Http\Controllers\PayrollFormulaController;
@@ -58,5 +59,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [EmployeeController::class, 'fetch'])->name('fetch');
         Route::post('destroy', [EmployeeController::class, 'destroy'])->name('destroy');
         Route::post('update', [EmployeeController::class, 'update'])->name('update');
+    });
+    //manage leaves
+    Route::name('leave-types.')->prefix('leave-types')->group(function () {
+        Route::post('edit', [LeaveTypeController::class, 'edit'])->name('edit');
+        Route::post('store', [LeaveTypeController::class, 'store'])->name('store');
+        Route::post('fetch', [LeaveTypeController::class, 'fetch'])->name('fetch');
+        Route::post('destroy', [LeaveTypeController::class, 'destroy'])->name('destroy');
+        Route::post('update', [LeaveTypeController::class, 'update'])->name('update');
+    });
+    Route::name('leave.')->prefix('leave')->group(function () {
+        Route::post('edit', [LeaveController::class, 'edit'])->name('edit');
+        Route::post('store', [LeaveController::class, 'store'])->name('store');
+        Route::post('fetch', [LeaveController::class, 'fetch'])->name('fetch');
+        Route::post('destroy', [LeaveController::class, 'destroy'])->name('destroy');
+        Route::post('update', [LeaveController::class, 'update'])->name('update');
     });
 });

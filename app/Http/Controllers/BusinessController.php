@@ -88,6 +88,8 @@ class BusinessController extends Controller
             $moduleIds = Module::whereIn('slug', $validatedData['modules'])->pluck('id');
             $business->modules()->sync($moduleIds);
 
+            session(['active_business_slug' => $business->slug]);
+
             $redirect_url = route('business.index', $business);
 
             $user->setStatus(Status::ACTIVE);

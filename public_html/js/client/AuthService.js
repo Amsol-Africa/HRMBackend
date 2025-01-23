@@ -6,9 +6,8 @@ class AuthService {
     async login(data) {
         try {
             const response = await this.requestClient.post('/login', data);
-            Swal.fire('Authenticated..!', response.message, 'success').then(() => {
-                this.handleRedirect(response.data.redirect_url);
-            });
+            Swal.fire('Authenticated..!', response.message, 'success');
+            this.handleRedirect(response.data.redirect_url);
         } catch (error) {
             console.log(error)
             throw error;
@@ -18,9 +17,8 @@ class AuthService {
     async register(data) {
         try {
             const response = await this.requestClient.post('/register', data);
-            Swal.fire('Authenticated..!', response.message, 'success').then(() => {
-                this.handleRedirect(response.data.redirect_url);
-            });
+            Swal.fire('Authenticated..!', response.message, 'success');
+            this.handleRedirect(response.data.redirect_url);
         } catch (error) {
             console.log(error)
             throw error;
@@ -30,9 +28,8 @@ class AuthService {
     async setup(data) {
         try {
             const response = await this.requestClient.post('/setup', data);
-            Swal.fire('Business Registered..!', response.message, 'success').then(() => {
-                this.handleRedirect(response.data.redirect_url);
-            });
+            Swal.fire('Business Registered..!', response.message, 'success');
+            this.handleRedirect(response.data.redirect_url);
         } catch (error) {
             console.log(error)
             throw error;
@@ -42,9 +39,8 @@ class AuthService {
     async logout(data) {
         try {
             const response = await this.requestClient.post('/logout', data);
-            Swal.fire('Logged out!', response.message, 'success').then(() => {
-                this.handleRedirect(response.data.redirect_url);
-            });
+            Swal.fire('Logged out!', response.message, 'success');
+            this.handleRedirect(response.data.redirect_url);
         } catch (error) {
             console.log(error)
             throw error;

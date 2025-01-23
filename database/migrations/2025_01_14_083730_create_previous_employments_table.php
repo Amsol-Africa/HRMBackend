@@ -11,13 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_next_of_kin', function (Blueprint $table) {
+        Schema::create('previous_employments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
-            $table->string('name');
-            $table->string('relationship');
-            $table->string('phone');
-            $table->string('code');
+            $table->string('employer_name');
+            $table->string('business_or_profession');
+            $table->string('address');
+            $table->string('capacity_employed');
+            $table->string('reason_for_leaving');
+            $table->date('start_date');
+            $table->date('end_date');
             $table->timestamps();
         });
     }
@@ -27,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('employee_next_of_kin');
+        Schema::dropIfExists('previous_employments');
     }
 };

@@ -1,6 +1,6 @@
-import { btn_loader } from "https://amsol.anzar.co.ke/public_html/js/client/config.js";
-import RequestClient from "https://amsol.anzar.co.ke/public_html/js/client/RequestClient.js";
-import ShiftsService from "https://amsol.anzar.co.ke/public_html/js/client/ShiftsService.js";
+import { btn_loader } from "/js/client/config.js";
+import RequestClient from "/js/client/RequestClient.js";
+import ShiftsService from "/js/client/ShiftsService.js";
 
 const requestClient = new RequestClient();
 const shiftsService = new ShiftsService(requestClient);
