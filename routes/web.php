@@ -16,10 +16,10 @@ Route::middleware(['auth'])->group(function () {
     });
 
 
-
     Route::middleware(['role:business_owner'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [DashboardController::class, 'clients'])->name('clients.index');
+        Route::get('/clients/create', [DashboardController::class, 'createClients'])->name('clients.create');
         Route::get('/departments', [DashboardController::class, 'departments'])->name('departments.index');
         Route::get('/employees/register', [DashboardController::class, 'createEmployees'])->name('employees.create');
         Route::get('/employees', [DashboardController::class, 'employees'])->name('employees.index');
@@ -40,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
 
         //leave management
-        Route::get('/leave/applications', [DashboardController::class, 'leaveApplications'])->name('leave.index');
+        Route::get('/leave/requests', [DashboardController::class, 'leaveApplications'])->name('leave.index');
         Route::get('/leave/types', [DashboardController::class, 'leaveTypes'])->name('leave.types');
         Route::get('/leave/periods', [DashboardController::class, 'leavePeriods'])->name('leave.periods');
         Route::get('/leave/entitlement', [DashboardController::class, 'leaveEntitlement'])->name('leave.entitlement');

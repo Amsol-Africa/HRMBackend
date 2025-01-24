@@ -15,12 +15,12 @@ class LeaveTypeController extends Controller
 {
     use HandleTransactions;
 
-    public function index(Request $request)
+    public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
         $leaveTypes = $business->leaveTypes()->with('leavePolicies')->get();
-
-        return RequestResponse::ok('Leave types fetched successfully.', compact('leaveTypes'));
+        $leaveTypesTable = view('leave._leave_types_table', compact('leaveTypes'))->render();
+        return RequestResponse::ok('Leave types fetched successfully.', $leaveTypesTable);
     }
 
     public function store(Request $request)
@@ -85,12 +85,23 @@ class LeaveTypeController extends Controller
         });
     }
 
-    // Edit a leave type
     public function edit(Request $request, $slug)
     {
-        $leaveType = LeaveType::where('slug', $slug)->with('leavePolicies')->firstOrFail();
-
+        $validatedData = $request->validate([
+            'leave_type_slug' => 'required|string|exists:leave_types,slug',
+        ]);
+        $leaveType = LeaveType::where('slug', $validatedData['leave_type_slug'])->with('leavePolicies')->firstOrFail();
         return RequestResponse::ok('Leave type fetched successfully.', compact('leaveType'));
+    }
+
+    public function show(Request $request)
+    {
+        $validatedData = $request->validate([
+            'leave_type_slug' => 'required|string|exists:leave_types,slug',
+        ]);
+        $leaveType = LeaveType::where('slug', $validatedData['leave_type_slug'])->with('leavePolicies.department', 'leavePolicies.jobCategory')->firstOrFail();
+        $leaveTypeDetails = view('leave._leave_type_details', compact('leaveType'))->render();
+        return RequestResponse::ok('Leave type fetched successfully.', $leaveTypeDetails);
     }
 
     public function update(Request $request)

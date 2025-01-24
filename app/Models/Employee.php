@@ -58,11 +58,6 @@ class Employee extends Model implements HasMedia
         return $this->hasOne(EmploymentDetail::class);
     }
 
-    public function nextOfKin()
-    {
-        return $this->hasMany(EmployeeNextOfKin::class);
-    }
-
     public function paymentDetails()
     {
         return $this->hasOne(EmployeePaymentDetail::class);

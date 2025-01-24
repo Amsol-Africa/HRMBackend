@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\LeaveTypeList;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Intervention\Image\ImageManagerStatic as Image;
@@ -189,3 +190,10 @@ function userHasCreatorPrivileges(): bool
 function formatDuration($seconds) {
     return gmdate(($seconds >= 3600 ? 'H:i:s' : 'i:s'), $seconds);
 }
+
+function getLeaveTypeNames()
+    {
+        $leaveTypes = LeaveTypeList::all();
+        Log::debug($leaveTypes);
+        return $leaveTypes->pluck('name')->toArray();
+    }

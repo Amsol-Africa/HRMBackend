@@ -34,6 +34,16 @@ class LeaveTypeService {
         }
     }
 
+    async show(data) {
+        try {
+            const response = await this.requestClient.post('/leave-types/show', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async save(data) {
         try {
             const response = await this.requestClient.post('/leave-types/store', data);

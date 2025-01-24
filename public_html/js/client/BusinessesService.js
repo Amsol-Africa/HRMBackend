@@ -6,9 +6,18 @@ class BusinessesService {
     async store(data) {
         try {
             const response = await this.requestClient.post('/businesses/store', data);
-            Swal.fire('Congratulations..!', response.message, 'success').then(() => {
-                this.handleRedirect(response.data.redirect_url);
-            });
+            Swal.fire('Congratulations..!', response.message, 'success');
+            this.handleRedirect(response.data.redirect_url);
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
+    async clients(data) {
+        try {
+            const response = await this.requestClient.post('/client-businesses/fetch', data);
+            return response.data;
         } catch (error) {
             console.log(error)
             throw error;

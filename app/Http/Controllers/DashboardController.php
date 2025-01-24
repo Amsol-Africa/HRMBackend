@@ -93,9 +93,16 @@ class DashboardController extends Controller
     }
 
     function clients(Request $request) {
-        $page = 'CLients';
+        $page = 'Clients';
         $description = '';
-        return view('clients.index', compact('page', 'description'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        $clientBusinesses = $business->managedBusinesses;
+        return view('clients.index', compact('page', 'description', 'clientBusinesses'));
+    }
+    function createClients(Request $request) {
+        $page = 'Clients';
+        $description = '';
+        return view('clients.create', compact('page', 'description'));
     }
     function departments(Request $request) {
         $page = 'Departments';
@@ -215,8 +222,14 @@ class DashboardController extends Controller
     public function leaveEntitlement(Request $request)
     {
         $page = 'Leave Entitlement';
+        $business = Business::findBySlug(session('active_business_slug'));
         $description = '';
-        return view('leave.entitlement', compact('page', 'description'));
+        $employees = $business->employees;
+        $leaveTypes = $business->leaveTypes;
+        $leavePeriods = $business->leavePeriods;
+        $departments = $business->departments;
+        $jobCategories = $business->job_categories;
+        return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories'));
     }
     public function leaveSettings(Request $request)
     {

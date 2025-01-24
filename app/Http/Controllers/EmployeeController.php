@@ -218,4 +218,37 @@ class EmployeeController extends Controller
             return RequestResponse::created('Employee Added successfully.');
         });
     }
+    public function filter(Request $request)
+    {
+        $query = Employee::query();
+
+        if ($request->has('department') && $request->department != 'all') {
+            $query->where('department_id', $request->department);
+        }
+
+        if ($request->has('job_category') && $request->job_category != 'all') {
+            $query->whereHas('employmentDetails', function ($q) use ($request) {
+                $q->where('job_category_id', $request->job_category);
+            });
+        }
+
+        if ($request->has('employment_term') && $request->employment_term != 'all') {
+            $query->whereHas('employmentDetails', function ($q) use ($request) {
+                $q->where('employment_term', $request->employment_term);
+            });
+        }
+
+        $employees = $query->get();
+
+        $employeesData = $employees->map(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'name' => $employee->user->name,
+                'department' => $employee->department->name ?? 'N/A',
+            ];
+        });
+
+        return RequestResponse::ok('Ok.', $employeesData);
+    }
+
 }

@@ -85,5 +85,37 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(Employee::class);
     }
+    public function leaveTypes()
+    {
+        return $this->hasMany(LeaveType::class);
+    }
+    public function leavePeriods()
+    {
+        return $this->hasMany(LeavePeriod::class);
+    }
+    public function leaveEntitlements()
+    {
+        return $this->hasMany(LeaveEntitlement::class);
+    }
+
+    //managed businesses
+    public function managedBusinesses()
+    {
+        return $this->belongsToMany(
+            Business::class,
+            'clients',
+            'business_id',
+            'client_business'
+        );
+    }
+    public function managingBusinesses()
+    {
+        return $this->belongsToMany(
+            Business::class,
+            'clients',
+            'client_business',
+            'business_id'
+        );
+    }
 
 }

@@ -38,11 +38,15 @@
 
 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+        <link rel="stylesheet" href="https://cdn.datatables.net/v/dt/dt-2.0.8/datatables.min.css"/>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.default.min.css"/>
 
     </head>
 
@@ -84,6 +88,8 @@
         <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+        <script src="https://cdn.datatables.net/v/dt/dt-2.0.8/datatables.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
         <script src="{{ asset('assets/js/vendor/isotope.pkgd.js') }}"></script>
         <script src="{{ asset('assets/js/vendor/bootstrap.bundle.min.js') }}"></script>
@@ -130,6 +136,7 @@
         <script src="{{ asset('assets/js/vendor/rating-script.js') }}"></script>
         <script src="{{ asset('assets/js/main.js') }}"></script>
         <script src="{{ asset('assets/js/vendor/sidebar.js') }}"></script>
+        <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
 
         <script src="{{ asset('js/init.js') }}"></script>
         <script src="{{ asset('js/main/logout.js') }}" type="module"></script>

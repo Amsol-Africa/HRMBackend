@@ -15,7 +15,7 @@ class EmploymentDetail extends Model
         'probation_end_date',
         'contract_end_date',
         'retirement_date',
-        'employment_status',
+        'employment_term',
         'job_description'
     ];
 

@@ -7,9 +7,10 @@ const leaveService = new LeaveService(requestClient);
 
 window.getLeave = async function (page = 1, status = 'pending') {
     try {
-        let data = {page:page, status: status};
-        const leaveCards = await leaveService.fetch(data);
-        $("#leaveContainer").html(leaveCards);
+        let data = { page: page, status: status };
+        const leaveTable = await leaveService.fetch(data);
+        $(`#${status}Container`).html(leaveTable);
+        new DataTable(`#${status}LeaveRequestsTable`);
     } catch (error) {
         console.error("Error loading user data:", error);
     }

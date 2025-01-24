@@ -1,63 +1,63 @@
 import { btn_loader } from "/js/client/config.js";
 import RequestClient from "/js/client/RequestClient.js";
-import LeaveTypeService from "/js/client/LeaveTypeService.js";
+import LeavePeriodsService from "/js/client/LeavePeriodsService.js";
 
 const requestClient = new RequestClient();
-const leaveTypeService = new LeaveTypeService(requestClient);
+const leavePeriodsService = new LeavePeriodsService(requestClient);
 
-window.getLeaveType = async function (page = 1, status = 'pending') {
+window.getLeavePeriods = async function (page = 1) {
     try {
-        let data = {page:page, status: status};
-        const leaveTypes = await leaveTypeService.fetch(data);
-        $("#leaveTypeContainer").html(leaveTypes);
-        new DataTable('#leaveTypesTable');
+        let data = {page:page};
+        const leavePeriodss = await leavePeriodsService.fetch(data);
+        $("#leavePeriodsContainer").html(leavePeriodss);
+        new DataTable('#leavePeriodsTable');
     } catch (error) {
         console.error("Error loading user data:", error);
     }
 };
-window.saveLeaveType = async function (btn) {
+window.saveLeavePeriods = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("leaveTypeForm"));
+    let formData = new FormData(document.getElementById("leavePeriodsForm"));
 
     try {
-        if (formData.has('leave_slug')) {
-            await leaveTypeService.update(formData);
+        if (formData.has('leave_period_slug')) {
+            await leavePeriodsService.update(formData);
         } else {
-            await leaveTypeService.save(formData);
+            await leavePeriodsService.save(formData);
         }
-        getLeaveType();
+        getLeavePeriods();
     } finally {
         btn_loader(btn, false);
     }
 };
-window.editLeaveType = async function (btn) {
+window.editLeavePeriods = async function (btn) {
     btn = $(btn);
 
     const leave = btn.data("leave");
     const data = { leave: leave };
 
     try {
-        const form = await leaveTypeService.edit(data);
-        $('#leaveTypeFormContainer').html(form)
+        const form = await leavePeriodsService.edit(data);
+        $('#leavePeriodsFormContainer').html(form)
     } finally {
     }
 };
-window.viewLeaveType = async function (btn) {
+window.viewLeavePeriods = async function (btn) {
     btn = $(btn);
 
     const leave_type = btn.data("leave-type");
     const data = { leave_type_slug: leave_type };
 
     try {
-        const details = await leaveTypeService.show(data);
-        $('#leaveTypeDetailsContent').html(details);
-        $('#leaveTypeDetailsModal').modal('show');
+        const details = await leavePeriodsService.show(data);
+        $('#leavePeriodsDetailsContent').html(details);
+        $('#leavePeriodsDetailsModal').modal('show');
     } finally {
     }
 };
-window.deleteLeaveType = async function (btn) {
+window.deleteLeavePeriods = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
@@ -75,8 +75,8 @@ window.deleteLeaveType = async function (btn) {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                await leaveTypeService.delete(data);
-                getLeaveType();
+                await leavePeriodsService.delete(data);
+                getLeavePeriods();
             } finally {
                 btn_loader(btn, false);
             }

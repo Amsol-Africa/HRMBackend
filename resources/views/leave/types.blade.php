@@ -154,25 +154,45 @@
         </div>
 
         <div class="col-md-6">
-            <div class="row" id="leaveContainer">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-body"> {{ loader() }} </div>
-                    </div>
+            <div id="leaveTypeContainer">
+                <div class="card">
+                    <div class="card-body"> {{ loader() }} </div>
                 </div>
             </div>
         </div>
 
     </div>
-
     @push('scripts')
-        <script src="{{ asset('js/main/leave-type.js') }}" type="module"></script>
-        <script>
-            $(document).ready(() => {
-                getLeaveType()
-            })
-        </script>
+        <!-- Include the leave type modal -->
+        @include('modals.leave-type')
 
+        <!-- Load the leave-type.js file -->
+        <script src="{{ asset('js/main/leave-type.js') }}" type="module"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Ensure getLeaveType function is called if it exists in the leave-type.js file
+                if (typeof getLeaveType === 'function') {
+                    getLeaveType();
+                }
+
+                // Get the input element
+                const input = document.getElementById('name');
+
+                // Fetch available leave types
+                const availableTypes = @json(getLeaveTypeNames());
+
+                // Initialize autocomplete using jQuery UI
+                if (typeof $ !== 'undefined' && $.fn.autocomplete) {
+                    $('#name').autocomplete({
+                        source: availableTypes,
+                        minLength: 1, // Start showing suggestions after typing 1 character
+                    });
+                } else {
+                    console.error('jQuery or jQuery UI is not loaded. Autocomplete will not work.');
+                }
+            });
+        </script>
     @endpush
 
 </x-app-layout>

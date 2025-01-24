@@ -136,7 +136,7 @@
                     </a>
                     <ul class="sidebar-menu child1">
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.leave.index', $currentBusiness->slug) }}">Leave Applications</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.leave.index', $currentBusiness->slug) }}">Leave Requests</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="{{ route('business.leave.types', $currentBusiness->slug) }}">Leave Types</a>
