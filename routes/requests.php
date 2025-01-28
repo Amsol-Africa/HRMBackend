@@ -100,10 +100,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [LeaveEntitlementController::class, 'update'])->name('update');
     });
     Route::name('client-businesses.')->prefix('client-businesses')->group(function () {
-        Route::post('edit', [ClientController::class, 'edit'])->name('edit');
-        Route::post('store', [ClientController::class, 'store'])->name('store');
+        Route::post('request-access', [ClientController::class, 'requestAccess'])->name('request-access');
+        Route::post('grant-access', [ClientController::class, 'grantAccess'])->name('grant-access');
         Route::post('fetch', [ClientController::class, 'fetch'])->name('fetch');
-        Route::post('show', [ClientController::class, 'show'])->name('show');
+        Route::post('access', [ClientController::class, 'impersonateManagedBusiness'])->name('access');
         Route::post('destroy', [ClientController::class, 'destroy'])->name('destroy');
         Route::post('update', [ClientController::class, 'update'])->name('update');
     });

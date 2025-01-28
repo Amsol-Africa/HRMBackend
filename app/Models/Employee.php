@@ -19,19 +19,30 @@ class Employee extends Model implements HasMedia
         'business_id',
 
         'gender',
+        'alternate_phone',
         'date_of_birth',
+        'place_of_birth',
         'marital_status',
         'national_id',
+        'place_of_issue',
 
         'tax_no',
         'nhif_no',
         'nssf_no',
-        'blood_group',
         'passport_no',
-
         'passport_issue_date',
         'passport_expiry_date',
+        'address',
+        'permanent_address',
+        'blood_group',
     ];
+
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'passport_issue_date' => 'date',
+        'passport_expiry_date' => 'date',
+    ];
+
 
     // Define relationships
     public function user()
@@ -43,6 +54,30 @@ class Employee extends Model implements HasMedia
     {
         return $this->belongsTo(Business::class);
     }
+    public function spouse()
+    {
+        return $this->hasOne(Spouse::class);
+    }
+    public function academicDetails()
+    {
+        return $this->hasMany(AcademicQualification::class);
+    }
+
+    public function previousEmployment()
+    {
+        return $this->hasOne(PreviousEmployment::class);
+    }
+
+    public function emergencyContacts()
+    {
+        return $this->hasMany(EmergencyContact::class);
+    }
+
+    public function familyMembers()
+    {
+        return $this->hasMany(EmployeeFamilyMember::class);
+    }
+
 
     public function job_category()
     {

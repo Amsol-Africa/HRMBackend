@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Client;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Support\Facades\File;
@@ -57,5 +58,22 @@ class User extends Authenticatable implements HasMedia
     public function business()
     {
         return $this->hasOne(Business::class);
+    }
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+
+    public function managedClients()
+    {
+        return $this->hasMany(Client::class, 'employee_id');
+    }
+    public function businessesAsManager()
+    {
+        return $this->hasManyThrough(Business::class,Client::class,'employee_id','id','id','client_business');
+    }
+    public function clientBusinesses()
+    {
+        return $this->hasManyThrough(Client::class,Business::class,'user_id','business_id','id','id');
     }
 }

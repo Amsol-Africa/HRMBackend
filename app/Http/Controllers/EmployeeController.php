@@ -24,7 +24,7 @@ class EmployeeController extends Controller
         $user = $request->user();
         $business = $user->business;
 
-        $employees = Employee::where('business_id', $business->id)->with(['employmentDetails', 'nextOfKin', 'paymentDetails', 'contactDetails'])->get();
+        $employees = Employee::where('business_id', $business->id)->with(['employmentDetails', 'paymentDetails'])->get();
         $employee_cards = view('employees._cards', compact('employees'))->render();
         return RequestResponse::ok('Ok', $employee_cards);
     }
@@ -35,10 +35,12 @@ class EmployeeController extends Controller
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
+            'employee_code' => 'required|string|unique:employees,employee_code|max:50',
             'gender' => 'required|in:male,female',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
             'phone_code' => 'required|string|max:10',
+            'phone_country' => 'required|string',
             'alternate_phone' => 'required|string|max:20',
             'alternate_phone_code' => 'required|string|max:10',
             'date_of_birth' => 'required|date|before:today',
@@ -57,34 +59,31 @@ class EmployeeController extends Controller
             'permanent_address' => 'required|string|max:255',
 
             // Spouse Information
-            'spouse_surname_name' => 'required|string|max:255',
-            'spouse_first_name' => 'required|string|max:100',
-            'spouse_middle_name' => 'required|string|max:20',
-            'spouse_date_of_birth' => 'required|string|max:10',
-            'spouse_national_id' => 'required|string|max:10',
-            'spouse_phone' => 'required|string|max:10',
-            'spouse_phone_code' => 'required|string|max:10',
-            'spouse_current_employer' => 'required|string|max:10',
-            'spouse_postal_address' => 'required|string|max:10',
-            'spouse_physical_address' => 'required|string|max:10',
-
-            // Passport Information
+            'spouse_surname_name' => 'required|string',
+            'spouse_first_name' => 'required|string',
+            'spouse_middle_name' => 'required|string|',
+            'spouse_date_of_birth' => 'required|string|',
+            'spouse_national_id' => 'required|string',
+            'spouse_phone' => 'required|string',
+            'spouse_phone_code' => 'required|string',
+            'spouse_current_employer' => 'required|string',
+            'spouse_postal_address' => 'required|string',
+            'spouse_physical_address' => 'required|string',
 
             // Work Information
-            'employee_code' => 'required|string|unique:employees,employee_code|max:50',
             'department' => 'required|string|exists:departments,slug',
             'job_category' => 'required|string|exists:job_categories,slug',
-            'employment_date' => 'required|date|before_or_equal:today',
-            'probation_end_date' => 'nullable|date|after:employment_date',
-            'contract_end_date' => 'nullable|date|after_or_equal:probation_end_date',
-            'retirement_date' => 'nullable|date|after:employment_date',
+            'employment_date' => 'required|date',
+            'probation_end_date' => 'nullable|date',
+            'contract_end_date' => 'nullable|date',
+            'retirement_date' => 'nullable|date',
             'shift' => 'required|string|exists:shifts,slug',
-            'employment_status' => 'required|string|max:50',
+            'employment_term' => 'required|string|max:50',
             'job_description' => 'required|string',
-            'basic_salary' => 'required|integer|min:0',
-            'currency' => 'required|string|size:3',
 
             // Payment Details
+            'basic_salary' => 'required|integer|min:0',
+            'currency' => 'required|string|size:3',
             'payment_mode' => 'required|string|max:50',
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:employee_payment_details,account_number|max:50',
@@ -93,15 +92,60 @@ class EmployeeController extends Controller
             'bank_branch' => 'required|string|max:255',
             'bank_branch_code' => 'required|string|max:20',
 
-            // Work Contact
-            'work_phone_no' => 'required|string|max:20',
-            'work_email' => 'required|string|email|unique:employee_contact_details,work_email',
+            // Academic & Professional Details
+            'certification' => 'required|array',
+            'certification.*' => 'required|string|max:255',
+            'institution' => 'required|array',
+            'institution.*' => 'required|string|max:255',
+            'from' => 'required|array',
+            'from.*' => 'required|date|before_or_equal:to.*',
+            'to' => 'required|array',
+            'to.*' => 'required|date|after_or_equal:from.*',
+
+            // Emergency contact validation
+            'emmergency_contact_name' => 'required|array',
+            'emmergency_contact_name.*' => 'required|string|max:255',
+            'emmergency_contact_relationship' => 'required|array',
+            'emmergency_contact_relationship.*' => 'required|string|max:255',
+            'emmergency_contact_address' => 'required|array',
+            'emmergency_contact_address.*' => 'required|string|max:255',
+            'emmergency_contact_phone' => 'required|array',
+            'emmergency_contact_phone.*' => 'required|string|max:15',
+            'emmergency_contact_phone_code' => 'required|array',
+            'emmergency_contact_phone_code.*' => 'required|string|max:10',
+            'emmergency_contact_phone_country' => 'required|array',
+            'emmergency_contact_phone_country.*' => 'required|string|max:100',
+
+            // Validation for family members
+            'family_member_name' => 'required|array',
+            'family_member_name.*' => 'required|string|max:255',
+            'family_member_relationship' => 'required|array',
+            'family_member_relationship.*' => 'required|string|max:255',
+            'family_member_date_of_birth' => 'required|array',
+            'family_member_date_of_birth.*' => 'required|date',
+            'family_member_contact_address' => 'required|array',
+            'family_member_contact_address.*' => 'required|string|max:255',
+            'family_member_contact_phone' => 'required|array',
+            'family_member_contact_phone.*' => 'required|string|max:15',
+            'family_member_contact_phone_code' => 'required|array',
+            'family_member_contact_phone_code.*' => 'required|string|max:10',
+            'family_member_contact_phone_country' => 'required|array',
+            'family_member_contact_phone_country.*' => 'required|string|max:100',
+
+            // Validation for single entry employment details
+            'employer_name' => 'required|string|max:255',
+            'business_or_profession' => 'required|string|max:255',
+            'employment_address' => 'required|string|max:255',
+            'employment_capacity' => 'required|string|max:255',
+            'employment_from' => 'required|date',
+            'employment_to' => 'nullable|date|after_or_equal:employment_from',
+            'reason_for_leaving' => 'nullable|string|max:500',
 
             // Miscellaneous
-            'email_signature' => 'required|string|max:255',
+            'email_signature' => 'nullable|string|max:255',
             'profile_picture' => 'nullable|file|image|max:2048',
             'cv_attachments' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'academic_files' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
+            'academic_files' => 'nullable|file|mimes:pdf,doc,docx,xlsx|max:2048',
 
             // Authentication
             'password' => 'required|string|min:8',
@@ -120,6 +164,9 @@ class EmployeeController extends Controller
 
             throw_if($validator->fails(), ValidationException::class, $validator);
 
+            $alternatePhoneNumber = "+{$request->alternate_phone_code}{$request->alternate_phone}";
+            $spousePhoneNumber = "+{$request->spouse_phone_code}{$request->spouse_phone}";
+
             $name = $validatedData['first_name'] . ' ' . $validatedData['middle_name'] . ' ' . $validatedData['last_name'];
 
             $user = User::create([
@@ -128,7 +175,7 @@ class EmployeeController extends Controller
                 'password' => Hash::make($validatedData['password']),
                 'phone' => $phoneNumber,
                 'code' => $validatedData['phone_code'],
-                'country' => $validatedData['country'],
+                'country' => $validatedData['phone_country'],
             ]);
 
             $user->setStatus(Status::ACTIVE);
@@ -143,38 +190,47 @@ class EmployeeController extends Controller
                 // 'business_id' => $business->id,
 
                 'gender' => $validatedData['gender'],
+                'alternate_phone' => $alternatePhoneNumber,
                 'date_of_birth' => $validatedData['date_of_birth'],
                 'marital_status' => $validatedData['marital_status'],
                 'national_id' => $validatedData['national_id'],
+                'place_of_issue' => $validatedData['place_of_issue'],
 
                 'tax_no' => $validatedData['tax_no'],
                 'nhif_no' => $validatedData['nhif_no'],
                 'nssf_no' => $validatedData['nssf_no'],
-                'blood_group' => $validatedData['blood_group'],
                 'passport_no' => $validatedData['passport_no'],
-
                 'passport_issue_date' => $validatedData['passport_issue_date'],
                 'passport_expiry_date' => $validatedData['passport_expiry_date'],
+                'address' => $validatedData['address'],
+                'permanent_address' => $validatedData['permanent_address'],
+                'blood_group' => $validatedData['blood_group'],
+
             ]);
 
             // Save next of kin details
-            $employee->nextOfKin()->create([
-                'name' => $validatedData['next_of_kin'],
-                'relationship' => $validatedData['next_of_kin_relationship'],
-                'phone' => $validatedData['next_of_kin_phone'],
-                'code' => $validatedData['next_of_kin_phone_code'],
+            $employee->spouse()->create([
+                'surname' => $validatedData['spouse_surname_name'],
+                'first_name' => $validatedData['spouse_first_name'],
+                'middle_name' => $validatedData['spouse_middle_name'],
+                'date_of_birth' => $validatedData['spouse_date_of_birth'],
+                'national_id' => $validatedData['spouse_national_id'],
+                'current_employer' => $validatedData['spouse_current_employer'],
+                'spouse_contact' => $spousePhoneNumber,
+                'spouse_postal_address' => $validatedData['spouse_postal_address'],
+                'spouse_physical_address' => $validatedData['spouse_physical_address'],
             ]);
 
             // Save employment details
             $employee->employmentDetails()->create([
                 'department_id' => Department::where('slug', $validatedData['department'])->firstOrFail()->id,
                 'job_category_id' => JobCategory::where('slug', $validatedData['job_category'])->firstOrFail()->id,
-                'shift_id' => Shift::where('slug', $validatedData['shift'])->firstOrFail()->id,
                 'employment_date' => $validatedData['employment_date'],
                 'probation_end_date' => $validatedData['probation_end_date'],
                 'contract_end_date' => $validatedData['contract_end_date'],
                 'retirement_date' => $validatedData['retirement_date'],
-                'employment_status' => $validatedData['employment_status'],
+                'shift_id' => Shift::where('slug', $validatedData['shift'])->firstOrFail()->id,
+                'employment_term' => $validatedData['employment_term'],
                 'job_description' => $validatedData['job_description'],
             ]);
 
@@ -191,16 +247,47 @@ class EmployeeController extends Controller
                 'bank_branch_code' => $validatedData['bank_branch_code'],
             ]);
 
-            // Save contact details
-            $employee->contactDetails()->create([
-                'work_phone' => $validatedData['work_phone_no'],
-                'work_phone_code' => $validatedData['phone_code'],
-                'work_email' => $validatedData['work_email'],
-                'address' => $validatedData['address'],
-                'city' => $validatedData['city'],
-                'postal_code' => $validatedData['postal_code'],
-                'country' => $validatedData['country'],
-                'email_signature' => $validatedData['email_signature'],
+            // Save Academic & Professional Details
+            foreach ($validatedData['certification'] as $index => $certification) {
+                $employee->academicDetails()->create([
+                    'start_date' => $validatedData['from'][$index],
+                    'end_date' => $validatedData['to'][$index],
+                    'institution_name' => $validatedData['institution'][$index],
+                    'certification_obtained' => $certification,
+                ]);
+            }
+
+            // Save emergency contacts
+            foreach ($validatedData['emmergency_contact_name'] as $index => $contactName) {
+                $employee->emergencyContacts()->create([
+                    'name' => $contactName,
+                    'relationship' => $validatedData['emmergency_contact_relationship'][$index],
+                    'contact_address' => $validatedData['emmergency_contact_address'][$index],
+                    'telephone' => $validatedData['emmergency_contact_phone'][$index],
+                ]);
+            }
+
+            // Save each family member
+            foreach ($validatedData['family_member_name'] as $index => $name) {
+                $employee->familyMembers()->create([
+                    'name' => $name,
+                    'relationship' => $validatedData['family_member_relationship'][$index],
+                    'date_of_birth' => $validatedData['family_member_date_of_birth'][$index],
+                    'contact_address' => $validatedData['family_member_contact_address'][$index],
+                    'phone' => $validatedData['family_member_contact_phone'][$index],
+                    'code' => $validatedData['family_member_contact_phone_code'][$index],
+                ]);
+            }
+
+            // Create or update the employment information
+            $employee->previousEmployment()->create([
+                'employer_name' => $validatedData['employer_name'],
+                'business_or_profession' => $validatedData['business_or_profession'],
+                'address' => $validatedData['employment_address'],
+                'capacity_employed' => $validatedData['employment_capacity'],
+                'start_date' => $validatedData['employment_from'],
+                'end_date' => $validatedData['employment_to'],
+                'reason_for_leaving' => $validatedData['reason_for_leaving'],
             ]);
 
             // Save uploaded files if any
@@ -220,23 +307,28 @@ class EmployeeController extends Controller
     }
     public function filter(Request $request)
     {
+        $business_slug = session('active_business_slug');
+        $business = Business::findBySlug($business_slug);
+
         $query = Employee::query();
 
         if ($request->has('department') && $request->department != 'all') {
-            $query->where('department_id', $request->department);
+            $department = Department::where('slug', $request->department)->where('business_id', $business->id)->firstOrFail();
+            $query->where('department_id', $department->id);
         }
 
-        if ($request->has('job_category') && $request->job_category != 'all') {
-            $query->whereHas('employmentDetails', function ($q) use ($request) {
-                $q->where('job_category_id', $request->job_category);
-            });
-        }
+        // if ($request->has('job_category') && $request->job_category != 'all') {
+        //     $job_category = JobCategory::where('slug', $request->department)->where('business_id', $business->id)->firstOrFail();
+        //     $query->whereHas('employmentDetails', function ($q) use ($job_category) {
+        //         $q->where('job_category_id', $job_category->id);
+        //     });
+        // }
 
-        if ($request->has('employment_term') && $request->employment_term != 'all') {
-            $query->whereHas('employmentDetails', function ($q) use ($request) {
-                $q->where('employment_term', $request->employment_term);
-            });
-        }
+        // if ($request->has('employment_term') && $request->employment_term != 'all') {
+        //     $query->whereHas('employmentDetails', function ($q) use ($request) {
+        //         $q->where('employment_term', $request->employment_term);
+        //     });
+        // }
 
         $employees = $query->get();
 

@@ -24,6 +24,10 @@ class Business extends Model implements HasMedia
         'phone',
         'country',
         'code',
+        'registration_no',
+        'tax_pin_no',
+        'business_license_no',
+        'physical_address',
     ];
     public function user()
     {
@@ -36,6 +40,9 @@ class Business extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('businesses');
+        $this->addMediaCollection('registration_certificates');
+        $this->addMediaCollection('tax_pin_certificates');
+        $this->addMediaCollection('business_license_certificates');
     }
     public function getImageUrl()
     {
@@ -45,8 +52,6 @@ class Business extends Model implements HasMedia
         }
         return asset('media/amsol-logo.png');
     }
-
-
 
     public function modules()
     {
@@ -99,6 +104,10 @@ class Business extends Model implements HasMedia
     }
 
     //managed businesses
+    public function clients()
+    {
+        return $this->hasMany(Client::class, 'business_id');
+    }
     public function managedBusinesses()
     {
         return $this->belongsToMany(

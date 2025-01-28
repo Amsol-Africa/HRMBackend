@@ -4913,7 +4913,7 @@ input[type=month]::-webkit-calendar-picker-indicator:hover {
   height: 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #A6A6A6;
+  background-color: #0000;
   /* Adjust as needed */
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -12426,7 +12426,8 @@ table.dataTable tbody tr:last-child {
   position: relative;
 }
 .employee__thumb img {
-  max-width: 100px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
 }
 .employee__digi {

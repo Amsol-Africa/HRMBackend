@@ -15,6 +15,32 @@ window.getClients = async function(page = 1) {
     }
 };
 
+window.requestAccess = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData(document.getElementById("requestAccessForm"));
+
+    try {
+        await clientsService.requestAccess(formData);
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
+window.grantAccess = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData(document.getElementById("grantAccessForm"));
+
+    try {
+        await clientsService.grantAccess(formData);
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
 window.addClient = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);

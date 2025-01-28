@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\JobCategory;
+use App\Models\Module;
 use App\Models\User;
 use App\Models\Business;
+use App\Models\Industry;
 use App\Models\Department;
+use App\Models\JobCategory;
 use Illuminate\Http\Request;
 use App\Models\PayrollFormula;
 use Spatie\Permission\Models\Role;
@@ -13,6 +15,8 @@ use Spatie\Permission\Models\Role;
 class DashboardController extends Controller
 {
     function index(Request $request){
+
+        // show(session('managing_business')); die;
 
         $cards = [
             [
@@ -99,10 +103,22 @@ class DashboardController extends Controller
         $clientBusinesses = $business->managedBusinesses;
         return view('clients.index', compact('page', 'description', 'clientBusinesses'));
     }
-    function createClients(Request $request) {
-        $page = 'Clients';
+    function requestAccess(Request $request) {
+        $page = 'Request Access';
+        $description = 'Choose this option if there is another AMSOL account you would like to manage. A request email will be sent to the email address you provide, allowing the account owner to grant access to the system.';
+        return view('clients.access', compact('page', 'description'));
+    }
+    function grantAccess(Request $request) {
+        $page = 'Grant Access';
+        $description = 'Select this option if you wish to grant access to your AMSOL account to another user. You will need to confirm their email address, and they will receive an email with access details.';
+        $modules = Module::all();
+        return view('clients.access', compact('page', 'description', 'modules'));
+    }
+    function organizationSetup(Request $request) {
+        $page = 'Organization Setup';
         $description = '';
-        return view('clients.create', compact('page', 'description'));
+        $industries = Industry::all();
+        return view('business.setup', compact('page', 'description', 'industries'));
     }
     function departments(Request $request) {
         $page = 'Departments';
@@ -132,6 +148,14 @@ class DashboardController extends Controller
         $departments = auth()->user()->business->departments;
         $roles = Role::where('name', '!=', 'admin')->get(); // Exclude roles with name 'admin'
         return view('employees.create', compact('page', 'description', 'departments', 'roles'));
+    }
+    public function employeeDetails(Request $request, $business_slug, $user_id)
+    {
+
+        $user = User::find($user_id);
+        $page = 'About - '.$user->name;
+        $description = '';
+        return view('employees.show', compact('page', 'user'));
     }
     public function importEmployees(Request $request)
     {
@@ -199,6 +223,12 @@ class DashboardController extends Controller
 
 
     //Leave management
+    public function requestLeave(Request $request)
+    {
+        $page = 'Leave Applications';
+        $description = '';
+        return view('leave.create', compact('page', 'description'));
+    }
     public function leaveApplications(Request $request)
     {
         $page = 'Leave Applications';

@@ -17,7 +17,7 @@
                 <div class="d-flex align-items-center justify-content-center gap-15">
                     <a class="btn btn-warning" href="tel:{{ $employee->user->phone }}"> <i class="bi bi-phone"></i> Call</a>
                     <a class="btn btn-primary" href="{{ route('business.employees.edit', ['business' => $currentBusiness->slug, 'employee' => $employee->user->id]) }}"> <i class="fa-solid fa-edit"></i> Update</a>
-                    <a class="btn btn-success" href="">View <i class="bi bi-arrow-right ms-2"></i> </a>
+                    <a class="btn btn-success" href="{{ route('business.employees.details', ['business' => $currentBusiness->slug, 'employee' => $employee->user->id]) }}">View <i class="bi bi-arrow-right ms-2"></i> </a>
                 </div>
             </div>
         </div>

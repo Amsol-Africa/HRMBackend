@@ -125,13 +125,15 @@ function get_snippet($str, $wordCount = 5, $ellipsis = '...')
     }
     return $output;
 }
-function formatBytes($bytes, $decimals = 2) {
+function formatBytes($bytes, $decimals = 2)
+{
     $sizeUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
     $factor = floor((strlen($bytes) - 1) / 3);
     return sprintf("%.{$decimals}f", $bytes / pow(1024, $factor)) . ' ' . @$sizeUnits[$factor];
 }
 
-function formatTimeLimit($minutes) {
+function formatTimeLimit($minutes)
+{
     $hours = intdiv($minutes, 60);
     $remainingMinutes = $minutes % 60;
 
@@ -149,7 +151,8 @@ function formatTimeLimit($minutes) {
     return $formatted;
 }
 
-function dateDifference($startDate, $endDate) {
+function dateDifference($startDate, $endDate)
+{
     $start = Carbon::parse($startDate);
     $end = Carbon::parse($endDate);
 
@@ -187,13 +190,17 @@ function userHasCreatorPrivileges(): bool
     $user = Auth::user();
     return $user ? $user->hasCreatorPrivileges() : false;
 }
-function formatDuration($seconds) {
+function formatDuration($seconds)
+{
     return gmdate(($seconds >= 3600 ? 'H:i:s' : 'i:s'), $seconds);
 }
 
 function getLeaveTypeNames()
-    {
-        $leaveTypes = LeaveTypeList::all();
-        Log::debug($leaveTypes);
-        return $leaveTypes->pluck('name')->toArray();
-    }
+{
+    $leaveTypes = LeaveTypeList::all();
+    Log::debug($leaveTypes);
+    return $leaveTypes->pluck('name')->toArray();
+}
+function generateRegistrationToken($requesterId, $businessId) {
+    return hash('sha256', $requesterId . $businessId . Str::random(10) . now());
+}

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Enum\Status;
+use App\Models\Client;
 use App\Models\Module;
 use App\Models\Business;
+use App\Models\Industry;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -18,7 +21,8 @@ class BusinessController extends Controller
     {
         $page = "Business Setup";
         $description = "Fill in your business details to get started with your account.";
-        return view('auth.business-setup', compact('page', 'description'));
+        $industries = Industry::all();
+        return view('auth.business-setup', compact('page', 'description', 'industries'));
     }
     public function store(Request $request)
     {
@@ -64,6 +68,17 @@ class BusinessController extends Controller
 
             $business->setStatus(Status::MODULE);
 
+            //assign managing business
+            if (session()->has('managing_business') && session()->has('employee_id')) {
+                $business_id = session('managing_business');
+                $employee_id = session('employee_id');
+                Client::create([
+                    'business_id' => $business_id,
+                    'client_business' => $business->id,
+                    'employee_id' => $employee_id,
+                ])->setStatus(Status::ACTIVE);
+            }
+
             $user->setStatus(Status::MODULE);
 
             $redirect_url = route('setup.modules');
@@ -88,6 +103,8 @@ class BusinessController extends Controller
             $moduleIds = Module::whereIn('slug', $validatedData['modules'])->pluck('id');
             $business->modules()->sync($moduleIds);
 
+            session()->forget(['managing_business', 'employee_id']);
+
             session(['active_business_slug' => $business->slug]);
 
             $redirect_url = route('business.index', $business);
@@ -98,6 +115,78 @@ class BusinessController extends Controller
             return RequestResponse::ok('Modules saved successfully.', ['redirect_url' => $redirect_url]);
         });
     }
+
+    public function update(Request $request)
+    {
+        Log::debug($request->all());
+        $validatedData = $request->validate([
+            'business_slug' => 'required|string|exists:businesses,slug',
+            'name' => 'required|string|max:255',
+            'company_size' => 'required|string',
+            'industry' => 'required|string',
+            'phone' => 'required|string|max:15',
+            'country' => 'required|string',
+            'code' => 'required|string|max:4',
+            'registration_no' => 'required|string',
+            'tax_pin_no' => 'required|string',
+            'business_license_no' => 'required|string',
+            'physical_address' => 'required|string',
+
+            'logo' => 'nullable|file|image|max:1024',
+            'registration_certificate' => 'nullable|file|max:2048',
+            'tax_pin_certificate' => 'nullable|file|max:2048',
+            'business_license_certificate' => 'nullable|file|max:2048',
+        ]);
+
+        return $this->handleTransaction(function () use ($request, $validatedData) {
+
+            $countryCode = $validatedData['code'];
+            $phoneNumber = "+{$countryCode}{$validatedData['phone']}";
+            $business = Business::findBySlug($validatedData['business_slug']);
+
+            // $validator = Validator::make(['phone' => $phoneNumber], [
+            //     'phone' => 'unique:businesses,phone,' . $business->id,
+            // ]);
+
+            // throw_if($validator->fails(), ValidationException::class, $validator);
+
+            $user = auth()->user();
+
+            $business->update([
+                'user_id' => $user->id,
+                'company_name' => $validatedData['name'],
+                'company_size' => $validatedData['company_size'],
+                'industry' => $validatedData['industry'],
+                'phone' => $phoneNumber,
+                'code' => $validatedData['code'],
+                'country' => $validatedData['country'],
+                'registration_no' => $validatedData['registration_no'],
+                'tax_pin_no' => $validatedData['tax_pin_no'],
+                'business_license_no' => $validatedData['business_license_no'],
+                'physical_address' => $validatedData['physical_address'],
+            ]);
+
+            // Handle file uploads
+            if ($request->hasFile('logo')) {
+                $business->addMediaFromRequest('logo')->toMediaCollection('businesses');
+            }
+
+            if ($request->hasFile('registration_certificate')) {
+                $business->addMediaFromRequest('registration_certificate')->toMediaCollection('registration_certificates');
+            }
+
+            if ($request->hasFile('tax_pin_certificate')) {
+                $business->addMediaFromRequest('tax_pin_certificate')->toMediaCollection('tax_pin_certificates');
+            }
+
+            if ($request->hasFile('business_license_certificate')) {
+                $business->addMediaFromRequest('business_license_certificate')->toMediaCollection('business_license_certificates');
+            }
+
+            return RequestResponse::created('Business updated successfully.');
+        });
+    }
+
 
 
 }

@@ -16,7 +16,7 @@ class DepartmentController extends Controller
     public function fetch(Request $request)
     {
         $user = $request->user();
-        $business = $user->business;
+        $business = Business::findBySlug(session('active_business_slug'));
 
         $departments = Department::where('business_id', $business->id)->get();
         $department_cards = view('departments._cards', compact('departments'))->render();

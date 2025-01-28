@@ -166,6 +166,8 @@
             phoneInputFields.forEach((phoneInputField, index) => {
                 initializePhoneInput(phoneInputField, index);
 
+                console.log(index)
+
                 phoneInputField.addEventListener("countrychange", function() {
                     const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
                     const selectedCountryData = phoneInput.getSelectedCountryData();

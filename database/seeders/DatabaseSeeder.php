@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(ShiftSeeder::class);
         // $this->call(JobCategorySeeder::class);
         // $this->call(DepartmentSeeder::class);
-        $this->call(LeaveTypeListSeeder::class);
+        // $this->call(LeaveTypeListSeeder::class);
+        $this->call(IndustriesSeeder::class);
     }
 }

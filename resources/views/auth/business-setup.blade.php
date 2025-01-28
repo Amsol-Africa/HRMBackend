@@ -57,11 +57,9 @@
                         <div class="form__input">
                             <select id="industry" name="industry" required class="form-select">
                                 <option value="">Select Industry</option>
-                                <option value="technology">Technology</option>
-                                <option value="healthcare">Healthcare</option>
-                                <option value="manufacturing">Manufacturing</option>
-                                <option value="retail">Retail</option>
-                                <option value="services">Services</option>
+                                @foreach($industries as $industry)
+                                    <option value="{{ $industry->slug }}">{{ $industry->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>

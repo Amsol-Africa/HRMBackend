@@ -19,6 +19,10 @@
 
                     @csrf
 
+                    @if (isset($registration_token) && !empty($registration_token))
+                        <input type="text" hidden name="registration_token" value="{{ $registration_token }}">
+                    @endif
+
                     <div class="from__input-box">
                         <div class="form__input-title">
                             <label for="name">Full Name</label>

@@ -8,14 +8,16 @@ use App\Models\Business;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Log;
 
 class ShiftController extends Controller
 {
     use HandleTransactions;
     public function fetch(Request $request)
     {
+        Log::debug(session()->all());
         $user = $request->user();
-        $business = $user->business;
+        $business = Business::findBySlug(session('active_business_slug'));
 
         $shifts = Shift::where('business_id', $business->id)->get();
         $shift_cards = view('shifts._cards', compact('shifts'))->render();

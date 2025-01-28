@@ -21,4 +21,22 @@ class EmailVerificationNotificationController extends Controller
 
         return back()->with('status', 'verification-link-sent');
     }
+    private function getRedirectUrlForRole($user)
+    {
+        if ($user->hasRole('business_owner')) {
+
+            $business = $user->business;
+
+            if($user->status === "setup") {
+                return route('setup.business', absolute: false).'?verified=1';
+            }elseif($user->status === "module") {
+                return route('setup.modules', absolute: false).'?verified=1';
+            }else{
+                return route('business.index', $business->slug, absolute: false).'?verified=1';
+            }
+
+        } else {
+            return route('myaccount.index');
+        }
+    }
 }

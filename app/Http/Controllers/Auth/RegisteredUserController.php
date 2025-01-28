@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Enum\Status;
+use App\Models\AccessRequest;
 use App\Models\User;
+use App\Models\Client;
 use App\Models\Module;
 use App\Models\Business;
 use Illuminate\View\View;
@@ -26,15 +28,20 @@ use Illuminate\Validation\ValidationException;
 class RegisteredUserController extends Controller
 {
     use HandleTransactions;
-    public function create(): View
+    public function create(Request $request,  $registration_token = null)
     {
+        if (auth()->check() && !empty($registration_token)) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
         $page = "Create an Account";
         $description = "Register to access your personalized dashboard and services.";
-        return view('auth.register', compact('page', 'description'));
+        return view('auth.register', compact('page', 'description', 'registration_token'));
     }
 
     public function store(Request $request)
     {
+        // Validate the request data
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -42,19 +49,29 @@ class RegisteredUserController extends Controller
             'phone' => 'required|string|max:15',
             'code' => 'required|string|max:15',
             'country' => 'required|string',
+            'registration_token' => 'nullable|string:exists:access_requests,registration_token',
         ]);
 
         return $this->handleTransaction(function () use ($request, $validatedData) {
 
             $countryCode = $request->code;
             $phoneNumber = "+{$countryCode}{$request->phone}";
+
             $validator = Validator::make(['phone' => $phoneNumber], [
                 'phone' => 'unique:users,phone',
             ]);
 
             throw_if($validator->fails(), ValidationException::class, $validator);
 
-            // Create User
+            if (!empty($validatedData['registration_token'])) {
+                $invitation = AccessRequest::where('registration_token', $validatedData['registration_token'])->firstOrFail();
+                Log::debug($invitation);
+                $managing_business = Business::find($invitation->business_id);
+                Log::debug($managing_business);
+                session(['managing_business' => $managing_business->id]);
+                session(['employee_id' => $invitation->requester_id]);
+            }
+
             $user = User::create([
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
@@ -64,9 +81,7 @@ class RegisteredUserController extends Controller
                 'country' => $validatedData['country'],
             ]);
 
-            // Assign business_owner role
             $user->assignRole('business_owner');
-
             $user->setStatus(Status::SETUP);
 
             $request->hasFile('image')
@@ -80,9 +95,7 @@ class RegisteredUserController extends Controller
             $redirect_url = route('setup.business');
 
             return RequestResponse::created('Account created successfully.', ['redirect_url' => $redirect_url]);
-
         });
-
     }
 
     public function setupModules(Request $request)
@@ -136,56 +149,5 @@ class RegisteredUserController extends Controller
         Mail::to($validatedData['email'])->send(new TeamInvitation($invitation));
 
         return back()->with('success', 'Invitation sent successfully.');
-    }
-
-    public function acceptInvitation(Request $request, $token)
-    {
-        $invitation = BusinessInvitation::where('token', $token)->where('expires_at', '>', now())->firstOrFail();
-
-        $validatedData = $request->validate([
-            'password' => 'required|min:8|confirmed'
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            // Create user
-            $user = User::create([
-                'name' => $invitation->name,
-                'email' => $invitation->email,
-                'password' => Hash::make($validatedData['password']),
-                'business_id' => $invitation->business_id,
-                'email_verified_at' => now(),
-            ]);
-
-            // Assign role
-            $user->assignRole($invitation->role);
-
-            // Create employee record
-            $lastEmpId = Employee::where('business_id', $invitation->business_id)->max('employee_id');
-            $nextEmpId = 'EMP' . str_pad((intval(substr($lastEmpId, 3)) + 1), 3, '0', STR_PAD_LEFT);
-
-            $user->employee()->create([
-                'business_id' => $invitation->business_id,
-                'employee_id' => $nextEmpId,
-                'department' => $invitation->department,
-                'position' => $invitation->position,
-                'start_date' => now(),
-            ]);
-
-            // Mark invitation as used
-            $invitation->update(['accepted_at' => now()]);
-
-            DB::commit();
-
-            auth()->login($user);
-
-            return redirect()->route('dashboard')
-                ->with('success', 'Welcome to ' . $user->business->name);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to accept invitation. Please try again.']);
-        }
     }
 }

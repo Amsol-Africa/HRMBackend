@@ -62,6 +62,19 @@ window.saveModules = async function (btn) {
     }
 };
 
+window.updateBusiness = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData(document.getElementById("businessDetailsForm"));
+
+    try {
+        await businessesService.update(formData);
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
 window.delete = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);

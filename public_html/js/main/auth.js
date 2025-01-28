@@ -26,14 +26,7 @@ window.register = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData();
-
-    formData.append("name", $("#name").val());
-    formData.append("email", $("#email").val());
-    formData.append("phone", $("#phone").val());
-    formData.append("country", $("#country").val());
-    formData.append("code", $("#code").val());
-    formData.append("password", $("#password").val());
+    let formData = new FormData(document.getElementById("registerForm"));
 
     try {
         await authService.register(formData);
