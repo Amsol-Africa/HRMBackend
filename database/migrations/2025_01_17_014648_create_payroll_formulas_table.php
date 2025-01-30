@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::create('payroll_formulas', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Business::class);
+            $table->foreignIdFor(Business::class)->nullable();
             $table->string('name');
             $table->string('slug')->unique();
             $table->enum('calculation_basis', ['basic pay', 'gross pay', 'cash pay', 'taxable pay']);

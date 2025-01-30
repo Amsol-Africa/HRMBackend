@@ -7,12 +7,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // $this->call(RolesSeeder::class);
-        // $this->call(ModulesSeeder::class);
-        // $this->call(ShiftSeeder::class);
-        // $this->call(JobCategorySeeder::class);
-        // $this->call(DepartmentSeeder::class);
-        // $this->call(LeaveTypeListSeeder::class);
+        $this->call(RolesSeeder::class);
+        $this->call(ModulesSeeder::class);
+        $this->call(ShiftSeeder::class);
+        $this->call(JobCategorySeeder::class);
+        $this->call(DepartmentSeeder::class);
+        $this->call(LeaveTypeListSeeder::class);
         $this->call(IndustriesSeeder::class);
     }
 }

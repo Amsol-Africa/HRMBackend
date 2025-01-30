@@ -81,7 +81,7 @@ class RegisteredUserController extends Controller
                 'country' => $validatedData['country'],
             ]);
 
-            $user->assignRole('business_owner');
+            $user->assignRole('business-admin'); //business_owner
             $user->setStatus(Status::SETUP);
 
             $request->hasFile('image')
@@ -93,9 +93,25 @@ class RegisteredUserController extends Controller
             Auth::login($user);
 
             $redirect_url = route('setup.business');
+            $redirectUrl = $this->getRedirectUrlForRole($user);
 
             return RequestResponse::created('Account created successfully.', ['redirect_url' => $redirect_url]);
         });
+    }
+
+    private function getRedirectUrlForRole($user)
+    {
+        if ($user->hasRole('business-admin')) {
+
+            if($user->status === "setup") {
+                return route('setup.business');
+            }elseif($user->status === "module") {
+                return route('setup.modules');
+            }else{
+                return route('login');
+            }
+
+        }
     }
 
     public function setupModules(Request $request)

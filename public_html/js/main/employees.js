@@ -5,11 +5,35 @@ import EmployeesService from "/js/client/EmployeesService.js";
 const requestClient = new RequestClient();
 const employeesService = new EmployeesService(requestClient);
 
-window.getEmployees = async function (page = 1) {
+window.getEmployees = async function (page = 1, status = null) {
     try {
-        let data = {page:page};
+        let data = {page:page, status:status};
         const employeesCards = await employeesService.fetch(data);
-        $("#employeesContainer").html(employeesCards);
+        $('#statusInput').val(status)
+        $(`#${status}Container`).html(employeesCards);
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};
+
+window.searchEmployees = async function (btn) {
+    let name = document.getElementById('employeeName').value;
+    let employee_no = document.getElementById('employeeNo').value;
+    let department = document.getElementById('employeeDepartment').value;
+    let gender = document.getElementById('employeeGender').value;
+    let status = localStorage.getItem('employeeStatus') || 'active';
+
+    try {
+        let data = {
+            page:1,
+            status:status,
+            name : name,
+            employee_no : employee_no,
+            department : department,
+            gender : gender,
+        };
+        const employeesCards = await employeesService.fetch(data);
+        $(`#${status}Container`).html(employeesCards);
     } catch (error) {
         console.error("Error loading user data:", error);
     }

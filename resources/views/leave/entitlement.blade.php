@@ -1,13 +1,13 @@
 <x-app-layout>
+
     <form method="POST" id="leaveEntitlementsForm">
         @csrf
         <div class="row g-20">
 
-            <!-- Form for general leave entitlement -->
+            <!-- Selection Panel -->
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body">
-
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="leave_period_id" class="form-label">Leave Period</label>
@@ -20,8 +20,8 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label for="department" class="form-label">Department</label>
-                                <select name="department" id="department" class="form-select">
+                                <label for="departments" class="form-label">Departments</label>
+                                <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
                                     <option value="all">All Departments</option>
                                     @foreach ($departments as $department)
                                         <option value="{{ $department->slug }}">{{ $department->name }}</option>
@@ -32,17 +32,18 @@
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="job_category" class="form-label">Job Category</label>
-                                <select name="job_category" id="job_category" class="form-select">
+                                <label for="job_categories" class="form-label">Job Categories</label>
+                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
                                     <option value="all">All Job Categories</option>
                                     @foreach ($jobCategories as $jobCategory)
                                         <option value="{{ $jobCategory->slug }}">{{ $jobCategory->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
+
                             <div class="col-md-6">
-                                <label for="employment_term" class="form-label">Employment Term</label>
-                                <select name="employment_term" id="employment_term" class="form-select">
+                                <label for="employment_terms" class="form-label">Employment Terms</label>
+                                <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
                                     <option value="all">All Terms</option>
                                     <option value="permanent">Permanent</option>
                                     <option value="contract">Contract</option>
@@ -53,22 +54,21 @@
                         </div>
 
                         <div class="row mb-3">
-                            <h6 class="mb-3">Check one or more employees</h6>
-
+                            <h6 class="mb-3">Select Employees (Optional)</h6>
                             <div id="employee-checkboxes" class="form-group">
-                                <!-- Dynamic employee checkboxes will be appended here -->
+                                <!-- Dynamic employee checkboxes will be added here -->
                             </div>
-
                         </div>
 
                     </div>
                 </div>
             </div>
 
+            <!-- Leave Type and Entitlements Panel -->
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-header">
-                        <h6>Dynamic Leave Entitlements</h6>
+                        <h6>Leave Type Entitlements</h6>
                     </div>
                     <div class="card-body">
                         <table class="table table-bordered">
@@ -86,9 +86,10 @@
 
                         <div class="d-flex justify-content-start mt-3">
                             <button type="button" class="btn btn-outline-primary" id="addRowButton">
-                                <i class="bi bi-plus-circle"></i> Add Row First
+                                <i class="bi bi-plus-circle"></i> Add Leave Type
                             </button>
                         </div>
+
                         <div class="row mt-4">
                             <div class="col-md-12">
                                 <button type="button" onclick="saveLeaveEntitlements(this)" class="btn btn-primary w-100">
@@ -103,28 +104,36 @@
         </div>
     </form>
 
+
     @push('scripts')
         <script src="{{ asset('js/main/leave-entitlement.js') }}" type="module"></script>
         <script src="{{ asset('js/main/filter-employees.js') }}" type="module"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                const filters = ['department', 'job_category', 'employment_term'];
+                const filters = ['departments', 'job_categories', 'employment_terms'];
 
-                filters.forEach(filter => {
-                    document.getElementById(filter).addEventListener('change', function () {
-                        triggerFilterEmployees();
-                    });
+                $('#departments').on('select2:select', function () {
+                    triggerFilterEmployees();
                 });
 
+                $('#job_categories').on('select2:select', function () {
+                    triggerFilterEmployees();
+                });
+
+                $('#employment_terms').on('select2:select', function () {
+                    triggerFilterEmployees();
+                });
+
+
                 async function triggerFilterEmployees() {
-                    const department = document.getElementById('department').value;
-                    const jobCategory = document.getElementById('job_category').value;
-                    const employmentTerm = document.getElementById('employment_term').value;
+                    const departments = getSelectedValues('departments');
+                    const jobCategories = getSelectedValues('job_categories');
+                    const employmentTerms = getSelectedValues('employment_terms');
 
                     const data = {
-                        department: department,
-                        jobCategory: jobCategory,
-                        employmentTerm: employmentTerm,
+                        departments: departments,
+                        jobCategories: jobCategories,
+                        employmentTerms: employmentTerms,
                     };
 
                     try {
@@ -147,6 +156,10 @@
                     }
                 }
 
+                function getSelectedValues(elementId) {
+                    const selectElement = document.getElementById(elementId);
+                    return Array.from(selectElement.selectedOptions).map(option => option.value);
+                }
 
                 function addRow() {
                     const dynamicRows = document.getElementById('dynamicRows');
@@ -172,8 +185,7 @@
                     dynamicRows.appendChild(newRow);
                 }
 
-                const addRowButton = document.getElementById('addRowButton');
-                addRowButton.addEventListener('click', addRow);
+                document.getElementById('addRowButton').addEventListener('click', addRow);
 
                 document.getElementById('dynamicRows').addEventListener('click', function (event) {
                     if (event.target.closest('.removeRowButton')) {
@@ -183,6 +195,7 @@
                 });
 
                 addRow();
+
             });
         </script>
 

@@ -25,6 +25,7 @@ class PayrollFormulaController extends Controller
 
     public function store(Request $request)
     {
+        // Log::debug($request->all());
         $validatedData = $request->validate([
             'formula_name' => 'required|string|max:255',
             'calculation_basis' => 'required|in:basic pay,gross pay,cash pay,taxable pay',
@@ -34,12 +35,9 @@ class PayrollFormulaController extends Controller
             'brackets' => 'nullable|array',
             'brackets.*.min' => 'required_with:brackets|numeric|min:0',
             'brackets.*.max' => 'nullable|numeric|gt:brackets.*.min',
-            'brackets.*.rate' => 'required_if:formula_type,rate|numeric|min:0|max:100',
-            // 'brackets.*.amount' => 'required_if:formula_type,amount|numeric|min:0',
+            'brackets.*.rate' => 'nullable|required_if:formulnumerica_type,rate||min:0|max:100',
+            'brackets.*.amount' => 'nullable|required_if:formula_type,amount|numeric|min:0',
         ]);
-
-        // Log::debug($request->all());
-
 
         return $this->handleTransaction(function () use ($request, $validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));

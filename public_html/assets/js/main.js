@@ -543,49 +543,6 @@
 	/* content hidden class js */
 	$('.contentHidden').remove();
 
-	/* password hidden class js */
-	/* password show and remember */
-	document.addEventListener('DOMContentLoaded', function () {
-		/* Password show */
-		const triggerPasswords = document.querySelectorAll('#passwordToggle, #passwordToggle2');
-		if (triggerPasswords.length > 0) {
-			triggerPasswords.forEach(triggerPassword => {
-				triggerPassword.addEventListener('click', () => {
-					const passwordInputId = triggerPassword.id === 'passwordToggle' ? 'passwordInput' : 'passwordInput2';
-					const passwordInput = document.getElementById(passwordInputId);
-					if (passwordInput.type === 'password') {
-						passwordInput.type = 'text';
-						triggerPassword.innerHTML = '<i class="fa-sharp fa-light fa-eye"></i>';
-					} else {
-						passwordInput.type = 'password';
-						triggerPassword.innerHTML = '<i class="fa-sharp fa-light fa-eye-slash"></i>';
-					}
-				});
-			});
-		}
-
-		/* Remember me */
-		const rmCheck = document.getElementById('rememberMe');
-		const emailInput = document.getElementById('email');
-
-		if (rmCheck && emailInput) {
-			if (localStorage.checkbox && localStorage.checkbox !== "") {
-				rmCheck.checked = true;
-				emailInput.value = localStorage.username;
-			}
-			rmCheck.addEventListener('change', function () {
-				if (rmCheck.checked && emailInput.value !== "") {
-					localStorage.username = emailInput.value;
-					localStorage.checkbox = rmCheck.checked;
-				} else {
-					localStorage.username = "";
-					localStorage.checkbox = "";
-				}
-			});
-		}
-	});
-
-
 	// In your Javascript (external .js resource or <script> tag) */
 	$(document).ready(function () {
 		$('.js-example-basic-single').select2();
@@ -595,7 +552,7 @@
 	});
 	// Multi Select */
 	$(document).ready(function () {
-		$(".js-example-basic-multiple").select2();
+		$(".select2-multiple").select2();
 	});
 	// With Placeholder */
 	$(".js-example-placeholder-multiple").select2({

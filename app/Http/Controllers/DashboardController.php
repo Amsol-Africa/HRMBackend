@@ -14,118 +14,124 @@ use Spatie\Permission\Models\Role;
 
 class DashboardController extends Controller
 {
-    function index(Request $request){
+    function index(Request $request)
+    {
 
-        // show(session('managing_business')); die;
-
-        $cards = [
+        $cards =
             [
-                'title' => 'Total Employees',
-                'icon' => 'fa-sharp fa-solid fa-user',
-                'value' => 313,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+10%',
-                'time_period' => 'Year',
-            ],
-            [
-                'title' => 'On Leave Employees',
-                'icon' => 'fa-sharp fa-solid fa-user-group',
-                'value' => 55,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+2.15%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Total Projects',
-                'icon' => 'fa-sharp fa-solid fa-gear',
-                'value' => 313,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+5.15%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Complete Projects',
-                'icon' => 'fa-light fa-badge-check',
-                'value' => 150,
-                'trend_class' => 'price-decrease',
-                'trend_icon' => 'fa-arrow-down',
-                'trend_value' => '+5.5%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Total Clients',
-                'icon' => 'fa-sharp fa-solid fa-users',
-                'value' => 151,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+2.15%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Total Revenues',
-                'icon' => 'fa-solid fa-arrow-up-right-dots',
-                'value' => '$55',
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+2.15%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Total Jobs',
-                'icon' => 'fa-sharp fa-light fa-suitcase',
-                'value' => 55,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+2.15%',
-                'time_period' => 'Month',
-            ],
-            [
-                'title' => 'Total Tickets',
-                'icon' => 'fa-solid fa-ticket',
-                'value' => 55,
-                'trend_class' => 'price-increase',
-                'trend_icon' => 'fa-arrow-up',
-                'trend_value' => '+2.15%',
-                'time_period' => 'Month',
-            ],
-        ];
+                [
+                    'title' => 'Total Employees',
+                    'icon' => 'fa-sharp fa-solid fa-user',
+                    'value' => 313,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+10%',
+                    'time_period' => 'Year',
+                ],
+                [
+                    'title' => 'On Leave Employees',
+                    'icon' => 'fa-sharp fa-solid fa-user-group',
+                    'value' => 55,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+2.15%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Total Projects',
+                    'icon' => 'fa-sharp fa-solid fa-gear',
+                    'value' => 313,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+5.15%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Complete Projects',
+                    'icon' => 'fa-light fa-badge-check',
+                    'value' => 150,
+                    'trend_class' => 'price-decrease',
+                    'trend_icon' => 'fa-arrow-down',
+                    'trend_value' => '+5.5%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Total Clients',
+                    'icon' => 'fa-sharp fa-solid fa-users',
+                    'value' => 151,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+2.15%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Total Revenues',
+                    'icon' => 'fa-solid fa-arrow-up-right-dots',
+                    'value' => '$55',
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+2.15%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Total Jobs',
+                    'icon' => 'fa-sharp fa-light fa-suitcase',
+                    'value' => 55,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+2.15%',
+                    'time_period' => 'Month',
+                ],
+                [
+                    'title' => 'Total Tickets',
+                    'icon' => 'fa-solid fa-ticket',
+                    'value' => 55,
+                    'trend_class' => 'price-increase',
+                    'trend_icon' => 'fa-arrow-up',
+                    'trend_value' => '+2.15%',
+                    'time_period' => 'Month',
+                ],
+            ];
 
         return view('business.index', compact('cards'));
     }
 
-    function clients(Request $request) {
+    function clients(Request $request)
+    {
         $page = 'Clients';
         $description = '';
         $business = Business::findBySlug(session('active_business_slug'));
         $clientBusinesses = $business->managedBusinesses;
         return view('clients.index', compact('page', 'description', 'clientBusinesses'));
     }
-    function requestAccess(Request $request) {
+    function requestAccess(Request $request)
+    {
         $page = 'Request Access';
         $description = 'Choose this option if there is another AMSOL account you would like to manage. A request email will be sent to the email address you provide, allowing the account owner to grant access to the system.';
         return view('clients.access', compact('page', 'description'));
     }
-    function grantAccess(Request $request) {
+    function grantAccess(Request $request)
+    {
         $page = 'Grant Access';
         $description = 'Select this option if you wish to grant access to your AMSOL account to another user. You will need to confirm their email address, and they will receive an email with access details.';
         $modules = Module::all();
         return view('clients.access', compact('page', 'description', 'modules'));
     }
-    function organizationSetup(Request $request) {
+    function organizationSetup(Request $request)
+    {
         $page = 'Organization Setup';
         $description = '';
         $industries = Industry::all();
         return view('business.setup', compact('page', 'description', 'industries'));
     }
-    function departments(Request $request) {
+    function departments(Request $request)
+    {
         $page = 'Departments';
         $description = 'Manage and organize all departments within your business. View, create, and update departmental information to streamline operations.';
         return view('departments.index', compact('page', 'description'));
     }
-    function jobCategories(Request $request) {
+    function jobCategories(Request $request)
+    {
         $page = 'Job Categories';
         $description = '';
         return view('job-categories.index', compact('page', 'description'));
@@ -143,7 +149,7 @@ class DashboardController extends Controller
     }
     public function editEmployees(Request $request, User $user)
     {
-        $page = 'Update Employee - '.$user->name;
+        $page = 'Update Employee - ' . $user->name;
         $description = 'Fill out the form below to update employee record.';
         $departments = auth()->user()->business->departments;
         $roles = Role::where('name', '!=', 'admin')->get(); // Exclude roles with name 'admin'
@@ -153,7 +159,7 @@ class DashboardController extends Controller
     {
 
         $user = User::find($user_id);
-        $page = 'About - '.$user->name;
+        $page = 'About - ' . $user->name;
         $description = '';
         return view('employees.show', compact('page', 'user'));
     }

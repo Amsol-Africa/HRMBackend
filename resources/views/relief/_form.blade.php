@@ -11,7 +11,6 @@
                 <option value="">Select tax application</option>
                 <option value="before_tax">Deductible before tax</option>
                 <option value="after_tax">Deductible after tax</option>
-                <option value="from_amount">Deductible from amount</option>
             </select>
         </div>
 
@@ -66,7 +65,7 @@
     </div>
 
     <div class="mt-4">
-        <button type="button" class="btn btn-primary w-100" id="saveReliefBtn">
+        <button type="button" onclick="saveRelief(this)" class="btn btn-primary w-100" id="saveReliefBtn">
             <i class="bi bi-check-circle me-2"></i>Save Relief Data
         </button>
     </div>

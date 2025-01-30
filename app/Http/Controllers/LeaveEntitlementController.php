@@ -23,6 +23,7 @@ class LeaveEntitlementController extends Controller
     function store(Request $request)
     {
         Log::debug($request->all());
+
         $validatedData = $request->validate([
             'leave_period_id' => 'required|exists:leave_periods,id',
             'department' => 'nullable|string',

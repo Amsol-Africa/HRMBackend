@@ -64,7 +64,15 @@
 
         <div class="page__full-wrapper">
 
-            @include('layouts.partials.navbar')
+            @if (auth()->user()->hasRole('business-admin'))
+                @include('layouts.partials.navbar')
+            @elseif (auth()->user()->hasRole('business-hr'))
+                @include('layouts.partials.navbar')
+            @elseif (auth()->user()->hasRole('business-finance'))
+                @include('layouts.partials.navbar')
+            @elseif (auth()->user()->hasRole('business-employee'))
+                @include('layouts.partials.navbar-employee')
+            @endif
 
             <div class="page__body-wrapper">
 

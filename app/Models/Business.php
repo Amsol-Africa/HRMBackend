@@ -84,6 +84,10 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(PayrollFormula::class);
     }
+    public function reliefs()
+    {
+        return $this->hasMany(Relief::class);
+    }
 
     // employees
     public function employees()

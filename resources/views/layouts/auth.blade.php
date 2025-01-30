@@ -120,20 +120,20 @@
 
         <script type="text/javascript">
 
-            document.addEventListener('DOMContentLoaded', function() {
-                const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
+            document.querySelectorAll(".pass-icon").forEach(toggle => {
+                toggle.addEventListener("click", function () {
+                    let input = this.previousElementSibling;
+                    let icon = this.querySelector("i");
 
-                toggleButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const fieldId = this.id.replace('toggle', '').toLowerCase();
-                        const passwordField = document.getElementById(fieldId);
-
-                        if (passwordField) {
-                            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
-                            passwordField.setAttribute('type', type);
-                            this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
-                        }
-                    });
+                    if (input.type === "password") {
+                        input.type = "text";
+                        icon.classList.remove("fa-eye-slash");
+                        icon.classList.add("fa-eye");
+                    } else {
+                        input.type = "password";
+                        icon.classList.remove("fa-eye");
+                        icon.classList.add("fa-eye-slash");
+                    }
                 });
             });
 

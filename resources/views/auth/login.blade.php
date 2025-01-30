@@ -36,8 +36,10 @@
                             <label for="password">Password</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Password" type="password" name="password" required id="password">
-                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
+                            <input class="form-control password" placeholder="Password" type="password" name="password" required id="password">
+                            <div class="pass-icon" id="password_toggle">
+                                <i class="fa-sharp fa-light fa-eye-slash"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">

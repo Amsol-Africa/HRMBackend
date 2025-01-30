@@ -8,7 +8,7 @@
                     <a class="btn btn-primary btn-sm" href="{{ route('business.relief.create', $currentBusiness->slug) }}"> <i class="bi bi-plus-square-dotted"></i> Add Reliefs</a>
 
                 </div>
-                <div class="card-body" id="reliefContainer">
+                <div class="card-body" id="reliefsContainer">
 
                     {{ loader() }}
 

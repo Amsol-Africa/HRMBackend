@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LeaveEntitlementController;
+use App\Http\Controllers\ReliefController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\BusinessController;
@@ -98,6 +99,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('show', [LeaveEntitlementController::class, 'show'])->name('show');
         Route::post('destroy', [LeaveEntitlementController::class, 'destroy'])->name('destroy');
         Route::post('update', [LeaveEntitlementController::class, 'update'])->name('update');
+    });
+    Route::name('reliefs.')->prefix('reliefs')->group(function () {
+        Route::post('edit', [ReliefController::class, 'edit'])->name('edit');
+        Route::post('store', [ReliefController::class, 'store'])->name('store');
+        Route::post('fetch', [ReliefController::class, 'fetch'])->name('fetch');
+        Route::post('show', [ReliefController::class, 'show'])->name('show');
+        Route::post('destroy', [ReliefController::class, 'destroy'])->name('destroy');
+        Route::post('update', [ReliefController::class, 'update'])->name('update');
     });
     Route::name('client-businesses.')->prefix('client-businesses')->group(function () {
         Route::post('request-access', [ClientController::class, 'requestAccess'])->name('request-access');

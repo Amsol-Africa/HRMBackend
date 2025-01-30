@@ -12,6 +12,7 @@ use App\Models\JobCategory;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -24,10 +25,36 @@ class EmployeeController extends Controller
         $user = $request->user();
         $business = $user->business;
 
-        $employees = Employee::where('business_id', $business->id)->with(['employmentDetails', 'paymentDetails'])->get();
+        $employees = Employee::where('business_id', $business->id)
+            ->when($request->name, function ($query, $employeeName) {
+                return $query->whereHas('user', function ($query) use ($employeeName) {
+                    $query->where('name', 'like', '%' . $employeeName . '%');
+                });
+            })
+            ->when($request->employee_no, function ($query, $employeeNo) {
+                return $query->where('employee_code', 'like', '%' . $employeeNo . '%');
+            })
+            ->when($request->department, function ($query, $employeeDepartment) {
+                return $query->whereHas('department', function ($query) use ($employeeDepartment) {
+                    $query->where('slug', $employeeDepartment);
+                });
+            })
+            ->when($request->status, function ($query, $employeeStatus) {
+                if ($employeeStatus !== 'all') {
+                    return $query->whereHas('user', function ($query) use ($employeeStatus) {
+                        $query->currentStatus($employeeStatus);  // Assuming this method filters by status.
+                    });
+                }
+            })
+            ->when($request->gender, function ($query, $employeeGender) {
+                return $query->where('gender', $employeeGender);
+            })
+            ->get();
+
         $employee_cards = view('employees._cards', compact('employees'))->render();
         return RequestResponse::ok('Ok', $employee_cards);
     }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -307,31 +334,48 @@ class EmployeeController extends Controller
     }
     public function filter(Request $request)
     {
+        Log::debug($request->all());
+
+        $validatedData = $request->validate([
+            'departments' => 'array|nullable',
+            'departments.*' => 'exists:departments,slug',
+            'jobCategories' => 'array|nullable',
+            'jobCategories.*' => 'exists:job_categories,slug',
+            'employmentTerms' => 'array|nullable',
+            'employmentTerms.*' => 'in:permanent,contract,temporary,internship',
+        ]);
+
         $business_slug = session('active_business_slug');
         $business = Business::findBySlug($business_slug);
 
-        $query = Employee::query();
+        // Start building the query for employees
+        $employeesQuery = $business->employees();
 
-        if ($request->has('department') && $request->department != 'all') {
-            $department = Department::where('slug', $request->department)->where('business_id', $business->id)->firstOrFail();
-            $query->where('department_id', $department->id);
+        // Filter by departments if provided
+        if (isset($validatedData['departments']) && count($validatedData['departments']) > 0) {
+            $employeesQuery->whereHas('department', function ($query) use ($validatedData) {
+                $query->whereIn('slug', $validatedData['departments']);
+            });
         }
 
-        // if ($request->has('job_category') && $request->job_category != 'all') {
-        //     $job_category = JobCategory::where('slug', $request->department)->where('business_id', $business->id)->firstOrFail();
-        //     $query->whereHas('employmentDetails', function ($q) use ($job_category) {
-        //         $q->where('job_category_id', $job_category->id);
-        //     });
-        // }
+        // Filter by job categories if provided
+        if (isset($validatedData['jobCategories']) && count($validatedData['jobCategories']) > 0) {
+            $employeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
+                $query->whereIn('job_category_id', JobCategory::whereIn('slug', $validatedData['jobCategories'])->pluck('id'));
+            });
+        }
 
-        // if ($request->has('employment_term') && $request->employment_term != 'all') {
-        //     $query->whereHas('employmentDetails', function ($q) use ($request) {
-        //         $q->where('employment_term', $request->employment_term);
-        //     });
-        // }
+        // Filter by employment terms if provided
+        if (isset($validatedData['employmentTerms']) && count($validatedData['employmentTerms']) > 0) {
+            $employeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
+                $query->whereIn('employment_term', $validatedData['employmentTerms']);
+            });
+        }
 
-        $employees = $query->get();
+        // Retrieve filtered employees
+        $employees = $employeesQuery->get();
 
+        // Map the employees for the response
         $employeesData = $employees->map(function ($employee) {
             return [
                 'id' => $employee->id,
@@ -342,5 +386,7 @@ class EmployeeController extends Controller
 
         return RequestResponse::ok('Ok.', $employeesData);
     }
+
+
 
 }

@@ -106,13 +106,7 @@
                         <span class="sidebar__menu-label">Payroll Settings</span>
                     </a>
                     <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.*') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
-                        <li class="slide {{ request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}"
-                               href="{{ route('business.payroll.formula.create', $currentBusiness->slug) }}">
-                               Add Formulas
-                            </a>
-                        </li>
-                        <li class="slide {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}">
+                        <li class="slide {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}"
                                href="{{ route('business.payroll.formula', $currentBusiness->slug) }}">
                                List Formulas
@@ -148,22 +142,22 @@
                     </a>
                     <ul class="sidebar-menu child1">
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.create', $currentBusiness->slug) }}">Process Payroll</a>
+                            <a class="sidebar__menu-item" href="{{ route('business.employees.create', $currentBusiness->slug) }}">Run a Payroll</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="recruitment.html">Past Payrolls</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="{{ route('business.employees.index', $currentBusiness->slug) }}">Payslips</a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Advances</a>
+                            <a class="sidebar__menu-item" href="recruitment.html">Salary Advances</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="recruitment.html">Loans</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="recruitment.html">Close Month</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Closed Months</a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="recruitment.html">Import Payrolls</a>

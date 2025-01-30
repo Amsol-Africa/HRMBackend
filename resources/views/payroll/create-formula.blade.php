@@ -20,13 +20,24 @@
                 const rateFields = document.querySelectorAll('[name*="[rate]"]');
                 const amountFields = document.querySelectorAll('[name*="[amount]"]');
 
-                rateFields.forEach(field => field.style.display = type === 'rate' ? 'block' : 'none');
-                amountFields.forEach(field => field.style.display = type === 'amount' ? 'block' : 'none');
+                rateFields.forEach(function(field) {
+                    field.style.display = (type === 'rate') ? 'block' : 'none';
+                    if (field.type === 'hidden') {
+                        field.type = 'text';
+                    }
+                });
+
+                amountFields.forEach(function(field) {
+                    field.style.display = (type === 'amount') ? 'block' : 'none';
+                    if (field.type === 'hidden') {
+                        field.type = 'text';
+                    }
+                });
             }
 
             function toggleBracketsSection(value) {
                 const section = document.getElementById('bracketsSection');
-                section.style.display = value === 'yes' ? 'block' : 'none';
+                section.style.display = (value === 'yes') ? 'block' : 'none';
             }
 
             function initializeToggleFormulaFields() {
@@ -55,17 +66,21 @@
                     <div class="col-md-4">
                         <input type="text" name="brackets[${bracketIndex}][min]" class="form-control" placeholder="Min Amount">
                     </div>
+
                     <div class="col-md-4">
                         <input type="text" name="brackets[${bracketIndex}][max]" class="form-control" placeholder="Max Amount">
                     </div>
+
                     <div class="col-md-4">
                         ${formulaType === 'amount' ? `
                             <input type="text" name="brackets[${bracketIndex}][amount]" class="form-control" placeholder="Fixed Amount">
-                            <input type="hidden" name="brackets[${bracketIndex}][rate]" class="form-control">`
-                            :
-                            `<input type="text" name="brackets[${bracketIndex}][rate]" class="form-control" placeholder="Rate (%)">
-                            <input type="hidden" name="brackets[${bracketIndex}][amount]" class="form-control">`}
+                            <input type="hidden" name="brackets[${bracketIndex}][rate]" class="form-control" placeholder="Rate (%)">
+                        ` : `
+                            <input type="text" name="brackets[${bracketIndex}][rate]" class="form-control" placeholder="Rate (%)">
+                            <input type="hidden" name="brackets[${bracketIndex}][amount]" class="form-control" placeholder="Fixed Amount">
+                        `}
                     </div>
+
                     <div class="col-md-1">
                         <button type="button" class="btn btn-danger" onclick="removeBracket(this)">Remove</button>
                     </div>
@@ -74,7 +89,6 @@
                 container.appendChild(row);
                 bracketIndex++;
 
-                // Call toggleFormulaFields to ensure visibility of rate/amount fields
                 toggleFormulaFields(formulaType);
             }
 
@@ -84,19 +98,19 @@
                 bracketIndex--;
             }
 
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', function() {
                 initializeBracketsSection();
                 initializeToggleFormulaFields();
 
-                const selectElement = document.getElementById('is_progressive');
-                const selectElementII = document.getElementById('formula_type');
+                const formulaTypeSelect = document.getElementById('formula_type');
+                const progressiveSelect = document.getElementById('is_progressive');
 
-                selectElement.addEventListener('change', (event) => {
-                    toggleBracketsSection(event.target.value);
+                formulaTypeSelect.addEventListener('change', function(event) {
+                    toggleFormulaFields(event.target.value);
                 });
 
-                selectElementII.addEventListener('change', (event) => {
-                    toggleFormulaFields(event.target.value);
+                progressiveSelect.addEventListener('change', function(event) {
+                    toggleBracketsSection(event.target.value);
                 });
             });
         </script>

@@ -1,4 +1,4 @@
-<table class="table table-striped table-bordered" id="payroll-formula-table">
+<table class="table table-striped table-bordered" style="width: 100%" id="payrollFormulas">
     <thead>
         <tr>
             <th>#</th>
@@ -10,7 +10,7 @@
         </tr>
     </thead>
     <tbody>
-        @forelse ($payroll_formulas as $key => $formula)
+        @foreach ($payroll_formulas as $key => $formula)
             <tr>
                 <td>{{ $key + 1 }}</td>
                 <td>{{ $formula->name }}</td>
@@ -23,10 +23,6 @@
                     <button type="button" class="btn btn-success btn-sm" data-payroll-formula="{{ $formula->slug }}" onclick="showFormula(this)" class="view-btn"> <i class="bi bi-view-list"></i> View</button>
                 </td>
             </tr>
-        @empty
-            <tr>
-                <td colspan="7" class="text-center">No payroll formulas found.</td>
-            </tr>
-        @endforelse
+        @endforeach
     </tbody>
 </table>

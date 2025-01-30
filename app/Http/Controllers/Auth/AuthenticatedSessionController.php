@@ -29,12 +29,8 @@ class AuthenticatedSessionController extends Controller
             $remember = $request->boolean('remember');
 
             if (Auth::attempt($credentials, $remember)) {
+
                 $user = Auth::user();
-
-                //get users business
-                $business = $user->business;
-                session(['active_business_slug' => $business->slug]);
-
                 $redirectUrl = $this->getRedirectUrlForRole($user);
                 return RequestResponse::ok('Welcome back.'.$user->status, ['redirect_url' => $redirectUrl]);
             }
@@ -47,20 +43,38 @@ class AuthenticatedSessionController extends Controller
 
     private function getRedirectUrlForRole($user)
     {
-        if ($user->hasRole('business_owner')) {
+        //get users related business
+        if ($user->hasRole('business-admin')) {
 
             $business = $user->business;
+            session(['active_business_slug' => $business->slug]);
 
             if($user->status === "setup") {
                 return route('setup.business');
             }elseif($user->status === "module") {
                 return route('setup.modules');
-            }else{
-                return route('business.index', $business->slug);
             }
 
-        } else {
-            return route('myaccount.index');
+            return route('business.index', $business->slug);
+
+        } elseif($user->hasRole('business-hr')) {
+
+            $business = $user->employee->business;
+            session(['active_business_slug' => $business->slug]);
+            return route('business.index', $business->slug);
+
+        } elseif($user->hasRole('business-finance')) {
+
+            $business = $user->employee->business;
+            session(['active_business_slug' => $business->slug]);
+            return route('business.index', $business->slug);
+
+        } elseif($user->hasRole('business-employee')) {
+
+            $business = $user->employee->business;
+            session(['active_business_slug' => $business->slug]);
+            return route('employee.index', $business->slug);
+
         }
     }
 

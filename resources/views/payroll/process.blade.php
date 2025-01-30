@@ -5,11 +5,8 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">{{ $page }}</h5>
-                    <a href="{{ route('business.payroll.formula.create', $currentBusiness->slug) }}" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-plus"></i> Create Payroll Formulas
-                    </a>
                 </div>
-                <div class="card-body" id="payrollformulasContainer">
+                <div class="card-body">
 
                     {{ loader() }}
 
@@ -24,7 +21,7 @@
         <script src="{{ asset('js/main/formula.js') }}" type="module"></script>
         <script>
             $(document).ready(() => {
-                getPayrollFormulas()
+
             })
         </script>
     @endpush

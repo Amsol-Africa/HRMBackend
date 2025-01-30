@@ -16,7 +16,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
 
-    Route::middleware(['role:business_owner'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+    Route::middleware(['role:business-admin'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [DashboardController::class, 'clients'])->name('clients.index');
         Route::get('/clients/request-access', [DashboardController::class, 'requestAccess'])->name('clients.request-access');
@@ -56,8 +56,12 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-});
 
+    Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+    });
+
+});
 
 
 Route::middleware('auth')->group(function () {

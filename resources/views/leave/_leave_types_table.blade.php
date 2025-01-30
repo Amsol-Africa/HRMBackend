@@ -15,7 +15,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($leaveTypes as $leaveType)
+                    @foreach ($leaveTypes as $leaveType)
                         <tr>
                             <td>{{ $leaveType->name }}</td>
                             <td>
@@ -36,11 +36,7 @@
                                 <a href="" class="btn btn-sm btn-primary"><i class="bi bi-question-circle"></i> Requests</a>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center">No leave types found</td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
         </div>

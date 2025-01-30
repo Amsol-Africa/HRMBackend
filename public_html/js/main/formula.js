@@ -10,21 +10,7 @@ window.getPayrollFormulas = async function (page = 1) {
         let data = {page:page};
         const payrollFormulasTable = await payrollFormulasService.fetch(data);
         $("#payrollformulasContainer").html(payrollFormulasTable);
-
-        var table = $('#payroll-formula-table');
-        // dataTable(table, {
-        //     "paging": false,
-        //     "bInfo": false,
-        //     "searching": false,
-        //     "dom": 'lfrtip',
-        //     "buttons": [],
-        //     "language": {
-        //         "emptyTable": "No data found",
-        //         "search": "Search any column:"
-        //     }
-        // });
-
-        // $('#payroll-formula-table').dataTable();
+        new DataTable('#payrollFormulas');
     } catch (error) {
         console.error("Error loading user data:", error);
     }
