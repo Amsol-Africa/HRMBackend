@@ -35,7 +35,7 @@ CREATE TABLE `academic_qualifications` (
   PRIMARY KEY (`id`),
   KEY `academic_qualifications_employee_id_foreign` (`employee_id`),
   CONSTRAINT `academic_qualifications_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -44,7 +44,44 @@ CREATE TABLE `academic_qualifications` (
 
 LOCK TABLES `academic_qualifications` WRITE;
 /*!40000 ALTER TABLE `academic_qualifications` DISABLE KEYS */;
+INSERT INTO `academic_qualifications` VALUES
+(1,1,'2025-01-30','2025-01-30','Doloremque nisi eos','KCSE','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,1,'2024-05-16','2024-12-26','Computer World KE','Bs Computer Science','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(3,2,'2010-01-01','2014-12-31','XYZ University','MBA','2025-01-30 07:22:44','2025-01-30 07:22:44'),
+(4,2,'2015-05-01','2020-12-31','ABC Institute','HR Certification','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `academic_qualifications` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `access_requests`
+--
+
+DROP TABLE IF EXISTS `access_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `access_requests` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `requester_id` bigint(20) unsigned NOT NULL,
+  `business_id` bigint(20) unsigned NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `registration_token` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_req_bus_token` (`requester_id`,`business_id`,`registration_token`),
+  KEY `access_requests_business_id_foreign` (`business_id`),
+  CONSTRAINT `access_requests_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `access_requests_requester_id_foreign` FOREIGN KEY (`requester_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `access_requests`
+--
+
+LOCK TABLES `access_requests` WRITE;
+/*!40000 ALTER TABLE `access_requests` DISABLE KEYS */;
+/*!40000 ALTER TABLE `access_requests` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -67,7 +104,7 @@ CREATE TABLE `business_modules` (
   KEY `business_modules_module_id_foreign` (`module_id`),
   CONSTRAINT `business_modules_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
   CONSTRAINT `business_modules_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,13 +114,16 @@ CREATE TABLE `business_modules` (
 LOCK TABLES `business_modules` WRITE;
 /*!40000 ALTER TABLE `business_modules` DISABLE KEYS */;
 INSERT INTO `business_modules` VALUES
-(1,1,1,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(2,1,5,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(3,1,2,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(4,1,4,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(5,1,10,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(6,1,3,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(7,1,6,1,NULL,'2025-01-23 08:28:59','2025-01-23 08:28:59');
+(1,1,7,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(2,1,1,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(3,1,9,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(4,1,8,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(5,1,5,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(6,1,2,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(7,1,4,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(8,1,10,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(9,1,3,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(10,1,6,1,NULL,'2025-01-30 05:46:11','2025-01-30 05:46:11');
 /*!40000 ALTER TABLE `business_modules` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -104,8 +144,13 @@ CREATE TABLE `businesses` (
   `phone` varchar(255) NOT NULL,
   `country` varchar(255) NOT NULL,
   `code` varchar(255) NOT NULL,
+  `registration_no` varchar(255) DEFAULT NULL,
+  `tax_pin_no` varchar(255) DEFAULT NULL,
+  `business_license_no` varchar(255) DEFAULT NULL,
+  `physical_address` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
+  `currency` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `businesses_slug_unique` (`slug`),
   KEY `businesses_user_id_foreign` (`user_id`),
@@ -120,7 +165,7 @@ CREATE TABLE `businesses` (
 LOCK TABLES `businesses` WRITE;
 /*!40000 ALTER TABLE `businesses` DISABLE KEYS */;
 INSERT INTO `businesses` VALUES
-(1,1,'Anzar Technologies','anzar-technologies','technology','11-50','+254711616015','Kenya','254','2025-01-23 08:28:43','2025-01-23 08:28:43');
+(1,1,'Anzar KE','anzar-ke','information-technology','1-10','+254711616018','Kenya','254',NULL,NULL,NULL,NULL,'2025-01-30 05:45:48','2025-01-30 05:45:48','KSH');
 /*!40000 ALTER TABLE `businesses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -191,7 +236,7 @@ CREATE TABLE `clients` (
   KEY `clients_client_business_foreign` (`client_business`),
   CONSTRAINT `clients_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`),
   CONSTRAINT `clients_client_business_foreign` FOREIGN KEY (`client_business`) REFERENCES `businesses` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -200,8 +245,6 @@ CREATE TABLE `clients` (
 
 LOCK TABLES `clients` WRITE;
 /*!40000 ALTER TABLE `clients` DISABLE KEYS */;
-INSERT INTO `clients` VALUES
-(1,1,1,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `clients` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -232,11 +275,11 @@ CREATE TABLE `departments` (
 LOCK TABLES `departments` WRITE;
 /*!40000 ALTER TABLE `departments` DISABLE KEYS */;
 INSERT INTO `departments` VALUES
-(1,1,'IT Department','it-department','Responsible for all IT-related tasks','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(2,1,'Human Resources','human-resources','Handles recruitment, employee benefits, and other HR tasks','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(3,1,'Sales Department','sales-department','Responsible for sales and customer interactions','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(4,1,'Marketing Department','marketing-department','Oversees marketing and branding strategies','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(5,1,'Operations','operations','Manages day-to-day operations of the business','2025-01-23 08:18:01','2025-01-23 08:18:01');
+(1,1,'IT Department','it-department','Responsible for all IT-related tasks','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,1,'Human Resources','human-resources','Handles recruitment, employee benefits, and other HR tasks','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,1,'Sales Department','sales-department','Responsible for sales and customer interactions','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,1,'Marketing Department','marketing-department','Oversees marketing and branding strategies','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,1,'Operations','operations','Manages day-to-day operations of the business','2025-01-30 05:35:58','2025-01-30 05:35:58');
 /*!40000 ALTER TABLE `departments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -260,7 +303,7 @@ CREATE TABLE `emergency_contacts` (
   PRIMARY KEY (`id`),
   KEY `emergency_contacts_employee_id_foreign` (`employee_id`),
   CONSTRAINT `emergency_contacts_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -269,6 +312,11 @@ CREATE TABLE `emergency_contacts` (
 
 LOCK TABLES `emergency_contacts` WRITE;
 /*!40000 ALTER TABLE `emergency_contacts` DISABLE KEYS */;
+INSERT INTO `emergency_contacts` VALUES
+(1,1,'Faith Mckenzie','Father','10 Second Freeway','765635372',NULL,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,1,'Edward Lloyd','Brother','Facere et nesciunt','788737252',NULL,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(3,2,'Mary Johnson','Mother','123 Elm St, NY','34567893',NULL,'2025-01-30 07:22:44','2025-01-30 07:22:44'),
+(4,2,'Ethan Ray','Brother','Dignissimos dolor la','7116268373',NULL,'2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `emergency_contacts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -358,7 +406,7 @@ CREATE TABLE `employee_family_members` (
   PRIMARY KEY (`id`),
   KEY `employee_family_members_employee_id_foreign` (`employee_id`),
   CONSTRAINT `employee_family_members_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -367,6 +415,9 @@ CREATE TABLE `employee_family_members` (
 
 LOCK TABLES `employee_family_members` WRITE;
 /*!40000 ALTER TABLE `employee_family_members` DISABLE KEYS */;
+INSERT INTO `employee_family_members` VALUES
+(1,1,'Harper Zamora','Father','1973-01-01','At voluptatum impedi','722635352','254','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,2,'Anna Doe','Sister','1992-07-25','456 Maple St, NY','234567894','254','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `employee_family_members` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -394,7 +445,7 @@ CREATE TABLE `employee_payment_details` (
   PRIMARY KEY (`id`),
   KEY `employee_payment_details_employee_id_foreign` (`employee_id`),
   CONSTRAINT `employee_payment_details_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -403,6 +454,9 @@ CREATE TABLE `employee_payment_details` (
 
 LOCK TABLES `employee_payment_details` WRITE;
 /*!40000 ALTER TABLE `employee_payment_details` DISABLE KEYS */;
+INSERT INTO `employee_payment_details` VALUES
+(1,1,54000.00,'KES','bank','Ava Saunders','463763653563','Abbot Wall','BHE7635','Sit essetas','35633','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,2,60000.00,'KES','bank','John Doe','123456789012','ABC Bank','ABC123','Main Branch','MB123','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `employee_payment_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -450,7 +504,7 @@ CREATE TABLE `employees` (
   CONSTRAINT `employees_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
   CONSTRAINT `employees_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`) ON DELETE CASCADE,
   CONSTRAINT `employees_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -459,6 +513,9 @@ CREATE TABLE `employees` (
 
 LOCK TABLES `employees` WRITE;
 /*!40000 ALTER TABLE `employees` DISABLE KEYS */;
+INSERT INTO `employees` VALUES
+(1,2,1,2,'EMP9347','male','+254722222222','1981-01-01',NULL,'married','207','Possimus modi cum a','TAX63563','NHIF8976365','NSSF3656465','PSP893784','2019-01-01','2025-01-30','Rerum est ut veniam','Tempor ea minim sint','O-','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,3,1,1,'EMP1001','male','+2547116168192','1985-04-15',NULL,'married','4567890','New York','TAX12345','NHIF12345','NSSF12345','P123456','2010-05-01','2025-05-01','Rerum est ut venia123 Main St, New York, NYm','456 Park Ave, New York, NY','O+','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -492,7 +549,7 @@ CREATE TABLE `employment_details` (
   CONSTRAINT `employment_details_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `employment_details_job_category_id_foreign` FOREIGN KEY (`job_category_id`) REFERENCES `job_categories` (`id`),
   CONSTRAINT `employment_details_shift_id_foreign` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -501,6 +558,9 @@ CREATE TABLE `employment_details` (
 
 LOCK TABLES `employment_details` WRITE;
 /*!40000 ALTER TABLE `employment_details` DISABLE KEYS */;
+INSERT INTO `employment_details` VALUES
+(1,1,2,2,4,'2024-01-17','2024-03-14','2027-01-31','2034-01-31','permanent','Et sequi voluptatibu','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,2,1,1,1,'2020-01-01','2020-06-01','2025-01-01','2045-01-01','fulltime','Et sequi voluptatibu','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `employment_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -531,6 +591,72 @@ CREATE TABLE `failed_jobs` (
 LOCK TABLES `failed_jobs` WRITE;
 /*!40000 ALTER TABLE `failed_jobs` DISABLE KEYS */;
 /*!40000 ALTER TABLE `failed_jobs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `industries`
+--
+
+DROP TABLE IF EXISTS `industries`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `industries` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `industries_slug_unique` (`slug`)
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `industries`
+--
+
+LOCK TABLES `industries` WRITE;
+/*!40000 ALTER TABLE `industries` DISABLE KEYS */;
+INSERT INTO `industries` VALUES
+(1,'Information Technology','information-technology','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(2,'Healthcare','healthcare','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(3,'Finance','finance','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(4,'Education','education','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(5,'Retail','retail','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(6,'Manufacturing','manufacturing','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(7,'Construction','construction','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(8,'Real Estate','real-estate','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(9,'Hospitality','hospitality','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(10,'Entertainment','entertainment','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(11,'Automotive','automotive','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(12,'Telecommunications','telecommunications','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(13,'Energy','energy','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(14,'Agriculture','agriculture','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(15,'Aerospace','aerospace','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(16,'Logistics and Supply Chain','logistics-and-supply-chain','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(17,'Food and Beverage','food-and-beverage','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(18,'Fashion','fashion','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(19,'Media and Publishing','media-and-publishing','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(20,'Pharmaceuticals','pharmaceuticals','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(21,'Sports and Recreation','sports-and-recreation','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(22,'Legal Services','legal-services','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(23,'Consulting','consulting','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(24,'Environmental Services','environmental-services','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(25,'Transportation','transportation','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(26,'Government and Public Administration','government-and-public-administration','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(27,'Non-Profit and Social Services','non-profit-and-social-services','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(28,'Marketing and Advertising','marketing-and-advertising','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(29,'E-Commerce','e-commerce','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(30,'Beauty and Personal Care','beauty-and-personal-care','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(31,'Insurance','insurance','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(32,'Cybersecurity','cybersecurity','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(33,'Event Management','event-management','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(34,'Research and Development','research-and-development','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(35,'Art and Design','art-and-design','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(36,'Pet Care','pet-care','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(37,'Fitness and Wellness','fitness-and-wellness','2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(38,'Waste Management','waste-management','2025-01-30 05:35:59','2025-01-30 05:35:59');
+/*!40000 ALTER TABLE `industries` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -591,11 +717,11 @@ CREATE TABLE `job_categories` (
 LOCK TABLES `job_categories` WRITE;
 /*!40000 ALTER TABLE `job_categories` DISABLE KEYS */;
 INSERT INTO `job_categories` VALUES
-(1,1,'Software Developer','software-developer','Develops and maintains software applications','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(2,1,'Human Resources','human-resources','Manages employee relations and recruitment','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(3,1,'Marketing Manager','marketing-manager','Oversees marketing strategies and campaigns','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(4,1,'Project Manager','project-manager','Manages and coordinates project teams','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(5,1,'Sales Executive','sales-executive','Responsible for sales and client acquisition','2025-01-23 08:18:01','2025-01-23 08:18:01');
+(1,1,'Software Developer','software-developer','Develops and maintains software applications','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,1,'Human Resources','human-resources','Manages employee relations and recruitment','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,1,'Marketing Manager','marketing-manager','Oversees marketing strategies and campaigns','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,1,'Project Manager','project-manager','Manages and coordinates project teams','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,1,'Sales Executive','sales-executive','Responsible for sales and client acquisition','2025-01-30 05:35:58','2025-01-30 05:35:58');
 /*!40000 ALTER TABLE `job_categories` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -637,6 +763,7 @@ DROP TABLE IF EXISTS `leave_delegations`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `leave_delegations` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `business_id` bigint(20) unsigned NOT NULL,
   `employee_id` bigint(20) unsigned NOT NULL,
   `delegate_id` bigint(20) unsigned NOT NULL,
   `leave_request_id` bigint(20) unsigned NOT NULL,
@@ -728,7 +855,7 @@ CREATE TABLE `leave_periods` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `leave_periods_name_unique` (`name`),
   UNIQUE KEY `leave_periods_slug_unique` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -737,9 +864,6 @@ CREATE TABLE `leave_periods` (
 
 LOCK TABLES `leave_periods` WRITE;
 /*!40000 ALTER TABLE `leave_periods` DISABLE KEYS */;
-INSERT INTO `leave_periods` VALUES
-(1,1,'2024 Calendar Year','2024-calendar-year','2024-01-01','2024-12-31',1,1,0,0,0,'2025-01-23 11:12:39','2025-01-23 11:12:39'),
-(2,1,'FY 2024-2025','fy-2024-2025','2024-07-01','2025-06-30',1,1,0,0,0,'2025-01-23 11:21:39','2025-01-23 11:21:39');
 /*!40000 ALTER TABLE `leave_periods` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -773,7 +897,7 @@ CREATE TABLE `leave_policies` (
   CONSTRAINT `leave_policies_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`),
   CONSTRAINT `leave_policies_job_category_id_foreign` FOREIGN KEY (`job_category_id`) REFERENCES `job_categories` (`id`),
   CONSTRAINT `leave_policies_leave_type_id_foreign` FOREIGN KEY (`leave_type_id`) REFERENCES `leave_types` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -782,8 +906,6 @@ CREATE TABLE `leave_policies` (
 
 LOCK TABLES `leave_policies` WRITE;
 /*!40000 ALTER TABLE `leave_policies` DISABLE KEYS */;
-INSERT INTO `leave_policies` VALUES
-(1,1,1,1,'all',15,'monthly',200.00,5,1,30,'2025-01-23','2031-01-30','2025-01-23 08:35:03','2025-01-23 08:35:03');
 /*!40000 ALTER TABLE `leave_policies` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -860,26 +982,26 @@ CREATE TABLE `leave_type_lists` (
 LOCK TABLES `leave_type_lists` WRITE;
 /*!40000 ALTER TABLE `leave_type_lists` DISABLE KEYS */;
 INSERT INTO `leave_type_lists` VALUES
-(1,'Annual Leave','annual-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(2,'Sick Leave','sick-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(3,'Maternity Leave','maternity-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(4,'Paternity Leave','paternity-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(5,'Compassionate Leave','compassionate-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(6,'Study Leave','study-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(7,'Unpaid Leave','unpaid-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(8,'Public Holidays','public-holidays',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(9,'Sabbatical Leave','sabbatical-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(10,'Marriage Leave','marriage-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(11,'Bereavement Leave','bereavement-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(12,'Adoption Leave','adoption-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(13,'Relocation Leave','relocation-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(14,'Childcare Leave','childcare-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(15,'Voting Leave','voting-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(16,'Jury Duty Leave','jury-duty-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(17,'Military Leave','military-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(18,'Emergency Leave','emergency-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(19,'Volunteer Leave','volunteer-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48'),
-(20,'Wellness Leave','wellness-leave',1,'2025-01-24 00:36:48','2025-01-24 00:36:48');
+(1,'Annual Leave','annual-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,'Sick Leave','sick-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,'Maternity Leave','maternity-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,'Paternity Leave','paternity-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,'Compassionate Leave','compassionate-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(6,'Study Leave','study-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(7,'Unpaid Leave','unpaid-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(8,'Public Holidays','public-holidays',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(9,'Sabbatical Leave','sabbatical-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(10,'Marriage Leave','marriage-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(11,'Bereavement Leave','bereavement-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(12,'Adoption Leave','adoption-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(13,'Relocation Leave','relocation-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(14,'Childcare Leave','childcare-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(15,'Voting Leave','voting-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(16,'Jury Duty Leave','jury-duty-leave',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(17,'Military Leave','military-leave',1,'2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(18,'Emergency Leave','emergency-leave',1,'2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(19,'Volunteer Leave','volunteer-leave',1,'2025-01-30 05:35:59','2025-01-30 05:35:59'),
+(20,'Wellness Leave','wellness-leave',1,'2025-01-30 05:35:59','2025-01-30 05:35:59');
 /*!40000 ALTER TABLE `leave_type_lists` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -908,7 +1030,7 @@ CREATE TABLE `leave_types` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `leave_types_slug_unique` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -917,9 +1039,40 @@ CREATE TABLE `leave_types` (
 
 LOCK TABLES `leave_types` WRITE;
 /*!40000 ALTER TABLE `leave_types` DISABLE KEYS */;
-INSERT INTO `leave_types` VALUES
-(1,1,'Annual Leave','annual-leave','Leave for personal or vacation purposes',1,1,1,1,1,10,5,1,'2025-01-23 08:35:03','2025-01-23 08:35:03');
 /*!40000 ALTER TABLE `leave_types` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `locations`
+--
+
+DROP TABLE IF EXISTS `locations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `locations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `business_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `company_size` varchar(255) DEFAULT NULL,
+  `registration_no` varchar(255) DEFAULT NULL,
+  `tax_pin_no` varchar(255) DEFAULT NULL,
+  `business_license_no` varchar(255) DEFAULT NULL,
+  `physical_address` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `locations_slug_unique` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `locations`
+--
+
+LOCK TABLES `locations` WRITE;
+/*!40000 ALTER TABLE `locations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `locations` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -952,7 +1105,7 @@ CREATE TABLE `media` (
   UNIQUE KEY `media_uuid_unique` (`uuid`),
   KEY `media_model_type_model_id_index` (`model_type`,`model_id`),
   KEY `media_order_column_index` (`order_column`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -962,8 +1115,12 @@ CREATE TABLE `media` (
 LOCK TABLES `media` WRITE;
 /*!40000 ALTER TABLE `media` DISABLE KEYS */;
 INSERT INTO `media` VALUES
-(1,'App\\Models\\User',1,'862a99cb-5e67-4880-a0dc-8f8b49e24754','avatars','media-libraryRwskW0','media-libraryRwskW0','image/png','public','public',392,'[]','[]','[]','[]',1,'2025-01-23 08:28:07','2025-01-23 08:28:07'),
-(2,'App\\Models\\Business',1,'102dc2f2-8247-406b-858f-95a488ab48e3','businesses','logo 2','logo-2.png','image/png','public','public',11294,'[]','[]','[]','[]',1,'2025-01-23 08:28:43','2025-01-23 08:28:43');
+(1,'App\\Models\\User',1,'184884c1-a3ef-4bf8-96d5-b1cd72d5932f','avatars','media-librarySAuDsF','media-librarySAuDsF','image/png','public','public',402,'[]','[]','[]','[]',1,'2025-01-30 05:44:55','2025-01-30 05:44:55'),
+(2,'App\\Models\\Business',1,'f500c610-2a45-431c-9b8e-e9ba7b364dd8','businesses','logo 2','logo-2.png','image/png','public','public',11294,'[]','[]','[]','[]',1,'2025-01-30 05:45:48','2025-01-30 05:45:48'),
+(3,'App\\Models\\User',2,'efbf1797-8b40-4f45-b7b6-4956a1bda07c','avatars','someone-using-pos','someone-using-pos.jpg','image/jpeg','public','public',124856,'[]','[]','[]','[]',1,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(4,'App\\Models\\Employee',1,'d5c5ca2d-8fc6-493b-8e5a-3e9f6fdad705','academic_files','Saparma ERP','Saparma-ERP.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',1073655,'[]','[]','[]','[]',1,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(5,'App\\Models\\User',3,'07c63c3c-d169-4313-a8ee-2eee62c15c38','avatars','someone-using-pos','someone-using-pos.jpg','image/jpeg','public','public',124856,'[]','[]','[]','[]',1,'2025-01-30 07:22:44','2025-01-30 07:22:44'),
+(6,'App\\Models\\Employee',2,'44c5d5c0-6459-4c7f-b9da-c46d4c53e5b1','academic_files','Saparma ERP','Saparma-ERP.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',1073655,'[]','[]','[]','[]',1,'2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -979,7 +1136,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -996,31 +1153,35 @@ INSERT INTO `migrations` VALUES
 (5,'2024_12_28_020618_create_media_table',1),
 (6,'2024_12_28_020943_create_statuses_table',1),
 (7,'2024_12_28_024918_create_businesses_table',1),
-(8,'2024_12_28_025027_create_modules_table',1),
-(9,'2025_01_14_025030_create_job_categories_table',1),
-(10,'2025_01_14_025032_create_shifts_table',1),
-(11,'2025_01_14_052658_create_departments_table',1),
-(12,'2025_01_14_083726_create_employees_table',1),
-(13,'2025_01_14_083727_create_spouses_table',1),
-(14,'2025_01_14_083728_create_emergency_contacts_table',1),
-(15,'2025_01_14_083729_create_academic_qualifications_table',1),
-(16,'2025_01_14_083730_create_previous_employments_table',1),
-(17,'2025_01_16_113024_create_employee_family_members_table',1),
-(18,'2025_01_16_113239_create_employment_details_table',1),
-(19,'2025_01_16_113352_create_employee_payment_details_table',1),
-(20,'2025_01_16_113502_create_employee_contact_details_table',1),
-(21,'2025_01_16_113640_create_employee_documents_table',1),
-(22,'2025_01_17_014648_create_payroll_formulas_table',1),
-(23,'2025_01_17_020359_create_payroll_formula_brackets_table',1),
-(24,'2025_01_17_050013_create_reliefs_table',1),
-(25,'2025_01_23_100649_create_leave_types_table',1),
-(26,'2025_01_23_100656_create_leave_policies_table',1),
-(27,'2025_01_23_123044_create_leave_requests_table',2),
-(28,'2025_01_23_130905_create_leave_delegations_table',3),
-(29,'2025_01_23_131303_create_leave_periods_table',4),
-(36,'2025_01_17_050014_create_leave_type_lists_table',5),
-(37,'2025_01_23_143454_create_leave_entitlements_table',5),
-(38,'2025_01_24_025902_create_clients_table',5);
+(8,'2024_12_28_024919_create_industries_table',1),
+(9,'2024_12_28_025027_create_modules_table',1),
+(10,'2025_01_14_025030_create_job_categories_table',1),
+(11,'2025_01_14_025032_create_shifts_table',1),
+(12,'2025_01_14_052658_create_departments_table',1),
+(13,'2025_01_14_083726_create_employees_table',1),
+(14,'2025_01_14_083727_create_spouses_table',1),
+(15,'2025_01_14_083728_create_emergency_contacts_table',1),
+(16,'2025_01_14_083729_create_academic_qualifications_table',1),
+(17,'2025_01_14_083730_create_previous_employments_table',1),
+(18,'2025_01_16_113024_create_employee_family_members_table',1),
+(19,'2025_01_16_113239_create_employment_details_table',1),
+(20,'2025_01_16_113352_create_employee_payment_details_table',1),
+(21,'2025_01_16_113502_create_employee_contact_details_table',1),
+(22,'2025_01_16_113640_create_employee_documents_table',1),
+(23,'2025_01_17_014648_create_payroll_formulas_table',1),
+(24,'2025_01_17_020359_create_payroll_formula_brackets_table',1),
+(26,'2025_01_17_050014_create_leave_type_lists_table',1),
+(27,'2025_01_23_100649_create_leave_types_table',1),
+(28,'2025_01_23_100656_create_leave_policies_table',1),
+(29,'2025_01_23_123044_create_leave_requests_table',1),
+(30,'2025_01_23_130905_create_leave_delegations_table',1),
+(31,'2025_01_23_131303_create_leave_periods_table',1),
+(32,'2025_01_23_143454_create_leave_entitlements_table',1),
+(33,'2025_01_24_025902_create_clients_table',1),
+(34,'2025_01_27_063018_create_access_requests_table',1),
+(35,'2025_01_30_082503_create_locations_table',1),
+(36,'2025_01_30_120436_add_formula_type_to_payroll_formulas_table',2),
+(37,'2025_01_17_050013_create_reliefs_table',3);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1074,7 +1235,9 @@ CREATE TABLE `model_has_roles` (
 LOCK TABLES `model_has_roles` WRITE;
 /*!40000 ALTER TABLE `model_has_roles` DISABLE KEYS */;
 INSERT INTO `model_has_roles` VALUES
-(2,'App\\Models\\User',1);
+(7,'App\\Models\\User',1),
+(6,'App\\Models\\User',2),
+(6,'App\\Models\\User',3);
 /*!40000 ALTER TABLE `model_has_roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1109,16 +1272,16 @@ CREATE TABLE `modules` (
 LOCK TABLES `modules` WRITE;
 /*!40000 ALTER TABLE `modules` DISABLE KEYS */;
 INSERT INTO `modules` VALUES
-(1,'Core HR Management','core-hr-management','Essential HR features including employee management, attendance, and basic reporting',0.00,0.00,1,'[\"Employee Database\",\"Attendance Management\",\"Leave Management\",\"Basic Reports\",\"Document Management\"]','people-fill','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(2,'Payroll Management','payroll-management','Complete payroll processing system with tax calculations and compliance',49.99,499.99,0,'[\"Salary Processing\",\"Tax Calculations\",\"Payslip Generation\",\"Statutory Compliance\",\"Multiple Payment Methods\",\"Payroll Reports\"]','wallet2','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(3,'Recruitment & Onboarding','recruitment-onboarding','End-to-end recruitment solution from job posting to onboarding',39.99,399.99,0,'[\"Job Posting Management\",\"Applicant Tracking\",\"Interview Scheduling\",\"Candidate Assessment\",\"Onboarding Workflow\",\"Document Collection\"]','person-plus-fill','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(4,'Performance Management','performance-management','Complete performance evaluation and goal tracking system',29.99,299.99,0,'[\"Goal Setting & Tracking\",\"Performance Reviews\",\"360\\u00b0 Feedback\",\"Skills Assessment\",\"Development Plans\",\"Performance Analytics\"]','graph-up-arrow','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(5,'Learning Management','learning-management','Employee training and development platform',34.99,349.99,0,'[\"Course Management\",\"Training Schedules\",\"Learning Paths\",\"Assessment Tools\",\"Certification Tracking\",\"Training Reports\"]','journal-bookmark','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(6,'Time & Attendance','time-attendance','Advanced time tracking and attendance management',24.99,249.99,0,'[\"Time Tracking\",\"Shift Management\",\"Overtime Calculation\",\"Leave Planning\",\"Attendance Reports\",\"Mobile Check-in\"]','clock-fill','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(7,'Asset Management','asset-management','Track and manage company assets and resources',19.99,199.99,0,'[\"Asset Tracking\",\"Maintenance Scheduling\",\"Asset Assignment\",\"Inventory Management\",\"Asset Reports\",\"Depreciation Tracking\"]','box-seam','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(8,'Employee Self-Service','employee-self-service','Portal for employees to manage their information and requests',14.99,149.99,0,'[\"Profile Management\",\"Leave Requests\",\"Expense Claims\",\"Document Access\",\"Payslip Download\",\"Benefits Enrollment\"]','person-workspace','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(9,'CRM Integration','crm-integration','Customer relationship management integration with HR',44.99,449.99,0,'[\"Contact Management\",\"Lead Tracking\",\"Sales Pipeline\",\"Customer Support\",\"Email Integration\",\"Analytics & Reports\"]','people','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(10,'Project Management','project-management','Project planning and resource management tools',39.99,399.99,0,'[\"Project Planning\",\"Task Management\",\"Resource Allocation\",\"Time Tracking\",\"Project Reports\",\"Team Collaboration\"]','clipboard-data','2025-01-23 08:18:01','2025-01-23 08:18:01');
+(1,'Core HR Management','core-hr-management','Essential HR features including employee management, attendance, and basic reporting',0.00,0.00,1,'[\"Employee Database\",\"Attendance Management\",\"Leave Management\",\"Basic Reports\",\"Document Management\"]','people-fill','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,'Payroll Management','payroll-management','Complete payroll processing system with tax calculations and compliance',49.99,499.99,0,'[\"Salary Processing\",\"Tax Calculations\",\"Payslip Generation\",\"Statutory Compliance\",\"Multiple Payment Methods\",\"Payroll Reports\"]','wallet2','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,'Recruitment & Onboarding','recruitment-onboarding','End-to-end recruitment solution from job posting to onboarding',39.99,399.99,0,'[\"Job Posting Management\",\"Applicant Tracking\",\"Interview Scheduling\",\"Candidate Assessment\",\"Onboarding Workflow\",\"Document Collection\"]','person-plus-fill','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,'Performance Management','performance-management','Complete performance evaluation and goal tracking system',29.99,299.99,0,'[\"Goal Setting & Tracking\",\"Performance Reviews\",\"360\\u00b0 Feedback\",\"Skills Assessment\",\"Development Plans\",\"Performance Analytics\"]','graph-up-arrow','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,'Learning Management','learning-management','Employee training and development platform',34.99,349.99,0,'[\"Course Management\",\"Training Schedules\",\"Learning Paths\",\"Assessment Tools\",\"Certification Tracking\",\"Training Reports\"]','journal-bookmark','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(6,'Time & Attendance','time-attendance','Advanced time tracking and attendance management',24.99,249.99,0,'[\"Time Tracking\",\"Shift Management\",\"Overtime Calculation\",\"Leave Planning\",\"Attendance Reports\",\"Mobile Check-in\"]','clock-fill','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(7,'Asset Management','asset-management','Track and manage company assets and resources',19.99,199.99,0,'[\"Asset Tracking\",\"Maintenance Scheduling\",\"Asset Assignment\",\"Inventory Management\",\"Asset Reports\",\"Depreciation Tracking\"]','box-seam','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(8,'Employee Self-Service','employee-self-service','Portal for employees to manage their information and requests',14.99,149.99,0,'[\"Profile Management\",\"Leave Requests\",\"Expense Claims\",\"Document Access\",\"Payslip Download\",\"Benefits Enrollment\"]','person-workspace','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(9,'CRM Integration','crm-integration','Customer relationship management integration with HR',44.99,449.99,0,'[\"Contact Management\",\"Lead Tracking\",\"Sales Pipeline\",\"Customer Support\",\"Email Integration\",\"Analytics & Reports\"]','people','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(10,'Project Management','project-management','Project planning and resource management tools',39.99,399.99,0,'[\"Project Planning\",\"Task Management\",\"Resource Allocation\",\"Time Tracking\",\"Project Reports\",\"Team Collaboration\"]','clipboard-data','2025-01-30 05:35:58','2025-01-30 05:35:58');
 /*!40000 ALTER TABLE `modules` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1158,14 +1321,14 @@ CREATE TABLE `payroll_formula_brackets` (
   `payroll_formula_id` bigint(20) unsigned NOT NULL,
   `min` decimal(15,2) NOT NULL,
   `max` decimal(15,2) DEFAULT NULL,
-  `rate` decimal(5,2) NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
+  `rate` decimal(5,2) DEFAULT NULL,
+  `amount` decimal(10,2) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `payroll_formula_brackets_payroll_formula_id_foreign` (`payroll_formula_id`),
   CONSTRAINT `payroll_formula_brackets_payroll_formula_id_foreign` FOREIGN KEY (`payroll_formula_id`) REFERENCES `payroll_formulas` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1174,6 +1337,15 @@ CREATE TABLE `payroll_formula_brackets` (
 
 LOCK TABLES `payroll_formula_brackets` WRITE;
 /*!40000 ALTER TABLE `payroll_formula_brackets` DISABLE KEYS */;
+INSERT INTO `payroll_formula_brackets` VALUES
+(1,3,0.00,5999.00,NULL,150.00,'2025-01-30 09:07:41','2025-01-30 09:07:41'),
+(2,3,6000.00,7999.00,NULL,300.00,'2025-01-30 09:07:41','2025-01-30 09:07:41'),
+(3,3,8000.00,11999.00,NULL,400.00,'2025-01-30 09:07:41','2025-01-30 09:07:41'),
+(4,3,12000.00,14999.00,NULL,500.00,'2025-01-30 09:07:41','2025-01-30 09:07:41'),
+(5,4,0.00,NULL,1.50,NULL,'2025-01-30 09:10:26','2025-01-30 09:10:26'),
+(6,5,0.00,24000.00,10.00,NULL,'2025-01-30 09:14:15','2025-01-30 09:14:15'),
+(7,5,24000.00,32333.00,25.00,NULL,'2025-01-30 09:14:15','2025-01-30 09:14:15'),
+(8,5,32333.00,50000.00,30.00,NULL,'2025-01-30 09:14:15','2025-01-30 09:14:15');
 /*!40000 ALTER TABLE `payroll_formula_brackets` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1186,9 +1358,10 @@ DROP TABLE IF EXISTS `payroll_formulas`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `payroll_formulas` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `business_id` bigint(20) unsigned NOT NULL,
+  `business_id` bigint(20) unsigned DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
+  `formula_type` varchar(255) DEFAULT NULL,
   `calculation_basis` enum('basic pay','gross pay','cash pay','taxable pay') NOT NULL,
   `is_progressive` tinyint(1) NOT NULL DEFAULT 0,
   `minimum_amount` decimal(15,2) DEFAULT NULL,
@@ -1197,7 +1370,7 @@ CREATE TABLE `payroll_formulas` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `payroll_formulas_slug_unique` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1206,6 +1379,10 @@ CREATE TABLE `payroll_formulas` (
 
 LOCK TABLES `payroll_formulas` WRITE;
 /*!40000 ALTER TABLE `payroll_formulas` DISABLE KEYS */;
+INSERT INTO `payroll_formulas` VALUES
+(3,1,'WHT','wht','amount','gross pay',1,NULL,NULL,'2025-01-30 09:07:41','2025-01-30 09:07:41'),
+(4,1,'Housing Levy','housing-levy','rate','gross pay',1,0.00,NULL,'2025-01-30 09:10:26','2025-01-30 09:10:26'),
+(5,1,'PAYE','paye','rate','gross pay',1,24000.00,NULL,'2025-01-30 09:14:15','2025-01-30 09:14:15');
 /*!40000 ALTER TABLE `payroll_formulas` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1258,7 +1435,7 @@ CREATE TABLE `previous_employments` (
   PRIMARY KEY (`id`),
   KEY `previous_employments_employee_id_foreign` (`employee_id`),
   CONSTRAINT `previous_employments_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1267,6 +1444,9 @@ CREATE TABLE `previous_employments` (
 
 LOCK TABLES `previous_employments` WRITE;
 /*!40000 ALTER TABLE `previous_employments` DISABLE KEYS */;
+INSERT INTO `previous_employments` VALUES
+(1,1,'Alexander Mcdaniel','Electronics Production','Sint minus omnis con','Manager','Consectetur adipisic','2014-07-23','2025-01-30','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,2,'XYZ Corp','Human Resources','123 Business St, NY','HR Manager','Consectetur adipisic','2018-01-01','2025-01-01','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `previous_employments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1282,11 +1462,20 @@ CREATE TABLE `reliefs` (
   `business_id` bigint(20) unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
+  `tax_application` enum('before_tax','after_tax') NOT NULL,
+  `relief_type` enum('rate','amount') NOT NULL,
+  `comparison_method` enum('least','greatest') DEFAULT NULL,
+  `rate_percentage` decimal(8,2) DEFAULT NULL,
+  `fixed_amount` decimal(15,2) DEFAULT NULL,
+  `maximum_relief` decimal(15,2) DEFAULT NULL,
+  `is_mandatory` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `reliefs_slug_unique` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `reliefs_slug_unique` (`slug`),
+  KEY `reliefs_business_id_foreign` (`business_id`),
+  CONSTRAINT `reliefs_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1295,6 +1484,9 @@ CREATE TABLE `reliefs` (
 
 LOCK TABLES `reliefs` WRITE;
 /*!40000 ALTER TABLE `reliefs` DISABLE KEYS */;
+INSERT INTO `reliefs` VALUES
+(1,1,'SHIF','shif','before_tax','rate','least',2.75,NULL,NULL,1,'2025-01-30 10:14:42','2025-01-30 10:14:42'),
+(2,1,'Pension relief','pension-relief','before_tax','amount','least',2.75,30000.00,30000.00,1,'2025-01-30 10:18:50','2025-01-30 10:18:50');
 /*!40000 ALTER TABLE `reliefs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1339,7 +1531,7 @@ CREATE TABLE `roles` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1349,9 +1541,17 @@ CREATE TABLE `roles` (
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
 INSERT INTO `roles` VALUES
-(1,'superadmin','web','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(2,'business_owner','web','2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(3,'employee','web','2025-01-23 08:18:01','2025-01-23 08:18:01');
+(1,'super-admin','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,'admin','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,'hr','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,'finance','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,'it','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(6,'employee','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(7,'business-admin','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(8,'business-hr','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(9,'business-finance','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(10,'business-it','web','2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(11,'business-employee','web','2025-01-30 05:35:58','2025-01-30 05:35:58');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1382,8 +1582,7 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('kxceouSorkMAvQtZWCeUbick5C0rT0RBJGWiUSOv',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoiUU9Rdm91OER2RWRGTE5CbEtqcUExR0ZvTDZJSDN5YVVEcmp3OWpOcyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTQ6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci10ZWNobm9sb2dpZXMvY2xpZW50cyI7fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6MTg6ImFuemFyLXRlY2hub2xvZ2llcyI7fQ==',1737658455),
-('nUqBtIR2Xhe5xV2PxY51dZajUHn6Q8F8JLdX1nkT',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoibzRtSkJ2YThkdDdTNmhCYjVhWVZTWURPTkMxNHlJTnp2a2tzZ0dBYyI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1NDoiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLXRlY2hub2xvZ2llcy9jbGllbnRzIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NjE6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci10ZWNobm9sb2dpZXMvY2xpZW50cy9jcmVhdGUiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO3M6MjA6ImFjdGl2ZV9idXNpbmVzc19zbHVnIjtzOjE4OiJhbnphci10ZWNobm9sb2dpZXMiO30=',1737690419);
+('isyr1jfYk8UK7HWOa3IsxPymxhipAi1CucckE1Sh',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoidWpVbFhOSkFWeWZhaWxlWk1DSVFRUVNJR2VZWjdSSWxmMGlyNWVBTiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDc6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9kZWR1Y3Rpb25zIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjIwOiJhY3RpdmVfYnVzaW5lc3Nfc2x1ZyI7czo4OiJhbnphci1rZSI7fQ==',1738258156);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1417,11 +1616,11 @@ CREATE TABLE `shifts` (
 LOCK TABLES `shifts` WRITE;
 /*!40000 ALTER TABLE `shifts` DISABLE KEYS */;
 INSERT INTO `shifts` VALUES
-(1,1,'Morning Shift','morning-shift','08:00:00','16:00:00','Standard morning shift',1,'2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(2,1,'Afternoon Shift','afternoon-shift','16:00:00','00:00:00','Standard afternoon shift',1,'2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(3,1,'Night Shift','night-shift','00:00:00','08:00:00','Standard night shift',1,'2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(4,1,'Flexible Shift','flexible-shift','10:00:00','18:00:00','Flexible shift for employees',1,'2025-01-23 08:18:01','2025-01-23 08:18:01'),
-(5,1,'Weekend Shift','weekend-shift','09:00:00','17:00:00','Shift during weekends',1,'2025-01-23 08:18:01','2025-01-23 08:18:01');
+(1,1,'Morning Shift','morning-shift','08:00:00','16:00:00','Standard morning shift',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(2,1,'Afternoon Shift','afternoon-shift','16:00:00','00:00:00','Standard afternoon shift',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(3,1,'Night Shift','night-shift','00:00:00','08:00:00','Standard night shift',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(4,1,'Flexible Shift','flexible-shift','10:00:00','18:00:00','Flexible shift for employees',1,'2025-01-30 05:35:58','2025-01-30 05:35:58'),
+(5,1,'Weekend Shift','weekend-shift','09:00:00','17:00:00','Shift during weekends',1,'2025-01-30 05:35:58','2025-01-30 05:35:58');
 /*!40000 ALTER TABLE `shifts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1449,7 +1648,7 @@ CREATE TABLE `spouses` (
   PRIMARY KEY (`id`),
   KEY `spouses_employee_id_foreign` (`employee_id`),
   CONSTRAINT `spouses_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1458,6 +1657,9 @@ CREATE TABLE `spouses` (
 
 LOCK TABLES `spouses` WRITE;
 /*!40000 ALTER TABLE `spouses` DISABLE KEYS */;
+INSERT INTO `spouses` VALUES
+(1,1,'Reeves','Galvin','Emerald Montoya','1989-01-01','948','Voluptas facilis in','+25473333333','Quia officia vel vol','Dolorum ea repellend','2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(2,2,'Doe','Jane','Ann','1988-09-20','0987654321','XYZ Corp','+2547116167182','1234 Elm St, NY','1234 Elm St, NY','2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `spouses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1478,7 +1680,7 @@ CREATE TABLE `statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `statuses_model_type_model_id_index` (`model_type`,`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1488,14 +1690,13 @@ CREATE TABLE `statuses` (
 LOCK TABLES `statuses` WRITE;
 /*!40000 ALTER TABLE `statuses` DISABLE KEYS */;
 INSERT INTO `statuses` VALUES
-(1,'setup',NULL,'App\\Models\\User',1,'2025-01-23 08:28:07','2025-01-23 08:28:07'),
-(2,'module',NULL,'App\\Models\\Business',1,'2025-01-23 08:28:43','2025-01-23 08:28:43'),
-(3,'module',NULL,'App\\Models\\User',1,'2025-01-23 08:28:43','2025-01-23 08:28:43'),
-(4,'active',NULL,'App\\Models\\User',1,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(5,'active',NULL,'App\\Models\\Business',1,'2025-01-23 08:28:59','2025-01-23 08:28:59'),
-(6,'active',NULL,'App\\Models\\LeavePeriod',1,'2025-01-23 11:12:39','2025-01-23 11:12:39'),
-(7,'active',NULL,'App\\Models\\LeavePeriod',2,'2025-01-23 11:21:39','2025-01-23 11:21:39'),
-(8,'inactive',NULL,'App\\Models\\LeavePeriod',1,'2025-01-23 11:12:39','2025-01-23 11:12:39');
+(1,'setup',NULL,'App\\Models\\User',1,'2025-01-30 05:44:55','2025-01-30 05:44:55'),
+(2,'module',NULL,'App\\Models\\Business',1,'2025-01-30 05:45:48','2025-01-30 05:45:48'),
+(3,'module',NULL,'App\\Models\\User',1,'2025-01-30 05:45:48','2025-01-30 05:45:48'),
+(4,'active',NULL,'App\\Models\\User',1,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(5,'active',NULL,'App\\Models\\Business',1,'2025-01-30 05:46:11','2025-01-30 05:46:11'),
+(6,'active',NULL,'App\\Models\\User',2,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(7,'active',NULL,'App\\Models\\User',3,'2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `statuses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1525,7 +1726,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_email_unique` (`email`),
   UNIQUE KEY `users_phone_unique` (`phone`),
   UNIQUE KEY `users_social_id_unique` (`social_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1535,7 +1736,9 @@ CREATE TABLE `users` (
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` VALUES
-(1,'Sammy James','sammy@anzar.co.ke','+254797702066','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$Mhc.0jbv5XRQQ44pTBf5ielx.EWT/8.lzf72L.GyE.uE5Zk3BhAKK',NULL,'2025-01-23 08:28:07','2025-01-23 08:28:07');
+(1,'Sammy James','sammy@anzar.co.ke','+254797702066','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$CC3b6BdjjiNNRdJH7Y64m.Hu30jlAPzKiNc92XcSJ0iXiAtN2b0/m',NULL,'2025-01-30 05:44:55','2025-01-30 05:44:55'),
+(2,'Wynter Ava Saunders Bowers','myreteke@mailinator.com','+711111111','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$CBBVoUKYpjRK35LqN3WlEeMuR6fgOhVe8TJETzerJ0qfO0MaROlc.',NULL,'2025-01-30 07:04:44','2025-01-30 07:04:44'),
+(3,'John Michael Doe','john.doe@example.com','+7977010278','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$2f3KaFOgX9Ix8mXHTnmMY.VX.i0IX2AmqMWLefrFK1qQ1IEn1YjW.',NULL,'2025-01-30 07:22:44','2025-01-30 07:22:44');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -1548,4 +1751,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-01-24 10:19:36
+-- Dump completed on 2025-01-31 12:49:03

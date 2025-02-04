@@ -22,6 +22,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/clients/request-access', [DashboardController::class, 'requestAccess'])->name('clients.request-access');
         Route::get('/clients/grant-access', [DashboardController::class, 'grantAccess'])->name('clients.grant-access');
         Route::get('/organization-setup', [DashboardController::class, 'organizationSetup'])->name('organization-setup');
+        Route::get('/pay-schedule', [DashboardController::class, 'paySchedule'])->name('pay-schedule');
 
         Route::get('/departments', [DashboardController::class, 'departments'])->name('departments.index');
         Route::get('/employees/register', [DashboardController::class, 'createEmployees'])->name('employees.create');
@@ -36,12 +37,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payroll/formula', [DashboardController::class, 'payrollFormula'])->name('payroll.formula');
         Route::get('/payroll/deductions', [DashboardController::class, 'payrollDeductions'])->name('payroll.deductions');
         Route::get('/payroll/pay-grades', [DashboardController::class, 'payrollPayGrades'])->name('payroll.pay-grades');
+        Route::get('/payroll/process', [DashboardController::class, 'processPayrolls'])->name('payroll.process');
 
         Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
         Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');
 
         Route::get('/deductions', [DashboardController::class, 'deductions'])->name('deductions.index');
         Route::get('/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
+
+        Route::get('/allowances', [DashboardController::class, 'allowances'])->name('allowances.index');
+        Route::get('/allowances/create', [DashboardController::class, 'createAllowances'])->name('allowances.create');
 
         //leave management
         Route::get('/leave/requests/create', [DashboardController::class, 'requestLeave'])->name('leave.create');

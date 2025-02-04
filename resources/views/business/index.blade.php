@@ -77,26 +77,35 @@
                             </div>
                         </div>
                     </li>
-                    <li class="timeline__item d-flex gap-10">
-                        <div class="timeline__icon"><span><i class="fa-light fa-box"></i></span></div>
-                        <div class="timeline__content w-100">
-                            <div class="d-flex flex-wrap gap-10 align-items-center justify-content-between">
-                                <h5 class="small">Purchased from MediaTek</h5>
-                                <span class="bd-badge bg-success">04 Mins Ago</span>
-                            </div>
-                            <p><span class="text-danger text-decoration-underline">3 days left</span> notification to
-                                submit
-                                new products</p>
-                        </div>
-                    </li>
                 </ul>
             </div>
         </div>
 
         <div class="col-xxl-8 col-xl-6 col-lg-12">
             <div class="card__wrapper height-equal" style="min-height: 459px;">
-                <div class="card-header border-0">
-                    <h5 class="card__heading-title"> <i class="fa-solid fa-bell"></i> You have tasks to be done..!</h5>
+                <div class="card-header border-0" style="margin-bottom: 50px">
+                    <h5 class="card__heading-title"> <i class="fa-solid fa-wallet"></i> Process Pay Roll for {{ date("F Y") }}! <span class="badge bg-success">READY</span> </h5>
+                </div>
+
+                <div class="row g-2" style="margin-bottom: 50px">
+                    <div class="col-md-4">
+                        <h5 class="card-title">NO. OF EMPLOYEES</h5> <br>
+                        <h5><strong>29</strong></h5>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="card-title">PAYMENT DATE</h5> <br>
+                        <h5><strong> {{ date("d, F Y") }} </strong></h5>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="card-title">TOTAL NET PAY</h5> <br>
+                        <a href="" class="btn btn-info">YET TO PROCESS</a>
+                    </div>
+                </div>
+
+                <div class="row g-2">
+                    <div class="col-md-12">
+                        <a href="" class="btn btn-primary btn-sm w-100"> <i class="fa-solid fa-arrow-right"></i> Run pay roll</a>
+                    </div>
                 </div>
 
             </div>

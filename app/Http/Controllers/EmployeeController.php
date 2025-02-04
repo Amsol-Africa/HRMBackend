@@ -332,6 +332,8 @@ class EmployeeController extends Controller
             return RequestResponse::created('Employee Added successfully.');
         });
     }
+
+
     public function filter(Request $request)
     {
         Log::debug($request->all());
@@ -348,44 +350,46 @@ class EmployeeController extends Controller
         $business_slug = session('active_business_slug');
         $business = Business::findBySlug($business_slug);
 
-        // Start building the query for employees
-        $employeesQuery = $business->employees();
+        // Get all employees
+        $allEmployees = $business->employees()->get();
 
-        // Filter by departments if provided
-        if (isset($validatedData['departments']) && count($validatedData['departments']) > 0) {
-            $employeesQuery->whereHas('department', function ($query) use ($validatedData) {
+        // Clone query for filtering
+        $filteredEmployeesQuery = clone $business->employees();
+
+        if (!empty($validatedData['departments'])) {
+            $filteredEmployeesQuery->whereHas('department', function ($query) use ($validatedData) {
                 $query->whereIn('slug', $validatedData['departments']);
             });
         }
 
-        // Filter by job categories if provided
-        if (isset($validatedData['jobCategories']) && count($validatedData['jobCategories']) > 0) {
-            $employeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
+        if (!empty($validatedData['jobCategories'])) {
+            $filteredEmployeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
                 $query->whereIn('job_category_id', JobCategory::whereIn('slug', $validatedData['jobCategories'])->pluck('id'));
             });
         }
 
-        // Filter by employment terms if provided
-        if (isset($validatedData['employmentTerms']) && count($validatedData['employmentTerms']) > 0) {
-            $employeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
+        if (!empty($validatedData['employmentTerms'])) {
+            $filteredEmployeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
                 $query->whereIn('employment_term', $validatedData['employmentTerms']);
             });
         }
 
-        // Retrieve filtered employees
-        $employees = $employeesQuery->get();
+        // Get only the employees that match the filter
+        $filteredEmployees = $filteredEmployeesQuery->get()->pluck('id')->toArray();
 
-        // Map the employees for the response
-        $employeesData = $employees->map(function ($employee) {
+        // Map response to include "checked" status
+        $employeesData = $allEmployees->map(function ($employee) use ($filteredEmployees) {
             return [
                 'id' => $employee->id,
                 'name' => $employee->user->name,
                 'department' => $employee->department->name ?? 'N/A',
+                'checked' => in_array($employee->id, $filteredEmployees), // Check only filtered employees
             ];
         });
 
         return RequestResponse::ok('Ok.', $employeesData);
     }
+
 
 
 

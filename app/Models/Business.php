@@ -28,6 +28,7 @@ class Business extends Model implements HasMedia
         'tax_pin_no',
         'business_license_no',
         'physical_address',
+        'currency',
     ];
     public function user()
     {
@@ -111,6 +112,10 @@ class Business extends Model implements HasMedia
     public function clients()
     {
         return $this->hasMany(Client::class, 'business_id');
+    }
+    public function locations()
+    {
+        return $this->hasMany(Location::class);
     }
     public function managedBusinesses()
     {

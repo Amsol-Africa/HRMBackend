@@ -14,5 +14,6 @@ class DatabaseSeeder extends Seeder
         $this->call(DepartmentSeeder::class);
         $this->call(LeaveTypeListSeeder::class);
         $this->call(IndustriesSeeder::class);
+        $this->call(PayrollFormulaSeeder::class);
     }
 }

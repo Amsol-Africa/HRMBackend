@@ -15,8 +15,8 @@ return new class extends Migration {
             $table->foreignId('payroll_formula_id')->constrained()->onDelete('cascade');
             $table->decimal('min', 15, 2);
             $table->decimal('max', 15, 2)->nullable();
-            $table->decimal('rate', 5, 2);
-            $table->decimal('amount', 10, 2);
+            $table->decimal('rate', 5, 2)->nullable();
+            $table->decimal('amount', 10, 2)->nullable();
             $table->timestamps();
         });
     }

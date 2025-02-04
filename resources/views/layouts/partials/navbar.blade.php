@@ -42,6 +42,12 @@
                                Configure Organization
                             </a>
                         </li>
+                        <li class="slide {{ request()->routeIs('business.pay-schedule') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.pay-schedule') ? 'active' : '' }}"
+                               href="{{ route('business.pay-schedule', $currentBusiness->slug) }}">
+                               Pay Schedule
+                            </a>
+                        </li>
                         <li class="slide {{ request()->routeIs('business.job-categories.index') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.job-categories.index') ? 'active' : '' }}"
                                href="{{ route('business.job-categories.index', $currentBusiness->slug) }}">
@@ -98,18 +104,54 @@
                     </ul>
                 </li>
 
+                <!-- Payroll Management Dropdown -->
+                <li class="slide has-sub {{ request()->routeIs('business.payroll.process') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}">
+                        <i class="fa-solid fa-angle-down side-menu__angle"></i>
+                        <div class="side-menu__icon"><i class="fa-solid fa-folder-open"></i></div>
+                        <span class="sidebar__menu-label">Payrolls</span>
+                    </a>
+
+                    <ul class="sidebar-menu child1">
+                        <li class="slide {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}"
+                               href="{{ route('business.payroll.process', $currentBusiness->slug) }}">
+                               Process Payroll
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Past Payrolls</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Payslips</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Salary Advances</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Loans</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Close Month</a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item" href="">Import Payrolls</a>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Payroll Settings Management Dropdown -->
-                <li class="slide has-sub {{ request()->routeIs('business.payroll.*') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active open' : '' }}">
-                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.payroll.*') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
+                <li class="slide has-sub {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
                         <i class="fa-solid fa-angle-down side-menu__angle"></i>
                         <div class="side-menu__icon"><i class="fa-solid fa-sack-dollar"></i></div>
                         <span class="sidebar__menu-label">Payroll Settings</span>
                     </a>
-                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.*') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
+                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
                         <li class="slide {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}"
                                href="{{ route('business.payroll.formula', $currentBusiness->slug) }}">
-                               List Formulas
+                               Statutory Deductions
                             </a>
                         </li>
                         <li class="slide {{ request()->routeIs('business.relief.index') ? 'active' : '' }}">
@@ -124,43 +166,17 @@
                                Deductions
                             </a>
                         </li>
+                        <li class="slide {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}"
+                               href="{{ route('business.allowances.index', $currentBusiness->slug) }}">
+                               Allowances
+                            </a>
+                        </li>
                         <li class="slide {{ request()->is('recruitment.html') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->is('recruitment.html') ? 'active' : '' }}"
                                href="recruitment.html">
                                Pay Grades
                             </a>
-                        </li>
-                    </ul>
-                </li>
-
-                <!-- Payroll Management Dropdown -->
-                <li class="slide has-sub">
-                    <a href="javascript:void(0);" class="sidebar__menu-item">
-                        <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                        <div class="side-menu__icon"><i class="fa-solid fa-folder-open"></i></div>
-                        <span class="sidebar__menu-label">Payroll Management</span>
-                    </a>
-                    <ul class="sidebar-menu child1">
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.create', $currentBusiness->slug) }}">Run a Payroll</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Past Payrolls</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="{{ route('business.employees.index', $currentBusiness->slug) }}">Payslips</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Salary Advances</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Loans</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Close Month</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="recruitment.html">Import Payrolls</a>
                         </li>
                     </ul>
                 </li>

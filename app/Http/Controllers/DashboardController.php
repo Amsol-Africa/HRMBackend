@@ -136,6 +136,12 @@ class DashboardController extends Controller
         $description = '';
         return view('job-categories.index', compact('page', 'description'));
     }
+    function paySchedule(Request $request)
+    {
+        $page = 'Pay Schedule';
+        $description = '';
+        return view('payroll.pay-schedule', compact('page', 'description'));
+    }
     public function createEmployees(Request $request)
     {
         $page = 'Create New Employee';
@@ -184,11 +190,34 @@ class DashboardController extends Controller
     }
 
 
+    public function processPayrolls(Request $request)
+    {
+        $page = 'Process Payroll';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $leavePeriods = $business->leavePeriods;
+        $departments = $business->departments;
+        $jobCategories = $business->job_categories;
+        $locations = $business->locations;
+        return view('payroll.process', compact('page', 'description', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
+    }
     public function payrollFormula(Request $request)
     {
         $page = 'Payroll Formula';
         $description = '';
-        return view('payroll.formula', compact('page', 'description'));
+
+        $deductions = [];
+
+        // NHIF
+        $deductions['nhif'] = PayrollFormula::where('slug', 'nhif')->with('brackets')->first();
+
+        // NSSF
+        $deductions['nssf'] = PayrollFormula::where('slug', 'nssf')->first();
+
+        // Housing Levy
+        $deductions['housing_levy'] = PayrollFormula::where('slug', 'housing_levy')->first();
+
+        return view('payroll.formula', compact('page', 'description', 'deductions'));
     }
     public function createPayrollFormula(Request $request)
     {
@@ -225,6 +254,20 @@ class DashboardController extends Controller
         $description = '';
         $formulas = PayrollFormula::all();
         return view('deductions.create', compact('page', 'description', 'formulas'));
+    }
+
+    public function allowances(Request $request)
+    {
+        $page = 'Allowances';
+        $description = '';
+        return view('allowances.index', compact('page', 'description'));
+    }
+
+    public function createAllowances(Request $request)
+    {
+        $page = 'Create Allowances';
+        $description = '';
+        return view('allowances.create', compact('page', 'description'));
     }
 
 

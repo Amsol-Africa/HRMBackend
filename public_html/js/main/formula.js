@@ -5,9 +5,9 @@ import PayrollFormulasService from "/js/client/PayrollFormulasService.js";
 const requestClient = new RequestClient();
 const payrollFormulasService = new PayrollFormulasService(requestClient);
 
-window.getPayrollFormulas = async function (page = 1) {
+window.getPayrollFormulas = async function (formula = 'nhif') {
     try {
-        let data = {page:page};
+        let data = {formula:formula};
         const payrollFormulasTable = await payrollFormulasService.fetch(data);
         $("#payrollformulasContainer").html(payrollFormulasTable);
         new DataTable('#payrollFormulas');

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('tax_pin_no')->nullable();
             $table->string('business_license_no')->nullable();
             $table->string('physical_address')->nullable();
+            $table->string('currency')->nullable();
             $table->timestamps();
         });
     }
