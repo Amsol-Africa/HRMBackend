@@ -15,6 +15,8 @@
                     <img src="{{ $currentBusiness->getImageUrl() }}" style="height: 20px" alt="">
                     <h2 class="header__title ms-1">{{ $currentBusiness->company_name }}. <span> </h2>
                 </div>
+
+                @if (auth()->user()->hasRole('business-admin'))
                 <div>
                     <form action="">
                         <select name="active_business" class="form-select" id="active_business">
@@ -25,6 +27,7 @@
                         </select>
                     </form>
                 </div>
+                @endif
 
             </div>
         </div>

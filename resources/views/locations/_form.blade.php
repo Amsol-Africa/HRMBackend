@@ -1,5 +1,9 @@
 <form id="locationsForm">
-    <input type="hidden" name="location_slug" id="location_slug" value="{{ isset($location) &&!empty($location)? $location->slug: '' }}">
+
+    @if (isset($location))
+        <input type="hidden" name="location_slug" id="location_slug" value="{{ isset($location) &&!empty($location)? $location->slug: '' }}">
+    @endif
+
 
     <div class="form-group mb-3">
         <label for="name">Location Name</label>

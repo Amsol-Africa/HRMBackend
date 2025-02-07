@@ -182,7 +182,7 @@
                     <h6 class="mb-3">Employee Summary</h6>
 
                     <div id="#employeePayslipsContainer">
-                        {{ loader() }}
+
                     </div>
 
                 </div>
@@ -196,8 +196,6 @@
         <script>
 
             document.addEventListener('DOMContentLoaded', function () {
-
-                getPayslips();
 
                 const filters = ['departments', 'job_categories', 'employment_terms', 'locations'];
 

@@ -73,7 +73,7 @@ class AuthenticatedSessionController extends Controller
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
-            return route('employee.index', $business->slug);
+            return route('myaccount.index', $business->slug);
 
         }
     }

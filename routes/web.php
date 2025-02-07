@@ -6,6 +6,7 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeDashboardController;
 
 
 Route::middleware(['auth'])->group(function () {
@@ -71,7 +72,7 @@ Route::middleware(['auth'])->group(function () {
 
 
     Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
-        Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
     });
 
 });
