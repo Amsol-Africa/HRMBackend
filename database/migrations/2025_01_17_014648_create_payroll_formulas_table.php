@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->string('formula_type')->nullable(); //rate or amount
             $table->enum('calculation_basis', ['basic_pay', 'gross_pay', 'cash_pay', 'taxable_pay']);
-            $table->string('formula_expression')->nullable();
             $table->boolean('is_progressive')->default(false);
             $table->decimal('minimum_amount', 15, 2)->nullable();
             $table->timestamps();

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class EmployeePayroll extends Model
 {
     protected $fillable = [
+        'payroll_id',
         'employee_id',
         'basic_salary',
         'housing_allowance',
@@ -20,6 +21,16 @@ class EmployeePayroll extends Model
         'deductions_after_tax',
         'net_pay'
     ];
+    public function payroll()
+    {
+        return $this->belongsTo(Payroll::class);
+    }
+
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
     public static function calculatePayslip($employee)
     {
         $basic_salary = $employee->salary;
@@ -38,7 +49,7 @@ class EmployeePayroll extends Model
         $paye = PayrollFormula::calculate('paye', $taxable_income);
 
         // Apply personal relief from DB
-        $personal_relief = PayrollFormula::getFixedAmount('personal_relief');
+        $personal_relief = PayrollFormula::getFixedAmount('personal-relief');
         $pay_after_tax = max(0, $paye - $personal_relief);
 
         // Additional deductions
@@ -48,9 +59,19 @@ class EmployeePayroll extends Model
         $net_pay = $gross_pay - ($pay_after_tax + $deductions_after_tax);
 
         return self::create(compact(
-            'employee_id', 'basic_salary', 'housing_allowance', 'gross_pay',
-            'nhif', 'nssf', 'housing_levy', 'taxable_income', 'paye',
-            'personal_relief', 'pay_after_tax', 'deductions_after_tax', 'net_pay'
+            'employee_id',
+            'basic_salary',
+            'housing_allowance',
+            'gross_pay',
+            'nhif',
+            'nssf',
+            'housing_levy',
+            'taxable_income',
+            'paye',
+            'personal_relief',
+            'pay_after_tax',
+            'deductions_after_tax',
+            'net_pay'
         ));
     }
 }

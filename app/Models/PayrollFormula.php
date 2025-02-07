@@ -35,4 +35,60 @@ class PayrollFormula extends Model
     {
         return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
     }
+    public static function calculate($slug, $amount)
+    {
+        // Fetch formula by slug (e.g., 'paye', 'nhif', 'nssf', 'housing-levy')
+        $formula = self::where('slug', $slug)->first();
+
+        if (!$formula) {
+            throw new \Exception("Payroll formula '{$slug}' not found.");
+        }
+
+        // Determine calculation type (Flat Rate or Progressive)
+        if ($formula->is_progressive) {
+            return self::calculateProgressive($amount, $formula->brackets);
+        }
+
+        return self::calculateFlat($amount, $formula);
+    }
+
+    private static function calculateFlat($amount, $formula)
+    {
+        if ($formula->formula_type === 'rate') {
+            return ($amount * ($formula->minimum_amount / 100));
+        }
+
+        return $formula->minimum_amount;
+    }
+
+    private static function calculateProgressive($amount, $brackets)
+    {
+        $tax = 0;
+
+        foreach ($brackets as $bracket) {
+            $min = $bracket['min'];
+            $max = $bracket['max'] ?? null;
+            $rate = $bracket['rate'] ?? 0;
+            $fixed = $bracket['amount'] ?? 0;
+
+            if ($amount > $min) {
+                $taxableAmount = $max ? min($amount, $max) - $min : $amount - $min;
+                $tax += ($taxableAmount * ($rate / 100)) + $fixed;
+            }
+        }
+
+        return $tax;
+    }
+
+    public static function getFixedAmount(string $slug)
+    {
+        $formula = self::where('slug', $slug)->first();
+
+        if (!$formula) {
+            throw new \Exception("Payroll formula '{$slug}' not found.");
+        }
+
+        return $formula->minimum_amount;
+    }
+
 }

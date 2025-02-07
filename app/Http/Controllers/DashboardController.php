@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Module;
+use App\Models\Payroll;
 use App\Models\User;
 use App\Models\Business;
 use App\Models\Industry;
@@ -104,6 +105,13 @@ class DashboardController extends Controller
         $clientBusinesses = $business->managedBusinesses;
         return view('clients.index', compact('page', 'description', 'clientBusinesses'));
     }
+    function locations(Request $request)
+    {
+        $page = 'Locations';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        return view('locations.index', compact('page', 'description'));
+    }
     function requestAccess(Request $request)
     {
         $page = 'Request Access';
@@ -189,7 +197,25 @@ class DashboardController extends Controller
         return view('shifts.index', compact('page', 'description'));
     }
 
+    public function payrolls(Request $request)
+    {
+        $page = 'Payrolls';
+        $description = '';
+        return view('payroll.index', compact('page', 'description'));
+    }
 
+    public function payslips(Request $request, String $business_slug, Payroll $payroll)
+    {
+        $page = 'Payslips';
+        $description = '';
+        return view('payroll.slips', compact('page', 'description', 'payroll'));
+    }
+    public function payrollImport(Request $request)
+    {
+        $page = 'Import Payrolls';
+        $description = '';
+        return view('payroll.import', compact('page', 'description'));
+    }
     public function processPayrolls(Request $request)
     {
         $page = 'Process Payroll';
@@ -268,6 +294,26 @@ class DashboardController extends Controller
         $page = 'Create Allowances';
         $description = '';
         return view('allowances.create', compact('page', 'description'));
+    }
+
+    public function advances(Request $request)
+    {
+        $page = 'Advances';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        $locations = $business->locations;
+        return view('advances.index', compact('page', 'description', 'employees'));
+    }
+
+    public function loans(Request $request)
+    {
+        $page = 'Loans';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        $locations = $business->locations;
+        return view('loans.index', compact('page', 'description', 'employees'));
     }
 
 

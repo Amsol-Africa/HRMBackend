@@ -121,4 +121,29 @@ class Employee extends Model implements HasMedia
         }
         return asset('media/avatar.png');
     }
+
+    public function reliefs()
+    {
+        return $this->hasMany(EmployeeRelief::class);
+    }
+    public function deductions()
+    {
+        return $this->hasMany(EmployeeDeduction::class);
+    }
+    public function allowances()
+    {
+        return $this->hasMany(EmployeeAllowance::class);
+    }
+    public function payrolls()
+    {
+        return $this->hasMany(EmployeePayroll::class);
+    }
+    public function advances()
+    {
+        return $this->hasMany(Advance::class);
+    }
+    public function loans()
+    {
+        return $this->hasMany(Loan::class);
+    }
 }

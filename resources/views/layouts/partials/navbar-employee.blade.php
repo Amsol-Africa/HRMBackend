@@ -11,63 +11,55 @@
             <ul class="main-menu" style="padding-top: 70px">
                 <li class="sidebar__menu-category"><span class="category-name">Main</span></li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
                         <div class="side-menu__icon"><i class="fa-solid fa-home"></i></div>
                         <span class="sidebar__menu-label">Dashboard</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-user"></i></div>
                         <span class="sidebar__menu-label">Profile Data</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-calendar-plus"></i></div>
                         <span class="sidebar__menu-label">Request a Leave</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-calendar-check"></i></div>
                         <span class="sidebar__menu-label">My Leave Requests</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-clock"></i></div>
                         <span class="sidebar__menu-label">Attendance</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
-                        <span class="sidebar__menu-label">p9 Forms</span>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-file-alt"></i></div>
+                        <span class="sidebar__menu-label">P9 Forms</span>
                     </a>
                 </li>
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-"></i></div>
+                <li class="slide">
+                    <a href="" class="sidebar__menu-item">
+                        <div class="side-menu__icon"><i class="fa-solid fa-money-bill-wave"></i></div>
                         <span class="sidebar__menu-label">Payment Slips</span>
                     </a>
                 </li>
 
-                <!-- Settings Dropdown -->
                 <li class="sidebar__menu-category"><span class="category-name">Settings</span></li>
 
                 <li class="slide">
@@ -89,6 +81,5 @@
         </nav>
     </div>
 </div>
-
 
 <div class="app__offcanvas-overlay"></div>

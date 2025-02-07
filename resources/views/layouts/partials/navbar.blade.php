@@ -27,6 +27,13 @@
                     </a>
                 </li>
 
+                <!-- Business Locations -->
+                <li class="slide {{ request()->routeIs('business.locations.*') ? 'active' : '' }}">
+                    <a href="{{ route('business.locations.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.locations.*') ? 'active' : '' }}">
+                        <div class="side-menu__icon"><i class="fa-solid fa-location-dot"></i></div> <span class="sidebar__menu-label">Locations</span>
+                    </a>
+                </li>
+
                 <li class="sidebar__menu-category"><span class="category-name">Organization</span></li>
 
                 <li class="slide has-sub {{ request()->routeIs('business.organization-setup', 'business.job-categories.index', 'business.departments.index', 'business.shifts.index') ? 'active open' : '' }}">
@@ -105,8 +112,8 @@
                 </li>
 
                 <!-- Payroll Management Dropdown -->
-                <li class="slide has-sub {{ request()->routeIs('business.payroll.process') ? 'active open' : '' }}">
-                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}">
+                <li class="slide has-sub {{ request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.advances.index') || request()->routeIs('business.loans.index') || request()->routeIs('business.payroll.index') || request()->routeIs('business.payroll.payslips') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
                         <i class="fa-solid fa-angle-down side-menu__angle"></i>
                         <div class="side-menu__icon"><i class="fa-solid fa-folder-open"></i></div>
                         <span class="sidebar__menu-label">Payrolls</span>
@@ -120,22 +127,34 @@
                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="">Past Payrolls</a>
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.index') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.index', $currentBusiness->slug) }}">
+                                Past Payrolls
+                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="">Payslips</a>
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.payslips') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.payslips', $currentBusiness->slug) }}">
+                                Payslips
+                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="">Salary Advances</a>
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.advances.index') ? 'active' : '' }}"
+                                href="{{ route('business.advances.index', $currentBusiness->slug) }}">
+                                Salary Advances
+                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="">Loans</a>
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.loans.index') ? 'active' : '' }}"
+                                href="{{ route('business.loans.index', $currentBusiness->slug) }}">
+                                Loans
+                            </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item" href="">Close Month</a>
-                        </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="">Import Payrolls</a>
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.import') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.import', $currentBusiness->slug) }}">
+                                Import Payrolls
+                            </a>
                         </li>
                     </ul>
                 </li>

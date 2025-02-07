@@ -1,17 +1,17 @@
 <x-app-layout>
 
-    <div class="row mb-4">
+    <div class="row mb-3">
         <div class="col-md-8 mx-auto">
             <div class="card">
                 <div class="card-body">
                     <form action="" id="importEmployeesForm">
-                        <label for="csv_file" class="mb-2">Employees CSV File</label>
+                        <label for="csv_file" class="mb-2">Payrolls CSV File</label>
                         <div class="row">
                             <div class="col-md-8">
                                 <input type="file" name="csv_file" id="csv_file" class="form-control">
                             </div>
                             <div class="col-md-4">
-                                <button type="button" class="btn btn-primary w-100" onclick="importEmployees(this)"> <i class="bi bi-cloud-upload"></i> Import Employees</button>
+                                <button type="button" class="btn btn-primary w-100" onclick="importPayrolls(this)"> <i class="bi bi-cloud-upload"></i> Import Payrolls</button>
                             </div>
                         </div>
                     </form>
@@ -19,7 +19,6 @@
             </div>
         </div>
     </div>
-
 
     <div class="row align-items-center justify-content-center">
         <div class="col-md-3">
@@ -44,7 +43,7 @@
     </div>
 
     @push('scripts')
-        <script src="{{ asset('js/main/employees.js') }}" type="module"></script>
+        <script src="{{ asset('js/main/payrolls.js') }}" type="module"></script>
     @endpush
 
 </x-app-layout>

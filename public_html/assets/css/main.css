@@ -781,9 +781,7 @@ input[type=file] {
 .btn.btn-sm {
   padding: 4px 12px;
 }
-.btn i {
-  margin-inline-end: 8px;
-}
+
 [dir=rtl] .btn i {
   margin-inline-start: 8px;
 }

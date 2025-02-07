@@ -10,6 +10,7 @@ use App\Models\LeavePolicy;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Log;
 
 class LeaveTypeController extends Controller
 {
@@ -25,6 +26,9 @@ class LeaveTypeController extends Controller
 
     public function store(Request $request)
     {
+
+        Log::debug($request->all());
+
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -35,9 +39,8 @@ class LeaveTypeController extends Controller
             'requires_attachment' => 'required|boolean',
             'max_continuous_days' => 'nullable|integer',
             'min_notice_days' => 'required|integer',
-            // Leave policy fields
-            'department' => 'required|exists:departments,slug',
-            'job_category' => 'required|exists:job_categories,slug',
+            'department' => 'required|string',
+            'job_category' => 'required|string',
             'gender_applicable' => 'required|string|in:all,male,female',
             'prorated_for_new_employees' => 'required|boolean',
             'default_days' => 'required|integer',
@@ -51,8 +54,6 @@ class LeaveTypeController extends Controller
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
-            $department = Department::findBySlug($validatedData['department']);
-            $job_category = JobCategory::findBySlug($validatedData['job_category']);
 
             $leaveType = $business->leaveTypes()->create([
                 'name' => $validatedData['name'],
@@ -67,21 +68,31 @@ class LeaveTypeController extends Controller
                 'is_active' => true,
             ]);
 
-            $leaveType->leavePolicies()->create([
-                'department_id' => $department->id,
-                'job_category_id' => $job_category->id,
-                'gender_applicable' => $validatedData['gender_applicable'],
-                'prorated_for_new_employees' => $validatedData['prorated_for_new_employees'],
-                'default_days' => $validatedData['default_days'],
-                'accrual_frequency' => $validatedData['accrual_frequency'],
-                'accrual_amount' => $validatedData['accrual_amount'],
-                'max_carryover_days' => $validatedData['max_carryover_days'],
-                'minimum_service_days_required' => $validatedData['minimum_service_days_required'],
-                'effective_date' => $validatedData['effective_date'],
-                'end_date' => $validatedData['end_date'],
-            ]);
+            $departments = ($validatedData['department'] === 'all') ? $business->departments->pluck('id')->toArray() : [Department::findBySlug($validatedData['department'])->id];
 
-            return RequestResponse::created('Leave type and policy created successfully.');
+            $jobCategories = ($validatedData['job_category'] === 'all') ? $business->job_categories->pluck('id')->toArray() : [JobCategory::findBySlug($validatedData['job_category'])->id];
+
+            $gender = $validatedData['gender_applicable'] === 'all' ? 'all' : $validatedData['gender_applicable'];
+
+            foreach ($departments as $department_id) {
+                foreach ($jobCategories as $job_category_id) {
+                    $leaveType->leavePolicies()->create([
+                        'department_id' => $department_id,
+                        'job_category_id' => $job_category_id,
+                        'gender_applicable' => $gender,
+                        'prorated_for_new_employees' => $validatedData['prorated_for_new_employees'],
+                        'default_days' => $validatedData['default_days'],
+                        'accrual_frequency' => $validatedData['accrual_frequency'],
+                        'accrual_amount' => $validatedData['accrual_amount'],
+                        'max_carryover_days' => $validatedData['max_carryover_days'],
+                        'minimum_service_days_required' => $validatedData['minimum_service_days_required'],
+                        'effective_date' => $validatedData['effective_date'],
+                        'end_date' => $validatedData['end_date'],
+                    ]);
+                }
+            }
+
+            return RequestResponse::created('Leave type and policies created successfully.');
         });
     }
 
@@ -107,7 +118,6 @@ class LeaveTypeController extends Controller
     public function update(Request $request)
     {
         $validatedData = $request->validate([
-            'leave_type_slug' => 'required|string|exists:leave_types,slug',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'requires_approval' => 'required|boolean',
@@ -117,9 +127,8 @@ class LeaveTypeController extends Controller
             'requires_attachment' => 'required|boolean',
             'max_continuous_days' => 'nullable|integer',
             'min_notice_days' => 'required|integer',
-            // Leave policy fields
-            'department' => 'required|exists:departments,slug',
-            'job_category' => 'required|exists:job_categories,slug',
+            'department' => 'required|string',
+            'job_category' => 'required|string',
             'gender_applicable' => 'required|string|in:all,male,female',
             'prorated_for_new_employees' => 'required|boolean',
             'default_days' => 'required|integer',

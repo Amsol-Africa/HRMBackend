@@ -5,87 +5,90 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="row mb-3">
-                        <h6 class="mb-3">Start a Payrun</h6>
-                        <div class="col-md-4">
-                            <label for="start_date" class="form-label">Start Date</label>
-                            <input type="text" name="start_date" id="start_date" class="form-control datepicker" placeholder="Start Date">
-                        </div>
-                        <div class="col-md-4">
-                            <label for="end_date" class="form-label">End Date</label>
-                            <input type="text" name="end_date" id="end_date" class="form-control datepicker" placeholder="End Date">
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <label for="start_date" class="form-label">Location / Branch</label>
-                            <select name="locations[]" id="locations" class="form-select select2-multiple" multiple>
-                                <option value="all">Select</option>
-                                @foreach ($locations as $location)
-                                    <option value="{{ $location->slug }}">{{ $location->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="departments" class="form-label">Departments</label>
-                            <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
-                                <option value="all">All Departments</option>
-                                @foreach ($departments as $department)
-                                    <option value="{{ $department->slug }}">{{ $department->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="job_categories" class="form-label">Job Categories</label>
-                            <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
-                                <option value="all">All Job Categories</option>
-                                @foreach ($jobCategories as $jobCategory)
-                                    <option value="{{ $jobCategory->slug }}">{{ $jobCategory->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="employment_terms" class="form-label">Employment Terms</label>
-                            <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
-                                <option value="all">All Terms</option>
-                                <option value="permanent">Permanent</option>
-                                <option value="contract">Contract</option>
-                                <option value="temporary">Temporary</option>
-                                <option value="internship">Internship</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-4">
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
-                                <label class="form-check-label" for="">Repay Loans</label>
+                    <form id="processPayroll">
+                        <div class="row mb-3">
+                            <h6 class="mb-3">Start a Payrun</h6>
+                            <div class="col-md-4">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="text" name="start_date" id="start_date" class="form-control datepicker" placeholder="Start Date">
                             </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
-                                <label class="form-check-label" for="">Recover Advance</label>
-                            </div>
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans">
-                                <label class="form-check-label" for="">Pay Overtime</label>
+                            <div class="col-md-4">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="text" name="end_date" id="end_date" class="form-control datepicker" placeholder="End Date">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="row mb-3">
-                        <h6 class="mb-3">Selected Employees</h6>
-                        <div id="employee-checkboxes" class="form-group">
-                            <!-- Dynamic employee checkboxes will be added here -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="start_date" class="form-label">Location / Branch</label>
+                                <select name="locations[]" id="locations" class="form-select select2-multiple" multiple>
+                                    <option value="all">Select</option>
+                                    @foreach ($locations as $location)
+                                        <option value="{{ $location->slug }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="departments" class="form-label">Departments</label>
+                                <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
+                                    <option value="all">All Departments</option>
+                                    @foreach ($departments as $department)
+                                        <option value="{{ $department->slug }}">{{ $department->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="job_categories" class="form-label">Job Categories</label>
+                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
+                                    <option value="all">All Job Categories</option>
+                                    @foreach ($jobCategories as $jobCategory)
+                                        <option value="{{ $jobCategory->slug }}">{{ $jobCategory->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="employment_terms" class="form-label">Employment Terms</label>
+                                <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
+                                    <option value="all">All Terms</option>
+                                    <option value="permanent">Permanent</option>
+                                    <option value="contract">Contract</option>
+                                    <option value="temporary">Temporary</option>
+                                    <option value="internship">Internship</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-md-12">
-                            <button class="btn btn-primary w-100" onclick="processPayroll(this)"> <i class="bi bi-check-circle"></i> Process Payroll </button>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
+                                    <label class="form-check-label" for="">Repay Loans</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
+                                    <label class="form-check-label" for="">Recover Advance</label>
+                                </div>
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans">
+                                    <label class="form-check-label" for="">Pay Overtime</label>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+
+                        <div class="row mb-3">
+                            <h6 class="mb-3">Selected Employees</h6>
+                            <div id="employee-checkboxes" class="form-group">
+                                <!-- Dynamic employee checkboxes will be added here -->
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-primary w-100" onclick="processPayroll(this)"> <i class="bi bi-check-circle"></i> Process Payroll </button>
+                            </div>
+                        </div>
+
+                    </form>
 
                 </div>
             </div>
@@ -188,12 +191,14 @@
     </div>
 
     @push('scripts')
-        @include('modals.payroll-formula')
-        <script src="{{ asset('js/main/formula.js') }}" type="module"></script>
+        <script src="{{ asset('js/main/payroll.js') }}" type="module"></script>
         <script src="{{ asset('js/main/filter-employees.js') }}" type="module"></script>
         <script>
 
             document.addEventListener('DOMContentLoaded', function () {
+
+                getPayslips();
+
                 const filters = ['departments', 'job_categories', 'employment_terms', 'locations'];
 
                 filters.forEach(filter => {

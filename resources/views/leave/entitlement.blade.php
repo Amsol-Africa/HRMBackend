@@ -140,12 +140,12 @@
                         const employees = await filterEmployees(data);
 
                         const checkboxesContainer = document.getElementById('employee-checkboxes');
-                        checkboxesContainer.innerHTML = '';
+                        checkboxesContainer.innerHTML = ''; // Clear previous checkboxes
 
                         employees.forEach(employee => {
                             const checkbox = `
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="employee_${employee.id}" name="employees[]" value="${employee.id}">
+                                    <input type="checkbox" class="form-check-input" id="employee_${employee.id}" name="employees[]" value="${employee.id}" ${employee.checked ? 'checked' : ''}>
                                     <label class="form-check-label" for="employee_${employee.id}">${employee.name} (${employee.department})</label>
                                 </div>
                             `;
@@ -156,9 +156,10 @@
                     }
                 }
 
-                function getSelectedValues(elementId) {
-                    const selectElement = document.getElementById(elementId);
-                    return Array.from(selectElement.selectedOptions).map(option => option.value);
+                // Helper function (if not already defined)
+                function getSelectedValues(selector) {
+                    const elements = document.querySelectorAll(`#${selector} input[type="checkbox"]:checked`);
+                    return Array.from(elements).map(el => el.value);
                 }
 
                 function addRow() {

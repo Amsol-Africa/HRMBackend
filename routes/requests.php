@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\AdvanceController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\LeaveEntitlementController;
+use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ReliefController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShiftController;
@@ -115,5 +119,37 @@ Route::middleware(['auth'])->group(function () {
         Route::post('access', [ClientController::class, 'impersonateManagedBusiness'])->name('access');
         Route::post('destroy', [ClientController::class, 'destroy'])->name('destroy');
         Route::post('update', [ClientController::class, 'update'])->name('update');
+    });
+    Route::name('locations.')->prefix('locations')->group(function () {
+        Route::post('edit', [LocationController::class, 'edit'])->name('edit');
+        Route::post('store', [LocationController::class, 'store'])->name('store');
+        Route::post('fetch', [LocationController::class, 'fetch'])->name('fetch');
+        Route::post('show', [LocationController::class, 'show'])->name('show');
+        Route::post('destroy', [LocationController::class, 'destroy'])->name('destroy');
+        Route::post('update', [LocationController::class, 'update'])->name('update');
+    });
+    Route::name('payroll.')->prefix('payroll')->group(function () {
+        Route::post('edit', [PayrollController::class, 'edit'])->name('edit');
+        Route::post('store', [PayrollController::class, 'store'])->name('store');
+        Route::post('fetch', [PayrollController::class, 'fetch'])->name('fetch');
+        Route::post('slips', [PayrollController::class, 'slips'])->name('slips');
+        Route::post('slips/show', [PayrollController::class, 'showSlip'])->name('slips.show');
+        Route::post('show', [PayrollController::class, 'show'])->name('show');
+        Route::post('destroy', [PayrollController::class, 'destroy'])->name('destroy');
+        Route::post('update', [PayrollController::class, 'update'])->name('update');
+    });
+    Route::name('advances.')->prefix('advances')->group(function () {
+        Route::post('edit', [AdvanceController::class, 'edit'])->name('edit');
+        Route::post('store', [AdvanceController::class, 'store'])->name('store');
+        Route::post('fetch', [AdvanceController::class, 'fetch'])->name('fetch');
+        Route::post('delete', [AdvanceController::class, 'destroy'])->name('delete');
+        Route::post('update', [AdvanceController::class, 'update'])->name('update');
+    });
+    Route::name('loans.')->prefix('loans')->group(function () {
+        Route::post('edit', [LoanController::class, 'edit'])->name('edit');
+        Route::post('store', [LoanController::class, 'store'])->name('store');
+        Route::post('fetch', [LoanController::class, 'fetch'])->name('fetch');
+        Route::post('delete', [LoanController::class, 'destroy'])->name('delete');
+        Route::post('update', [LoanController::class, 'update'])->name('update');
     });
 });
