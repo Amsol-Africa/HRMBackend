@@ -5,11 +5,11 @@ import LeaveEntitlementsService from "/js/client/LeaveEntitlementsService.js";
 const requestClient = new RequestClient();
 const leaveEntitlementsService = new LeaveEntitlementsService(requestClient);
 
-window.getLeaveEntitlements = async function (page = 1) {
+window.getLeaveEntitlements = async function (page = 1, location = null) {
     try {
-        let data = {page:page};
+        let data = { page: page, location: location };
         const leaveEntitlementss = await leaveEntitlementsService.fetch(data);
-        $("#leaveEntitlementsContainer").html(leaveEntitlementss);
+        $('#leaveEntitlementsContainer').html(leaveTable);
         new DataTable('#leaveEntitlementsTable');
     } catch (error) {
         console.error("Error loading user data:", error);

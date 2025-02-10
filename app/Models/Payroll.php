@@ -34,9 +34,9 @@ class Payroll extends Model
         return $this->hasMany(EmployeePayroll::class);
     }
 
-    public static function getPayrolls($businessId)
+    public static function getPayrolls($col, $value)
     {
-        return self::where('business_id', $businessId)->get();
+        return self::where($col, $value)->get();
     }
 
     public function getPayslips()

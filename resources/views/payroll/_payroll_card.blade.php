@@ -1,7 +1,19 @@
 <div class="card h-100">
     <div class="card-header border-0">
         <h5 class="card__heading-title">
-            <i class="fa-solid fa-wallet"></i> Payroll for {{ date("F Y", strtotime($payroll->start_date)) }} - {{ date("F Y", strtotime($payroll->end_date)) }}
+
+            <?php
+                $startDate = date("F", strtotime($payroll->start_date));
+                $endDate = date("F", strtotime($payroll->end_date));
+
+                if ($startDate == $endDate) {
+                    echo '<i class="fa-solid fa-wallet"></i> Payroll for ' . $startDate . ' ' . date("Y", strtotime($payroll->start_date));
+                } else {
+                    echo '<i class="fa-solid fa-wallet"></i> Payroll from this ' . $startDate . ' to this ' . $endDate . ', ' . date("Y", strtotime($payroll->start_date)) .
+                        (date("Y", strtotime($payroll->end_date)) != date("Y", strtotime($payroll->start_date)) ? ', ' . date("Y", strtotime($payroll->end_date)) : '');
+                }
+            ?>
+
             @if ($payroll->employeePayrolls()->count() > 0)
             <span class="badge bg-success">PROCESSED</span>
             @else

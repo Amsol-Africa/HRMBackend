@@ -32,6 +32,10 @@ class Location extends Model
     {
         return $this->hasMany(Employee::class);
     }
+    public function payrolls(): HasMany
+    {
+        return $this->hasMany(Payroll::class);
+    }
     public function departments(): HasMany
     {
         return $this->hasMany(Department::class);

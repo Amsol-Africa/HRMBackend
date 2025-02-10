@@ -15,7 +15,6 @@ class LeaveEntitlement extends Model
         'employee_id',
         'leave_type_id',
         'leave_period_id',
-        'carry_forward',
         'entitled_days',
         'accrued_days',
         'total_days',

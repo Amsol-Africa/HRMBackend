@@ -17,6 +17,7 @@ class Employee extends Model implements HasMedia
         'employee_code',
         'department_id',
         'business_id',
+        'location_id',
 
         'gender',
         'alternate_phone',
@@ -53,6 +54,10 @@ class Employee extends Model implements HasMedia
     public function business()
     {
         return $this->belongsTo(Business::class);
+    }
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
     public function spouse()
     {

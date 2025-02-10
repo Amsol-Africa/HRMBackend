@@ -16,33 +16,87 @@ class LeaveEntitlementController extends Controller
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $leavePeriods = $business->leavePeriods()->get();
-        $leavePeriodTable = view('leave._leave_periods_table', compact('leavePeriods'))->render();
-        return RequestResponse::ok('Leave periods fetched successfully.', $leavePeriodTable);
+
+        $leaveEntitlementsQuery = LeaveEntitlement::where('business_id', $business->id)
+            ->whereHas('employee', function ($query) {
+                $query->whereNull('location_id');
+            });
+
+        if ($request->has('location_id')) {
+            $leaveEntitlementsQuery = LeaveEntitlement::whereHas('employee', function ($query) use ($request) {
+                $query->where('location_id', $request->location_id);
+            });
+        }
+
+        $leaveEntitlements = $leaveEntitlementsQuery->with(['employee', 'leaveType', 'leavePeriod'])->get();
+
+        $leaveEntitlementsTable = view('leave._leave_entitlements_table', compact('leaveEntitlements'))->render();
+        return RequestResponse::ok('Leave entitlements fetched successfully.', $leaveEntitlementsTable);
     }
-    function store(Request $request)
+    public function store(Request $request)
     {
         Log::debug($request->all());
 
         $validatedData = $request->validate([
             'leave_period_id' => 'required|exists:leave_periods,id',
-            'department' => 'nullable|string',
-            'job_category' => 'nullable|string',
-            'employment_term' => 'nullable|string',
-            'employee_ids' => 'required|array',
-            'employee_ids.*' => 'nullable|exists:employees,id',
+            'employees' => 'required|array',
+            'employees.*' => 'nullable|exists:employees,id',
             'leave_type_ids' => 'required|array',
             'leave_type_ids.*' => 'required|exists:leave_types,id',
             'entitled_days' => 'required|array',
             'entitled_days.*' => 'required|numeric|min:0',
-            'total_days' => 'required|array',
-            'total_days.*' => 'required|numeric|min:0',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
 
-            return RequestResponse::created('Leave period created successfully.');
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.', 404);
+            }
+
+            $leaveEntitlements = [];
+            foreach ($validatedData['employees'] as $employeeId) {
+                foreach ($validatedData['leave_type_ids'] as $index => $leaveTypeId) {
+                    $entitledDays = $validatedData['entitled_days'][$index] ?? 0;
+
+                    $existingEntitlement = LeaveEntitlement::where([
+                        'business_id' => $business->id,
+                        'employee_id' => $employeeId,
+                        'leave_type_id' => $leaveTypeId,
+                        'leave_period_id' => $validatedData['leave_period_id'],
+                    ])->first();
+
+                    if ($existingEntitlement) {
+                        // If entitlement exists, update it
+                        $existingEntitlement->update([
+                            'entitled_days' => $entitledDays,
+                            'total_days' => $entitledDays,
+                            'days_remaining' => $entitledDays - $existingEntitlement->days_taken,
+                        ]);
+                    } else {
+                        // If new, create entitlement
+                        $leaveEntitlements[] = [
+                            'business_id' => $business->id,
+                            'employee_id' => $employeeId,
+                            'leave_type_id' => $leaveTypeId,
+                            'leave_period_id' => $validatedData['leave_period_id'],
+                            'entitled_days' => $entitledDays,
+                            'total_days' => $entitledDays,
+                            'days_taken' => 0,
+                            'days_remaining' => $entitledDays,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                }
+            }
+
+            if (!empty($leaveEntitlements)) {
+                LeaveEntitlement::insert($leaveEntitlements);
+            }
+
+            return RequestResponse::created('Leave entitlements assigned successfully.');
         });
     }
+
 }

@@ -5,28 +5,38 @@ namespace App\Http\Controllers;
 use App\Models\Payroll;
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
+use App\Models\EmployeePayroll;
 use App\Services\PayrollService;
+use App\Services\PayslipService;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PayrollController extends Controller
 {
-    protected $payrollService;
+    protected $payrollService, $payslipService;
     use HandleTransactions;
 
-    public function __construct(PayrollService $payrollService)
+    public function __construct(PayrollService $payrollService, PayslipService $payslipService)
     {
         $this->payrollService = $payrollService;
+        $this->payslipService = $payslipService;
     }
 
-    public function fetch()
+    public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $payrolls = Payroll::getPayrolls($business->id);
-        $payrollTable = view('payroll._payroll_list', compact('payrolls'))->render();
+        $payrolls = Payroll::getPayrolls('business_id', $business->id);
+        $disp_location = $business->company_name;
+        if ($request->has('location') && !empty($request->location)) {
+            $location = Location::findBySlug($request->location);
+            $payrolls = Payroll::getPayrolls('location_id', $location->id);
+            $disp_location = $location->name;
+        }
+        $payrollTable = view('payroll._payroll_list', compact('payrolls', 'disp_location'))->render();
         return RequestResponse::ok('Payrolls retrieved successfully.', $payrollTable);
     }
 
@@ -34,26 +44,55 @@ class PayrollController extends Controller
     {
         $payroll = Payroll::findOrFail($request->payroll);
         $payslips = $payroll->getPayslips();
+
+        $totalEmployees = $payslips->count();
+        $totalPayrollCost = $payslips->sum('gross_pay');
+        $totalNetPay = $payslips->sum('net_pay');
+        $totalTaxes = $payslips->sum('paye');
+        $totalPreTaxDeductions = $payslips->sum('nhif') + $payslips->sum('nssf') + $payslips->sum('housing_levy');
+        $totalPostTaxDeductions = $payslips->sum('deductions_after_tax');
+
+        $period = date('F Y', strtotime($payroll->end_date ?? now()));
+
+        $payDay = date('jS F Y', strtotime($payroll->end_date ?? now()->endOfMonth()));
+
         $payslipTable = view('payroll._payslips_table', compact('payslips'))->render();
-        return RequestResponse::ok('Payslips retrieved successfully.', $payslipTable);
+
+        return RequestResponse::ok('Payslips retrieved successfully.', [
+            'payslipTable' => $payslipTable,
+            'summary' => [
+                'period' => $period,
+                'pay_day' => $payDay,
+                'employees' => $totalEmployees,
+                'payroll_cost' => $totalPayrollCost,
+                'net_pay' => $totalNetPay,
+                'taxes' => $totalTaxes,
+                'pre_tax_deductions' => $totalPreTaxDeductions,
+                'post_tax_deductions' => $totalPostTaxDeductions,
+            ]
+        ]);
     }
 
     public function showSlip(Request $request)
     {
-        $payroll = Payroll::findOrFail($request->payroll);
-        $payslips = $payroll->getPayslips();
-        $payslipData = view('payroll._payslip_details', compact('payslips'))->render();
+        $payslip = EmployeePayroll::findOrFail($request->payslip);
+        $payslipData = view('payroll._payslip_details', compact('payslip'))->render();
         return RequestResponse::ok('Payslip retrieved successfully.', $payslipData);
     }
 
     public function store(Request $request)
     {
+        Log::debug($request->all());
+
         $validatedData = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'employees' => 'required|array',
             'employees.*' => 'exists:employees,id',
-            'location' => 'nullable|exists:locations,slug', // Optional location
+            'location' => 'nullable|exists:locations,slug',
+            'repay_loans' => 'nullable|boolean',
+            'recover_advance' => 'nullable|boolean',
+            'pay_overtime' => 'nullable|boolean',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
@@ -101,6 +140,13 @@ class PayrollController extends Controller
             return RequestResponse::created('Payroll processed successfully.', $payroll->id);
         });
     }
+
+    public function printPayslip($id)
+    {
+        $payslip = EmployeePayroll::findOrFail($id);
+        return $this->payslipService->generatePayslipPdf($payslip->id);
+    }
+
     public function downloadCsvTemplate()
     {
         $filePath = storage_path('app/public/templates/payroll_template.csv');

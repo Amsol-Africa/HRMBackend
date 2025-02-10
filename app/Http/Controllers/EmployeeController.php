@@ -7,10 +7,12 @@ use App\Models\User;
 use App\Models\Shift;
 use App\Models\Business;
 use App\Models\Employee;
+use App\Models\Location;
 use App\Models\Department;
 use App\Models\JobCategory;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
+use App\Models\EmploymentDetail;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +25,7 @@ class EmployeeController extends Controller
     public function fetch(Request $request)
     {
         $user = $request->user();
-        $business = $user->business;
+        $business = Business::findBySlug(session('active_business_slug'));
 
         $employees = Employee::where('business_id', $business->id)
             ->when($request->name, function ($query, $employeeName) {
@@ -37,6 +39,11 @@ class EmployeeController extends Controller
             ->when($request->department, function ($query, $employeeDepartment) {
                 return $query->whereHas('department', function ($query) use ($employeeDepartment) {
                     $query->where('slug', $employeeDepartment);
+                });
+            })
+            ->when($request->location, function ($query, $employeeLocation) {
+                return $query->whereHas('location', function ($query) use ($employeeLocation) {
+                    $query->where('slug', $employeeLocation);
                 });
             })
             ->when($request->status, function ($query, $employeeStatus) {
@@ -58,6 +65,7 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
+            'location' => 'nullable|string|exists:locations,slug',
             // Personal Information
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
@@ -182,6 +190,7 @@ class EmployeeController extends Controller
             $user = $request->user();
             $business_slug = session('active_business_slug');
             $business = Business::findBySlug($business_slug);
+            $location = Location::findBySlug($validatedData['location']);
 
             $department = Department::findBySlug($validatedData['department']);
             $phoneNumber = "+{$request->code}{$request->phone}";
@@ -209,12 +218,11 @@ class EmployeeController extends Controller
 
             $user->assignRole('employee');
 
-
             $employee = $business->employees()->create([
                 'user_id' => $user->id,
                 'employee_code' => $validatedData['employee_code'],
                 'department_id' => $department->id,
-                // 'business_id' => $business->id,
+                'location_id' => $location?->id,
 
                 'gender' => $validatedData['gender'],
                 'alternate_phone' => $alternatePhoneNumber,
@@ -333,64 +341,110 @@ class EmployeeController extends Controller
         });
     }
 
-
     public function filter(Request $request)
     {
         Log::debug($request->all());
 
-        $validatedData = $request->validate([
-            'departments' => 'array|nullable',
-            'departments.*' => 'exists:departments,slug',
-            'jobCategories' => 'array|nullable',
-            'jobCategories.*' => 'exists:job_categories,slug',
-            'employmentTerms' => 'array|nullable',
-            'employmentTerms.*' => 'in:permanent,contract,temporary,internship',
-        ]);
-
         $business_slug = session('active_business_slug');
         $business = Business::findBySlug($business_slug);
 
-        // Get all employees
-        $allEmployees = $business->employees()->get();
-
-        // Clone query for filtering
-        $filteredEmployeesQuery = clone $business->employees();
-
-        if (!empty($validatedData['departments'])) {
-            $filteredEmployeesQuery->whereHas('department', function ($query) use ($validatedData) {
-                $query->whereIn('slug', $validatedData['departments']);
-            });
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.', 404);
         }
 
-        if (!empty($validatedData['jobCategories'])) {
-            $filteredEmployeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
-                $query->whereIn('job_category_id', JobCategory::whereIn('slug', $validatedData['jobCategories'])->pluck('id'));
-            });
+        $validatedData = $request->validate([
+            'locations' => 'array|nullable',
+            'locations.*' => [
+                function ($attribute, $value, $fail) use ($business_slug) {
+                    if ($value !== 'all' && $value !== $business_slug && !Location::where('slug', $value)->exists()) {
+                        $fail("The selected location '$value' is invalid.");
+                    }
+                },
+            ],
+
+            'departments' => 'array|nullable',
+            'departments.*' => [
+                function ($attribute, $value, $fail) {
+                    if ($value !== 'all' && !Department::where('slug', $value)->exists()) {
+                        $fail("The selected department '$value' is invalid.");
+                    }
+                },
+            ],
+
+            'job_categories' => 'array|nullable',
+            'job_categories.*' => [
+                function ($attribute, $value, $fail) {
+                    if ($value !== 'all' && !JobCategory::where('slug', $value)->exists()) {
+                        $fail("The selected job category '$value' is invalid.");
+                    }
+                },
+            ],
+
+            'employment_terms' => 'array|nullable',
+            'employment_terms.*' => [
+                function ($attribute, $value, $fail) {
+                    $validTerms = ['permanent', 'contract', 'temporary', 'internship'];
+                    if ($value !== 'all' && !in_array($value, $validTerms)) {
+                        $fail("The selected employment term '$value' is invalid.");
+                    }
+                },
+            ],
+        ]);
+
+        $query = $business->employees()->with(['user:id,name', 'department:id,name']);
+
+        if (empty($validatedData['locations']) || in_array($business_slug, $validatedData['locations'])) {
+            $query->whereNull('location_id'); // Exclude employees with a location
         }
 
-        if (!empty($validatedData['employmentTerms'])) {
-            $filteredEmployeesQuery->whereHas('employmentDetails', function ($query) use ($validatedData) {
-                $query->whereIn('employment_term', $validatedData['employmentTerms']);
-            });
+        if (!empty($validatedData)) {
+            if (!empty($validatedData['departments']) && !in_array('all', $validatedData['departments'])) {
+                $query->whereHas('department', function ($q) use ($validatedData) {
+                    $q->whereIn('slug', $validatedData['departments']);
+                });
+            }
+
+            if (!empty($validatedData['job_categories']) && !in_array('all', $validatedData['job_categories'])) {
+                $jobCategoryIds = JobCategory::whereIn('slug', $validatedData['job_categories'])->pluck('id');
+                $query->whereHas('employmentDetails', function ($q) use ($jobCategoryIds) {
+                    $q->whereIn('job_category_id', $jobCategoryIds);
+                });
+            }
+
+            if (!empty($validatedData['locations']) && !in_array('all', $validatedData['locations']) && !in_array($business_slug, $validatedData['locations'])) {
+                $locationIds = Location::whereIn('slug', $validatedData['locations'])->pluck('id');
+                $query->whereHas('location', function ($q) use ($locationIds) {
+                    $q->whereIn('id', $locationIds);
+                });
+            }
+
+            if (!empty($validatedData['employment_terms']) && !in_array('all', $validatedData['employment_terms'])) {
+                $query->whereHas('employmentDetails', function ($q) use ($validatedData) {
+                    $q->whereIn('employment_term', $validatedData['employment_terms']);
+                });
+            }
         }
 
-        // Get only the employees that match the filter
-        $filteredEmployees = $filteredEmployeesQuery->get()->pluck('id')->toArray();
+        $filteredEmployees = $query->get();
 
-        // Map response to include "checked" status
-        $employeesData = $allEmployees->map(function ($employee) use ($filteredEmployees) {
+        $employeesData = $filteredEmployees->map(function ($employee) {
             return [
                 'id' => $employee->id,
-                'name' => $employee->user->name,
+                'name' => $employee->user->name ?? 'N/A',
                 'department' => $employee->department->name ?? 'N/A',
-                'checked' => in_array($employee->id, $filteredEmployees), // Check only filtered employees
+                'checked' => true,
             ];
         });
 
-        return RequestResponse::ok('Ok.', $employeesData);
+        return RequestResponse::ok('Filtered employees retrieved successfully.', $employeesData);
     }
 
-
-
+    public function list(Request $request)
+    {
+        $business_slug = session('active_business_slug');
+        $business = Business::findBySlug($business_slug);
+        $employees = Employee::with('user')->where('business_id', $business->id)->get();
+        return RequestResponse::ok('Ok', $employees);
+    }
 
 }

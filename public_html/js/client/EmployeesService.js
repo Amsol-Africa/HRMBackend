@@ -3,6 +3,16 @@ class EmployeesService {
         this.requestClient = requestClient;
     }
 
+    async list(data) {
+        try {
+            const response = await this.requestClient.post('/employees/list', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async fetch(data) {
         try {
             const response = await this.requestClient.post('/employees/fetch', data);

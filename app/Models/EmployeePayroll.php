@@ -12,15 +12,20 @@ class EmployeePayroll extends Model
         'basic_salary',
         'housing_allowance',
         'gross_pay',
-        'nhif', 'nssf',
+        'overtime',
+        'nhif',
+        'nssf',
         'housing_levy',
         'taxable_income',
         'paye',
         'personal_relief',
         'pay_after_tax',
+        'loan_repayment',
+        'advance_recovery',
         'deductions_after_tax',
         'net_pay'
     ];
+
     public function payroll()
     {
         return $this->belongsTo(Payroll::class);

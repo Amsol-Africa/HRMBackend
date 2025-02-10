@@ -20,6 +20,7 @@ window.searchEmployees = async function (btn) {
     let name = document.getElementById('employeeName').value;
     let employee_no = document.getElementById('employeeNo').value;
     let department = document.getElementById('employeeDepartment').value;
+    let location = document.getElementById('location').value;
     let gender = document.getElementById('employeeGender').value;
     let status = localStorage.getItem('employeeStatus') || 'active';
 
@@ -30,6 +31,7 @@ window.searchEmployees = async function (btn) {
             name : name,
             employee_no : employee_no,
             department : department,
+            location : location,
             gender : gender,
         };
         const employeesCards = await employeesService.fetch(data);

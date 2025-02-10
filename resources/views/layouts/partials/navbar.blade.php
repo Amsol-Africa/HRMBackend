@@ -127,17 +127,17 @@
                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.index') ? 'active' : '' }}"
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.index') || request()->routeIs('business.payroll.payslips') ? 'active' : '' }}"
                                 href="{{ route('business.payroll.index', $currentBusiness->slug) }}">
                                 Past Payrolls
                              </a>
                         </li>
-                        <li class="slide">
+                        {{-- <li class="slide">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.payslips') ? 'active' : '' }}"
                                 href="{{ route('business.payroll.payslips', $currentBusiness->slug) }}">
                                 Payslips
                              </a>
-                        </li>
+                        </li> --}}
                         <li class="slide">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.advances.index') ? 'active' : '' }}"
                                 href="{{ route('business.advances.index', $currentBusiness->slug) }}">
@@ -230,12 +230,6 @@
                             <a class="sidebar__menu-item {{ request()->routeIs('business.leave.entitlement') ? 'active' : '' }}"
                                href="{{ route('business.leave.entitlement', $currentBusiness->slug) }}">
                                Leave Entitlement
-                            </a>
-                        </li>
-                        <li class="slide {{ request()->routeIs('business.leave.settings') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.settings') ? 'active' : '' }}"
-                               href="{{ route('business.leave.settings', $currentBusiness->slug) }}">
-                               Settings
                             </a>
                         </li>
                         <li class="slide {{ request()->routeIs('business.leave.reports') ? 'active' : '' }}">

@@ -1,16 +1,15 @@
 <?php
 
-use App\Http\Controllers\AdvanceController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\LeaveEntitlementController;
-use App\Http\Controllers\LoanController;
-use App\Http\Controllers\LocationController;
-use App\Http\Controllers\PayrollController;
-use App\Http\Controllers\ReliefController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ReliefController;
+use App\Http\Controllers\AdvanceController;
+use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\JobCategoryController;
@@ -18,6 +17,7 @@ use App\Http\Controllers\LeavePeriodController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveTypeListController;
 use App\Http\Controllers\PayrollFormulaController;
+use App\Http\Controllers\LeaveEntitlementController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -70,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('filter', [EmployeeController::class, 'filter'])->name('filter');
         Route::post('destroy', [EmployeeController::class, 'destroy'])->name('destroy');
         Route::post('update', [EmployeeController::class, 'update'])->name('update');
+        Route::post('list', [EmployeeController::class, 'list'])->name('list');
     });
     //manage leaves
     Route::name('leave-types.')->prefix('leave-types')->group(function () {
@@ -152,4 +153,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('delete', [LoanController::class, 'destroy'])->name('delete');
         Route::post('update', [LoanController::class, 'update'])->name('update');
     });
+
+    //print
+    Route::get('/payslip/print/{id}', [PayrollController::class, 'printPayslip'])->name('payslip.print');
 });

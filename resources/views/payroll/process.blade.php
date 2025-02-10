@@ -1,25 +1,37 @@
 <x-app-layout>
     <div class="row g-20 mb-4">
 
-        <div class="col-md-7">
+        <div class="col-md-8">
 
             <div class="card">
                 <div class="card-body">
                     <form id="processPayroll">
                         <div class="row mb-3">
                             <h6 class="mb-3">Start a Payrun</h6>
-                            <div class="col-md-4">
-                                <label for="start_date" class="form-label">Start Date</label>
-                                <input type="text" name="start_date" id="start_date" class="form-control datepicker" placeholder="Start Date">
+
+                            <!-- Year Input -->
+                            <div class="col-md-6">
+                                <label for="payrun_year" class="form-label">Year</label>
+                                <input type="number" id="payrun_year" name="payrun_year" class="form-control"
+                                       min="{{ now()->year - 5 }}" max="{{ now()->year + 1 }}" value="{{ now()->year }}">
                             </div>
-                            <div class="col-md-4">
-                                <label for="end_date" class="form-label">End Date</label>
-                                <input type="text" name="end_date" id="end_date" class="form-control datepicker" placeholder="End Date">
+
+                            <!-- Month Dropdown -->
+                            <div class="col-md-6">
+                                <label for="payrun_month" class="form-label">Month</label>
+                                <select id="payrun_month" name="payrun_month" class="form-select">
+                                    @foreach(range(1, 12) as $month)
+                                        <option value="{{ $month }}" {{ now()->month == $month ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::create()->month($month)->format('F') }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
+
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="start_date" class="form-label">Location / Branch</label>
                                 <select name="locations[]" id="locations" class="form-select select2-multiple" multiple>
                                     <option value="all">Select</option>
@@ -28,7 +40,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="departments" class="form-label">Departments</label>
                                 <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
                                     <option value="all">All Departments</option>
@@ -37,7 +49,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="job_categories" class="form-label">Job Categories</label>
                                 <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
                                     <option value="all">All Job Categories</option>
@@ -46,7 +58,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="employment_terms" class="form-label">Employment Terms</label>
                                 <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
                                     <option value="all">All Terms</option>
@@ -61,15 +73,15 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
+                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="1" checked>
                                     <label class="form-check-label" for="">Repay Loans</label>
                                 </div>
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans" checked>
+                                    <input type="checkbox" class="form-check-input" id="recover_advance" name="recover_advance" value="1" checked>
                                     <label class="form-check-label" for="">Recover Advance</label>
                                 </div>
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="repay_loans" name="repay_loans" value="repay_loans">
+                                    <input type="checkbox" class="form-check-input" id="pay_overtime" name="pay_overtime" value="1">
                                     <label class="form-check-label" for="">Pay Overtime</label>
                                 </div>
                             </div>
@@ -84,90 +96,12 @@
 
                         <div class="row">
                             <div class="col-md-12">
-                                <button type="button" class="btn btn-primary w-100" onclick="processPayroll(this)"> <i class="bi bi-check-circle"></i> Process Payroll </button>
+                                <button type="button" class="btn btn-primary w-100" onclick="processPayroll(this)"> <i class="bi bi-check-circle me-1"></i> Process Payroll </button>
                             </div>
                         </div>
 
                     </form>
 
-                </div>
-            </div>
-
-        </div>
-
-        <div class="col-md-5">
-
-            <div class="row g-2">
-                <div class="col-md-4">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-calendar-week"></i> Period</h6>
-                            <p>January 2024</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-calendar-check"></i> Pay Day</h6>
-                            <p>31st January 2024</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-people"></i> Employees</h6>
-                            <p>50 Employees</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <h6><i class="bi bi-cash-stack"></i> Payroll Cost</h6>
-                            <p>KES 5,000,000</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-secondary text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-wallet2"></i> Net Pay</h6>
-                            <p>KES 3,500,000</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-danger text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-graph-down"></i> Taxes</h6>
-                            <p>KES 1,000,000</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-dark text-white">
-                        <div class="card-body">
-                            <h6><i class="bi bi-arrow-down-circle"></i> Pre-Tax Deductions</h6>
-                            <p>KES 300,000</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card bg-light text-dark">
-                        <div class="card-body">
-                            <h6><i class="bi bi-arrow-down-up"></i> Post-Tax Deductions</h6>
-                            <p>KES 200,000</p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -179,7 +113,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
-                    <h6 class="mb-3">Employee Summary</h6>
+                    <h6 class="mb-3"> <i class="fa-solid fa-people me-2"></i> Employee Summary</h6>
 
                     <div id="#employeePayslipsContainer">
 
@@ -191,8 +125,10 @@
     </div>
 
     @push('scripts')
+
         <script src="{{ asset('js/main/payroll.js') }}" type="module"></script>
         <script src="{{ asset('js/main/filter-employees.js') }}" type="module"></script>
+
         <script>
 
             document.addEventListener('DOMContentLoaded', function () {

@@ -1,9 +1,5 @@
 <x-app-layout>
 
-
-
-
-
     <div class="col-md-12">
         <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
@@ -28,20 +24,30 @@
 
         <div class="card__wrapper">
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="search-box">
                         <input type="text" class="form-control" id="employeeName" placeholder="Employee Name">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="search-box">
-                        <input type="text" class="form-control" id="employeeNo" placeholder="Employee Number">
+                        <input type="text" class="form-control" id="employeeNo" placeholder="Employee No">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="from__input-box">
+                        <select class="form-select" id="location">
+                            <option value="">Location</option>
+                            @foreach ($locations as $location)
+                                <option value="{{ $location->slug }}">{{ $location->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div class="col-md-2">
                     <div class="from__input-box">
                         <select class="form-select" id="employeeDepartment">
-                            <option value="">Employee Department</option>
+                            <option value="">Department</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department->slug }}">{{ $department->name }}</option>
                             @endforeach

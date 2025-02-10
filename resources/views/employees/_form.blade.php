@@ -9,6 +9,19 @@
         </div>
         <div class="card-body">
 
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <label for="gender">Choose location</label>
+                    <select name="location" id="location" class="form-select">
+                        <option>Choose location</option>
+                        @foreach ($locations as $location)
+                            <option value="{{ $location->slug }}">{{ $location->name }}</option>
+                        @endforeach
+                    </select>
+                    <p><i>Leave empty to add employee to main business</i></p>
+                </div>
+            </div>
+
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="last_name">Surname</label>

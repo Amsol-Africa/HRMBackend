@@ -12,3 +12,12 @@ window.filterEmployees = async function (filters) {
         console.error("Error loading user data:", error);
     }
 };
+
+window.getAllEmployeesList = async function () {
+    try {
+        let data = {};
+        return await employeesService.list(data);
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};

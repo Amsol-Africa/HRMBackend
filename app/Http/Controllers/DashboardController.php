@@ -158,16 +158,19 @@ class DashboardController extends Controller
         $departments = $business->departments;
         $job_categories = $business->job_categories;
         $shifts = $business->shifts;
-        $roles = Role::where('name', '!=', 'admin')->get(); // Exclude roles with name 'admin'
-        return view('employees.create', compact('page', 'description', 'departments', 'job_categories', 'shifts', 'roles'));
+        $roles = Role::where('name', '!=', 'admin')->get();
+        $locations = $business->locations;
+        return view('employees.create', compact('page', 'description', 'departments', 'job_categories', 'shifts', 'roles', 'locations'));
     }
     public function editEmployees(Request $request, User $user)
     {
         $page = 'Update Employee - ' . $user->name;
+        $business = Business::findBySlug(session('active_business_slug'));
         $description = 'Fill out the form below to update employee record.';
         $departments = auth()->user()->business->departments;
-        $roles = Role::where('name', '!=', 'admin')->get(); // Exclude roles with name 'admin'
-        return view('employees.create', compact('page', 'description', 'departments', 'roles'));
+        $roles = Role::where('name', '!=', 'admin')->get();
+        $locations = $business->locations;
+        return view('employees.create', compact('page', 'description', 'departments', 'roles', 'locations'));
     }
     public function employeeDetails(Request $request, $business_slug, $user_id)
     {
@@ -187,8 +190,11 @@ class DashboardController extends Controller
     {
         $page = 'Employee List';
         $description = 'Here is a list of all employees in the system. You can view, edit, or delete records.';
-        $departments = auth()->user()->business->departments;
-        return view('employees.index', compact('page', 'description', 'departments'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        $departments = $business->departments;
+        $job_categories = $business->job_categories;
+        $locations = $business->locations;
+        return view('employees.index', compact('page', 'description', 'departments', 'locations'));
     }
     public function shifts(Request $request)
     {
@@ -201,7 +207,9 @@ class DashboardController extends Controller
     {
         $page = 'Payrolls';
         $description = '';
-        return view('payroll.index', compact('page', 'description'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        $locations = $business->locations;
+        return view('payroll.index', compact('page', 'description', 'locations'));
     }
 
     public function payslips(Request $request, String $business_slug, Payroll $payroll)
@@ -354,7 +362,8 @@ class DashboardController extends Controller
         $leavePeriods = $business->leavePeriods;
         $departments = $business->departments;
         $jobCategories = $business->job_categories;
-        return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories'));
+        $locations = $business->locations;
+        return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
     }
     public function leaveSettings(Request $request)
     {
