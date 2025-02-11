@@ -6,18 +6,23 @@
         <div class="col-md-6">
 
             <div class="mb-3">
-                <label for="address" class="form-label">First Name</label>
-                <input type="text" class="form-control" name="address" id="address" placeholder="123 Main St">
+                <label for="first_name" class="form-label">First Name</label>
+                <input type="text" class="form-control" name="first_name" id="first_name" placeholder="First Name">
             </div>
 
             <div class="mb-3">
-                <label for="address" class="form-label">Last Name</label>
-                <input type="text" class="form-control" name="address" id="address" placeholder="123 Main St">
+                <label for="middle_name" class="form-label">Middle Name</label>
+                <input type="text" class="form-control" name="middle_name" id="middle_name" placeholder="Middle Name">
             </div>
 
             <div class="mb-3">
-                <label for="address" class="form-label">Email</label>
-                <input type="text" class="form-control" name="address" id="address" placeholder="123 Main St">
+                <label for="last_name" class="form-label">Last Name</label>
+                <input type="text" class="form-control" name="last_name" id="last_name" placeholder="Last Name">
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" id="email" placeholder="Email">
             </div>
 
             <div class="mb-3">

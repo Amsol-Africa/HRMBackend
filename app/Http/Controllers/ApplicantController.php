@@ -7,6 +7,7 @@ use App\Models\Applicant;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -18,12 +19,17 @@ class ApplicantController extends Controller
 
     public function fetch(Request $request)
     {
-        $applicants = Applicant::with('user')->get();
-        $applicant_table = view('job-applicants.applicants._table', compact('applicants'))->render();
+        $role = Role::findByName('applicant');
+
+        if (!$role) {
+            return RequestResponse::badRequest('Applicant role not found.');
+        }
+
+        $applicants = User::role($role->name)->with('applicant')->get();
+        $applicant_table = view('job-applications._job_applicants_table', compact('applicants'))->render();
 
         return RequestResponse::ok('Ok', $applicant_table);
     }
-
     public function create()
     {
         $users = User::all();

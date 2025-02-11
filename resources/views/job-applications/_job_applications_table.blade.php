@@ -1,43 +1,58 @@
-<table class="table table-hover table-bordered table-striped" id="jobPostsTable">
+<table class="table table-striped" id="jobApplicationsTable">
     <thead>
         <tr>
             <th>#</th>
+            <th>Applicant</th>
+            <th>Phone</th>
             <th>Job Title</th>
-            <th>Employment Type</th>
-            <th>Location</th>
-            <th>Posted At</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Applied On</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach ($job_posts as $index => $job)
+        @forelse($applications as $index => $application)
             <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $job->title }}</td>
-                <td>{{ ucfirst($job->employment_type) }}</td>
-                <td>{{ $job->place }}</td>
-                <td>{{ $job->created_at->format('d M Y') }}</td>
+                <td>{{ $applications->firstItem() + $index }}</td>
                 <td>
-                    <span class="badge bg-{{ $job->status == 'open' ? 'success' : 'secondary' }}">
-                        {{ ucfirst($job->status) }}
+                    <div class="d-flex align-items-center" style="gap: 3px">
+                        <span class="table-avatar">
+                            <a class="employee__avatar mr-5" href="">
+                                <img class="img-48 border-circle" src="{{ $application->applicant->user->getImageUrl() }}" alt="{{ $application->applicant->user->name }}">
+                            </a>
+                        </span>
+                        <span>
+                            <strong>{{ $application->applicant->user->name }}</strong> <br>
+                            <small class="text-muted">{{ $application->applicant->user->email }}</small>
+                        </span>
+                    </div>
+                </td>
+                <td>{{ $application->applicant->user->phone }}</td>
+                <td>{{ $application->jobPost->title }}</td>
+                <td>
+                    <span class="badge bg-{{ $application->status === 'applied' ? 'primary' : 'success' }}">
+                        {{ ucfirst($application->status) }}
                     </span>
                 </td>
+                <td>{{ $application->created_at->format('d M, Y') }}</td>
                 <td>
-                    <a href="" class="btn btn-warning btn-sm">
-                        <i class="bi bi-pencil"></i> Edit
-                    </a>
-                    <form action="" method="POST" style="display:inline;">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this job?')">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </form>
-                    <a href="" class="btn btn-info btn-sm">
+                    <button class="btn btn-sm btn-info" onclick="viewApplication({{ $application->id }})">
                         <i class="bi bi-eye"></i> View
-                    </a>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteApplication({{ $application->id }})">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="openScheduleInterviewModal({{ $application->id }}, '{{ $application->applicant->user->name }}', '{{ $application->jobPost->title }}')">
+                        <i class="bi bi-calendar-plus"></i> Schedule Interview
+                    </button>
                 </td>
+
             </tr>
-        @endforeach
+        @empty
+            <tr>
+                <td colspan="7" class="text-center text-muted">No applications found.</td>
+            </tr>
+        @endforelse
     </tbody>
 </table>
+

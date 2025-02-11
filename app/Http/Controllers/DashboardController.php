@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Applicant;
 use App\Models\Module;
 use App\Models\Payroll;
 use App\Models\User;
@@ -426,7 +427,10 @@ class DashboardController extends Controller
     {
         $page = 'Create Job Applications';
         $description = 'Track job applications and their statuses.';
-        return view('job-applications.create', compact('page', 'description'));
+        $applicants = Applicant::with('user')->get();
+        $business = Business::findBySlug(session('active_business_slug'));
+        $job_posts = $business->jobPosts;
+        return view('job-applications.create', compact('page', 'description', 'applicants', 'job_posts'));
     }
 
     public function jobApplications(Request $request)
@@ -440,14 +444,14 @@ class DashboardController extends Controller
     {
         $page = 'Interview Scheduling';
         $description = 'Schedule and manage job interviews.';
-        return view('recruitment.interviews', compact('page', 'description'));
+        return view('job-applications.interviews', compact('page', 'description'));
     }
 
     public function recruitmentReports(Request $request)
     {
         $page = 'Recruitment Reports';
         $description = 'Analyze recruitment trends and performance.';
-        return view('recruitment.reports', compact('page', 'description'));
+        return view('job-applications.reports', compact('page', 'description'));
     }
 
 

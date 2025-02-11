@@ -23,19 +23,12 @@
     </div>
 
     @push('scripts')
-        @include('modals.schedule-interview')
-        <script src="{{ asset('js/main/job-applications.js') }}" type="module"></script>
+        {{-- @include('modals.payroll-formula') --}}
+        <script src="{{ asset('js/main/interviews.js') }}" type="module"></script>
         <script>
             $(document).ready(() => {
-                getJobApplications()
+                getInterviews()
             })
-
-            function openScheduleInterviewModal(applicationId, applicantName, jobTitle) {
-                const selectApplication = document.querySelector('select[name="application_id"]');
-                selectApplication.innerHTML = `<option value="${applicationId}" selected>${applicantName} - ${jobTitle}</option>`;
-                let scheduleInterviewModal = new bootstrap.Modal(document.getElementById('scheduleInterviewModal'));
-                scheduleInterviewModal.show();
-            }
         </script>
     @endpush
 

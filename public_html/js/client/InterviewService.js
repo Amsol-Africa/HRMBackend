@@ -1,11 +1,11 @@
-class JobApplicantService {
+class InterviewService {
     constructor(requestClient) {
         this.requestClient = requestClient;
     }
 
     async fetch(data) {
         try {
-            const response = await this.requestClient.post('/applicants/fetch', data);
+            const response = await this.requestClient.post('/interviews/fetch', data);
             return response.data;
         } catch (error) {
             console.log(error)
@@ -15,7 +15,7 @@ class JobApplicantService {
 
     async update(data) {
         try {
-            const response = await this.requestClient.post('/applicants/update', data);
+            const response = await this.requestClient.post('/interviews/update', data);
             toastr.info(response.message, "Success");
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
@@ -26,7 +26,7 @@ class JobApplicantService {
 
     async edit(data) {
         try {
-            const response = await this.requestClient.post('/applicants/edit', data);
+            const response = await this.requestClient.post('/interviews/edit', data);
             return response.data;
         } catch (error) {
             console.log(error)
@@ -36,7 +36,7 @@ class JobApplicantService {
 
     async save(data) {
         try {
-            const response = await this.requestClient.post('/applicants/store', data);
+            const response = await this.requestClient.post('/interviews/store', data);
             toastr.success(response.message, "Success");
         } catch (error) {
             console.log(error)
@@ -46,7 +46,7 @@ class JobApplicantService {
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/applicants/delete', data);
+            const response = await this.requestClient.post('/interviews/delete', data);
             toastr.info(response.message, "Success");
         } catch (error) {
             console.log(error)
@@ -63,4 +63,4 @@ class JobApplicantService {
     }
 }
 
-export default JobApplicantService;
+export default InterviewService;

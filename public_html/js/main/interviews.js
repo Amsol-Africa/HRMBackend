@@ -1,16 +1,16 @@
 import { btn_loader } from "/js/client/config.js";
 import RequestClient from "/js/client/RequestClient.js";
-import JobApplicationService from "/js/client/JobApplicationService.js";
+import InterviewService from "/js/client/InterviewService.js";
 
 const requestClient = new RequestClient();
-const jobApplicationService = new JobApplicationService(requestClient);
+const interviewService = new InterviewService(requestClient);
 
-window.getJobApplications = async function (page = 1) {
+window.getInterviews = async function (page = 1) {
     try {
         let data = {page:page};
-        const JobApplications = await jobApplicationService.fetch(data);
-        $("#jobApplicationsContainer").html(JobApplications);
-        new DataTable('#jobApplicationsTable');
+        const Interviews = await interviewService.fetch(data);
+        $("#interviewsContainer").html(Interviews);
+        new DataTable('#interviewsTable');
     } catch (error) {
         console.error("Error loading user data:", error);
     }
@@ -21,31 +21,31 @@ window.saveApplication = async function (btn) {
 
     tinymce.triggerSave();
 
-    let formData = new FormData(document.getElementById("jobApplicationForm"));
+    let formData = new FormData(document.getElementById("interviewForm"));
 
     try {
         if (formData.has('_period_slug')) {
-            await jobApplicationService.update(formData);
+            await interviewService.update(formData);
         } else {
-            await jobApplicationService.save(formData);
+            await interviewService.save(formData);
         }
     } finally {
         btn_loader(btn, false);
     }
 };
-window.editJobApplication = async function (btn) {
+window.editInterview = async function (btn) {
     btn = $(btn);
 
     const job_application  = btn.data("job-application");
     const data = { job_application:job_application  };
 
     try {
-        const form = await jobApplicationService.edit(data);
-        $('#jobApplicationFormContainer').html(form)
+        const form = await interviewService.edit(data);
+        $('#interviewFormContainer').html(form)
     } finally {
     }
 };
-window.deleteJobApplication = async function (btn) {
+window.deleteInterview = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
@@ -63,8 +63,8 @@ window.deleteJobApplication = async function (btn) {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                await jobApplicationService.delete(data);
-                getJobApplications();
+                await interviewService.delete(data);
+                getInterviews();
             } finally {
                 btn_loader(btn, false);
             }

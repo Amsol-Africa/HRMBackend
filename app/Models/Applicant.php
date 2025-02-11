@@ -34,8 +34,6 @@ class Applicant extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    // Relationship with Job Applications
     public function applications()
     {
         return $this->hasMany(Application::class);

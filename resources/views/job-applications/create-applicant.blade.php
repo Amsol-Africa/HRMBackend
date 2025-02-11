@@ -7,7 +7,7 @@
     </div>
 
     @push('scripts')
-        <script src="{{ asset('js/main/job-applications.js') }}" type="module"></script>
+        <script src="{{ asset('js/main/job-applicants.js') }}" type="module"></script>
     @endpush
 
 </x-app-layout>

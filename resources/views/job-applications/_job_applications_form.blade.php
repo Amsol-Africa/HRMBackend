@@ -1,52 +1,53 @@
-<form action="" method="POST" id="jobPostForm">
-    <div class="row g-2">
+<form id="jobApplicationForm" method="POST" enctype="multipart/form-data">
+    @csrf
 
-        <div class="col-md-8">
+    <div class="mb-3">
+        <label for="applicant_id" class="form-label">Applicant</label>
+        <select name="applicant_id" id="applicant_id" class="form-control">
+            <option value="">-- Select Applicant --</option>
+            @foreach($applicants as $applicant)
+                <option value="{{ $applicant->id }}">{{ $applicant->user->name }} - {{ $applicant->user->email }}</option>
+            @endforeach
+        </select>
 
-            <div class="mb-3">
-                <h5 class="mb-2">Job Description</h5>
-                <textarea class="form-control tinyMce" name="description" required></textarea>
-            </div>
-
-        </div>
-
-        <div class="col-md-4">
-
-            <div class="card">
-                <div class="card-body">
-                    @csrf
-
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Job Title</label>
-                        <input type="text" class="form-control" placeholder="Job Openning title" name="title" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="employment_type" class="form-label">Employment Type</label>
-                        <select class="form-select" name="employment_type" required>
-                            <option value="full-time">Full-Time</option>
-                            <option value="part-time">Part-Time</option>
-                            <option value="contract">Contract</option>
-                            <option value="internship">Internship</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="place" class="form-label">Location</label>
-                        <input type="text" class="form-control" placeholder="place" name="place" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="salary_range" class="form-label">Salary Range (Monthyl) </label>
-                        <input type="text" class="form-control" placeholder="e.g. 30000 - 50000" name="salary_range">
-                    </div>
-
-                    <button type="button" onclick="saveJobPost(this)" class="btn btn-primary w-100"> <i class="fa-regular fa-check-circle me-1"></i> Create Job Opening</button>
-                </div>
-            </div>
-
-        </div>
-
+        <button type="button" class="btn btn-primary mt-2" data-bs-toggle="modal" data-bs-target="#addApplicantModal">
+            <i class="bi bi-plus-square-dotted me-2"></i> Add Applicant
+        </button>
     </div>
 
+    <div class="mb-3">
+        <label for="job_post_id" class="form-label">Job Post</label>
+        <select name="job_post_id" id="job_post_id" class="form-control">
+            @foreach($job_posts as $job)
+                <option value="{{ $job->slug }}">{{ $job->title }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="cover_letter" class="form-label">Cover Letter</label>
+        <textarea name="cover_letter" id="cover_letter" class="form-control tinyMce"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="attachments" class="form-label">File Attachments</label>
+        <input type="file" multiple name="attachments[]" id="attachments" class="form-control">
+    </div>
+
+    <button type="button" onclick="saveApplication(this)" class="btn btn-primary w-100"> <i class="bi bi-check-circle me-2"></i> Submit Application</button>
 </form>
+
+<!-- Add Applicant Modal -->
+<div class="modal fade" id="addApplicantModal" tabindex="-1" aria-labelledby="addApplicantModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addApplicantModalLabel">Add New Applicant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @include('job-applications._applicant_form')
+            </div>
+        </div>
+    </div>
+</div>

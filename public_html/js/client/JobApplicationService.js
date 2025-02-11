@@ -5,7 +5,7 @@ class JobApplicationService {
 
     async fetch(data) {
         try {
-            const response = await this.requestClient.post('/job-applications/fetch', data);
+            const response = await this.requestClient.post('/applications/fetch', data);
             return response.data;
         } catch (error) {
             console.log(error)
@@ -15,7 +15,7 @@ class JobApplicationService {
 
     async update(data) {
         try {
-            const response = await this.requestClient.post('/job-applications/update', data);
+            const response = await this.requestClient.post('/applications/update', data);
             toastr.info(response.message, "Success");
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
@@ -26,7 +26,7 @@ class JobApplicationService {
 
     async edit(data) {
         try {
-            const response = await this.requestClient.post('/job-applications/edit', data);
+            const response = await this.requestClient.post('/applications/edit', data);
             return response.data;
         } catch (error) {
             console.log(error)
@@ -36,7 +36,7 @@ class JobApplicationService {
 
     async save(data) {
         try {
-            const response = await this.requestClient.post('/job-applications/store', data);
+            const response = await this.requestClient.post('/applications/store', data);
             toastr.success(response.message, "Success");
         } catch (error) {
             console.log(error)
@@ -46,7 +46,7 @@ class JobApplicationService {
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/job-applications/delete', data);
+            const response = await this.requestClient.post('/applications/delete', data);
             toastr.info(response.message, "Success");
         } catch (error) {
             console.log(error)

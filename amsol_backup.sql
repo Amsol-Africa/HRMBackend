@@ -148,6 +148,132 @@ LOCK TABLES `allowances` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `applicant_skills`
+--
+
+DROP TABLE IF EXISTS `applicant_skills`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `applicant_skills` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `applicant_id` bigint(20) unsigned NOT NULL,
+  `skill_id` bigint(20) unsigned NOT NULL,
+  `skill_level` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `applicant_skills_applicant_id_foreign` (`applicant_id`),
+  KEY `applicant_skills_skill_id_foreign` (`skill_id`),
+  CONSTRAINT `applicant_skills_applicant_id_foreign` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `applicant_skills_skill_id_foreign` FOREIGN KEY (`skill_id`) REFERENCES `skills` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `applicant_skills`
+--
+
+LOCK TABLES `applicant_skills` WRITE;
+/*!40000 ALTER TABLE `applicant_skills` DISABLE KEYS */;
+/*!40000 ALTER TABLE `applicant_skills` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `applicants`
+--
+
+DROP TABLE IF EXISTS `applicants`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `applicants` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned NOT NULL,
+  `address` varchar(255) DEFAULT NULL,
+  `city` varchar(255) DEFAULT NULL,
+  `state` varchar(255) DEFAULT NULL,
+  `zip_code` varchar(255) DEFAULT NULL,
+  `country` varchar(255) DEFAULT NULL,
+  `linkedin_profile` varchar(255) DEFAULT NULL,
+  `portfolio_url` varchar(255) DEFAULT NULL,
+  `summary` text DEFAULT NULL,
+  `current_job_title` varchar(255) DEFAULT NULL,
+  `current_company` varchar(255) DEFAULT NULL,
+  `experience_level` varchar(255) DEFAULT NULL,
+  `education_level` varchar(255) DEFAULT NULL,
+  `desired_salary` varchar(255) DEFAULT NULL,
+  `job_preferences` varchar(255) DEFAULT NULL,
+  `source` varchar(255) DEFAULT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `applicants_user_id_foreign` (`user_id`),
+  KEY `applicants_created_by_foreign` (`created_by`),
+  CONSTRAINT `applicants_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `applicants_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `applicants`
+--
+
+LOCK TABLES `applicants` WRITE;
+/*!40000 ALTER TABLE `applicants` DISABLE KEYS */;
+INSERT INTO `applicants` VALUES
+(1,6,'Anzar 23rd Street, Nairobi','Nairobi','Nairobi','27689','Kenya','https://www.kubeparavyf.org','https://www.wyseme.ws',NULL,'Facilis in tempore','Duke Vance Co','Entry-level','Bachelor\'s','70000','Web Developer','Referral',1,'2025-02-11 00:18:24','2025-02-11 00:18:24'),
+(2,7,'123 Elm Street','Nairobi','Nairobi','00100','Kenya','https://www.linkedin.com/in/johndoe','https://johndoeportfolio.com',NULL,'Software Engineer','TechCorp','Mid-level','Bachelor\'s','150000','Remote, Full-time','LinkedIn',1,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
+(3,8,'456 Maple Ave',NULL,NULL,NULL,'Kenya',NULL,NULL,NULL,NULL,NULL,'Entry-level','Bachelor\'s',NULL,NULL,NULL,1,'2025-02-11 00:33:39','2025-02-11 00:33:39');
+/*!40000 ALTER TABLE `applicants` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `applications`
+--
+
+DROP TABLE IF EXISTS `applications`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `applications` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `business_id` bigint(20) unsigned DEFAULT NULL,
+  `location_id` bigint(20) unsigned DEFAULT NULL,
+  `applicant_id` bigint(20) unsigned NOT NULL,
+  `job_post_id` bigint(20) unsigned NOT NULL,
+  `cover_letter` longtext DEFAULT NULL,
+  `stage` varchar(255) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `match_score` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `applications_business_id_foreign` (`business_id`),
+  KEY `applications_location_id_foreign` (`location_id`),
+  KEY `applications_applicant_id_foreign` (`applicant_id`),
+  KEY `applications_job_post_id_foreign` (`job_post_id`),
+  KEY `applications_created_by_foreign` (`created_by`),
+  CONSTRAINT `applications_applicant_id_foreign` FOREIGN KEY (`applicant_id`) REFERENCES `applicants` (`id`),
+  CONSTRAINT `applications_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `applications_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `applications_job_post_id_foreign` FOREIGN KEY (`job_post_id`) REFERENCES `job_posts` (`id`),
+  CONSTRAINT `applications_location_id_foreign` FOREIGN KEY (`location_id`) REFERENCES `locations` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `applications`
+--
+
+LOCK TABLES `applications` WRITE;
+/*!40000 ALTER TABLE `applications` DISABLE KEYS */;
+INSERT INTO `applications` VALUES
+(1,1,NULL,1,1,'<p>Dear Hiring Manager,\\n\\nI am writing to express my strong interest in the Software Engineer position at your esteemed company. With a solid background in web development and a passion for building scalable and efficient applications, I am excited about the opportunity to contribute to your team.\\n\\nOver the past five years, I have worked extensively with Laravel, Vue.js, and various backend technologies to develop enterprise-level applications. My experience includes designing RESTful APIs, optimizing database queries for performance, and implementing robust authentication and role-based access control mechanisms. I have successfully led projects that improved system efficiency, enhanced security, and delivered a seamless user experience.\\n\\nBeyond my technical expertise, I am a firm believer in collaboration and continuous learning. I thrive in fast-paced environments where problem-solving and innovation are key. I am particularly drawn to your company\'s mission of leveraging technology to drive business success, and I am eager to bring my skills in full-stack development to support your objectives.\\n\\nI have attached my resume and portfolio for your review. I would welcome the opportunity to discuss how my experience and skills align with your needs. Thank you for your time and consideration. I look forward to hearing from you.\\n\\nBest regards,\\nJohn Doe</p>','applied',NULL,1,NULL,'2025-02-11 01:04:24','2025-02-11 01:04:24'),
+(2,1,NULL,2,3,'<p>Dear Hiring Manager,\\n\\nI am writing to express my strong interest in the Software Engineer position at your esteemed company. With a solid background in web development and a passion for building scalable and efficient applications, I am excited about the opportunity to contribute to your team.\\n\\nOver the past five years, I have worked extensively with Laravel, Vue.js, and various backend technologies to develop enterprise-level applications. My experience includes designing RESTful APIs, optimizing database queries for performance, and implementing robust authentication and role-based access control mechanisms. I have successfully led projects that improved system efficiency, enhanced security, and delivered a seamless user experience.\\n\\nBeyond my technical expertise, I am a firm believer in collaboration and continuous learning. I thrive in fast-paced environments where problem-solving and innovation are key. I am particularly drawn to your company\'s mission of leveraging technology to drive business success, and I am eager to bring my skills in full-stack development to support your objectives.\\n\\nI have attached my resume and portfolio for your review. I would welcome the opportunity to discuss how my experience and skills align with your needs. Thank you for your time and consideration. I look forward to hearing from you.\\n\\nBest regards,\\nJohn Doe</p>','applied',NULL,1,NULL,'2025-02-11 01:04:52','2025-02-11 01:04:52');
+/*!40000 ALTER TABLE `applications` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `business_modules`
 --
 
@@ -739,7 +865,7 @@ LOCK TABLES `employees` WRITE;
 /*!40000 ALTER TABLE `employees` DISABLE KEYS */;
 INSERT INTO `employees` VALUES
 (1,2,1,1,'EMP7836','male','+25474589631','1992-09-16',NULL,'married','3655874','Another place','TX68734653L','N4T67365','NST73256','PS9867','2023-08-16','2028-02-16','The river side ST, 353','Home River Street, 872','AB+','2025-02-04 23:11:27','2025-02-04 23:11:27',NULL),
-(2,3,1,2,'EMP1023','male','+2541234567891','1985-04-15',NULL,'single','1234567890','New York','TAX12345','NHIF12345','NSSF12345','P123456','2010-05-01','2025-05-01','123 Main St, New York, NY','456 Park Ave, New York, NY','O+','2025-02-04 23:22:26','2025-02-04 23:22:26',NULL),
+(2,3,1,2,'EMP1023','male','+2541234567891','1985-04-15',NULL,'single','1234567890','New York','TAX12345','NHIF12345','NSSF12345','P123456','2010-05-01','2025-05-01','123 Main St, New York, NY','456 Park Ave, New York, NY','O+','2025-02-04 23:22:26','2025-02-04 23:22:26',3),
 (3,4,1,3,'EMP1002','female','+2541245678902','1990-08-10',NULL,'married','2233445566','California','TAX22345','NHIF22345','NSSF22345','P223456','2012-03-15','2027-03-15','456 Oak St, Los Angeles, CA','789 Pine St, Los Angeles, CA','A+','2025-02-04 23:30:46','2025-02-04 23:30:46',NULL);
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -886,6 +1012,78 @@ INSERT INTO `industries` VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `interview_feedback`
+--
+
+DROP TABLE IF EXISTS `interview_feedback`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `interview_feedback` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `interview_id` bigint(20) unsigned NOT NULL,
+  `interviewer_id` bigint(20) unsigned NOT NULL,
+  `comments` text NOT NULL,
+  `score` int(11) NOT NULL DEFAULT 0,
+  `recommendation` enum('hire','reject','second_interview') NOT NULL DEFAULT 'second_interview',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `interview_feedback_interview_id_foreign` (`interview_id`),
+  KEY `interview_feedback_interviewer_id_foreign` (`interviewer_id`),
+  CONSTRAINT `interview_feedback_interview_id_foreign` FOREIGN KEY (`interview_id`) REFERENCES `interviews` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `interview_feedback_interviewer_id_foreign` FOREIGN KEY (`interviewer_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `interview_feedback`
+--
+
+LOCK TABLES `interview_feedback` WRITE;
+/*!40000 ALTER TABLE `interview_feedback` DISABLE KEYS */;
+/*!40000 ALTER TABLE `interview_feedback` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `interviews`
+--
+
+DROP TABLE IF EXISTS `interviews`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `interviews` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `application_id` bigint(20) unsigned NOT NULL,
+  `interviewer_id` bigint(20) unsigned DEFAULT NULL,
+  `created_by` bigint(20) unsigned DEFAULT NULL,
+  `type` enum('phone','video','in-person') NOT NULL DEFAULT 'in-person',
+  `location` varchar(255) DEFAULT NULL,
+  `meeting_link` varchar(255) DEFAULT NULL,
+  `scheduled_at` timestamp NOT NULL,
+  `notes` text DEFAULT NULL,
+  `outcome` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `interviews_application_id_foreign` (`application_id`),
+  KEY `interviews_interviewer_id_foreign` (`interviewer_id`),
+  KEY `interviews_created_by_foreign` (`created_by`),
+  CONSTRAINT `interviews_application_id_foreign` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `interviews_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `interviews_interviewer_id_foreign` FOREIGN KEY (`interviewer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `interviews`
+--
+
+LOCK TABLES `interviews` WRITE;
+/*!40000 ALTER TABLE `interviews` DISABLE KEYS */;
+/*!40000 ALTER TABLE `interviews` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `job_batches`
 --
 
@@ -949,6 +1147,50 @@ INSERT INTO `job_categories` VALUES
 (4,1,'Project Manager','project-manager','Manages and coordinates project teams','2025-02-04 03:34:17','2025-02-04 03:34:17'),
 (5,1,'Sales Executive','sales-executive','Responsible for sales and client acquisition','2025-02-04 03:34:17','2025-02-04 03:34:17');
 /*!40000 ALTER TABLE `job_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `job_posts`
+--
+
+DROP TABLE IF EXISTS `job_posts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `job_posts` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `business_id` bigint(20) unsigned DEFAULT NULL,
+  `location_id` bigint(20) unsigned DEFAULT NULL,
+  `department_id` bigint(20) unsigned DEFAULT NULL,
+  `title` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `description` longtext NOT NULL,
+  `requirements` longtext DEFAULT NULL,
+  `salary_range` varchar(255) DEFAULT NULL,
+  `number_of_positions` int(11) NOT NULL DEFAULT 1,
+  `employment_type` enum('full-time','part-time','contract','internship') NOT NULL,
+  `place` varchar(255) DEFAULT NULL,
+  `created_by` bigint(20) unsigned NOT NULL,
+  `closed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `job_posts_slug_unique` (`slug`),
+  KEY `job_posts_created_by_foreign` (`created_by`),
+  CONSTRAINT `job_posts_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_posts`
+--
+
+LOCK TABLES `job_posts` WRITE;
+/*!40000 ALTER TABLE `job_posts` DISABLE KEYS */;
+INSERT INTO `job_posts` VALUES
+(1,1,NULL,NULL,'Software Engineer (Full-Stack) – Laravel & Vue.js','software-engineer-full-stack-laravel-vuejs','<p data-start=\"298\" data-end=\"627\">We are seeking a skilled <strong data-start=\"323\" data-end=\"355\">Full-Stack Software Engineer</strong> with experience in <strong data-start=\"375\" data-end=\"386\">Laravel</strong> and <strong data-start=\"391\" data-end=\"401\">Vue.js</strong> to join our dynamic development team. The ideal candidate will be responsible for designing, developing, and maintaining scalable web applications while ensuring seamless integration between frontend and backend components.</p>\r\n<h4 data-start=\"629\" data-end=\"661\"><strong data-start=\"634\" data-end=\"659\">Key Responsibilities:</strong></h4>\r\n<ul data-start=\"662\" data-end=\"1220\">\r\n<li data-start=\"662\" data-end=\"737\">Develop and maintain web applications using <strong data-start=\"708\" data-end=\"719\">Laravel</strong> and <strong data-start=\"724\" data-end=\"734\">Vue.js</strong>.</li>\r\n<li data-start=\"738\" data-end=\"836\">Collaborate with UX/UI designers to implement visually appealing and user-friendly interfaces.</li>\r\n<li data-start=\"837\" data-end=\"907\">Write efficient, reusable, and secure <strong data-start=\"877\" data-end=\"899\">PHP and JavaScript</strong> code.</li>\r\n<li data-start=\"908\" data-end=\"964\">Integrate <strong data-start=\"920\" data-end=\"936\">RESTful APIs</strong> and third-party services.</li>\r\n<li data-start=\"965\" data-end=\"1018\">Optimize application performance and scalability.</li>\r\n<li data-start=\"1019\" data-end=\"1090\">Maintain and update database structures using <strong data-start=\"1067\" data-end=\"1087\">MySQL/PostgreSQL</strong>.</li>\r\n<li data-start=\"1091\" data-end=\"1134\">Troubleshoot and debug software issues.</li>\r\n<li data-start=\"1135\" data-end=\"1220\">Work closely with cross-functional teams to define and meet project requirements.</li>\r\n</ul>\r\n<h4 data-start=\"1222\" data-end=\"1246\"><strong data-start=\"1227\" data-end=\"1244\">Requirements:</strong></h4>\r\n<p data-start=\"1247\" data-end=\"1670\">✅ Bachelor\'s degree in Computer Science, Software Engineering, or a related field.<br data-start=\"1329\" data-end=\"1332\">✅ 3+ years of experience in <strong data-start=\"1360\" data-end=\"1371\">Laravel</strong> and <strong data-start=\"1376\" data-end=\"1386\">Vue.js</strong> development.<br data-start=\"1399\" data-end=\"1402\">✅ Strong knowledge of <strong data-start=\"1424\" data-end=\"1440\">RESTful APIs</strong>, database management, and cloud services.<br data-start=\"1482\" data-end=\"1485\">✅ Experience with <strong data-start=\"1503\" data-end=\"1510\">Git</strong>, <strong data-start=\"1512\" data-end=\"1522\">Docker</strong>, and CI/CD pipelines.<br data-start=\"1544\" data-end=\"1547\">✅ Ability to write clean, maintainable, and well-documented code.<br data-start=\"1612\" data-end=\"1615\">✅ Excellent problem-solving and communication skills.</p>\r\n<h4 data-start=\"1672\" data-end=\"1700\"><strong data-start=\"1677\" data-end=\"1698\">Preferred Skills:</strong></h4>\r\n<ul data-start=\"1701\" data-end=\"1897\">\r\n<li data-start=\"1701\" data-end=\"1752\">Experience with <strong data-start=\"1719\" data-end=\"1749\">microservices architecture</strong>.</li>\r\n<li data-start=\"1753\" data-end=\"1824\">Knowledge of <strong data-start=\"1768\" data-end=\"1779\">Node.js</strong> and WebSockets for real-time applications.</li>\r\n<li data-start=\"1825\" data-end=\"1897\">Familiarity with <strong data-start=\"1844\" data-end=\"1860\">unit testing</strong> and test-driven development (TDD).</li>\r\n</ul>',NULL,'150000 - 200000',1,'full-time','Nairobi, Kenya',1,NULL,'2025-02-10 22:55:57','2025-02-10 22:55:57'),
+(2,1,NULL,NULL,'Digital Marketing Specialist','digital-marketing-specialist','<p data-start=\"3607\" data-end=\"3913\">We are looking for a creative and data-driven <strong data-start=\"3653\" data-end=\"3685\">Digital Marketing Specialist</strong> to drive our <strong data-start=\"3699\" data-end=\"3739\">SEO, SEM, and social media campaigns</strong>. The ideal candidate will have a deep understanding of digital marketing strategies and be able to analyze key performance indicators (KPIs) to optimize marketing efforts.</p>\r\n<h4 data-start=\"3915\" data-end=\"3947\"><strong data-start=\"3920\" data-end=\"3945\">Key Responsibilities:</strong></h4>\r\n<ul data-start=\"3948\" data-end=\"4408\">\r\n<li data-start=\"3948\" data-end=\"4022\">Develop and execute <strong data-start=\"3970\" data-end=\"3977\">SEO</strong> and <strong data-start=\"3982\" data-end=\"3989\">PPC</strong> campaigns for lead generation.</li>\r\n<li data-start=\"4023\" data-end=\"4110\">Manage and grow company presence across <strong data-start=\"4065\" data-end=\"4107\">Facebook, Twitter, LinkedIn, Instagram</strong>.</li>\r\n<li data-start=\"4111\" data-end=\"4177\">Write compelling <strong data-start=\"4130\" data-end=\"4174\">blog posts, email campaigns, and ad copy</strong>.</li>\r\n<li data-start=\"4178\" data-end=\"4256\">Optimize website content and landing pages for <strong data-start=\"4227\" data-end=\"4253\">search engine rankings</strong>.</li>\r\n<li data-start=\"4257\" data-end=\"4321\">Track, analyze, and report on marketing performance metrics.</li>\r\n<li data-start=\"4322\" data-end=\"4408\">Collaborate with the sales team to align marketing strategies with business goals.</li>\r\n</ul>\r\n<h4 data-start=\"4410\" data-end=\"4434\"><strong data-start=\"4415\" data-end=\"4432\">Requirements:</strong></h4>\r\n<p data-start=\"4435\" data-end=\"4769\">✅ Bachelor&rsquo;s degree in <strong data-start=\"4458\" data-end=\"4501\">Marketing, Business, or a related field</strong>.<br data-start=\"4502\" data-end=\"4505\">✅ 3+ years of experience in <strong data-start=\"4533\" data-end=\"4573\">digital marketing, SEO, and paid ads</strong>.<br data-start=\"4574\" data-end=\"4577\">✅ Proficiency in <strong data-start=\"4594\" data-end=\"4648\">Google Analytics, Google Ads, and Meta Ads Manager</strong>.<br data-start=\"4649\" data-end=\"4652\">✅ Strong writing and content creation skills.<br data-start=\"4697\" data-end=\"4700\">✅ Ability to analyze data and make data-driven marketing decisions.</p>\r\n<h4 data-start=\"4771\" data-end=\"4799\"><strong data-start=\"4776\" data-end=\"4797\">Preferred Skills:</strong></h4>\r\n<ul data-start=\"4800\" data-end=\"4960\">\r\n<li data-start=\"4800\" data-end=\"4878\">Experience with <strong data-start=\"4818\" data-end=\"4848\">marketing automation tools</strong> (e.g., HubSpot, Mailchimp).</li>\r\n<li data-start=\"4879\" data-end=\"4960\">Familiarity with <strong data-start=\"4898\" data-end=\"4922\">graphic design tools</strong> like Canva or Adobe Creative Suite.</li>\r\n</ul>',NULL,'100000 - 150000',1,'contract','Remote / Hybrid',1,NULL,'2025-02-10 22:57:03','2025-02-10 22:57:03'),
+(3,1,NULL,NULL,'Human Resource Manager','human-resource-manager','<p data-start=\"2085\" data-end=\"2360\">We are looking for a <strong data-start=\"2106\" data-end=\"2132\">Human Resource Manager</strong> to oversee our HR department and drive <strong data-start=\"2172\" data-end=\"2245\">talent management, employee relations, and organizational development</strong>. The HR Manager will work closely with department heads to implement HR policies that align with business goals.</p>\r\n<h4 data-start=\"2362\" data-end=\"2394\"><strong data-start=\"2367\" data-end=\"2392\">Key Responsibilities:</strong></h4>\r\n<ul data-start=\"2395\" data-end=\"2833\">\r\n<li data-start=\"2395\" data-end=\"2476\">Develop and implement <strong data-start=\"2419\" data-end=\"2473\">HR policies, procedures, and compliance strategies</strong>.</li>\r\n<li data-start=\"2477\" data-end=\"2556\">Manage the <strong data-start=\"2490\" data-end=\"2531\">recruitment, onboarding, and training</strong> process for new hires.</li>\r\n<li data-start=\"2557\" data-end=\"2638\">Handle <strong data-start=\"2566\" data-end=\"2635\">employee relations, conflict resolution, and disciplinary actions</strong>.</li>\r\n<li data-start=\"2639\" data-end=\"2712\">Oversee payroll, benefits administration, and performance appraisals.</li>\r\n<li data-start=\"2713\" data-end=\"2784\">Ensure compliance with <strong data-start=\"2738\" data-end=\"2781\">Kenyan labor laws and HR best practices</strong>.</li>\r\n<li data-start=\"2785\" data-end=\"2833\">Foster a positive and engaging work culture.</li>\r\n</ul>\r\n<h4 data-start=\"2835\" data-end=\"2859\"><strong data-start=\"2840\" data-end=\"2857\">Requirements:</strong></h4>\r\n<p data-start=\"2860\" data-end=\"3224\">✅ Bachelor&rsquo;s degree in <strong data-start=\"2883\" data-end=\"2957\">Human Resource Management, Business Administration, or a related field</strong>.<br data-start=\"2958\" data-end=\"2961\">✅ Minimum of <strong data-start=\"2974\" data-end=\"3013\">5 years of HR management experience</strong>.<br data-start=\"3014\" data-end=\"3017\">✅ Strong knowledge of <strong data-start=\"3039\" data-end=\"3079\">Kenyan labor laws and HR regulations</strong>.<br data-start=\"3080\" data-end=\"3083\">✅ Excellent leadership, communication, and interpersonal skills.<br data-start=\"3147\" data-end=\"3150\">✅ Experience using <strong data-start=\"3169\" data-end=\"3185\">HRM software</strong> for payroll and employee management.</p>\r\n<h4 data-start=\"3226\" data-end=\"3254\"><strong data-start=\"3231\" data-end=\"3252\">Preferred Skills:</strong></h4>\r\n<ul data-start=\"3255\" data-end=\"3399\">\r\n<li data-start=\"3255\" data-end=\"3327\">Certification in <strong data-start=\"3274\" data-end=\"3284\">CHRP-K</strong> or other professional HR qualifications.</li>\r\n<li data-start=\"3328\" data-end=\"3399\">Experience in <strong data-start=\"3344\" data-end=\"3396\">organizational development and change management</strong>.</li>\r\n</ul>',NULL,'180000 - 250000',1,'full-time','Mombasa, Kenya',1,NULL,'2025-02-10 22:58:53','2025-02-10 22:58:53');
+/*!40000 ALTER TABLE `job_posts` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1030,12 +1272,11 @@ CREATE TABLE `leave_entitlements` (
   `employee_id` bigint(20) unsigned NOT NULL,
   `leave_type_id` bigint(20) unsigned NOT NULL,
   `leave_period_id` bigint(20) unsigned NOT NULL,
-  `carry_forward` decimal(5,2) NOT NULL,
-  `entitled_days` decimal(5,2) NOT NULL,
-  `accrued_days` decimal(5,2) NOT NULL,
-  `total_days` decimal(5,2) NOT NULL,
+  `entitled_days` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `accrued_days` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `total_days` decimal(5,2) NOT NULL DEFAULT 0.00,
   `days_taken` decimal(5,2) NOT NULL DEFAULT 0.00,
-  `days_remaining` decimal(5,2) NOT NULL,
+  `days_remaining` decimal(5,2) NOT NULL DEFAULT 0.00,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -1045,7 +1286,7 @@ CREATE TABLE `leave_entitlements` (
   CONSTRAINT `leave_entitlements_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
   CONSTRAINT `leave_entitlements_leave_period_id_foreign` FOREIGN KEY (`leave_period_id`) REFERENCES `leave_periods` (`id`),
   CONSTRAINT `leave_entitlements_leave_type_id_foreign` FOREIGN KEY (`leave_type_id`) REFERENCES `leave_types` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1054,6 +1295,9 @@ CREATE TABLE `leave_entitlements` (
 
 LOCK TABLES `leave_entitlements` WRITE;
 /*!40000 ALTER TABLE `leave_entitlements` DISABLE KEYS */;
+INSERT INTO `leave_entitlements` VALUES
+(1,1,1,6,1,21.00,0.00,21.00,0.00,21.00,'2025-02-10 01:11:31','2025-02-10 01:11:31'),
+(2,1,3,6,1,21.00,0.00,21.00,0.00,21.00,'2025-02-10 01:11:31','2025-02-10 01:11:31');
 /*!40000 ALTER TABLE `leave_entitlements` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1349,7 +1593,7 @@ CREATE TABLE `loans` (
   PRIMARY KEY (`id`),
   KEY `loans_employee_id_foreign` (`employee_id`),
   CONSTRAINT `loans_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1358,9 +1602,6 @@ CREATE TABLE `loans` (
 
 LOCK TABLES `loans` WRITE;
 /*!40000 ALTER TABLE `loans` DISABLE KEYS */;
-INSERT INTO `loans` VALUES
-(1,3,21000.00,4.00,3,'2025-02-07',NULL,'To be repaid or cut from salary','2025-02-07 02:58:45','2025-02-07 02:59:45'),
-(2,3,10000.00,3.00,4,'2025-02-07',NULL,'Something here abpout the loan','2025-02-07 03:54:05','2025-02-07 03:54:05');
 /*!40000 ALTER TABLE `loans` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1431,7 +1672,7 @@ CREATE TABLE `media` (
   UNIQUE KEY `media_uuid_unique` (`uuid`),
   KEY `media_model_type_model_id_index` (`model_type`,`model_id`),
   KEY `media_order_column_index` (`order_column`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1448,7 +1689,12 @@ INSERT INTO `media` VALUES
 (5,'App\\Models\\User',3,'63503b37-5589-4af4-9047-996e568c2304','avatars','person1','person1.jpeg','image/jpeg','public','public',5220,'[]','[]','[]','[]',1,'2025-02-04 23:22:26','2025-02-04 23:22:26'),
 (6,'App\\Models\\Employee',2,'05ffaad3-0edc-4005-88a6-860e83d6c23f','academic_files','New - Employee Bio Data Form','New---Employee-Bio-Data-Form.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',164215,'[]','[]','[]','[]',1,'2025-02-04 23:22:26','2025-02-04 23:22:26'),
 (7,'App\\Models\\User',4,'10276f1d-2d61-4083-8870-e67f8c6f717e','avatars','person4','person4.jpeg','image/jpeg','public','public',3522,'[]','[]','[]','[]',1,'2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(8,'App\\Models\\Employee',3,'2356b19e-cdbd-4935-b554-0ca508cbf309','academic_files','New - Employee Bio Data Form','New---Employee-Bio-Data-Form.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',164215,'[]','[]','[]','[]',1,'2025-02-04 23:30:46','2025-02-04 23:30:46');
+(8,'App\\Models\\Employee',3,'2356b19e-cdbd-4935-b554-0ca508cbf309','academic_files','New - Employee Bio Data Form','New---Employee-Bio-Data-Form.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',164215,'[]','[]','[]','[]',1,'2025-02-04 23:30:46','2025-02-04 23:30:46'),
+(10,'App\\Models\\User',6,'4e6672a8-2abc-4886-8bb1-d4d796e4eb5e','avatars','media-libraryfUR2gY','media-libraryfUR2gY','image/png','public','public',338,'[]','[]','[]','[]',1,'2025-02-11 00:18:24','2025-02-11 00:18:24'),
+(11,'App\\Models\\User',7,'bd37c5a4-8c8a-43c2-908d-6200ca2782d6','avatars','media-library4xDc9T','media-library4xDc9T','image/png','public','public',339,'[]','[]','[]','[]',1,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
+(12,'App\\Models\\User',8,'f5547c10-162f-4d31-9361-0fb751a3e28f','avatars','media-library7ZKF9t','media-library7ZKF9t','image/png','public','public',338,'[]','[]','[]','[]',1,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
+(13,'App\\Models\\Application',1,'52cc4cd2-ab83-49fd-aeec-b1dc1c177d52','applications','New - Employee Bio Data Form','New---Employee-Bio-Data-Form.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',164215,'[]','[]','[]','[]',1,'2025-02-11 01:04:24','2025-02-11 01:04:24'),
+(14,'App\\Models\\Application',2,'386aa516-51a8-4e33-9f43-f6dedfe1b559','applications','Head Of Department-Payslip for the month of January (01), 2025','Head-Of-Department-Payslip-for-the-month-of-January-(01),-2025.pdf','application/pdf','public','public',14126,'[]','[]','[]','[]',1,'2025-02-11 01:04:52','2025-02-11 01:04:52');
 /*!40000 ALTER TABLE `media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1464,7 +1710,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=80 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1518,8 +1764,17 @@ INSERT INTO `migrations` VALUES
 (42,'2025_02_05_025648_add_location_id_to_employees_table',2),
 (43,'2025_01_17_050010_create_employee_reliefs_table',3),
 (44,'2025_02_07_042439_create_advances_table',4),
-(45,'2025_02_07_052854_create_loans_table',5),
-(46,'2025_02_07_053852_create_loan_repayments_table',5);
+(47,'2025_02_07_052854_create_loans_table',5),
+(48,'2025_02_07_053852_create_loan_repayments_table',5),
+(49,'2025_02_08_184451_create_peoples_table',5),
+(72,'2025_02_10_210013_create_skills_table',6),
+(73,'2025_02_10_210016_create_job_posts_table',6),
+(74,'2025_02_10_211642_create_applicants_table',6),
+(75,'2025_02_10_211643_create_applicant_skills_table',6),
+(76,'2025_02_10_213257_create_applications_table',6),
+(77,'2025_02_10_221803_create_interviews_table',6),
+(78,'2025_02_10_224847_create_interview_feedback_table',6),
+(79,'2025_02_11_031751_add_timestamps_to_applicants_table',7);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1576,7 +1831,10 @@ INSERT INTO `model_has_roles` VALUES
 (7,'App\\Models\\User',1),
 (11,'App\\Models\\User',2),
 (11,'App\\Models\\User',3),
-(11,'App\\Models\\User',4);
+(11,'App\\Models\\User',4),
+(12,'App\\Models\\User',6),
+(12,'App\\Models\\User',7),
+(12,'App\\Models\\User',8);
 /*!40000 ALTER TABLE `model_has_roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1910,7 +2168,7 @@ CREATE TABLE `roles` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1930,7 +2188,8 @@ INSERT INTO `roles` VALUES
 (8,'business-hr','web','2025-02-04 03:34:17','2025-02-04 03:34:17'),
 (9,'business-finance','web','2025-02-04 03:34:17','2025-02-04 03:34:17'),
 (10,'business-it','web','2025-02-04 03:34:17','2025-02-04 03:34:17'),
-(11,'business-employee','web','2025-02-04 03:34:17','2025-02-04 03:34:17');
+(11,'business-employee','web','2025-02-04 03:34:17','2025-02-04 03:34:17'),
+(12,'applicant','web','2025-02-04 03:34:17','2025-02-04 03:34:17');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1961,8 +2220,7 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('5mj5TJg6yyalngL30KTzfRa0JkVHevwNdt33pm7S',NULL,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTozOntzOjY6Il90b2tlbiI7czo0MDoiVU9USG10RElBWm5sV1g4Q3NTcVNxZlhtcUk4VXEza2s4U0lpUXZpdyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjQ6Imh0dHA6Ly9hbXNvbC5sb2NhbC9sb2dpbiI7fX0=',1738911710),
-('9KAxIPcVf0pRQx6md9dcz7CTRIiEqoI101Mn5DsY',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoiWDBNVDJkUXprcmFTNzVtUXNkZG9GNG9NeHdmNGV5RUtXRGpiNEtMRCI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTY6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9wYXlyb2xscy9wYXlzbGlwcy80Ijt9czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjIwOiJhY3RpdmVfYnVzaW5lc3Nfc2x1ZyI7czo4OiJhbnphci1rZSI7fQ==',1738918665);
+('hWWElEMWk1tCyWx117RzgjVw2Q1Rsbm3ijaVIVCq',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiUFlwRG1NMWxwbXQyMnVDdlFVenNmOElJSmJxYUhGcFBkcldZVHBMTCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1NToiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2xlYXZlL2VudGl0bGVtZW50cyI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU5OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXIta2UvcmVjcnVpdG1lbnQvaW50ZXJ2aWV3cyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739248591);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2002,6 +2260,34 @@ INSERT INTO `shifts` VALUES
 (4,1,'Flexible Shift','flexible-shift','10:00:00','18:00:00','Flexible shift for employees',1,'2025-02-04 03:34:17','2025-02-04 03:34:17'),
 (5,1,'Weekend Shift','weekend-shift','09:00:00','17:00:00','Shift during weekends',1,'2025-02-04 03:34:17','2025-02-04 03:34:17');
 /*!40000 ALTER TABLE `shifts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `skills`
+--
+
+DROP TABLE IF EXISTS `skills`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `skills` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `slug` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `skills_name_unique` (`name`),
+  UNIQUE KEY `skills_slug_unique` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `skills`
+--
+
+LOCK TABLES `skills` WRITE;
+/*!40000 ALTER TABLE `skills` DISABLE KEYS */;
+/*!40000 ALTER TABLE `skills` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -2061,7 +2347,7 @@ CREATE TABLE `statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `statuses_model_type_model_id_index` (`model_type`,`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2088,7 +2374,18 @@ INSERT INTO `statuses` VALUES
 (15,'active',NULL,'App\\Models\\Location',5,'2025-02-07 03:47:37','2025-02-07 03:47:37'),
 (16,'active',NULL,'App\\Models\\Location',5,'2025-02-07 03:47:48','2025-02-07 03:47:48'),
 (17,'active',NULL,'App\\Models\\Advance',2,'2025-02-07 03:53:10','2025-02-07 03:53:10'),
-(18,'active',NULL,'App\\Models\\Loan',2,'2025-02-07 03:54:05','2025-02-07 03:54:05');
+(18,'active',NULL,'App\\Models\\Loan',2,'2025-02-07 03:54:05','2025-02-07 03:54:05'),
+(19,'open',NULL,'App\\Models\\JobPost',1,'2025-02-10 22:55:57','2025-02-10 22:55:57'),
+(20,'open',NULL,'App\\Models\\JobPost',2,'2025-02-10 22:57:03','2025-02-10 22:57:03'),
+(21,'open',NULL,'App\\Models\\JobPost',3,'2025-02-10 22:58:53','2025-02-10 22:58:53'),
+(23,'active',NULL,'App\\Models\\User',6,'2025-02-11 00:18:24','2025-02-11 00:18:24'),
+(24,'active',NULL,'App\\Models\\Applicant',1,'2025-02-11 00:18:24','2025-02-11 00:18:24'),
+(25,'active',NULL,'App\\Models\\User',7,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
+(26,'active',NULL,'App\\Models\\Applicant',2,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
+(27,'active',NULL,'App\\Models\\User',8,'2025-02-11 00:33:38','2025-02-11 00:33:38'),
+(28,'active',NULL,'App\\Models\\Applicant',3,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
+(29,'applied',NULL,'App\\Models\\Application',1,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
+(30,'applied',NULL,'App\\Models\\Application',2,'2025-02-11 00:33:39','2025-02-11 00:33:39');
 /*!40000 ALTER TABLE `statuses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2118,7 +2415,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_email_unique` (`email`),
   UNIQUE KEY `users_phone_unique` (`phone`),
   UNIQUE KEY `users_social_id_unique` (`social_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2131,7 +2428,10 @@ INSERT INTO `users` VALUES
 (1,'Sammy James','sammy@anzar.co.ke','+254797702066','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$l5Tgf5vzgCrN..8JMT/80.cXVA8/HcDz4T6qK2/dwBIs0REfgOQlu',NULL,'2025-02-04 03:34:48','2025-02-04 03:34:48'),
 (2,'Wayne Zahara Arnold','arnold@gmail.com','+711458963','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$0G.GRi3w/NjlzNOUvNfzv.jaMFpby2QCVoduJoS4Caa1DP9C86Spu',NULL,'2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (3,'John Michael Doe','john.doe@example.com','+1234567890','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$I4nAR/VoIgCQejXKjY80U.7Zw3D371i..XCsY9PMlYOkgErc7Ex0G',NULL,'2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(4,'Emily Rose Smith','emily.smith@example.com','+1245678901','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$VW3waobGdCszZ2HX00EMEeY3/RcS.5K15LbMTIGZP0LMoPy7rfo9G',NULL,'2025-02-04 23:30:46','2025-02-04 23:30:46');
+(4,'Emily Rose Smith','emily.smith@example.com','+1245678901','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$VW3waobGdCszZ2HX00EMEeY3/RcS.5K15LbMTIGZP0LMoPy7rfo9G',NULL,'2025-02-04 23:30:46','2025-02-04 23:30:46'),
+(6,'Martin James Barton Morgan','bujovytywe@mailinator.com','+2547977020836','Kenya',NULL,NULL,NULL,NULL,NULL,'$2y$12$Fi6r3yw36RkBK8czNpROK.Njd5tXSzL2UbRk88s57jgvxvaELGekC',NULL,'2025-02-11 00:18:24','2025-02-11 00:18:24'),
+(7,'John Michael Doe','johndoe@example.com','+254712345678','Kenya',NULL,NULL,NULL,NULL,NULL,'$2y$12$3dCTqMsvobRzriVumuDq1.neoOWf5TVSfr3R9YzlZ6SVyPnP0Pkru',NULL,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
+(8,'Alice  ','alice@example.com','+254723456789','Kenya',NULL,NULL,NULL,NULL,NULL,'$2y$12$jDkc9j9eUSMv9um/RyJ9a.yM77pjpLOpH4tOFkbmzn4/GzPi.wcsW',NULL,'2025-02-11 00:33:38','2025-02-11 00:33:38');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -2144,4 +2444,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-02-07 11:59:20
+-- Dump completed on 2025-02-11  7:51:13

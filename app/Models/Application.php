@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStatus\HasStatuses;
+use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Application extends Model
-{
-    use HasFactory, HasStatuses;
+class Application extends Model implements HasMedia {
+
+    use HasFactory, HasStatuses, InteractsWithMedia;
 
     protected $fillable = [
         'business_id',
@@ -17,7 +20,7 @@ class Application extends Model
         'job_post_id',
         'cover_letter',
         'stage',
-        'notes',   
+        'notes',
         'created_by',
         'match_score',
     ];
@@ -64,5 +67,17 @@ class Application extends Model
     public function scopeForBusiness($query, $businessId)
     {
         return $query->where('business_id', $businessId);
+    }
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('applications');
+    }
+    public function getImageUrl()
+    {
+        $media = $this->getFirstMedia('applications');
+        if ($media && File::exists($media->getPath())) {
+            return $media->getUrl();
+        }
+        return asset('media/avatar.png');
     }
 }

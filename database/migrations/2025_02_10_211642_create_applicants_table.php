@@ -30,6 +30,7 @@ return new class extends Migration {
             $table->string('source')->nullable(); // How did the applicant hear about the company? (e.g., LinkedIn, Indeed, Referral)
             $table->unsignedBigInteger('created_by')->nullable();
             $table->foreign('created_by')->references('id')->on('users');
+            $table->timestamps();
         });
     }
 
