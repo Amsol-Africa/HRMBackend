@@ -29,16 +29,29 @@ class PayrollController extends Controller
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $payrolls = Payroll::getPayrolls('business_id', $business->id);
+
+        $payrolls = Payroll::where('business_id', $business->id)
+            ->orderByDesc('payrun_year')
+            ->orderByDesc('payrun_month')
+            ->get();
+
         $disp_location = $business->company_name;
+
         if ($request->has('location') && !empty($request->location)) {
             $location = Location::findBySlug($request->location);
-            $payrolls = Payroll::getPayrolls('location_id', $location->id);
+            $payrolls = Payroll::where('location_id', $location->id)
+                ->orderByDesc('payrun_year')
+                ->orderByDesc('payrun_month')
+                ->get();
+
             $disp_location = $location->name;
         }
+
         $payrollTable = view('payroll._payroll_list', compact('payrolls', 'disp_location'))->render();
+
         return RequestResponse::ok('Payrolls retrieved successfully.', $payrollTable);
     }
+
 
     public function slips(Request $request)
     {
@@ -85,8 +98,8 @@ class PayrollController extends Controller
         Log::debug($request->all());
 
         $validatedData = $request->validate([
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
+            'payrun_year' => 'required|integer|min:' . (now()->year - 5) . '|max:' . (now()->year + 1),
+            'payrun_month' => 'required|integer|min:1|max:12',
             'employees' => 'required|array',
             'employees.*' => 'exists:employees,id',
             'location' => 'nullable|exists:locations,slug',
@@ -105,8 +118,8 @@ class PayrollController extends Controller
                 'payroll_type' => 'monthly',
                 'currency' => 'KSH',
                 'staff' => count($validatedData['employees']),
-                'start_date' => $validatedData['start_date'],
-                'end_date' => $validatedData['end_date'],
+                'payrun_year' => $validatedData['payrun_year'],
+                'payrun_month' => $validatedData['payrun_month'],
             ]);
 
             $employeeIds = $validatedData['employees'];
@@ -119,7 +132,12 @@ class PayrollController extends Controller
                 try {
                     Log::debug("Calculating payroll for employee ID: {$employee->id}");
 
-                    $payrollData = $this->payrollService->calculatePayroll($employee, $validatedData['start_date'], $validatedData['end_date'], $payroll->id, );
+                    $payrollData = $this->payrollService->calculatePayroll(
+                        $employee,
+                        $validatedData['payrun_year'],
+                        $validatedData['payrun_month'],
+                        $payroll->id
+                    );
 
                     $payrollResults[] = [
                         'employee_id' => $employee->id,
@@ -137,9 +155,10 @@ class PayrollController extends Controller
                 return RequestResponse::badRequest('Payroll processing failed for some employees.', trim($errors));
             }
 
-            return RequestResponse::created('Payroll processed successfully.', $payroll->id);
+            return RequestResponse::created('Payroll processed successfully.');
         });
     }
+
 
     public function printPayslip($id)
     {

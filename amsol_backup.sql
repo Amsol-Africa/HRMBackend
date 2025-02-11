@@ -1071,7 +1071,7 @@ CREATE TABLE `interviews` (
   CONSTRAINT `interviews_application_id_foreign` FOREIGN KEY (`application_id`) REFERENCES `applications` (`id`) ON DELETE CASCADE,
   CONSTRAINT `interviews_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   CONSTRAINT `interviews_interviewer_id_foreign` FOREIGN KEY (`interviewer_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1080,6 +1080,9 @@ CREATE TABLE `interviews` (
 
 LOCK TABLES `interviews` WRITE;
 /*!40000 ALTER TABLE `interviews` DISABLE KEYS */;
+INSERT INTO `interviews` VALUES
+(6,1,NULL,NULL,'in-person','Othaya 51, Kielleshwa',NULL,'2025-02-11 09:00:00',NULL,NULL,'2025-02-11 02:38:32','2025-02-11 02:38:32'),
+(7,1,NULL,NULL,'in-person','Othaya 51, Kielleshwa',NULL,'2025-02-11 09:00:00',NULL,NULL,'2025-02-11 02:44:41','2025-02-11 02:44:41');
 /*!40000 ALTER TABLE `interviews` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1210,7 +1213,7 @@ CREATE TABLE `jobs` (
   `created_at` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `jobs_queue_index` (`queue`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1219,6 +1222,11 @@ CREATE TABLE `jobs` (
 
 LOCK TABLES `jobs` WRITE;
 /*!40000 ALTER TABLE `jobs` DISABLE KEYS */;
+INSERT INTO `jobs` VALUES
+(1,'default','{\"uuid\":\"138f12a0-6cad-4632-a644-0e45cf7eb4eb\",\"displayName\":\"App\\\\Notifications\\\\InterviewScheduledNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:48:\\\"App\\\\Notifications\\\\InterviewScheduledNotification\\\":2:{s:12:\\\"\\u0000*\\u0000interview\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:20:\\\"App\\\\Models\\\\Interview\\\";s:2:\\\"id\\\";i:6;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:2:\\\"id\\\";s:36:\\\"270ae3c4-79ad-4f0c-9298-5f7606162172\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1739252312,1739252312),
+(2,'default','{\"uuid\":\"9b73b924-1f80-43ec-aff9-350a780a2e1f\",\"displayName\":\"App\\\\Notifications\\\\InterviewScheduledNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:48:\\\"App\\\\Notifications\\\\InterviewScheduledNotification\\\":2:{s:12:\\\"\\u0000*\\u0000interview\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:20:\\\"App\\\\Models\\\\Interview\\\";s:2:\\\"id\\\";i:6;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:2:\\\"id\\\";s:36:\\\"270ae3c4-79ad-4f0c-9298-5f7606162172\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"}}',0,NULL,1739252312,1739252312),
+(3,'default','{\"uuid\":\"afa305ca-d8fa-438d-9bab-45c310dd15d4\",\"displayName\":\"App\\\\Notifications\\\\InterviewScheduledNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:48:\\\"App\\\\Notifications\\\\InterviewScheduledNotification\\\":2:{s:12:\\\"\\u0000*\\u0000interview\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:20:\\\"App\\\\Models\\\\Interview\\\";s:2:\\\"id\\\";i:7;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:2:\\\"id\\\";s:36:\\\"695bcb0e-5576-4b81-84b7-59d27b4d07a1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1739252681,1739252681),
+(4,'default','{\"uuid\":\"e272fed5-e207-43eb-9c19-e2a6c1c4ccf8\",\"displayName\":\"App\\\\Notifications\\\\InterviewScheduledNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:6;}s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:48:\\\"App\\\\Notifications\\\\InterviewScheduledNotification\\\":2:{s:12:\\\"\\u0000*\\u0000interview\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:20:\\\"App\\\\Models\\\\Interview\\\";s:2:\\\"id\\\";i:7;s:9:\\\"relations\\\";a:0:{}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:2:\\\"id\\\";s:36:\\\"695bcb0e-5576-4b81-84b7-59d27b4d07a1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:4:\\\"mail\\\";}}\"}}',0,NULL,1739252681,1739252681);
 /*!40000 ALTER TABLE `jobs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2220,7 +2228,7 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('hWWElEMWk1tCyWx117RzgjVw2Q1Rsbm3ijaVIVCq',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiUFlwRG1NMWxwbXQyMnVDdlFVenNmOElJSmJxYUhGcFBkcldZVHBMTCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1NToiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2xlYXZlL2VudGl0bGVtZW50cyI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU5OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXIta2UvcmVjcnVpdG1lbnQvaW50ZXJ2aWV3cyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739248591);
+('hWWElEMWk1tCyWx117RzgjVw2Q1Rsbm3ijaVIVCq',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiUFlwRG1NMWxwbXQyMnVDdlFVenNmOElJSmJxYUhGcFBkcldZVHBMTCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1NToiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2xlYXZlL2VudGl0bGVtZW50cyI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU5OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXIta2UvcmVjcnVpdG1lbnQvaW50ZXJ2aWV3cyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739253359);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2347,7 +2355,7 @@ CREATE TABLE `statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `statuses_model_type_model_id_index` (`model_type`,`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2385,7 +2393,9 @@ INSERT INTO `statuses` VALUES
 (27,'active',NULL,'App\\Models\\User',8,'2025-02-11 00:33:38','2025-02-11 00:33:38'),
 (28,'active',NULL,'App\\Models\\Applicant',3,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
 (29,'applied',NULL,'App\\Models\\Application',1,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
-(30,'applied',NULL,'App\\Models\\Application',2,'2025-02-11 00:33:39','2025-02-11 00:33:39');
+(30,'applied',NULL,'App\\Models\\Application',2,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
+(31,'scheduled',NULL,'App\\Models\\Interview',6,'2025-02-11 00:33:39','2025-02-11 00:33:39'),
+(32,'scheduled',NULL,'App\\Models\\Interview',7,'2025-02-11 00:33:39','2025-02-11 00:33:39');
 /*!40000 ALTER TABLE `statuses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2444,4 +2454,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-02-11  7:51:13
+-- Dump completed on 2025-02-11  8:56:50

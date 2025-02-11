@@ -1,23 +1,15 @@
 <div class="card h-100">
     <div class="card-header border-0">
         <h5 class="card__heading-title">
-
             <?php
-                $startDate = date("F", strtotime($payroll->start_date));
-                $endDate = date("F", strtotime($payroll->end_date));
-
-                if ($startDate == $endDate) {
-                    echo '<i class="fa-solid fa-wallet"></i> Payroll for ' . $startDate . ' ' . date("Y", strtotime($payroll->start_date));
-                } else {
-                    echo '<i class="fa-solid fa-wallet"></i> Payroll from this ' . $startDate . ' to this ' . $endDate . ', ' . date("Y", strtotime($payroll->start_date)) .
-                        (date("Y", strtotime($payroll->end_date)) != date("Y", strtotime($payroll->start_date)) ? ', ' . date("Y", strtotime($payroll->end_date)) : '');
-                }
+                $payrunMonth = DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F');
+                echo '<i class="fa-solid fa-wallet"></i> Payroll for ' . $payrunMonth . ' ' . $payroll->payrun_year;
             ?>
 
             @if ($payroll->employeePayrolls()->count() > 0)
-            <span class="badge bg-success">PROCESSED</span>
+                <span class="badge bg-success">PROCESSED</span>
             @else
-            <span class="badge bg-warning">READY</span>
+                <span class="badge bg-warning">READY</span>
             @endif
         </h5>
     </div>
@@ -29,8 +21,8 @@
                 <p><strong>{{ $payroll->staff }}</strong></p>
             </div>
             <div class="col-md-4">
-                <h6 class="card-title">PAYMENT DATE</h6>
-                <p><strong>{{ date("d, F Y", strtotime($payroll->end_date)) }}</strong></p>
+                <h6 class="card-title">PAYRUN MONTH</h6>
+                <p><strong>{{ DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F') }}, {{ $payroll->payrun_year }}</strong></p>
             </div>
             <div class="col-md-4">
                 <h6 class="card-title">TOTAL NET PAY</h6>
@@ -58,5 +50,4 @@
             </div>
         </div>
     </div>
-
 </div>

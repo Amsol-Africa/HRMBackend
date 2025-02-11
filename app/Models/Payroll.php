@@ -7,16 +7,16 @@ use Spatie\ModelStatus\HasStatuses;
 
 class Payroll extends Model
 {
-
     use HasStatuses;
+
     protected $fillable = [
         'business_id',
         'location_id',
         'payroll_type',
         'currency',
         'staff',
-        'start_date',
-        'end_date',
+        'payrun_year',
+        'payrun_month',
     ];
 
     public function business()
