@@ -65,9 +65,7 @@ class RegisteredUserController extends Controller
 
             if (!empty($validatedData['registration_token'])) {
                 $invitation = AccessRequest::where('registration_token', $validatedData['registration_token'])->firstOrFail();
-                Log::debug($invitation);
                 $managing_business = Business::find($invitation->business_id);
-                Log::debug($managing_business);
                 session(['managing_business' => $managing_business->id]);
                 session(['employee_id' => $invitation->requester_id]);
             }

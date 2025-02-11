@@ -1,7 +1,16 @@
 $(document).ready(() => {
-    if ($('.summernote').length) {
-        $('.summernote').summernote({
+    if ($(".summernote").length) {
+        $(".summernote").summernote({
             height: 200,
+        });
+    }
+    if ($(".tinyMce").length) {
+        tinymce.init({
+            selector: "textarea.tinyMce",
+            plugins:
+                "anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount",
+            toolbar:
+                "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat",
         });
     }
     initializeDatepicker();
@@ -9,21 +18,21 @@ $(document).ready(() => {
 
 // Initialize Toastr options
 toastr.options = {
-    "closeButton": true,
-    "debug": false,
-    "newestOnTop": false,
-    "progressBar": true,
-    "positionClass": "toast-top-right",
-    "preventDuplicates": true,
-    "onclick": null,
-    "showDuration": "300",
-    "hideDuration": "1000",
-    "timeOut": "5000",
-    "extendedTimeOut": "1000",
-    "showEasing": "swing",
-    "hideEasing": "linear",
-    "showMethod": "fadeIn",
-    "hideMethod": "fadeOut"
+    closeButton: true,
+    debug: false,
+    newestOnTop: false,
+    progressBar: true,
+    positionClass: "toast-top-right",
+    preventDuplicates: true,
+    onclick: null,
+    showDuration: "300",
+    hideDuration: "1000",
+    timeOut: "5000",
+    extendedTimeOut: "1000",
+    showEasing: "swing",
+    hideEasing: "linear",
+    showMethod: "fadeIn",
+    hideMethod: "fadeOut",
 };
 function initializeDatepicker() {
     $(".datepicker").flatpickr({
@@ -49,26 +58,26 @@ function dataTable(table, options) {
             dom: '<"d-flex justify-content-between align-items-center"lBf>tip',
             buttons: [
                 {
-                    extend: 'print',
+                    extend: "print",
                     text: '<i class="fa-solid fa-print" title="print"></i>',
                     exportOptions: {
-                        columns: ':visible'
-                    }
+                        columns: ":visible",
+                    },
                 },
                 {
-                    extend: 'csv',
+                    extend: "csv",
                     text: '<i class="fa-solid fa-file-csv" title="csv"></i>',
                     exportOptions: {
-                        columns: ':visible'
-                    }
+                        columns: ":visible",
+                    },
                 },
                 {
-                    extend: 'excel',
+                    extend: "excel",
                     text: '<i class="fa-solid fa-file-excel" title="excel"></i>',
                     exportOptions: {
-                        columns: ':visible'
-                    }
-                }
+                        columns: ":visible",
+                    },
+                },
             ],
             language: {
                 emptyTable: "No data available in the table",
@@ -84,7 +93,9 @@ function dataTable(table, options) {
             drawCallback: function (settings) {
                 var api = this.api();
                 var pageInfo = api.page.info();
-                var $pagination = $(this).closest(".dataTables_wrapper").find(".dataTables_paginate");
+                var $pagination = $(this)
+                    .closest(".dataTables_wrapper")
+                    .find(".dataTables_paginate");
                 if (pageInfo.pages <= 1) {
                     $pagination.hide();
                 } else {

@@ -6,12 +6,16 @@ use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ReliefController;
 use App\Http\Controllers\AdvanceController;
+use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ApplicantController;
+use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\JobCategoryController;
 use App\Http\Controllers\LeavePeriodController;
 use App\Http\Controllers\LeaveRequestController;
@@ -153,6 +157,48 @@ Route::middleware(['auth'])->group(function () {
         Route::post('delete', [LoanController::class, 'destroy'])->name('delete');
         Route::post('update', [LoanController::class, 'update'])->name('update');
     });
+
+    // Job Postings Management
+    Route::name('job-posts.')->prefix('job-posts')->group(function () {
+        Route::post('edit', [JobPostController::class, 'edit'])->name('edit');
+        Route::post('store', [JobPostController::class, 'store'])->name('store');
+        Route::post('fetch', [JobPostController::class, 'fetch'])->name('fetch');
+        Route::post('show', [JobPostController::class, 'show'])->name('show');
+        Route::post('destroy', [JobPostController::class, 'destroy'])->name('destroy');
+        Route::post('update', [JobPostController::class, 'update'])->name('update');
+    });
+
+    // Job Applications Management
+    Route::name('applications.')->prefix('applications')->group(function () {
+        Route::post('edit', [ApplicationController::class, 'edit'])->name('edit');
+        Route::post('store', [ApplicationController::class, 'store'])->name('store');
+        Route::post('fetch', [ApplicationController::class, 'fetch'])->name('fetch');
+        Route::post('destroy', [ApplicationController::class, 'destroy'])->name('destroy');
+        Route::post('update', [ApplicationController::class, 'update'])->name('update');
+    });
+
+    // Interview Scheduling
+    Route::name('interviews.')->prefix('interviews')->group(function () {
+        Route::post('edit', [InterviewController::class, 'edit'])->name('edit');
+        Route::post('store', [InterviewController::class, 'store'])->name('store');
+        Route::post('fetch', [InterviewController::class, 'fetch'])->name('fetch');
+        Route::post('show', [InterviewController::class, 'show'])->name('show');
+        Route::post('destroy', [InterviewController::class, 'destroy'])->name('destroy');
+        Route::post('update', [InterviewController::class, 'update'])->name('update');
+        Route::post('reschedule', [InterviewController::class, 'reschedule'])->name('reschedule');
+        Route::post('cancel', [InterviewController::class, 'cancel'])->name('cancel');
+    });
+
+    // Applicant Management
+    Route::name('applicants.')->prefix('applicants')->group(function () {
+        Route::post('edit', [ApplicantController::class, 'edit'])->name('edit');
+        Route::post('store', [ApplicantController::class, 'store'])->name('store');
+        Route::post('fetch', [ApplicantController::class, 'fetch'])->name('fetch');
+        Route::post('show', [ApplicantController::class, 'show'])->name('show');
+        Route::post('destroy', [ApplicantController::class, 'destroy'])->name('destroy');
+        Route::post('update', [ApplicantController::class, 'update'])->name('update');
+    });
+
 
     //print
     Route::get('/payslip/print/{id}', [PayrollController::class, 'printPayslip'])->name('payslip.print');

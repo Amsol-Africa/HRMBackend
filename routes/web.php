@@ -55,14 +55,36 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/advances', [DashboardController::class, 'advances'])->name('advances.index');
         Route::get('/loans', [DashboardController::class, 'loans'])->name('loans.index');
+
         //leave management
-        Route::get('/leave/requests/create', [DashboardController::class, 'requestLeave'])->name('leave.create');
-        Route::get('/leave/requests', [DashboardController::class, 'leaveApplications'])->name('leave.index');
-        Route::get('/leave/types', [DashboardController::class, 'leaveTypes'])->name('leave.types');
-        Route::get('/leave/periods', [DashboardController::class, 'leavePeriods'])->name('leave.periods');
-        Route::get('/leave/entitlement', [DashboardController::class, 'leaveEntitlement'])->name('leave.entitlement');
-        Route::get('/leave/settings', [DashboardController::class, 'leaveSettings'])->name('leave.settings');
-        Route::get('/leave/reports', [DashboardController::class, 'leaveReports'])->name('leave.reports');
+        Route::prefix('leave')->name('leave.')->group(function () {
+            Route::get('/requests/create', [DashboardController::class, 'requestLeave'])->name('create');
+            Route::get('/requests', [DashboardController::class, 'leaveApplications'])->name('index');
+            Route::get('/types', [DashboardController::class, 'leaveTypes'])->name('types');
+            Route::get('/periods', [DashboardController::class, 'leavePeriods'])->name('periods');
+            Route::get('/entitlements', [DashboardController::class, 'leaveEntitlements'])->name('entitlements.index');
+            Route::get('/entitlements/set', [DashboardController::class, 'setLeaveEntitlements'])->name('entitlements.create');
+            Route::get('/settings', [DashboardController::class, 'leaveSettings'])->name('settings');
+            Route::get('/reports', [DashboardController::class, 'leaveReports'])->name('reports');
+        });
+
+        // Recruitment Module
+        Route::prefix('recruitment')->name('recruitment.')->group(function () {
+            Route::get('/applicants', [DashboardController::class, 'applicants'])->name('applicants');
+            Route::get('/job-posts', [DashboardController::class, 'jobPosts'])->name('jobs.index');
+            Route::get('/job-posts/create', [DashboardController::class, 'createJobPosts'])->name('jobs.create');
+            Route::get('/interviews', [DashboardController::class, 'interviews'])->name('interviews');
+            Route::get('/reports', [DashboardController::class, 'recruitmentReports'])->name('reports');
+        });
+        // Recruitment Module
+        Route::prefix('job-applications')->name('job-applications.')->group(function () {
+            Route::get('/', [DashboardController::class, 'jobApplications'])->name('index');
+            Route::get('/create', [DashboardController::class, 'createJobApplications'])->name('create');
+            Route::get('/applicants', [DashboardController::class, 'jobApplicants'])->name('applicants.index');
+            Route::get('/applicants/create', [DashboardController::class, 'createJobApplicants'])->name('applicants.create');
+        });
+
+
 
 
 
@@ -85,5 +107,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/payroll-template/xlsx', [PayrollController::class, 'downloadXlsxTemplate'])->name('payroll-template.xlsx');
 });
 
-require __DIR__.'/auth.php';
-require __DIR__.'/requests.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/requests.php';

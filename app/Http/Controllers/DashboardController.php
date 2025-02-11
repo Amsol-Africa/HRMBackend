@@ -212,7 +212,7 @@ class DashboardController extends Controller
         return view('payroll.index', compact('page', 'description', 'locations'));
     }
 
-    public function payslips(Request $request, String $business_slug, Payroll $payroll)
+    public function payslips(Request $request, string $business_slug, Payroll $payroll)
     {
         $page = 'Payslips';
         $description = '';
@@ -352,9 +352,17 @@ class DashboardController extends Controller
         $description = '';
         return view('leave.periods', compact('page', 'description'));
     }
-    public function leaveEntitlement(Request $request)
+    public function leaveEntitlements(Request $request)
     {
-        $page = 'Leave Entitlement';
+        $page = 'Leave Entitlements';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $leave_periods = $business->leavePeriods;
+        return view('leave.entitlements', compact('page', 'description', 'leave_periods'));
+    }
+    public function setLeaveEntitlements(Request $request)
+    {
+        $page = 'Set Leave Entitlements';
         $business = Business::findBySlug(session('active_business_slug'));
         $description = '';
         $employees = $business->employees;
@@ -377,6 +385,71 @@ class DashboardController extends Controller
         $description = '';
         return view('leave.reports', compact('page', 'description'));
     }
+
+
+    // Recruitment Module
+    public function applicants(Request $request)
+    {
+        $page = 'Applicants';
+        $description = 'Manage and review all job applicants.';
+        return view('job-applications.applicants', compact('page', 'description'));
+    }
+
+    public function jobPosts(Request $request)
+    {
+        $page = 'Job Posts';
+        $description = 'Manage job postings and vacancies.';
+        return view('job-posts.index', compact('page', 'description'));
+    }
+
+    public function createJobPosts(Request $request)
+    {
+        $page = 'Add Job Posts';
+        $description = 'Manage job postings and vacancies.';
+        return view('job-posts.create', compact('page', 'description'));
+    }
+
+    public function jobApplicants(Request $request)
+    {
+        $page = 'Job Applicants';
+        $description = 'Track job applications and their statuses.';
+        return view('job-applications.applicants', compact('page', 'description'));
+    }
+    public function createJobApplicants(Request $request)
+    {
+        $page = 'Create Job Applicants';
+        $description = 'Track job applications and their statuses.';
+        return view('job-applications.create-applicant', compact('page', 'description'));
+    }
+
+    public function createJobApplications(Request $request)
+    {
+        $page = 'Create Job Applications';
+        $description = 'Track job applications and their statuses.';
+        return view('job-applications.create', compact('page', 'description'));
+    }
+
+    public function jobApplications(Request $request)
+    {
+        $page = 'Job Applications';
+        $description = 'Track job applications and their statuses.';
+        return view('job-applications.index', compact('page', 'description'));
+    }
+
+    public function interviews(Request $request)
+    {
+        $page = 'Interview Scheduling';
+        $description = 'Schedule and manage job interviews.';
+        return view('recruitment.interviews', compact('page', 'description'));
+    }
+
+    public function recruitmentReports(Request $request)
+    {
+        $page = 'Recruitment Reports';
+        $description = 'Analyze recruitment trends and performance.';
+        return view('recruitment.reports', compact('page', 'description'));
+    }
+
 
 
 }

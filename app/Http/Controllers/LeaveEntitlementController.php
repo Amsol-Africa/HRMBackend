@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
+use App\Models\LeavePeriod;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Models\LeaveEntitlement;
@@ -15,24 +16,42 @@ class LeaveEntitlementController extends Controller
 
     public function fetch(Request $request)
     {
+        $validatedData = $request->validate([
+            'leave_period_slug' => 'required|exists:leave_periods,slug',
+        ]);
         $business = Business::findBySlug(session('active_business_slug'));
 
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.', 404);
+        }
+
+        $leavePeriod = LeavePeriod::where('slug', $validatedData['leave_period_slug'])->where('business_id', $business->id)->first();
+
+        if (!$leavePeriod) {
+            return RequestResponse::badRequest('Leave period not found.', 404);
+        }
+
+
         $leaveEntitlementsQuery = LeaveEntitlement::where('business_id', $business->id)
-            ->whereHas('employee', function ($query) {
-                $query->whereNull('location_id');
-            });
+            ->where('leave_period_id', $leavePeriod->id);
 
         if ($request->has('location_id')) {
-            $leaveEntitlementsQuery = LeaveEntitlement::whereHas('employee', function ($query) use ($request) {
+            $leaveEntitlementsQuery->whereHas('employee', function ($query) use ($request) {
                 $query->where('location_id', $request->location_id);
             });
+        } else {
+            $leaveEntitlementsQuery->whereHas('employee', function ($query) {
+                $query->whereNull('location_id');
+            });
         }
+
 
         $leaveEntitlements = $leaveEntitlementsQuery->with(['employee', 'leaveType', 'leavePeriod'])->get();
 
         $leaveEntitlementsTable = view('leave._leave_entitlements_table', compact('leaveEntitlements'))->render();
         return RequestResponse::ok('Leave entitlements fetched successfully.', $leaveEntitlementsTable);
     }
+
     public function store(Request $request)
     {
         Log::debug($request->all());

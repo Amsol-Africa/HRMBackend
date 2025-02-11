@@ -98,6 +98,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
         <script src="https://cdn.datatables.net/v/dt/dt-2.0.8/datatables.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        <script src="https://cdn.tiny.cloud/1/3kfd12d1nvownxb4sd23epa9oexib4c3nzwidt83yg1m4xew/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
         <script src="{{ asset('assets/js/vendor/isotope.pkgd.js') }}"></script>
         <script src="{{ asset('assets/js/vendor/bootstrap.bundle.min.js') }}"></script>

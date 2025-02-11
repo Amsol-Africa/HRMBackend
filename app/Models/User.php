@@ -63,6 +63,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         return $this->hasOne(Employee::class);
     }
+    public function applicant()
+    {
+        return $this->hasOne(Employee::class);
+    }
 
     public function managedClients()
     {

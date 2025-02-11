@@ -117,6 +117,10 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(Location::class);
     }
+    public function jobPosts()
+    {
+        return $this->hasMany(JobPost::class);
+    }
     public function managedBusinesses()
     {
         return $this->belongsToMany(
