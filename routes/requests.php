@@ -198,16 +198,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('destroy', [ApplicantController::class, 'destroy'])->name('destroy');
         Route::post('update', [ApplicantController::class, 'update'])->name('update');
     });
-    // Applicant Management
-    Route::name('interviews.')->prefix('interviews')->group(function () {
-        Route::post('edit', [InterviewController::class, 'edit'])->name('edit');
-        Route::post('store', [InterviewController::class, 'store'])->name('store');
-        Route::post('fetch', [InterviewController::class, 'fetch'])->name('fetch');
-        Route::post('show', [InterviewController::class, 'show'])->name('show');
-        Route::post('destroy', [InterviewController::class, 'destroy'])->name('destroy');
-        Route::post('update', [InterviewController::class, 'update'])->name('update');
-    });
-
 
     //print
     Route::get('/payslip/print/{id}', [PayrollController::class, 'printPayslip'])->name('payslip.print');

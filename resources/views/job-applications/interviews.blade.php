@@ -12,7 +12,7 @@
                     </div>
 
                 </div>
-                <div class="card-body" id="jobApplicationsContainer">
+                <div class="card-body" id="interviewsContainer">
 
                     {{ loader() }}
 

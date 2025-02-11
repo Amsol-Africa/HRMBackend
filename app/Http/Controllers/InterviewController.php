@@ -2,110 +2,112 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Enum\Status;
-use App\Models\User;
 use App\Models\Business;
+use App\Models\Applicant;
 use App\Models\Interview;
 use App\Models\Application;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use App\Notifications\InterviewScheduledNotification;
 
 class InterviewController extends Controller
 {
     use HandleTransactions;
 
-    /**
-     * Display a listing of interviews.
-     */
-    public function index()
-    {
-        $business = Business::findBySlug(session('active_business_slug'));
-        $interviews = $business->interviews()->with(['application.applicant', 'interviewer'])->paginate(10);
-
-        return view('interviews.index', compact('interviews'));
-    }
-
-    /**
-     * Store a newly created interview.
-     */
     public function store(Request $request)
     {
         Log::debug($request->all());
-
-        $request->validate([
+        $validatedData = $request->validate([
             'application_id' => 'required|exists:applications,id',
-            'interviewer_id' => 'nullable|exists:users,id',
             'type' => 'required|in:phone,video,in-person',
             'scheduled_at' => 'required|date|after:now',
-            'location' => 'nullable|required_if:type,in-person|string',
-            'meeting_link' => 'nullable|required_if:type,video|url',
+            'location' => 'nullable|string|required_if:type,in-person',
+            'meeting_link' => 'nullable|url|required_if:type,video',
             'notes' => 'nullable|string',
         ]);
 
-        return $this->handleTransaction(function () use ($request) {
-            $application = Application::findOrFail($request->application_id);
-            $business = $application->business;
-
-            $interview = Interview::create([
-                'application_id' => $application->id,
-                'interviewer_id' => $request->interviewer_id,
-                'created_by' => Auth::id(),
-                'type' => $request->type,
-                'scheduled_at' => $request->scheduled_at,
-                'location' => $request->location,
-                'meeting_link' => $request->meeting_link,
-                'notes' => $request->notes,
-            ]);
+        return $this->handleTransaction(function () use ($validatedData) {
+            $interview = Interview::create(array_merge($validatedData, [
+                'created_by' => auth()->id()
+            ]));
 
             $interview->setStatus(Status::SCHEDULED);
 
-            return RequestResponse::created('Interview scheduled successfully');
+            $application = Application::with('applicant')->findOrFail($validatedData['application_id']);
+
+            $application->applicant->user->notify(new InterviewScheduledNotification($interview));
+
+            if ($interview->interviewer) {
+                $interview->interviewer->notify(new InterviewScheduledNotification($interview));
+            }
+
+            return RequestResponse::created('Interview scheduled successfully.');
         });
     }
 
-    /**
-     * Display the specified interview details.
-     */
-    public function show(Interview $interview)
+    public function fetch(Request $request)
     {
-        return view('interviews.show', compact('interview'));
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.', 404);
+        }
+
+        $interviews = Interview::whereHas('jobApplication', function ($query) use ($business) {
+            $query->where('business_id', $business->id);
+        })->with('jobApplication', 'interviewer')->latest()->paginate(10);
+
+        $interviews_table = view('job-applications._interviews_table', compact('interviews'))->render();
+
+        return RequestResponse::ok('Interviews fetched successfully.', $interviews_table);
     }
 
-    /**
-     * Update the specified interview.
-     */
-    public function update(Request $request, Interview $interview)
+    public function show($id)
     {
-        $request->validate([
-            'interviewer_id' => 'nullable|exists:users,id',
+        $interview = Interview::with('application', 'interviewer')->findOrFail($id);
+        return RequestResponse::ok('Interview details fetched successfully.', $interview);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validatedData = $request->validate([
             'type' => 'required|in:phone,video,in-person',
             'scheduled_at' => 'required|date|after:now',
-            'location' => 'nullable|required_if:type,in-person|string',
-            'meeting_link' => 'nullable|required_if:type,video|url',
+            'location' => 'nullable|string|required_if:type,in-person',
+            'meeting_link' => 'nullable|url|required_if:type,video',
             'notes' => 'nullable|string',
         ]);
 
-        return $this->handleTransaction(function () use ($request, $interview) {
-            $interview->update($request->only([
-                'interviewer_id', 'type', 'scheduled_at', 'location', 'meeting_link', 'notes'
-            ]));
-
-            return RequestResponse::ok('Interview updated successfully', $interview);
+        return $this->handleTransaction(function () use ($validatedData, $id) {
+            $interview = Interview::findOrFail($id);
+            $interview->update($validatedData);
+            return RequestResponse::ok('Interview updated successfully.', $interview);
         });
     }
 
-    /**
-     * Remove the specified interview.
-     */
-    public function destroy(Interview $interview)
+    public function reschedule(Request $request, $id)
     {
-        return $this->handleTransaction(function () use ($interview) {
+        $validatedData = $request->validate([
+            'scheduled_at' => 'required|date|after:now',
+        ]);
+
+        return $this->handleTransaction(function () use ($validatedData, $id) {
+            $interview = Interview::findOrFail($id);
+            $interview->update(['scheduled_at' => $validatedData['scheduled_at']]);
+            return RequestResponse::ok('Interview rescheduled successfully.', $interview);
+        });
+    }
+
+    public function cancel($id)
+    {
+        return $this->handleTransaction(function () use ($id) {
+            $interview = Interview::findOrFail($id);
             $interview->delete();
-            return RequestResponse::ok('Interview deleted successfully');
+            return RequestResponse::ok('Interview canceled successfully.');
         });
     }
 }

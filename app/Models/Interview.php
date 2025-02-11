@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
+use App\Notifications\InterviewCanceledNotification;
 use App\Notifications\InterviewDeclinedNotification;
 use App\Notifications\InterviewScheduledNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +15,7 @@ class Interview extends Model
     use HasFactory, HasStatuses;
 
     protected $fillable = [
-        'job_application_id',
+        'application_id',
         'interviewer_id',
         'type',
         'location',
@@ -30,7 +31,7 @@ class Interview extends Model
 
     public function jobApplication()
     {
-        return $this->belongsTo(Application::class);
+        return $this->belongsTo(Application::class, 'application_id');
     }
 
     public function interviewer()
@@ -44,20 +45,6 @@ class Interview extends Model
     public function feedback()
     {
         return $this->hasOne(InterviewFeedback::class);
-    }
-
-
-    protected static function booted()
-    {
-        static::created(function ($interview) {
-            // Notify applicant
-            $interview->jobApplication->applicant->user->notify(new InterviewScheduledNotification($interview));
-
-            // Notify interviewer if assigned
-            if ($interview->interviewer) {
-                $interview->interviewer->notify(new InterviewScheduledNotification($interview));
-            }
-        });
     }
 
     public function reschedule($newDateTime)

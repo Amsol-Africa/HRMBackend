@@ -12,11 +12,11 @@
         </tr>
     </thead>
     <tbody>
-        @foreach($interviews as $interview)
+        @foreach($interviews as $key => $interview)
         <tr>
-            <td>{{ $loop->iteration }}</td>
-            <td>{{ $interview->application->applicant->name }}</td>
-            <td>{{ $interview->application->jobPost->title }}</td>
+            <td>{{ $key + 1 }}.</td>
+            <td>{{ $interview->jobApplication->applicant->user->name }}</td>
+            <td>{{ $interview->jobApplication->jobPost->title }}</td>
             <td>{{ ucfirst($interview->type) }}</td>
             <td>{{ $interview->scheduled_at->format('M d, Y H:i A') }}</td>
             <td>{{ $interview->interviewer?->name ?? 'Not Assigned' }}</td>

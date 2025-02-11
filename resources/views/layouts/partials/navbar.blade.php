@@ -272,6 +272,12 @@
                         <span class="sidebar__menu-label">Recruitment</span>
                     </a>
                     <ul class="sidebar-menu child1">
+                        <li class="slide {{ request()->routeIs('business.job-applications.applicants.*') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.job-applications.applicants.*') ? 'active' : '' }}"
+                               href="{{ route('business.job-applications.applicants.index', $currentBusiness->slug) }}">
+                               Job Applicants
+                            </a>
+                        </li>
                         <li class="slide {{ request()->routeIs('business.recruitment.jobs.*') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.recruitment.jobs.*') ? 'active' : '' }}"
                                href="{{ route('business.recruitment.jobs.index', $currentBusiness->slug) }}">
@@ -282,12 +288,6 @@
                             <a class="sidebar__menu-item {{ request()->routeIs('business.job-applications.index') ? 'active' : '' }}"
                                href="{{ route('business.job-applications.index', $currentBusiness->slug) }}">
                                Job Applications
-                            </a>
-                        </li>
-                        <li class="slide {{ request()->routeIs('business.job-applications.applicants.*') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.job-applications.applicants.*') ? 'active' : '' }}"
-                               href="{{ route('business.job-applications.applicants.index', $currentBusiness->slug) }}">
-                               Job Applicants
                             </a>
                         </li>
                         <li class="slide {{ request()->routeIs('business.recruitment.interviews') ? 'active' : '' }}">

@@ -15,13 +15,13 @@ window.getInterviews = async function (page = 1) {
         console.error("Error loading user data:", error);
     }
 };
-window.saveApplication = async function (btn) {
+window.scheduleInterview = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
     tinymce.triggerSave();
 
-    let formData = new FormData(document.getElementById("interviewForm"));
+    let formData = new FormData(document.getElementById("interviewsForm"));
 
     try {
         if (formData.has('_period_slug')) {

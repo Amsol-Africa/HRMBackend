@@ -37,13 +37,13 @@
                 <td>{{ $application->created_at->format('d M, Y') }}</td>
                 <td>
                     <button class="btn btn-sm btn-info" onclick="viewApplication({{ $application->id }})">
-                        <i class="bi bi-eye"></i> View
+                        <i class="bi bi-eye me-2"></i> View
                     </button>
                     <button class="btn btn-sm btn-danger" onclick="deleteApplication({{ $application->id }})">
-                        <i class="bi bi-trash"></i> Delete
+                        <i class="bi bi-trash me-2"></i> Delete
                     </button>
                     <button class="btn btn-sm btn-primary" onclick="openScheduleInterviewModal({{ $application->id }}, '{{ $application->applicant->user->name }}', '{{ $application->jobPost->title }}')">
-                        <i class="bi bi-calendar-plus"></i> Schedule Interview
+                        <i class="bi bi-calendar-plus me-2"></i> Schedule Interview
                     </button>
                 </td>
 
