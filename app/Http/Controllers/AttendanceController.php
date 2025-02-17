@@ -9,23 +9,27 @@ use App\Models\Attendance;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
     use HandleTransactions;
 
-    // Fetch Job Posts
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
 
         $date = $request->input('date', now()->format('Y-m-d'));
 
+        Log::debug($date);
+
         $attendances = Attendance::where('business_id', $business->id)
             ->whereDate('date', $date)
             ->with('employee')
             ->orderBy('date', 'desc')
             ->get();
+
+        Log::debug($attendances);
 
         $attendanceTable = view('attendances._attendance_table', compact('attendances'))->render();
 
@@ -70,7 +74,7 @@ class AttendanceController extends Controller
     {
         $validatedData = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'clock_out' => 'required|date_format:H:i',
+            'remarks' => 'nullable|string',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
@@ -86,13 +90,13 @@ class AttendanceController extends Controller
             }
 
             $clockIn = Carbon::parse($attendance->clock_in);
-            $clockOut = Carbon::parse($validatedData['clock_out']);
+            $clockOut = now()->format('H:i');
             $workHours = $clockIn->diffInHours($clockOut);
 
             $overtimeHours = max(0, $workHours - 8);
 
             $attendance->update([
-                'clock_out' => $validatedData['clock_out'],
+                'clock_out' => $clockOut,
                 'overtime_hours' => $overtimeHours,
             ]);
 
