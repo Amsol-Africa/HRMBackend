@@ -44,7 +44,6 @@ class Employee extends Model implements HasMedia
         'passport_expiry_date' => 'date',
     ];
 
-
     // Define relationships
     public function user()
     {
@@ -55,14 +54,17 @@ class Employee extends Model implements HasMedia
     {
         return $this->belongsTo(Business::class);
     }
+
     public function location()
     {
         return $this->belongsTo(Location::class);
     }
+
     public function spouse()
     {
         return $this->hasOne(Spouse::class);
     }
+
     public function academicDetails()
     {
         return $this->hasMany(AcademicQualification::class);
@@ -83,7 +85,6 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(EmployeeFamilyMember::class);
     }
 
-
     public function job_category()
     {
         return $this->belongsTo(Business::class);
@@ -93,6 +94,7 @@ class Employee extends Model implements HasMedia
     {
         return $this->belongsTo(Department::class);
     }
+
     public function employmentDetails()
     {
         return $this->hasOne(EmploymentDetail::class);
@@ -118,6 +120,7 @@ class Employee extends Model implements HasMedia
         $this->addMediaCollection('cv_attachments');
         $this->addMediaCollection('academic_files');
     }
+
     public function getImageUrl()
     {
         $media = $this->getFirstMedia('avatars');
@@ -136,20 +139,30 @@ class Employee extends Model implements HasMedia
     {
         return $this->hasMany(EmployeeDeduction::class);
     }
+
     public function allowances()
     {
         return $this->hasMany(EmployeeAllowance::class);
     }
+
     public function payrolls()
     {
         return $this->hasMany(EmployeePayroll::class);
     }
+
     public function advances()
     {
         return $this->hasMany(Advance::class);
     }
+
     public function loans()
     {
         return $this->hasMany(Loan::class);
+    }
+
+    // Added Task Relationship (Many-to-Many)
+    public function tasks()
+    {
+        return $this->belongsToMany(Task::class, 'employee_task')->withTimestamps();
     }
 }

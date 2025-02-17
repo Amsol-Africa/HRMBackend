@@ -11,7 +11,7 @@
         <table class="table table-bordered" style="width: 100%" id="{{ $status }}LeaveRequestsTable">
             <thead>
                 <tr>
-                    <th>Reference Number</th>
+                    <th>Ref. No.</th>
                     <th>Employee</th>
                     <th>Leave Type</th>
                     <th>Start Date</th>
@@ -25,7 +25,7 @@
                 @foreach ($leaveRequests as $request)
                     <tr>
                         <td>{{ $request->reference_number }}</td>
-                        <td>{{ $request->employee->full_name }}</td>
+                        <td>{{ $request->employee->user->name }}</td>
                         <td>{{ $request->leaveType->name }}</td>
                         <td>{{ $request->start_date->format('Y-m-d') }}</td>
                         <td>{{ $request->end_date->format('Y-m-d') }}</td>
@@ -40,27 +40,34 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('leave_requests.show', $request->reference_number) }}" class="btn btn-sm btn-primary">
+                            <a href="{{ route('leave_requests.show', $request->reference_number) }}"
+                                class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> View
                             </a>
                             @if (is_null($request->approved_by))
-                                <a href="{{ route('leave_requests.approve', $request->reference_number) }}" class="btn btn-sm btn-success">
+                                <a href="{{ route('leave_requests.approve', $request->reference_number) }}"
+                                    class="btn btn-sm btn-success">
                                     <i class="fas fa-check"></i> Approve
                                 </a>
-                                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#rejectModal{{ $request->id }}">
+                                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal"
+                                    data-target="#rejectModal{{ $request->id }}">
                                     <i class="fas fa-times"></i> Reject
                                 </button>
 
-                                <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+                                <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1"
+                                    role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
                                     <div class="modal-dialog" role="document">
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h5 class="modal-title" id="rejectModalLabel">Reject Leave Request</h5>
-                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <button type="button" class="close" data-dismiss="modal"
+                                                    aria-label="Close">
                                                     <span aria-hidden="true">&times;</span>
                                                 </button>
                                             </div>
-                                            <form action="{{ route('leave_requests.reject', $request->reference_number) }}" method="POST">
+                                            <form
+                                                action="{{ route('leave_requests.reject', $request->reference_number) }}"
+                                                method="POST">
                                                 @csrf
                                                 <div class="modal-body">
                                                     <div class="form-group">
@@ -69,7 +76,8 @@
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                    <button type="button" class="btn btn-secondary"
+                                                        data-dismiss="modal">Close</button>
                                                     <button type="submit" class="btn btn-danger">Reject</button>
                                                 </div>
                                             </form>

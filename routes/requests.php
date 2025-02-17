@@ -23,6 +23,7 @@ use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveTypeListController;
 use App\Http\Controllers\PayrollFormulaController;
 use App\Http\Controllers\LeaveEntitlementController;
+use App\Http\Controllers\TaskController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -199,7 +200,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('destroy', [ApplicantController::class, 'destroy'])->name('destroy');
         Route::post('update', [ApplicantController::class, 'update'])->name('update');
     });
-
+    
+    // Tasks
+    Route::name('tasks.')->prefix('tasks')->group(function () {
+        Route::post('fetch', [TaskController::class, 'fetch'])->name('fetch');
+        Route::post('edit', [TaskController::class, 'edit'])->name('edit');
+        Route::post('store', [TaskController::class, 'store'])->name('store');
+        Route::post('update/{task}', [TaskController::class, 'update'])->name('update');
+        Route::post('delete/{task}', [TaskController::class, 'destroy'])->name('delete');
+    });
+    
     // Applicant Management
     Route::name('attendances.')->prefix('attendances')->group(function () {
         Route::post('clockin', [AttendanceController::class, 'clockIn'])->name('clockin');

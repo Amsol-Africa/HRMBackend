@@ -8,7 +8,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeDashboardController;
+use App\Http\Controllers\JobPostController;
+use App\Http\Controllers\TaskController;
 
+Route::get('api/jobs/openings', [JobPostController::class, 'fetch'])->name('jobs.openings');
 
 Route::middleware(['auth'])->group(function () {
 
@@ -35,6 +38,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/import', [DashboardController::class, 'importEmployees'])->name('employees.import');
         Route::get('/job-categories', [DashboardController::class, 'jobCategories'])->name('job-categories.index');
         Route::get('/shifts', [DashboardController::class, 'shifts'])->name('shifts.index');
+        // Route::get('/tasks', [DashboardController::class, 'tasks'])->name('tasks.index');
 
         Route::get('/payroll/formula/create', [DashboardController::class, 'createPayrollFormula'])->name('payroll.formula.create');
         Route::get('/payroll/formula', [DashboardController::class, 'payrollFormula'])->name('payroll.formula');
@@ -77,7 +81,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/interviews', [DashboardController::class, 'interviews'])->name('interviews');
             Route::get('/reports', [DashboardController::class, 'recruitmentReports'])->name('reports');
         });
-
+      
         // Recruitment Module
         Route::prefix('job-applications')->name('job-applications.')->group(function () {
             Route::get('/', [DashboardController::class, 'jobApplications'])->name('index');
@@ -86,6 +90,31 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/applicants/create', [DashboardController::class, 'createJobApplicants'])->name('applicants.create');
         });
 
+        // Tasks module
+        Route::prefix('performance')->name('performance.')->group(function () {
+            Route::prefix('tasks')->name('tasks.')->group(function () {
+                Route::get('/', [DashboardController::class, 'tasks'])->name('index');
+                Route::get('/create', [DashboardController::class, 'create'])->name('create');
+                Route::get('/progress', [DashboardController::class, 'progress'])->name('progress');
+                Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
+                Route::get('/{task}', [DashboardController::class, 'show'])->name('show');
+            });
+            Route::get('/reviews', [DashboardController::class, 'reviews'])->name('reviews');
+        });
+
+    });
+
+    Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function(){
+        Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
+
+        // Profile Routes
+        Route::get('/profile', [EmployeeDashboardController::class, 'profile'])->name('profile');
+
+        // Leave Management
+        Route::prefix('leave')->name('leave.')->group(function () {
+            Route::get('/requests', [EmployeeDashboardController::class, 'leaveRequests'])->name('requests.index');
+            Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
+        });
         // Attendance Module
         Route::prefix('attendances')->name('attendances.')->group(function () {
             Route::get('/', [DashboardController::class, 'attendances'])->name('index');
@@ -108,14 +137,27 @@ Route::middleware(['auth'])->group(function () {
         // Attendance Reports Route
         Route::get('reports', [DashboardController::class, 'attendanceReport'])->name('reports.index');
 
-    });
+        // Attendance
+        Route::get('/attendance', [EmployeeDashboardController::class, 'checkIn'])->name('attendance');
 
-    Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
-        Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
+        // P9 Form (Tax Document)
+        Route::get('/p9', [EmployeeDashboardController::class, 'downloadP9'])->name('p9');
+
+        // Payment Slips
+        Route::get('/payslips', [EmployeeDashboardController::class, 'viewPayslips'])->name('payslips');
+        Route::get('/payslips/download/{id}', [EmployeeDashboardController::class, 'downloadPayslip'])->name('payslips.download');
+
+        // Account & Notifications
+        Route::get('/account-settings', function () {
+            return view('employee.settings');
+        })->name('account.settings');
+
+        Route::get('/notifications', function () {
+            return view('employee.notifications');
+        })->name('notifications');
     });
 
 });
-
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

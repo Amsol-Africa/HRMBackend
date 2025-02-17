@@ -325,7 +325,6 @@ class DashboardController extends Controller
         return view('loans.index', compact('page', 'description', 'employees'));
     }
 
-
     //Leave management
     public function requestLeave(Request $request)
     {
@@ -387,7 +386,6 @@ class DashboardController extends Controller
         return view('leave.reports', compact('page', 'description'));
     }
 
-
     // Recruitment Module
     public function applicants(Request $request)
     {
@@ -403,6 +401,13 @@ class DashboardController extends Controller
         return view('job-posts.index', compact('page', 'description'));
     }
 
+    public function tasks(Request $request)
+    {
+        $page = 'Tasks';
+        $description = 'Create and assign tasks to employees';
+        return view('tasks.index', compact('page', 'description'));
+    }
+
     public function createJobPosts(Request $request)
     {
         $page = 'Add Job Posts';
@@ -416,6 +421,7 @@ class DashboardController extends Controller
         $description = 'Track job applications and their statuses.';
         return view('job-applications.applicants', compact('page', 'description'));
     }
+    
     public function createJobApplicants(Request $request)
     {
         $page = 'Create Job Applicants';
@@ -453,6 +459,7 @@ class DashboardController extends Controller
         $description = 'Analyze recruitment trends and performance.';
         return view('job-applications.reports', compact('page', 'description'));
     }
+}
 
     public function attendances(Request $request)
     {

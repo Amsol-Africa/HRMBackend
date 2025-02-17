@@ -17,9 +17,18 @@ class JobPostController extends Controller
     // Fetch Job Posts
     public function fetch(Request $request)
     {
-        $business = Business::findBySlug(session('active_business_slug'));
+        $businessSlug = session('active_business_slug');
 
-        $job_posts = JobPost::where('business_id', $business->id)->orderBy('created_at', 'desc')->get();
+        if ($businessSlug) {
+            $business = Business::findBySlug($businessSlug);
+            $job_posts = JobPost::with('business')->where('business_id', $business->id)->orderBy('created_at', 'desc')->get();
+        } else {
+            $job_posts = JobPost::with('business')->orderBy('created_at', 'desc')->get();
+        }
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return RequestResponse::ok('Ok', $job_posts);
+        }
 
         $jobPostsTable = view('job-posts._job_posts_table', compact('job_posts'))->render();
         return RequestResponse::ok('Ok', $jobPostsTable);
@@ -166,4 +175,3 @@ class JobPostController extends Controller
         });
     }
 }
-
