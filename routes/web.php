@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\JobPostController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PayrollController;
@@ -80,8 +81,8 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/interviews', [DashboardController::class, 'interviews'])->name('interviews');
             Route::get('/reports', [DashboardController::class, 'recruitmentReports'])->name('reports');
         });
-
-        // Application Module
+      
+        // Recruitment Module
         Route::prefix('job-applications')->name('job-applications.')->group(function () {
             Route::get('/', [DashboardController::class, 'jobApplications'])->name('index');
             Route::get('/create', [DashboardController::class, 'createJobApplications'])->name('create');
@@ -114,6 +115,27 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/requests', [EmployeeDashboardController::class, 'leaveRequests'])->name('requests.index');
             Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
         });
+        // Attendance Module
+        Route::prefix('attendances')->name('attendances.')->group(function () {
+            Route::get('/', [DashboardController::class, 'attendances'])->name('index');
+            Route::get('/clock-in', [DashboardController::class, 'clockIn'])->name('clock-in');
+            Route::get('/clock-out', [DashboardController::class, 'clockOut'])->name('clock-out');
+        });
+
+        // Overtime Routes
+        Route::prefix('overtime')->name('overtime.')->group(function () {
+            Route::get('/', [DashboardController::class, 'overtime'])->name('index');
+            Route::get('/rates', [DashboardController::class, 'overtimeRates'])->name('rates');
+        });
+
+        // Absenteeism Route
+        Route::get('absenteeism', [DashboardController::class, 'absenteeism'])->name('absenteeism.index');
+
+        // Clock In/Out Route
+        Route::get('clock-in-out', [DashboardController::class, 'clockInOut'])->name('clock-in-out.index');
+
+        // Attendance Reports Route
+        Route::get('reports', [DashboardController::class, 'attendanceReport'])->name('reports.index');
 
         // Attendance
         Route::get('/attendance', [EmployeeDashboardController::class, 'checkIn'])->name('attendance');

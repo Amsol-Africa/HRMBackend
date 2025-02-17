@@ -25,9 +25,9 @@ class Relief extends Model
 
     protected $casts = [
         'rate_percentage' => 'float',
-        'fixed_amount'    => 'float',
-        'maximum_relief'  => 'float',
-        'is_mandatory'    => 'boolean',
+        'fixed_amount' => 'float',
+        'maximum_relief' => 'float',
+        'is_mandatory' => 'boolean',
     ];
 
     public function business()
@@ -38,4 +38,9 @@ class Relief extends Model
     {
         return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
     }
+    public function employees()
+    {
+        return $this->belongsToMany(Employee::class, 'employee_reliefs')->withPivot('amount')->withTimestamps();
+    }
+
 }

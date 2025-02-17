@@ -8,8 +8,8 @@ const advancesService = new AdvancesService(requestClient);
 window.getAdvances = async function (page = 1) {
     try {
         let data = {page:page};
-        const advancesCards = await advancesService.fetch(data);
-        $("#advancesContainer").html(advancesCards);
+        const advances = await advancesService.fetch(data);
+        $("#advancesContainer").html(advances);
         new DataTable('#advancesTable');
     } catch (error) {
         console.error("Error loading user data:", error);

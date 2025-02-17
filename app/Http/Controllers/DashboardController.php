@@ -460,3 +460,30 @@ class DashboardController extends Controller
         return view('job-applications.reports', compact('page', 'description'));
     }
 }
+
+    public function attendances(Request $request)
+    {
+        $page = 'Manage Attendances';
+        $description = '';
+        return view('attendances.index', compact('page', 'description'));
+    }
+
+    public function clockIn(Request $request)
+    {
+        $page = 'Clock In';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        return view('attendances.clockin', compact('page', 'description', 'employees'));
+    }
+    public function clockOut(Request $request)
+    {
+        $page = 'Clock Out';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        return view('attendances.clockout', compact('page', 'description', 'employees'));
+    }
+
+
+}

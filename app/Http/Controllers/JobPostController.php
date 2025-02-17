@@ -13,7 +13,7 @@ use App\Http\Controllers\Controller;
 class JobPostController extends Controller
 {
     use HandleTransactions;
-
+    
     // Fetch Job Posts
     public function fetch(Request $request)
     {
@@ -36,6 +36,44 @@ class JobPostController extends Controller
 
     // Store New Job Post
     public function store(Request $request)
+    {   Log::debug($request->all());
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'salary_range' => 'nullable|string',
+            'employment_type' => 'required|string|in:full-time,part-time,contract,internship',
+            'place' => 'required|string',
+            'posted_at' => 'nullable|date',
+            'closed_at' => 'nullable|date|after_or_equal:posted_at',
+        ]);
+
+        if (!empty($validatedData['salary_range'])) {
+            $validatedData['salary_range'] = preg_replace('/,/', '', $validatedData['salary_range']);
+        }
+
+        return $this->handleTransaction(function () use ($validatedData) {
+            $user = auth()->user();
+            $business = Business::findBySlug(session('active_business_slug'));
+
+            $jobPost = $business->jobPosts()->create([
+                'place' => $validatedData['place'],
+                'title' => $validatedData['title'],
+                'description' => $validatedData['description'],
+                'salary_range' => $validatedData['salary_range'] ?? null,
+                'employment_type' => $validatedData['employment_type'],
+                'created_by' => $user->id,
+                'posted_at' => $validatedData['posted_at'] ?? now(),
+                'closed_at' => $validatedData['closed_at'] ?? null,
+            ]);
+
+            $jobPost->setStatus(Status::OPEN);
+
+            return RequestResponse::created('Job Post created successfully.');
+        });
+    }
+
+    // Store New Job Post
+    public function add(Request $request)
     {   Log::debug($request->all());
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
@@ -114,7 +152,7 @@ class JobPostController extends Controller
                 'closed_at' => $validatedData['closed_at'],
             ]);
 
-            return RequestResponse::ok('Job Post updated successfully.');
+            return RequestResponse::ok('Job Post updated successfully.', ['job_openings' => $jobPost]);
         });
     }
 
