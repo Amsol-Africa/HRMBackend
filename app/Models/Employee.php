@@ -129,8 +129,9 @@ class Employee extends Model implements HasMedia
 
     public function reliefs()
     {
-        return $this->hasMany(EmployeeRelief::class);
+        return $this->belongsToMany(Relief::class, 'employee_reliefs')->withPivot('amount')->withTimestamps();
     }
+
     public function deductions()
     {
         return $this->hasMany(EmployeeDeduction::class);

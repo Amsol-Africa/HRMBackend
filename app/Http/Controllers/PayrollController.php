@@ -99,7 +99,17 @@ class PayrollController extends Controller
 
         $validatedData = $request->validate([
             'payrun_year' => 'required|integer|min:' . (now()->year - 5) . '|max:' . (now()->year + 1),
-            'payrun_month' => 'required|integer|min:1|max:12',
+            'payrun_month' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:12',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->payrun_year == now()->year && $value > now()->month) {
+                        $fail("You cannot process payroll for future months.");
+                    }
+                },
+            ],
             'employees' => 'required|array',
             'employees.*' => 'exists:employees,id',
             'location' => 'nullable|exists:locations,slug',

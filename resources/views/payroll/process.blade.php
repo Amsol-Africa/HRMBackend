@@ -21,7 +21,10 @@
                                 <label for="payrun_month" class="form-label">Month</label>
                                 <select id="payrun_month" name="payrun_month" class="form-select">
                                     @foreach(range(1, 12) as $month)
-                                        <option value="{{ $month }}" {{ now()->month == $month ? 'selected' : '' }}>
+                                        @php
+                                            $isDisabled = now()->year == request('payrun_year', now()->year) && $month > now()->month;
+                                        @endphp
+                                        <option value="{{ $month }}" {{ now()->month == $month ? 'selected' : '' }} {{ $isDisabled ? 'disabled' : '' }}>
                                             {{ \Carbon\Carbon::create()->month($month)->format('F') }}
                                         </option>
                                     @endforeach
@@ -132,6 +135,22 @@
         <script>
 
             document.addEventListener('DOMContentLoaded', function () {
+
+                const yearInput = document.getElementById('payrun_year');
+                const monthSelect = document.getElementById('payrun_month');
+                const currentYear = new Date().getFullYear();
+                const currentMonth = new Date().getMonth() + 1;
+
+                function updateMonthOptions() {
+                    const selectedYear = parseInt(yearInput.value);
+                    Array.from(monthSelect.options).forEach(option => {
+                        const monthValue = parseInt(option.value);
+                        option.disabled = (selectedYear === currentYear && monthValue > currentMonth);
+                    });
+                }
+
+                yearInput.addEventListener('change', updateMonthOptions);
+                updateMonthOptions();
 
                 const filters = ['departments', 'job_categories', 'employment_terms', 'locations'];
 

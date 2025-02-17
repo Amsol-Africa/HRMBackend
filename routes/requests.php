@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ShiftController;
@@ -197,6 +198,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('show', [ApplicantController::class, 'show'])->name('show');
         Route::post('destroy', [ApplicantController::class, 'destroy'])->name('destroy');
         Route::post('update', [ApplicantController::class, 'update'])->name('update');
+    });
+
+    // Applicant Management
+    Route::name('attendances.')->prefix('attendances')->group(function () {
+        Route::post('clockin', [AttendanceController::class, 'clockIn'])->name('clockin');
+        Route::post('clockout', [AttendanceController::class, 'clockOut'])->name('clockout');
+        Route::post('fetch', [AttendanceController::class, 'fetch'])->name('fetch');
+        Route::post('show', [AttendanceController::class, 'show'])->name('show');
+        Route::post('destroy', [AttendanceController::class, 'destroy'])->name('destroy');
+        Route::post('update', [AttendanceController::class, 'update'])->name('update');
     });
 
     //print
