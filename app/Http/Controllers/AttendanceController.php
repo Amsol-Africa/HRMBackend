@@ -18,13 +18,12 @@ class AttendanceController extends Controller
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-
         $date = $request->input('date', now()->format('Y-m-d'));
 
         Log::debug($date);
 
         $attendances = Attendance::where('business_id', $business->id)
-            ->whereDate('date', $date)
+            // ->whereDate('date', $date)
             ->with('employee')
             ->orderBy('date', 'desc')
             ->get();
