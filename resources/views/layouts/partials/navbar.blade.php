@@ -213,7 +213,7 @@
                     </li>
                 </ul>
             </li>
-            
+
             <!-- Leave Management Dropdown -->
             <li class="slide has-sub {{ request()->routeIs('business.leave.*') ? 'active open' : '' }}">
                 <a href="javascript:void(0);"
@@ -384,35 +384,6 @@
                             href="{{ route('business.recruitment.reports', $currentBusiness->slug) }}">
                             Recruitment Reports
                         </a>
-                    </li>
-                </ul>
-            </li>
-
-            <!-- Time & Attendance Dropdown -->
-            <li class="slide has-sub">
-                <a href="javascript:void(0);" class="sidebar__menu-item">
-                    <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                    <div class="side-menu__icon"><i class="fa-solid fa-clock"></i></div>
-                    <span class="sidebar__menu-label">Time & Attendance</span>
-                </a>
-                <ul class="sidebar-menu child1">
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="time-attendance.html">Track Attendance</a>
-                    </li>
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="leave-management.html">Overtime</a>
-                    </li>
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="leave-management.html">Overtime Rates</a>
-                    </li>
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="leave-management.html">Absenteeism</a>
-                    </li>
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="leave-management.html">Clock In Out</a>
-                    </li>
-                    <li class="slide">
-                        <a class="sidebar__menu-item" href="leave-management.html">Attendance Reports</a>
                     </li>
                 </ul>
             </li>
