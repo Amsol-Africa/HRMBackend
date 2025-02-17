@@ -421,7 +421,7 @@ class DashboardController extends Controller
         $description = 'Track job applications and their statuses.';
         return view('job-applications.applicants', compact('page', 'description'));
     }
-    
+
     public function createJobApplicants(Request $request)
     {
         $page = 'Create Job Applicants';
@@ -459,7 +459,6 @@ class DashboardController extends Controller
         $description = 'Analyze recruitment trends and performance.';
         return view('job-applications.reports', compact('page', 'description'));
     }
-}
 
     public function attendances(Request $request)
     {
@@ -484,6 +483,4 @@ class DashboardController extends Controller
         $employees = $business->employees;
         return view('attendances.clockout', compact('page', 'description', 'employees'));
     }
-
-
 }
