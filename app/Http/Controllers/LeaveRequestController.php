@@ -51,17 +51,19 @@ class LeaveRequestController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee_id' => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'half_day' => 'boolean',
-            'half_day_type' => 'nullable|in:first_half,second_half',
+            // 'end_date' => 'required|date|after_or_equal:start_date',
+            // 'half_day' => 'boolean',
+            // 'half_day_type' => 'nullable|in:first_half,second_half',
             'reason' => 'nullable|string',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
+            $leave_type = Leave::findOrFail($validatedData['leave_type_id']);
+            $duration = $leave_type->max_continuous_days;
 
             $leaveRequest = new LeaveRequest();
             $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
@@ -69,11 +71,12 @@ class LeaveRequestController extends Controller
             $leaveRequest->business_id = $business->id;
             $leaveRequest->leave_type_id = $validatedData['leave_type_id'];
             $leaveRequest->start_date = $validatedData['start_date'];
-            $leaveRequest->end_date = $validatedData['end_date'];
-            $leaveRequest->total_days = $this->calculateTotalDays($validatedData['start_date'], $validatedData['end_date'], $validatedData['half_day']);
-            $leaveRequest->half_day = $validatedData['half_day'];
-            $leaveRequest->half_day_type = $validatedData['half_day_type'];
+            $leaveRequest->total_days = $duration;
             $leaveRequest->reason = $validatedData['reason'];
+            // $leaveRequest->end_date = $validatedData['end_date'];
+            // $leaveRequest->total_days = $this->calculateTotalDays($validatedData['start_date'], $validatedData['end_date'], $validatedData['half_day']);
+            // $leaveRequest->half_day = $validatedData['half_day'];
+            // $leaveRequest->half_day_type = $validatedData['half_day_type'];
             $leaveRequest->save();
 
             $leaveRequest->setStatus(Status::PENDING);

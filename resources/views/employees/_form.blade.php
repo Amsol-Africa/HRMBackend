@@ -1,5 +1,3 @@
-
-
 <form id="employeesForm" method="post" enctype="multipart/form-data">
     @csrf
 
@@ -25,15 +23,18 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="last_name">Surname</label>
-                    <input type="text" class="form-control" id="last_name" name="last_name" required placeholder="Last Name">
+                    <input type="text" class="form-control" id="last_name" name="last_name" required
+                        placeholder="Last Name">
                 </div>
                 <div class="col-md-4">
                     <label for="first_name">First Name</label>
-                    <input type="text" class="form-control" id="first_name" name="first_name" required placeholder="First Name">
+                    <input type="text" class="form-control" id="first_name" name="first_name" required
+                        placeholder="First Name">
                 </div>
                 <div class="col-md-4">
                     <label for="middle_name">Middle Name</label>
-                    <input type="text" class="form-control" id="middle_name" name="middle_name" required placeholder="Middle Name">
+                    <input type="text" class="form-control" id="middle_name" name="middle_name" required
+                        placeholder="Middle Name">
                 </div>
             </div>
 
@@ -47,7 +48,8 @@
                 </div>
                 <div class="col-md-3">
                     <label for="email">Email</label>
-                    <input type="text" class="form-control" id="email" name="email" required placeholder="Personal e-mail Address">
+                    <input type="text" class="form-control" id="email" name="email" required
+                        placeholder="Personal e-mail Address">
                 </div>
                 <div class="col-md-3">
                     <label for="phone0">Phone</label>
@@ -66,11 +68,13 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="date_of_birth">Date of Birth</label>
-                    <input type="text" class="form-control datepicker" id="date_of_birth" name="date_of_birth" required placeholder="Date of Birth">
+                    <input type="text" class="form-control datepicker" id="date_of_birth" name="date_of_birth"
+                        required placeholder="Date of Birth">
                 </div>
                 <div class="col-md-4">
                     <label for="place_of_birth">Place of Birth</label>
-                    <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" required placeholder="Place of Birth">
+                    <input type="text" class="form-control" id="place_of_birth" name="place_of_birth" required
+                        placeholder="Place of Birth">
                 </div>
                 <div class="col-md-4">
                     <label for="marital_status">Marital Status</label>
@@ -87,49 +91,59 @@
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label for="national_id">ID Number</label>
-                    <input type="text" class="form-control" id="national_id" name="national_id" required placeholder="National ID">
+                    <input type="text" class="form-control" id="national_id" name="national_id" required
+                        placeholder="National ID">
                 </div>
                 <div class="col-md-3">
                     <label for="place_of_issue">Place of Issue</label>
-                    <input type="text" class="form-control" id="place_of_issue" name="place_of_issue" required placeholder="Place of Issue">
+                    <input type="text" class="form-control" id="place_of_issue" name="place_of_issue" required
+                        placeholder="Place of Issue">
                 </div>
                 <div class="col-md-3">
                     <label for="tax_no">Tax No.</label>
-                    <input type="text" class="form-control" id="tax_no" name="tax_no" required placeholder="Tax No.">
+                    <input type="text" class="form-control" id="tax_no" name="tax_no" required
+                        placeholder="Tax No.">
                 </div>
                 <div class="col-md-3">
                     <label for="nhif_no">NHIF No.</label>
-                    <input type="text" class="form-control" id="nhif_no" name="nhif_no" required placeholder="NHIF No.">
+                    <input type="text" class="form-control" id="nhif_no" name="nhif_no" required
+                        placeholder="NHIF No.">
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label for="nssf_no">NSSF No.</label>
-                    <input type="text" class="form-control" id="nssf_no" name="nssf_no" required placeholder="NSSF No.">
+                    <input type="text" class="form-control" id="nssf_no" name="nssf_no" required
+                        placeholder="NSSF No.">
                 </div>
                 <div class="col-md-3">
                     <label for="passport_no">Passport No.</label>
-                    <input type="text" class="form-control" id="passport_no" name="passport_no" required placeholder="Passport No.">
+                    <input type="text" class="form-control" id="passport_no" name="passport_no" required
+                        placeholder="Passport No.">
                 </div>
                 <div class="col-md-3">
                     <label for="passport_issue_date">Passport Issue Date.</label>
-                    <input type="text" class="form-control datepicker" id="passport_issue_date" name="passport_issue_date" required placeholder="Passport Issue Date">
+                    <input type="text" class="form-control datepicker" id="passport_issue_date"
+                        name="passport_issue_date" required placeholder="Passport Issue Date">
                 </div>
                 <div class="col-md-3">
                     <label for="passport_expiry_date">Passport Expiry Date.</label>
-                    <input type="text" class="form-control datepicker" id="passport_expiry_date" name="passport_expiry_date" required placeholder="Passport Expiry Date">
+                    <input type="text" class="form-control datepicker" id="passport_expiry_date"
+                        name="passport_expiry_date" required placeholder="Passport Expiry Date">
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="address">Residential Address</label>
-                    <input type="text" class="form-control" id="address" name="address" required placeholder="Residential Address">
+                    <input type="text" class="form-control" id="address" name="address" required
+                        placeholder="Residential Address">
                 </div>
                 <div class="col-md-4">
                     <label for="permanent_address">Permanent Residential Address</label>
-                    <input type="text" class="form-control" id="permanent_address" name="permanent_address" required placeholder="Permanent Residential Address">
+                    <input type="text" class="form-control" id="permanent_address" name="permanent_address"
+                        required placeholder="Permanent Residential Address">
                 </div>
                 <div class="col-md-4">
                     <label for="blood_group">Blood Group</label>
@@ -154,10 +168,13 @@
                 </div>
                 <div class="col-md-6">
                     <div class="from__input-box">
-                        <label for="password">Password <strong>(Leave empty if employee should not login)</strong> </label>
+                        <label for="password">Password <strong>(Leave empty if employee should not login)</strong>
+                        </label>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Password" type="password" name="password" required id="password">
-                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
+                            <input class="form-control" placeholder="Password" type="password" name="password"
+                                required id="password">
+                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -178,23 +195,28 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="spouse_surname_name">Surname</label>
-                    <input type="text" class="form-control" id="spouse_surname_name" name="spouse_surname_name" required placeholder="Surname">
+                    <input type="text" class="form-control" id="spouse_surname_name" name="spouse_surname_name"
+                        required placeholder="Surname">
                 </div>
                 <div class="col-md-4">
                     <label for="spouse_first_name">First Name</label>
-                    <input type="text" class="form-control" id="spouse_first_name" name="spouse_first_name" required placeholder="First Name">
+                    <input type="text" class="form-control" id="spouse_first_name" name="spouse_first_name"
+                        required placeholder="First Name">
                 </div>
                 <div class="col-md-4">
                     <label for="spouse_middle_name">Middle Name</label>
-                    <input type="text" class="form-control" id="spouse_middle_name" name="spouse_middle_name" required placeholder="Middle Name">
+                    <input type="text" class="form-control" id="spouse_middle_name" name="spouse_middle_name"
+                        required placeholder="Middle Name">
                 </div>
                 <div class="col-md-3">
                     <label for="spouse_date_of_birth">Date of Birth</label>
-                    <input type="text" class="form-control datepicker" id="spouse_date_of_birth" name="spouse_date_of_birth" required placeholder="Date of Birth">
+                    <input type="text" class="form-control datepicker" id="spouse_date_of_birth"
+                        name="spouse_date_of_birth" required placeholder="Date of Birth">
                 </div>
                 <div class="col-md-3">
                     <label for="spouse_national_id">ID Number</label>
-                    <input type="text" class="form-control" id="spouse_national_id" name="spouse_national_id" required placeholder="National ID">
+                    <input type="text" class="form-control" id="spouse_national_id" name="spouse_national_id"
+                        required placeholder="National ID">
                 </div>
                 <div class="col-md-3">
                     <label for="phone2">Contact Phone</label>
@@ -204,15 +226,18 @@
                 </div>
                 <div class="col-md-3">
                     <label for="spouse_current_employer">Current Employer</label>
-                    <input type="text" class="form-control" id="spouse_current_employer" name="spouse_current_employer" required placeholder="Current Employer">
+                    <input type="text" class="form-control" id="spouse_current_employer"
+                        name="spouse_current_employer" required placeholder="Current Employer">
                 </div>
                 <div class="col-md-6">
                     <label for="spouse_postal_address">Postal Address</label>
-                    <input type="text" class="form-control" id="spouse_postal_address" name="spouse_postal_address" required placeholder="Postal Address">
+                    <input type="text" class="form-control" id="spouse_postal_address"
+                        name="spouse_postal_address" required placeholder="Postal Address">
                 </div>
                 <div class="col-md-6">
                     <label for="spouse_physical_address">Physical Address</label>
-                    <input type="text" class="form-control" id="spouse_physical_address" name="spouse_physical_address" required placeholder="Physical Address">
+                    <input type="text" class="form-control" id="spouse_physical_address"
+                        name="spouse_physical_address" required placeholder="Physical Address">
                 </div>
             </div>
 
@@ -220,19 +245,24 @@
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label for="emmergency_contact_name_1">Name</label>
-                    <input type="text" class="form-control" id="emmergency_contact_name_1" name="emmergency_contact_name[]" required placeholder="Name">
+                    <input type="text" class="form-control" id="emmergency_contact_name_1"
+                        name="emmergency_contact_name[]" required placeholder="Name">
                 </div>
                 <div class="col-md-3">
                     <label for="emmergency_contact_relationship_1">Relationship</label>
-                    <input type="text" class="form-control" id="emmergency_contact_relationship_1" name="emmergency_contact_relationship[]" required placeholder="e.g. Father / Wife / Brother etc">
+                    <input type="text" class="form-control" id="emmergency_contact_relationship_1"
+                        name="emmergency_contact_relationship[]" required
+                        placeholder="e.g. Father / Wife / Brother etc">
                 </div>
                 <div class="col-md-3">
                     <label for="emmergency_contact_address_1">Contact Address</label>
-                    <input type="text" class="form-control" id="emmergency_contact_address_1" name="emmergency_contact_address[]" required placeholder="Contact Address">
+                    <input type="text" class="form-control" id="emmergency_contact_address_1"
+                        name="emmergency_contact_address[]" required placeholder="Contact Address">
                 </div>
                 <div class="col-md-3">
                     <label for="phone3">Contact Phone</label>
-                    <input type="text" class="phone-input-control" id="phone3" name="emmergency_contact_phone[]" required>
+                    <input type="text" class="phone-input-control" id="phone3"
+                        name="emmergency_contact_phone[]" required>
                     <input type="text" hidden id="code3" name="emmergency_contact_phone_code[]" required>
                     <input type="text" hidden id="country3" name="emmergency_contact_phone_country[]" required>
                 </div>
@@ -241,19 +271,24 @@
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label for="emmergency_contact_name_2">Name</label>
-                    <input type="text" class="form-control" id="emmergency_contact_name_2" name="emmergency_contact_name[]" required placeholder="Name">
+                    <input type="text" class="form-control" id="emmergency_contact_name_2"
+                        name="emmergency_contact_name[]" required placeholder="Name">
                 </div>
                 <div class="col-md-3">
                     <label for="emmergency_contact_relationship_2">Relationship</label>
-                    <input type="text" class="form-control" id="emmergency_contact_relationship_2" name="emmergency_contact_relationship[]" required placeholder="e.g. Father / Wife / Brother etc">
+                    <input type="text" class="form-control" id="emmergency_contact_relationship_2"
+                        name="emmergency_contact_relationship[]" required
+                        placeholder="e.g. Father / Wife / Brother etc">
                 </div>
                 <div class="col-md-3">
                     <label for="emmergency_contact_address_2">Contact Address</label>
-                    <input type="text" class="form-control" id="emmergency_contact_address_2" name="emmergency_contact_address[]" required placeholder="Contact Address">
+                    <input type="text" class="form-control" id="emmergency_contact_address_2"
+                        name="emmergency_contact_address[]" required placeholder="Contact Address">
                 </div>
                 <div class="col-md-3">
                     <label for="phone4">Contact Phone</label>
-                    <input type="text" class="phone-input-control" id="phone4" name="emmergency_contact_phone[]" required>
+                    <input type="text" class="phone-input-control" id="phone4"
+                        name="emmergency_contact_phone[]" required>
                     <input type="text" hidden id="code4" name="emmergency_contact_phone_code[]" required>
                     <input type="text" hidden id="country4" name="emmergency_contact_phone_country[]" required>
                 </div>
@@ -262,7 +297,8 @@
             <div class="row mb-3">
                 <div class="col-md-12">
                     <label for="additional_emmergency_instructions">Additional Emergency Instructions</label>
-                    <textarea name="additional_emmergency_instructions" class="form-control" placeholder="Additional Emergency Instructions" id="additional_emmergency_instructions"></textarea>
+                    <textarea name="additional_emmergency_instructions" class="form-control"
+                        placeholder="Additional Emergency Instructions" id="additional_emmergency_instructions"></textarea>
                 </div>
             </div>
 
@@ -281,25 +317,32 @@
                 <div class="row mb-3 family-members-row">
                     <div class="col-md-4">
                         <label>Name</label>
-                        <input type="text" class="form-control" name="family_member_name[]" required placeholder="Certification">
+                        <input type="text" class="form-control" name="family_member_name[]" required
+                            placeholder="Certification">
                     </div>
                     <div class="col-md-4">
                         <label>Relationship</label>
-                        <input type="text" class="form-control" name="family_member_relationship[]" required placeholder="Institution">
+                        <input type="text" class="form-control" name="family_member_relationship[]" required
+                            placeholder="Institution">
                     </div>
                     <div class="col-md-4">
                         <label>Date of Birth</label>
-                        <input type="text" class="form-control datepicker" name="family_member_date_of_birth[]" required placeholder="Date of Birth">
+                        <input type="text" class="form-control datepicker" name="family_member_date_of_birth[]"
+                            required placeholder="Date of Birth">
                     </div>
                     <div class="col-md-6">
                         <label>Contact Address</label>
-                        <input type="text" class="form-control" name="family_member_contact_address[]" required placeholder="Contact Address">
+                        <input type="text" class="form-control" name="family_member_contact_address[]" required
+                            placeholder="Contact Address">
                     </div>
                     <div class="col-md-6">
                         <label for="phone5">Contact Phone</label>
-                        <input type="text" class="phone-input-control" id="phone5" name="family_member_contact_phone[]" required>
-                        <input type="text" hidden id="code5" name="family_member_contact_phone_code[]" required>
-                        <input type="text" hidden id="country5" name="family_member_contact_phone_country[]" required>
+                        <input type="text" class="phone-input-control" id="phone5"
+                            name="family_member_contact_phone[]" required>
+                        <input type="text" hidden id="code5" name="family_member_contact_phone_code[]"
+                            required>
+                        <input type="text" hidden id="country5" name="family_member_contact_phone_country[]"
+                            required>
                     </div>
                 </div>
             </div>
@@ -325,19 +368,23 @@
                 <div class="row mb-3 academic-details-row">
                     <div class="col-md-4">
                         <label>Certification Obtained</label>
-                        <input type="text" class="form-control" name="certification[]" required placeholder="Certification">
+                        <input type="text" class="form-control" name="certification[]" required
+                            placeholder="Certification">
                     </div>
                     <div class="col-md-4">
                         <label>Institution Name</label>
-                        <input type="text" class="form-control" name="institution[]" required placeholder="Institution">
+                        <input type="text" class="form-control" name="institution[]" required
+                            placeholder="Institution">
                     </div>
                     <div class="col-md-2">
                         <label>From</label>
-                        <input type="text" class="form-control datepicker" name="from[]" required placeholder="From">
+                        <input type="text" class="form-control datepicker" name="from[]" required
+                            placeholder="From">
                     </div>
                     <div class="col-md-2">
                         <label>To</label>
-                        <input type="text" class="form-control datepicker" name="to[]" required placeholder="To">
+                        <input type="text" class="form-control datepicker" name="to[]" required
+                            placeholder="To">
                     </div>
                 </div>
             </div>
@@ -360,27 +407,33 @@
 
                 <div class="col-md-4">
                     <label for="employer_name">Name of Employer</label>
-                    <input type="text" class="form-control" name="employer_name" required placeholder="Name of Employer">
+                    <input type="text" class="form-control" name="employer_name" required
+                        placeholder="Name of Employer">
                 </div>
                 <div class="col-md-4">
                     <label for="business_or_profession">Business or Profession</label>
-                    <input type="text" class="form-control" name="business_or_profession" required placeholder="Business or Profession">
+                    <input type="text" class="form-control" name="business_or_profession" required
+                        placeholder="Business or Profession">
                 </div>
                 <div class="col-md-4">
                     <label for="employment_address">Address</label>
-                    <input type="text" class="form-control" name="employment_address" required placeholder="Address">
+                    <input type="text" class="form-control" name="employment_address" required
+                        placeholder="Address">
                 </div>
                 <div class="col-md-4">
                     <label for="employment_capacity">Capacity</label>
-                    <input type="text" class="form-control" name="employment_capacity" required placeholder="Capacity">
+                    <input type="text" class="form-control" name="employment_capacity" required
+                        placeholder="Capacity">
                 </div>
                 <div class="col-md-4">
                     <label for="employment_from">From</label>
-                    <input type="text" class="form-control datepicker" name="employment_from" required placeholder="From">
+                    <input type="text" class="form-control datepicker" name="employment_from" required
+                        placeholder="From">
                 </div>
                 <div class="col-md-4">
                     <label for="employment_to">To</label>
-                    <input type="text" class="form-control datepicker" name="employment_to" required placeholder="To">
+                    <input type="text" class="form-control datepicker" name="employment_to" required
+                        placeholder="To">
                 </div>
                 <div class="col-md-12">
                     <label for="reason_for_leaving">Reason for leaving</label>
@@ -402,14 +455,15 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="employee_code">Employee Code</label>
-                    <input type="text" class="form-control" id="employee_code" name="employee_code" required placeholder="e.g. EMP001">
+                    <input type="text" class="form-control" id="employee_code" name="employee_code" required
+                        placeholder="e.g. EMP001">
                 </div>
 
                 <div class="col-md-4">
                     <label for="department">Department</label>
                     <select class="form-select" id="department" name="department" required>
                         <option value="" disabled selected>Select Department</option>
-                        @foreach($departments as $department)
+                        @foreach ($departments as $department)
                             <option value="{{ $department->slug }}">{{ $department->name }}</option>
                         @endforeach
                     </select>
@@ -419,7 +473,7 @@
                     <label for="job_category">Job Category</label>
                     <select class="form-select" id="job_category" name="job_category" required>
                         <option value="" selected>Select Job Category</option>
-                        @foreach($job_categories as $job_category)
+                        @foreach ($job_categories as $job_category)
                             <option value="{{ $job_category->slug }}">{{ $job_category->name }}</option>
                         @endforeach
                     </select>
@@ -438,19 +492,23 @@
                 </div>
                 <div class="col-md-4">
                     <label for="employment_date">Employment Start Date</label>
-                    <input type="text" class="form-control datepicker" id="employment_date" name="employment_date" required placeholder="Employment Date">
+                    <input type="text" class="form-control datepicker" id="employment_date"
+                        name="employment_date" required placeholder="Employment Date">
                 </div>
                 <div class="col-md-4">
                     <label for="probation_end_date">Probabtion End Date.</label>
-                    <input type="text" class="form-control datepicker" id="probation_end_date" name="probation_end_date" required placeholder="Probabtion End Date">
+                    <input type="text" class="form-control datepicker" id="probation_end_date"
+                        name="probation_end_date" required placeholder="Probabtion End Date">
                 </div>
                 <div class="col-md-4">
                     <label for="contract_end_date">Contract End Date.</label>
-                    <input type="text" class="form-control datepicker" id="contract_end_date" name="contract_end_date" required placeholder="Contract End Date">
+                    <input type="text" class="form-control datepicker" id="contract_end_date"
+                        name="contract_end_date" required placeholder="Contract End Date">
                 </div>
                 <div class="col-md-4">
                     <label for="retirement_date">Retirement Date.</label>
-                    <input type="text" class="form-control datepicker" id="retirement_date" name="retirement_date" required placeholder="Retirement Date">
+                    <input type="text" class="form-control datepicker" id="retirement_date"
+                        name="retirement_date" required placeholder="Retirement Date">
                 </div>
                 <div class="col-md-4">
                     <label for="shift">Work Shift</label>
@@ -467,7 +525,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <label for="job_description">Job Description</label>
-                    <textarea class="form-control" id="job_description" name="job_description" rows="4" placeholder="Job Description..."></textarea>
+                    <textarea class="form-control" id="job_description" name="job_description" rows="4"
+                        placeholder="Job Description..."></textarea>
                 </div>
             </div>
 
@@ -483,7 +542,8 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="basic_salary">Basic Salary</label>
-                    <input type="number" class="form-control" id="basic_salary" name="basic_salary" required placeholder="e.g. 50000">
+                    <input type="number" class="form-control" id="basic_salary" name="basic_salary" required
+                        placeholder="e.g. 50000">
                 </div>
                 <div class="col-md-4">
                     <label for="currency">Currency</label>
@@ -511,30 +571,36 @@
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="account_name">Account Name</label>
-                    <input type="text" class="form-control" id="account_name" name="account_name" required placeholder="Account Name">
+                    <input type="text" class="form-control" id="account_name" name="account_name" required
+                        placeholder="Account Name">
                 </div>
                 <div class="col-md-4">
                     <label for="account_number">Account Number</label>
-                    <input type="text" class="form-control" id="account_number" name="account_number" required placeholder="Account Number">
+                    <input type="text" class="form-control" id="account_number" name="account_number" required
+                        placeholder="Account Number">
                 </div>
                 <div class="col-md-4">
                     <label for="bank_name">Bank Name.</label>
-                    <input type="text" class="form-control" id="bank_name" name="bank_name" required placeholder="Bank Name">
+                    <input type="text" class="form-control" id="bank_name" name="bank_name" required
+                        placeholder="Bank Name">
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="bank_code">Bank Code.</label>
-                    <input type="text" class="form-control" id="bank_code" name="bank_code" required placeholder="Bank Code">
+                    <input type="text" class="form-control" id="bank_code" name="bank_code" required
+                        placeholder="Bank Code">
                 </div>
                 <div class="col-md-4">
                     <label for="bank_branch">Branch.</label>
-                    <input type="text" class="form-control" id="bank_branch" name="bank_branch" required placeholder="Branch">
+                    <input type="text" class="form-control" id="bank_branch" name="bank_branch" required
+                        placeholder="Branch">
                 </div>
                 <div class="col-md-4">
                     <label for="bank_branch_code">Branch Code.</label>
-                    <input type="text" class="form-control" id="bank_branch_code" name="bank_branch_code" required placeholder="Branch Code">
+                    <input type="text" class="form-control" id="bank_branch_code" name="bank_branch_code"
+                        required placeholder="Branch Code">
                 </div>
             </div>
 
@@ -559,8 +625,9 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label for="academic_files">Accademic Files.</label>
-                    <input type="file" multiple class="form-control" id="academic_files" name="academic_files" required>
+                    <label for="academic_files">Academic Files.</label>
+                    <input type="file" multiple class="form-control" id="academic_files" name="academic_files"
+                        required>
                 </div>
             </div>
 
@@ -569,7 +636,8 @@
 
     <div class="card">
         <div class="card-body">
-            <button type="button" onclick="saveEmployee(this)" class="btn btn-primary w-100"> <i class="bi bi-check-circle"></i> Save Employee</button>
+            <button type="button" onclick="saveEmployee(this)" class="btn btn-primary w-100"> <i
+                    class="bi bi-check-circle"></i> Save Employee</button>
         </div>
     </div>
 

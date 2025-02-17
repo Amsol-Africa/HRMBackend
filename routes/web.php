@@ -47,10 +47,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payroll/process', [DashboardController::class, 'processPayrolls'])->name('payroll.process');
         Route::get('/payrolls', [DashboardController::class, 'payrolls'])->name('payroll.index');
         Route::get('/payrolls/payslips/{payroll?}', [DashboardController::class, 'payslips'])->name('payroll.payslips');
-        
+
         Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
         Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');
-        
+
         Route::get('/deductions', [DashboardController::class, 'deductions'])->name('deductions.index');
         Route::get('/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
 
@@ -99,24 +99,21 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/{task}', [DashboardController::class, 'show'])->name('show');
             });
             Route::get('/reviews', [DashboardController::class, 'reviews'])->name('reviews');
-        });        
-        
+        });
+
     });
 
-    Route::middleware(['role:business-employee'])
-    ->name('myaccount.')
-    ->prefix('myaccount/{business:slug}')
-    ->group(function () {
+    Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function(){
         Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
 
         // Profile Routes
         Route::get('/profile', [EmployeeDashboardController::class, 'profile'])->name('profile');
-        Route::post('/profile/update', [EmployeeDashboardController::class, 'updateProfile'])->name('profile.update');
 
         // Leave Management
-        Route::get('/leaves/request', [EmployeeDashboardController::class, 'requestLeave'])->name('leave.request');
-        Route::post('/leaves/request', [EmployeeDashboardController::class, 'submitLeaveRequest'])->name('leave.submit');
-        Route::get('/leaves', [EmployeeDashboardController::class, 'viewLeaves'])->name('leave.view');
+        Route::prefix('leave')->name('leave.')->group(function () {
+            Route::get('/requests', [EmployeeDashboardController::class, 'leaveRequests'])->name('requests.index');
+            Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
+        });
 
         // Attendance
         Route::get('/attendance', [EmployeeDashboardController::class, 'checkIn'])->name('attendance');

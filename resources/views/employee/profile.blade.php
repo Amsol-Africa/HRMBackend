@@ -19,8 +19,7 @@
                 </div>
                 @endif
 
-                <form method="POST"
-                    action="{{ route('myaccount.profile.update', ['business' => request()->business]) }}">
+                <form method="POST" action="">
                     @csrf
                     @method('PUT')
 

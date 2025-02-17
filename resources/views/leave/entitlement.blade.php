@@ -22,7 +22,8 @@
                             <div class="col-md-6">
                                 <label for="departments" class="form-label">Location</label>
                                 <select name="locations[]" id="locations" class="form-select select2-multiple" multiple>
-                                    <option selected value="{{ $currentBusiness->slug }}">{{ $currentBusiness->company_name }}</option>
+                                    <option selected value="{{ $currentBusiness->slug }}">
+                                        {{ $currentBusiness->company_name }}</option>
                                     @foreach ($locations as $location)
                                         <option value="{{ $location->slug }}">{{ $location->name }}</option>
                                     @endforeach
@@ -34,7 +35,8 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="departments" class="form-label">Departments</label>
-                                <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
+                                <select name="departments[]" id="departments" class="form-select select2-multiple"
+                                    multiple>
                                     <option value="all" selected>All Departments</option>
                                     @foreach ($departments as $department)
                                         <option value="{{ $department->slug }}">{{ $department->name }}</option>
@@ -44,7 +46,8 @@
 
                             <div class="col-md-4">
                                 <label for="job_categories" class="form-label">Job Categories</label>
-                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
+                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple"
+                                    multiple>
                                     <option value="all" selected>All Job Categories</option>
                                     @foreach ($jobCategories as $jobCategory)
                                         <option value="{{ $jobCategory->slug }}">{{ $jobCategory->name }}</option>
@@ -54,7 +57,8 @@
 
                             <div class="col-md-4">
                                 <label for="employment_terms" class="form-label">Employment Terms</label>
-                                <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
+                                <select name="employment_terms[]" id="employment_terms"
+                                    class="form-select select2-multiple" multiple>
                                     <option value="all" selected>All Terms</option>
                                     <option value="permanent">Permanent</option>
                                     <option value="contract">Contract</option>
@@ -103,7 +107,8 @@
 
                         <div class="row mt-4">
                             <div class="col-md-12">
-                                <button type="button" onclick="saveLeaveEntitlements(this)" class="btn btn-primary w-100">
+                                <button type="button" onclick="saveLeaveEntitlements(this)"
+                                    class="btn btn-primary w-100">
                                     <i class="bi bi-check-circle"></i> Save Entitlement
                                 </button>
                             </div>
@@ -115,12 +120,11 @@
         </div>
     </form>
 
-
     @push('scripts')
         <script src="{{ asset('js/main/leave-entitlement.js') }}" type="module"></script>
         <script src="{{ asset('js/main/filter-employees.js') }}" type="module"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 const filters = ['departments', 'job_categories', 'employment_terms', 'locations']; // Add locations
 
                 // Initialize Select2 for multiple select fields
@@ -133,7 +137,8 @@
                     filters.forEach(filterName => {
                         const selectElement = document.getElementById(filterName);
                         if (selectElement) {
-                            const selectedValues = Array.from(selectElement.selectedOptions).map(option => option.value);
+                            const selectedValues = Array.from(selectElement.selectedOptions).map(option =>
+                                option.value);
                             filtersData[filterName] = selectedValues;
                         }
                     });
@@ -152,7 +157,8 @@
                         if (allEmployees && Array.isArray(allEmployees)) {
                             allEmployees.forEach(employee => {
                                 console.log(employee)
-                                const isFiltered = filteredEmployees.some(filteredEmployee => filteredEmployee.id === employee.id);
+                                const isFiltered = filteredEmployees.some(filteredEmployee =>
+                                    filteredEmployee.id === employee.id);
 
                                 const checkbox = `
                                     <div class="form-check">
@@ -175,10 +181,10 @@
 
 
                 filters.forEach(filterName => {
-                    $(`#${filterName}`).on('select2:select', function () {
+                    $(`#${filterName}`).on('select2:select', function() {
                         triggerFilterEmployees();
                     });
-                    $(`#${filterName}`).on('select2:unselect', function () {
+                    $(`#${filterName}`).on('select2:unselect', function() {
                         triggerFilterEmployees();
                     });
                 });
@@ -186,8 +192,6 @@
                 $('#leave_period_id').on('change', function() {
                     triggerFilterEmployees();
                 });
-
-
 
                 // Initial employee load when the page loads
                 triggerFilterEmployees();
@@ -224,7 +228,7 @@
 
                 document.getElementById('addRowButton').addEventListener('click', addRow);
 
-                document.getElementById('dynamicRows').addEventListener('click', function (event) {
+                document.getElementById('dynamicRows').addEventListener('click', function(event) {
                     if (event.target.closest('.removeRowButton')) {
                         const row = event.target.closest('tr');
                         row.remove();
@@ -235,7 +239,6 @@
 
             });
         </script>
-
     @endpush
 
 </x-app-layout>

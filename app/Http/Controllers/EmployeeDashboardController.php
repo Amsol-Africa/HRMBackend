@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Employee;
 use App\Models\LeaveRequest;
+use App\Models\LeaveType;
+use App\Models\Business;
 // use App\Models\Attendance;
 // use App\Models\Payslip;
 use Carbon\Carbon;
@@ -44,25 +46,14 @@ class EmployeeDashboardController extends Controller
         $employee->update($request->only(['name', 'email', 'phone']));
         return back()->with('success', 'Profile updated successfully!');
     }
-
     // Leave Requests
     public function requestLeave(Request $request)
     {
-        $request->validate([
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after:start_date',
-            'reason' => 'required|string|max:255',
-        ]);
-
-        LeaveRequest::create([
-            'employee_id' => Auth::id(),
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'reason' => $request->reason,
-            'status' => 'pending',
-        ]);
-
-        return back()->with('success', 'Leave request submitted successfully!');
+        $page = "Request Leave";
+        $description = "";
+        $business = Business::findBySlug(session('active_business_slug'));
+        $leaveTypes = $business->leaveTypes;
+        return view('leave.request-leave', compact('page', 'description', 'leaveTypes'));
     }
 
     public function viewLeaves()

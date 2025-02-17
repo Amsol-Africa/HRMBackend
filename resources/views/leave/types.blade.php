@@ -8,7 +8,8 @@
 
                         <div class="form-group mb-3">
                             <label for="name">Name</label>
-                            <input type="text" name="name" id="name" placeholder="Leave Name" class="form-control">
+                            <input type="text" name="name" id="name" placeholder="Leave Name"
+                                class="form-control">
                         </div>
 
                         <div class="form-group mb-3">
@@ -54,7 +55,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="max_continuous_days">Max continuous days</label>
-                                <input type="number" name="max_continuous_days" id="max_continuous_days" class="form-control">
+                                <input type="number" name="max_continuous_days" id="max_continuous_days"
+                                    class="form-control">
                             </div>
 
                             <div class="col-md-12">
@@ -62,7 +64,6 @@
                                 <input type="number" name="min_notice_days" id="min_notice_days" class="form-control">
                             </div>
                         </div>
-
 
                         <h6 class="mt-3">Leave Policies</h6>
 
@@ -96,7 +97,8 @@
 
                             <div class="col-md-6">
                                 <label for="prorated_for_new_employees">Prorated for new employees</label>
-                                <select name="prorated_for_new_employees" id="prorated_for_new_employees" class="form-select">
+                                <select name="prorated_for_new_employees" id="prorated_for_new_employees"
+                                    class="form-select">
                                     <option value="1">Yes</option>
                                     <option value="0">No</option>
                                 </select>
@@ -118,32 +120,38 @@
 
                             <div class="col-md-4">
                                 <label for="accrual_amount">Accrual amount</label>
-                                <input type="number" name="accrual_amount" id="accrual_amount" class="form-control">
+                                <input type="number" name="accrual_amount" id="accrual_amount"
+                                    class="form-control">
                             </div>
 
                             <div class="col-md-6">
                                 <label for="max_carryover_days">Max carryover days</label>
-                                <input type="number" name="max_carryover_days" id="max_carryover_days" class="form-control">
+                                <input type="number" name="max_carryover_days" id="max_carryover_days"
+                                    class="form-control">
                             </div>
 
                             <div class="col-md-6">
                                 <label for="minimum_service_days_required">minimum service days required</label>
-                                <input type="number" name="minimum_service_days_required" id="minimum_service_days_required" class="form-control">
+                                <input type="number" name="minimum_service_days_required"
+                                    id="minimum_service_days_required" class="form-control">
                             </div>
 
                             <div class="col-md-6">
                                 <label for="effective_date">Effective date</label>
-                                <input type="text" class="form-control datepicker" id="effective_date" name="effective_date" required placeholder="Effective date">
+                                <input type="text" class="form-control datepicker" id="effective_date"
+                                    name="effective_date" required placeholder="Effective date">
                             </div>
                             <div class="col-md-6">
                                 <label for="end_date">End date</label>
-                                <input type="text" class="form-control datepicker" id="end_date" name="end_date" required placeholder="End date">
+                                <input type="text" class="form-control datepicker" id="end_date" name="end_date"
+                                    required placeholder="End date">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-12">
-                                <button type="button" class="btn btn-primary w-100" onclick="saveLeaveType(this)"> Save Leave Type </button>
+                                <button type="button" class="btn btn-primary w-100" onclick="saveLeaveType(this)">
+                                    Save Leave Type </button>
                             </div>
                         </div>
 
@@ -170,7 +178,7 @@
         <script src="{{ asset('js/main/leave-type.js') }}" type="module"></script>
 
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('DOMContentLoaded', function() {
                 // Ensure getLeaveType function is called if it exists in the leave-type.js file
                 if (typeof getLeaveType === 'function') {
                     getLeaveType();
