@@ -274,6 +274,49 @@ INSERT INTO `applications` VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `attendances`
+--
+
+DROP TABLE IF EXISTS `attendances`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `attendances` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `employee_id` bigint(20) unsigned NOT NULL,
+  `business_id` bigint(20) unsigned NOT NULL,
+  `date` date NOT NULL,
+  `clock_in` time DEFAULT NULL,
+  `clock_out` time DEFAULT NULL,
+  `overtime_hours` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `is_absent` tinyint(1) NOT NULL DEFAULT 0,
+  `remarks` text DEFAULT NULL,
+  `logged_by` bigint(20) unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `attendances_employee_id_foreign` (`employee_id`),
+  KEY `attendances_business_id_foreign` (`business_id`),
+  KEY `attendances_logged_by_foreign` (`logged_by`),
+  CONSTRAINT `attendances_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `attendances_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `attendances_logged_by_foreign` FOREIGN KEY (`logged_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `attendances`
+--
+
+LOCK TABLES `attendances` WRITE;
+/*!40000 ALTER TABLE `attendances` DISABLE KEYS */;
+INSERT INTO `attendances` VALUES
+(1,3,1,'2025-02-16',NULL,NULL,0.00,1,NULL,1,'2025-02-16 11:13:33','2025-02-16 11:13:33'),
+(2,2,1,'2025-02-16','14:13:00',NULL,0.00,0,NULL,1,'2025-02-16 11:16:47','2025-02-16 11:16:47'),
+(3,1,1,'2025-02-16','14:18:00',NULL,0.00,0,NULL,1,'2025-02-16 11:18:05','2025-02-16 11:18:05');
+/*!40000 ALTER TABLE `attendances` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `business_modules`
 --
 
@@ -1720,7 +1763,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=81 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=84 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1785,7 +1828,10 @@ INSERT INTO `migrations` VALUES
 (77,'2025_02_10_221803_create_interviews_table',6),
 (78,'2025_02_10_224847_create_interview_feedback_table',6),
 (79,'2025_02_11_031751_add_timestamps_to_applicants_table',7),
-(80,'2025_02_11_065712_update_payrolls_table',8);
+(80,'2025_02_11_065712_update_payrolls_table',8),
+(81,'2025_02_14_044514_add_unique_constraint_to_payrolls',9),
+(82,'2025_02_16_084350_create_attendances_table',10),
+(83,'2025_02_16_104550_create_overtimes_table',10);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1891,6 +1937,40 @@ INSERT INTO `modules` VALUES
 (9,'CRM Integration','crm-integration','Customer relationship management integration with HR',44.99,449.99,0,'[\"Contact Management\",\"Lead Tracking\",\"Sales Pipeline\",\"Customer Support\",\"Email Integration\",\"Analytics & Reports\"]','people','2025-02-04 03:34:17','2025-02-04 03:34:17'),
 (10,'Project Management','project-management','Project planning and resource management tools',39.99,399.99,0,'[\"Project Planning\",\"Task Management\",\"Resource Allocation\",\"Time Tracking\",\"Project Reports\",\"Team Collaboration\"]','clipboard-data','2025-02-04 03:34:17','2025-02-04 03:34:17');
 /*!40000 ALTER TABLE `modules` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `overtimes`
+--
+
+DROP TABLE IF EXISTS `overtimes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `overtimes` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `employee_id` bigint(20) unsigned NOT NULL,
+  `business_id` bigint(20) unsigned NOT NULL,
+  `date` date NOT NULL,
+  `overtime_hours` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `rate` decimal(8,2) NOT NULL,
+  `total_pay` decimal(10,2) NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `overtimes_employee_id_foreign` (`employee_id`),
+  KEY `overtimes_business_id_foreign` (`business_id`),
+  CONSTRAINT `overtimes_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `overtimes_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `overtimes`
+--
+
+LOCK TABLES `overtimes` WRITE;
+/*!40000 ALTER TABLE `overtimes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `overtimes` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -2019,7 +2099,8 @@ CREATE TABLE `payrolls` (
   `payrun_month` tinyint(3) unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `payroll_unique` (`payrun_year`,`payrun_month`,`business_id`,`location_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2232,7 +2313,9 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('hWWElEMWk1tCyWx117RzgjVw2Q1Rsbm3ijaVIVCq',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiUFlwRG1NMWxwbXQyMnVDdlFVenNmOElJSmJxYUhGcFBkcldZVHBMTCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1NToiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2xlYXZlL2VudGl0bGVtZW50cyI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjU2OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXIta2UvcGF5cm9sbHMvcGF5c2xpcHMvNSI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739257702);
+('EHto04mDKjZH7tl7zcxSaokwo6UZTMj7IJ8dPYSh',NULL,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTozOntzOjY6Il90b2tlbiI7czo0MDoicEtNQ3dzYjV2N0M5WWhvY3A1MDk5UGJZUDhndDNpVXduUk9nVGY2MiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjc6Imh0dHA6Ly8xMjcuMC4wLjE6ODAwMC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1739724037),
+('VljRCQO7GJOQZzao2ndgmBtCt9zvIJnZxmSezsZ2',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiQWgyT055TENMQktaSVE3N0lxWUNCUWVJYWhqZlFCNmdIYndaODlVMSI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo0ODoiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2F0dGVuZGFuY2VzIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDg6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9hdHRlbmRhbmNlcyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739750905),
+('vm4gI3mqXyYGEjoiqNDCvqwQNJzLdGRQAsu4w0UJ',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoiNVQ3akFxUGdMZHRvQ1JwVGVhR3FjSDdYdTNNWkxrYTlFbk9LN0RIcCI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDg6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9hdHRlbmRhbmNlcyI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7czoyMDoiYWN0aXZlX2J1c2luZXNzX3NsdWciO3M6ODoiYW56YXIta2UiO30=',1739707744);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2458,4 +2541,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-02-11 10:09:14
+-- Dump completed on 2025-02-17  8:56:41
