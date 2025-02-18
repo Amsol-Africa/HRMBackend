@@ -19,6 +19,8 @@ return new class extends Migration
             $table->decimal('overtime_hours', 5, 2)->default(0);
             $table->decimal('rate', 8, 2);
             $table->decimal('total_pay', 10, 2);
+            $table->text('description');
+            $table->foreignId('approved_by')->constrained('users')->onDelete('cascade');
             $table->timestamps();
         });
     }

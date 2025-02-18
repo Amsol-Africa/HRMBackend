@@ -13,6 +13,26 @@ class AttendancesService {
         }
     }
 
+    async monthly(data) {
+        try {
+            const response = await this.requestClient.post('/attendances/monthly', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
+    async clockins(data) {
+        try {
+            const response = await this.requestClient.post('/attendances/clockins', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async update(data) {
         try {
             const response = await this.requestClient.post('/attendances/update', data);

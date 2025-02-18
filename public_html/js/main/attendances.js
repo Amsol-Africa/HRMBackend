@@ -15,6 +15,37 @@ window.getAttendances = async function (date = null) {
         console.error("Error loading user data:", error);
     }
 };
+
+window.getMonthly = async function (month = null) {
+    try {
+        let data = {month: month};
+        const attendances = await attendancesService.monthly(data);
+        $("#attendancesContainer").html(attendances);
+        new DataTable('#attendancesTable');
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};
+
+window.getOvertime = async function (date = null) {
+    try {
+        let data = {date: date};
+        const overtime = await attendancesService.overtime(data);
+        $("#overtimeContainer").html(overtime);
+        new DataTable('#overtimeTable');
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};
+window.getClockins = async function () {
+    try {
+        let data = {};
+        const clockins = await attendancesService.clockins(data);
+        $("#clockinsContainer").html(clockins);
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};
 window.clockIn = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -24,18 +55,19 @@ window.clockIn = async function (btn) {
     try {
         await attendancesService.clockIn(formData);
     } finally {
+        getClockins()
         btn_loader(btn, false);
     }
 };
 window.clockOut = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-
-    let formData = new FormData(document.getElementById("clockOutForm"));
-
+    const employee = btn.data('employee');
+    const data = {employee : employee}
     try {
-        await attendancesService.clockOut(formData);
+        await attendancesService.clockOut(data);
     } finally {
+        getClockins()
         btn_loader(btn, false);
     }
 };

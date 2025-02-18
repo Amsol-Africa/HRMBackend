@@ -2,59 +2,104 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
+use App\Models\User;
 use Illuminate\View\View;
+use Illuminate\Http\Request;
+use App\Http\RequestResponse;
+use Illuminate\Validation\Rule;
+use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\ProfileUpdateRequest;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
+    use HandleTransactions;
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request): View
+    public function edit(Request $request)
     {
         return view('profile.edit', [
             'user' => $request->user(),
         ]);
     }
-
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function store(ProfileUpdateRequest $request)
     {
-        $request->user()->fill($request->validated());
+        return $this->handleTransaction(function () use ($request) {
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
+            $user = auth()->user();
 
-        $request->user()->save();
+            $countryCode = $request->code;
+            $phoneNumber = "+{$countryCode}{$request->phone}";
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+            $validator = Validator::make(['phone' => $phoneNumber], [
+                'phone' => Rule::unique(User::class)->ignore(auth()->user()->id)
+            ]);
+
+            throw_if($validator->fails(), ValidationException::class, $validator);
+
+            $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $phoneNumber,
+                'code' => $request->code,
+                'country' => $request->country,
+            ]);
+
+            if ($user->isDirty('email')) {
+                $user->email_verified_at = null;
+                $user->save();
+            }
+
+            return RequestResponse::created('Account updated successfully.');
+        });
     }
-
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
+    public function password(Request $request)
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
+        return $this->handleTransaction(function () use ($request) {
+            $request->validate([
+                'current_password' => ['required', 'current_password'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
 
-        $user = $request->user();
+            $user = auth()->user();
+            $user->update([
+                'password' => Hash::make($request->password),
+            ]);
 
-        Auth::logout();
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-        $user->delete();
+            return RequestResponse::ok('Password updated successfully. Please log in again.', [
+                'redirect_url' => route('login')
+            ]);
+        });
+    }
+    public function destroy(Request $request)
+    {
+        return $this->handleTransaction(function () use ($request) {
+            $request->validateWithBag('userDeletion', [
+                'password' => ['required', 'current_password'],
+            ]);
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+            $user = $request->user();
 
-        return Redirect::to('/');
+            Auth::logout();
+
+            $user->delete();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            $redirect_url = route('login');
+
+            return RequestResponse::ok('Account updated successfully.', ['redirect_url' => $redirect_url]);
+        });
     }
 }

@@ -467,6 +467,13 @@ class DashboardController extends Controller
         return view('attendances.index', compact('page', 'description'));
     }
 
+    public function monthlyAttendances(Request $request)
+    {
+        $page = 'Manage Attendances';
+        $description = '';
+        return view('attendances.monthly', compact('page', 'description'));
+    }
+
     public function clockIn(Request $request)
     {
         $page = 'Clock In';
@@ -482,5 +489,13 @@ class DashboardController extends Controller
         $business = Business::findBySlug(session('active_business_slug'));
         $employees = $business->employees;
         return view('attendances.clockout', compact('page', 'description', 'employees'));
+    }
+    public function overtime(Request $request)
+    {
+        $page = 'Overtime';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        return view('attendances.overtime', compact('page', 'description', 'employees'));
     }
 }

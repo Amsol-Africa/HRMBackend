@@ -17,12 +17,24 @@ class Overtime extends Model
         'overtime_hours',
         'rate',
         'total_pay',
+        'description',
+        'approved_by',
     ];
 
-    // Relationships
+    protected $casts = [
+        'date' => 'date',
+        'overtime_hours' => 'decimal:2',
+        'rate' => 'decimal:2',
+        'total_pay' => 'decimal:2',
+    ];
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     public function business()

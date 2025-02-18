@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\OvertimeController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\ShiftController;
@@ -200,7 +202,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('destroy', [ApplicantController::class, 'destroy'])->name('destroy');
         Route::post('update', [ApplicantController::class, 'update'])->name('update');
     });
-    
+
     // Tasks
     Route::name('tasks.')->prefix('tasks')->group(function () {
         Route::post('fetch', [TaskController::class, 'fetch'])->name('fetch');
@@ -209,7 +211,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update/{task}', [TaskController::class, 'update'])->name('update');
         Route::post('delete/{task}', [TaskController::class, 'destroy'])->name('delete');
     });
-    
+
     // Applicant Management
     Route::name('attendances.')->prefix('attendances')->group(function () {
         Route::post('clockin', [AttendanceController::class, 'clockIn'])->name('clockin');
@@ -218,6 +220,23 @@ Route::middleware(['auth'])->group(function () {
         Route::post('show', [AttendanceController::class, 'show'])->name('show');
         Route::post('destroy', [AttendanceController::class, 'destroy'])->name('destroy');
         Route::post('update', [AttendanceController::class, 'update'])->name('update');
+        Route::post('clockins', [AttendanceController::class, 'clockIns'])->name('clockins');
+        Route::post('monthly', [AttendanceController::class, 'monthly'])->name('monthly');
+    });
+
+    // Applicant Management
+    Route::name('overtime.')->prefix('overtime')->group(function () {
+        Route::post('store', [OvertimeController::class, 'store'])->name('store');
+        Route::post('destroy', [OvertimeController::class, 'destroy'])->name('destroy');
+        Route::post('edit', [OvertimeController::class, 'edit'])->name('edit');
+        Route::post('fetch', [OvertimeController::class, 'fetch'])->name('fetch');
+    });
+
+    // Profile
+    Route::name('profile.')->prefix('profile')->group(function () {
+        Route::post('store', [ProfileController::class, 'store'])->name('store');
+        Route::post('destroy', [ProfileController::class, 'destroy'])->name('destroy');
+        Route::post('password', [ProfileController::class, 'password'])->name('password');
     });
 
     //print

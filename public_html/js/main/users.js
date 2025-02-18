@@ -16,13 +16,13 @@ window.getUsers = async function (role = null) {
         console.error("Error loading user data:", error);
     }
 };
+
 window.saveUser = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
     let formData = new FormData();
 
-    // Provider Details
     formData.append("middle_name", $("#middle_name").val());
     formData.append("first_name", $("#first_name").val());
     formData.append("last_name", $("#last_name").val());
@@ -59,6 +59,7 @@ window.saveUser = async function (btn) {
         btn_loader(btn, false);
     }
 };
+
 window.updateUser = async function (btn, userId) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -128,4 +129,20 @@ window.deleteUser = async function (btn) {
         } else {
         }
     });
+};
+
+
+//profile
+
+window.updateProfile = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData(document.getElementById("profileForm"));
+
+    try {
+        await usersService.updateProfile(formData);
+    } finally {
+        btn_loader(btn, false);
+    }
 };

@@ -18,21 +18,66 @@ class AttendanceController extends Controller
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $date = $request->input('date', now()->format('Y-m-d'));
 
-        Log::debug($date);
+        $dateInput = $request->input('date');
+
+        if ($dateInput) {
+            try {
+                $date = Carbon::parse($dateInput)->format('Y-m-d');
+            } catch (\Exception $e) {
+                Log::error("Invalid date format: " . $dateInput . " - Error: " . $e->getMessage());
+                return RequestResponse::badRequest('Invalid date format provided.');
+            }
+        } else {
+            $date = now()->format('Y-m-d');
+        }
 
         $attendances = Attendance::where('business_id', $business->id)
-            // ->whereDate('date', $date)
+            ->whereDate('date', $date)
             ->with('employee')
             ->orderBy('date', 'desc')
             ->get();
 
-        Log::debug($attendances);
-
         $attendanceTable = view('attendances._attendance_table', compact('attendances'))->render();
-
         return RequestResponse::ok('Attendance records fetched successfully.', $attendanceTable);
+    }
+
+    public function monthly(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        $year = now()->year;
+        $month = $request->input('month')
+            ? Carbon::createFromDate($year, intval($request->input('month')), 1)
+            : now();
+
+
+        $startDate = $month->copy()->startOfMonth();
+        $endDate = $month->copy()->endOfMonth();
+        $daysInMonth = $endDate->day;
+
+        $startDate = $startDate->toDateString();
+        $endDate = $endDate->toDateString();
+
+        $attendances = Attendance::where('business_id', $business->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->with('employee')
+            ->get();
+
+        $attendanceData = [];
+        foreach ($attendances as $attendance) {
+            $employeeId = $attendance->employee_id;
+            $day = $attendance->date->day;
+            $attendanceData[$employeeId][$day] = $attendance;
+        }
+
+        $attendanceTable = view('attendances._monthly_attendance_table', [
+            'attendanceData' => $attendanceData,
+            'daysInMonth' => $daysInMonth,
+            'month' => $month->format('F Y'),
+        ])->render();
+
+        return RequestResponse::ok('Ok.', $attendanceTable);
     }
 
     public function clockIn(Request $request)
@@ -69,17 +114,32 @@ class AttendanceController extends Controller
         });
     }
 
+    public function clockIns(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        $date = now()->format('Y-m-d');
+
+        $clockins = Attendance::where('business_id', $business->id)
+            ->whereDate('date', $date)
+            ->with('employee')
+            ->orderBy('date', 'desc')
+            ->get();
+
+        $clockinsCards = view('attendances._clock_ins', compact('clockins'))->render();
+        return RequestResponse::ok('Ok.', $clockinsCards);
+    }
+
     public function clockOut(Request $request)
     {
         $validatedData = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
+            'employee' => 'required|exists:employees,id',
             'remarks' => 'nullable|string',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
 
-            $attendance = Attendance::where('employee_id', $validatedData['employee_id'])
+            $attendance = Attendance::where('employee_id', $validatedData['employee'])
                 ->where('business_id', $business->id)
                 ->whereDate('date', now()->format('Y-m-d'))
                 ->first();
@@ -101,7 +161,7 @@ class AttendanceController extends Controller
 
             if ($overtimeHours > 0) {
                 Overtime::create([
-                    'employee_id' => $validatedData['employee_id'],
+                    'employee_id' => $validatedData['employee'],
                     'business_id' => $business->id,
                     'date' => now()->format('Y-m-d'),
                     'overtime_hours' => $overtimeHours,
