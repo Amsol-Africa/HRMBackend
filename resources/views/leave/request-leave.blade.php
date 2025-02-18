@@ -11,7 +11,16 @@
             </div>
         </div>
         <div class="col-md-7">
-
+            <div class="card">
+                <div class="card-body">
+                    {{-- @include('leave._leave_requests_table') --}}
+                </div>
+            </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script src="{{ asset('js/main/leave.js') }}" type="module"></script>
+    @endpush
+
 </x-app-layout>

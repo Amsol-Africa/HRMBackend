@@ -62,7 +62,7 @@ class LeaveRequestController extends Controller
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
-            $leave_type = Leave::findOrFail($validatedData['leave_type_id']);
+            $leave_type = LeaveType::findOrFail($validatedData['leave_type_id']);
             $duration = $leave_type->max_continuous_days;
 
             $leaveRequest = new LeaveRequest();
@@ -73,6 +73,7 @@ class LeaveRequestController extends Controller
             $leaveRequest->start_date = $validatedData['start_date'];
             $leaveRequest->total_days = $duration;
             $leaveRequest->reason = $validatedData['reason'];
+            $leaveRequest->end_date = date('Y-m-d', strtotime($validatedData['start_date'] . " +$duration days"));
             // $leaveRequest->end_date = $validatedData['end_date'];
             // $leaveRequest->total_days = $this->calculateTotalDays($validatedData['start_date'], $validatedData['end_date'], $validatedData['half_day']);
             // $leaveRequest->half_day = $validatedData['half_day'];

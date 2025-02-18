@@ -7,8 +7,8 @@ use App\Models\Employee;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
 use App\Models\Business;
-// use App\Models\Attendance;
-// use App\Models\Payslip;
+use App\Models\Attendance;
+use App\Models\Payslip;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -60,7 +60,7 @@ class EmployeeDashboardController extends Controller
     {
         $page = "My Leaves";
         $leaves = LeaveRequest::where('employee_id', Auth::id())->latest()->get();
-        return view('employee.leaves', compact('page', 'leaves'));
+        return view('leave.index', compact('page', 'leaves'));
     }
 
     // Employee Sign-in (Attendance)
