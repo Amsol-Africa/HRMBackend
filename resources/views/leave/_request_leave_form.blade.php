@@ -13,7 +13,8 @@
 
     <div class="mb-3">
         <label for="start_date" class="form-label">Start Date</label>
-        <input type="date" class="form-control datepicker" id="start_date" name="start_date" required>
+        <input type="date" class="form-control datepicker" id="start_date" name="start_date" required
+            min="{{ date('Y-m-d') }}">
     </div>
 
     <div class="mb-3">

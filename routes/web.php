@@ -134,7 +134,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Leave Management
         Route::prefix('leave')->name('leave.')->group(function () {
-            Route::get('/requests', [EmployeeDashboardController::class, 'leaveRequests'])->name('requests.index');
+            Route::get('/requests', [EmployeeDashboardController::class, 'viewLeaves'])->name('requests.index');
             Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
         });
         // Attendance Module
