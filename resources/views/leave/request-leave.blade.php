@@ -13,7 +13,7 @@
         <div class="col-md-7">
             <div class="card">
                 <div class="card-body">
-                    {{-- @include('leave._leave_requests_table') --}}
+                    @include('leave._cards')
                 </div>
             </div>
         </div>

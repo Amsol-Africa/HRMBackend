@@ -44,7 +44,7 @@ class LeaveRequestController extends Controller
     public function show(Request $request, $referenceNumber)
     {
         $leaveRequest = LeaveRequest::where('reference_number', $referenceNumber)->with('employee', 'leaveType')->firstOrFail();
-        $leaveRequestDetails = view('leave._leave_request_details', compact('leaveRequest'))->render();
+        $leaveRequestDetails = view('leave._leave_request_table', compact('leaveRequest'))->render();
         return RequestResponse::ok('Leave request fetched successfully.', $leaveRequestDetails);
     }
 
@@ -135,8 +135,7 @@ class LeaveRequestController extends Controller
 
     private function calculateTotalDays($startDate, $endDate, $halfDay)
     {
-        $days = $endDate->diffInDays($startDate) + 1; // Include both start and end dates
-
+        $days = $endDate->diffInDays($startDate) + 1;
         if ($halfDay) {
             $days -= 0.5;
         }

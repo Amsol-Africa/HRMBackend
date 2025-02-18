@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="container py-4">
-        <h2 class="fw-bold mb-4">Welcome Wayne</h2>
+        <h2 class="fw-bold mb-4">Welcome {{ explode(' ', Auth::user()->name)[0] }}</h2>
 
         <!-- Stats Overview -->
         <div class="row g-4">
@@ -36,12 +36,14 @@
 
         <!-- Quick Actions -->
         <div class="row g-4 mt-4">
+            <h3 class="fw-bold mb-4">Quick Actions</h3>
             <div class="col-md-4">
                 <div class="card border-0 shadow-sm rounded-3">
                     <div class="card-body text-center">
                         <i class="bi bi-person-circle text-primary" style="font-size: 2.5rem;"></i>
                         <h6 class="mt-2">Profile</h6>
-                        <a href="#" class="btn btn-outline-primary btn-sm mt-3">View
+                        <a href="{{ route('myaccount.profile', $currentBusiness->slug) }}"
+                            class="btn btn-outline-primary btn-sm mt-3">View
                             Profile</a>
                     </div>
                 </div>
@@ -51,7 +53,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-calendar-check text-warning" style="font-size: 2.5rem;"></i>
                         <h6 class="mt-2">Leave Requests</h6>
-                        <a href="#" class="btn btn-outline-warning btn-sm mt-3">Request
+                        <a href="{{ route('myaccount.leave.requests.create', $currentBusiness->slug) }}"
+                            class="btn btn-outline-warning btn-sm mt-3">Request
                             Leave</a>
                     </div>
                 </div>
@@ -61,7 +64,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-clock text-success" style="font-size: 2.5rem;"></i>
                         <h6 class="mt-2">Sign-in</h6>
-                        <a href="#" class="btn btn-outline-success btn-sm mt-3">Check In</a>
+                        <a href="{{ route('myaccount.attendances.clock-in', $currentBusiness->slug) }}"
+                            class="btn btn-outline-success btn-sm mt-3">Check In</a>
                     </div>
                 </div>
             </div>

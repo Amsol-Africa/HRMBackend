@@ -44,6 +44,16 @@ class UsersService {
         }
     }
 
+    async updateProfile(data) {
+        try {
+            const response = await this.requestClient.post('/profile/store', data);
+            toastr.success(response.message, "Success");
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async delete(data) {
         try {
             const response = await this.requestClient.post('/users/delete', data);
