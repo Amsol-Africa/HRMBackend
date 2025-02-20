@@ -4,7 +4,8 @@
         <div class="breadcrumb__wrapper mb-25">
             <nav>
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{{ route('business.index', $currentBusiness->slug) }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('business.index', $currentBusiness->slug) }}">Home</a>
+                    </li>
                     <li class="breadcrumb-item active" aria-current="page">Employee Profile</li>
                 </ol>
             </nav>
@@ -13,16 +14,21 @@
 
     <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">Employee Profile</button>
+            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile"
+                type="button" role="tab" aria-controls="profile" aria-selected="true">Employee Profile</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="payrolls-tab" data-bs-toggle="tab" data-bs-target="#payrolls" type="button" role="tab" aria-controls="payrolls" aria-selected="false">Payrolls</button>
+            <button class="nav-link" id="payrolls-tab" data-bs-toggle="tab" data-bs-target="#payrolls" type="button"
+                role="tab" aria-controls="payrolls" aria-selected="false">Payrolls</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="leave-tab" data-bs-toggle="tab" data-bs-target="#leave" type="button" role="tab" aria-controls="leave" aria-selected="false">Leave</button>
+            <button class="nav-link" id="leave-tab" data-bs-toggle="tab" data-bs-target="#leave" type="button"
+                role="tab" aria-controls="leave" aria-selected="false">Leave</button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button" role="tab" aria-controls="attendance" aria-selected="false">Time & Attendance</button>
+            <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance"
+                type="button" role="tab" aria-controls="attendance" aria-selected="false">Time &
+                Attendance</button>
         </li>
     </ul>
     <div class="tab-content" id="myTabContent">

@@ -17,8 +17,8 @@ class JobCategoryController extends Controller
         $user = $request->user();
         $business = Business::findBySlug(slug: session('active_business_slug'));
         $job_categories = $business->job_categories;
-        $job_categories_cards = view('job-categories._cards', compact('job_categories'))->render();
-        return RequestResponse::ok('Ok', $job_categories_cards);
+        $job_categories_table = view('job-categories._table', compact('job_categories'))->render();
+        return RequestResponse::ok('Ok', $job_categories_table);
     }
     public function store(Request $request)
     {

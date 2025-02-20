@@ -23,6 +23,7 @@ class ShiftController extends Controller
         $shift_table = view('shifts._table', compact('shifts'))->render();
         return RequestResponse::ok('Ok', $shift_table);
     }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -33,7 +34,7 @@ class ShiftController extends Controller
         ]);
 
         return $this->handleTransaction(function () use ($request, $validatedData) {
-            $business = Business::findBySlug(session('current_business_slug'));
+            $business = Business::findBySlug(session('active_business_slug'));
 
             $shift = $business->shifts()->create([
                 'name' => $validatedData['shift_name'],
@@ -88,4 +89,22 @@ class ShiftController extends Controller
             return RequestResponse::ok('Shift updated successfully.');
         });
     }
+    public function destroy(Request $request)
+    {
+        $validatedData = $request->validate([
+            'shift' => 'required|exists:shifts,slug',
+        ]);
+
+        return $this->handleTransaction(function () use ($validatedData) {
+            $shift = Shift::where('slug', $validatedData['shift'])->first();
+
+            if ($shift) {
+                $shift->delete();
+                return RequestResponse::ok('Shift deleted successfully.');
+            }
+
+            return RequestResponse::badRequest('Failed to delete shift.', 404);
+        });
+    }
+
 }

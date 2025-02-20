@@ -15,8 +15,7 @@
         <div class="col-md-8">
             <div class="card-body p-4">
                 <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Shifts</h5>
-                    <div id="exportButtons" class="d-flex gap-2"></div>
+                    <h5 class="mb-2">Shifts</h5>
                 </div>
                 <div class="table-responsive" id="shiftsContainer">
                     <div class="text-center py-4">{{ loader() }}</div>

@@ -1,24 +1,28 @@
 <table class="table table-striped table-hover" id="locationsTable">
     <thead>
         <tr>
+            <th>#</th>
             <th>Name</th>
             <th>Company Size</th>
             {{-- <th>Registration No</th>
             <th>Tax Pin No</th>
             <th>Business License No</th> --}}
             <th>Physical Address</th>
+            <th>Created At</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach ($locations as $location)
+        @foreach ($locations as $index => $location)
             <tr>
+                <td>{{ $index + 1 }}</td>
                 <td>{{ $location->name }}</td>
                 <td>{{ $location->company_size }}</td>
                 {{-- <td>{{ $location->registration_no }}</td>
                 <td>{{ $location->tax_pin_no }}</td>
                 <td>{{ $location->business_license_no }}</td> --}}
                 <td>{{ $location->physical_address }}</td>
+                <td>{{ \Carbon\Carbon::parse($location->created_at)->diffForHumans() }}</td>
                 <td>
                     <div class="btn-group" role="group">
                         <button class="btn btn-primary view-location" data-location="{{ $location->slug }}"

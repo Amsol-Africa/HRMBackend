@@ -49,7 +49,7 @@ class EmployeeController extends Controller
             ->when($request->status, function ($query, $employeeStatus) {
                 if ($employeeStatus !== 'all') {
                     return $query->whereHas('user', function ($query) use ($employeeStatus) {
-                        $query->currentStatus($employeeStatus);  // Assuming this method filters by status.
+                        $query->currentStatus($employeeStatus);
                     });
                 }
             })
@@ -58,8 +58,9 @@ class EmployeeController extends Controller
             })
             ->get();
 
-        $employee_cards = view('employees._cards', compact('employees'))->render();
-        return RequestResponse::ok('Ok', $employee_cards);
+        $employee_table = view('employees._table', compact('employees'))->render();
+
+        return RequestResponse::ok('Ok', $employee_table);
     }
 
     public function store(Request $request)

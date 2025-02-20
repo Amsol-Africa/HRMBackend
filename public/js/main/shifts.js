@@ -63,14 +63,28 @@ window.saveShift = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("shiftsForm"));
+    let form = document.getElementById("shiftsForm");
+    let formData = new FormData(form);
 
     try {
-        if (formData.has('shift_slug')) {
+        if (formData.has('shift_slug') && formData.get('shift_slug')) {
             await shiftsService.update(formData);
+
+            form.reset();
+            $("#shift_slug").val("");
+            $("#shift_name").val("");
+            $("#description").val("");
+            $("#start_time").val("");
+            $("#end_time").val("");
+
+            $("#card-header").text("Add New Shift");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Shift');
+            }, 100);
         } else {
             await shiftsService.save(formData);
         }
+
         getShifts();
     } finally {
         btn_loader(btn, false);
@@ -79,12 +93,19 @@ window.saveShift = async function (btn) {
 
 window.editShift = async function (btn) {
     btn = $(btn);
+
     const shift = btn.data("shift");
     const data = { shift: shift };
 
     try {
         const form = await shiftsService.edit(data);
         $('#shiftsFormContainer').html(form);
+
+        setTimeout(() => {
+            $("#submitButton").html('<i class="bi bi-check-circle"></i> Update Shift');
+        }, 100);
+
+        $("#card-header").text("Edit Shift");
     } catch (error) {
         console.error("Error editing shift:", error);
     }

@@ -84,54 +84,48 @@
 
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="active" role="tabpanel" aria-labelledby="active-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="activeContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="on-leave" role="tabpanel" aria-labelledby="on-leave-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="on-leaveContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="notice-exit" role="tabpanel" aria-labelledby="notice-exit-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="notice-exitContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="inactive" role="tabpanel" aria-labelledby="inactive-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="inactiveContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="exited" role="tabpanel" aria-labelledby="exited-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="exitedContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
-
             <div class="tab-pane fade" id="all" role="tabpanel" aria-labelledby="all-tab">
-                <div class="card-body p-4">
-                    <div class="table-responsive" id="employeesContainer">
-                        <div class="text-center py-4">{{ loader() }}</div>
+                <div id="allContainer">
+                    <div class="card">
+                        <div class="card-body"> {{ loader() }} </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     @push('scripts')
