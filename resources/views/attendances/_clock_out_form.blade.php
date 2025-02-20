@@ -12,11 +12,6 @@
     </div>
 
     <div class="form-group">
-        <label for="clock_out">Clock Out</label>
-        <input type="time" name="clock_out" id="clock_out" class="form-control">
-    </div>
-
-    <div class="form-group">
         <label for="remarks">Remarks</label>
         <textarea name="remarks" id="remarks" class="form-control" rows="2"></textarea>
     </div>

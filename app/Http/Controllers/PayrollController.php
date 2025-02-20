@@ -52,7 +52,6 @@ class PayrollController extends Controller
         return RequestResponse::ok('Payrolls retrieved successfully.', $payrollTable);
     }
 
-
     public function slips(Request $request)
     {
         $payroll = Payroll::findOrFail($request->payroll);
@@ -95,8 +94,6 @@ class PayrollController extends Controller
 
     public function store(Request $request)
     {
-        Log::debug($request->all());
-
         $validatedData = $request->validate([
             'payrun_year' => 'required|integer|min:' . (now()->year - 5) . '|max:' . (now()->year + 1),
             'payrun_month' => [
@@ -112,7 +109,8 @@ class PayrollController extends Controller
             ],
             'employees' => 'required|array',
             'employees.*' => 'exists:employees,id',
-            'location' => 'nullable|exists:locations,slug',
+            'locations' => 'nullable|array',  // Adjusted to locations[] instead of location[]
+            'locations.*' => 'exists:locations,slug', // Check each element in locations[]
             'repay_loans' => 'nullable|boolean',
             'recover_advance' => 'nullable|boolean',
             'pay_overtime' => 'nullable|boolean',
@@ -122,9 +120,15 @@ class PayrollController extends Controller
 
             $business = Business::findBySlug(session('active_business_slug'));
 
+            // Get the first location from the locations array, if any
+            $locationSlug = $validatedData['locations'][0] ?? null;
+
+            // If locationSlug exists, find the location ID
+            $locationId = $locationSlug ? Location::where('slug', $locationSlug)->first()->id : null;
+
             $payroll = Payroll::create([
                 'business_id' => $business->id,
-                'location_id' => null,
+                'location_id' => $locationId, // Set location_id based on the first element in locations[]
                 'payroll_type' => 'monthly',
                 'currency' => 'KSH',
                 'staff' => count($validatedData['employees']),

@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="row g-20">
 
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="card">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5>{{ $page }}</h5>
@@ -17,16 +17,18 @@
             </div>
         </div>
 
+        <div class="col-md-7" id="clockinsContainer">
+
+        </div>
+
     </div>
 
     @push('scripts')
         <script src="{{ asset('js/main/attendances.js') }}" type="module"></script>
         <script>
-            function toggleClockFields() {
-                let isAbsent = document.getElementById("is_absent").checked;
-                document.getElementById("clock_in").disabled = isAbsent;
-                document.getElementById("clock_out").disabled = isAbsent;
-            }
+            $(document).ready(() => {
+                getClockins();
+            });
         </script>
     @endpush
 

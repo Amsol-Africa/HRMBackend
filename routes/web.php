@@ -104,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
         // Attendance Module
         Route::prefix('attendances')->name('attendances.')->group(function () {
             Route::get('/', [DashboardController::class, 'attendances'])->name('index');
+            Route::get('/monthly', [DashboardController::class, 'monthlyAttendances'])->name('monthly');
             Route::get('/clock-in', [DashboardController::class, 'clockIn'])->name('clock-in');
             Route::get('/clock-out', [DashboardController::class, 'clockOut'])->name('clock-out');
         });
@@ -114,14 +115,14 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/rates', [DashboardController::class, 'overtimeRates'])->name('rates');
         });
 
-        // Absenteeism Route
-        Route::get('absenteeism', [DashboardController::class, 'absenteeism'])->name('absenteeism.index');
-
         // Clock In/Out Route
         Route::get('clock-in-out', [DashboardController::class, 'clockInOut'])->name('clock-in-out.index');
 
         // Attendance Reports Route
         Route::get('reports', [DashboardController::class, 'attendanceReport'])->name('reports.index');
+
+
+        Route::get('profile', [ProfileController::class, 'edit'])->name('profile.index');
 
     });
 

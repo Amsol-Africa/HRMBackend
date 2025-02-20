@@ -13,7 +13,7 @@
                             <div class="row">
                                 <div class="col-md-7">
                                     <form action="">
-                                        <input type="text" class="form-control datepicker" name="date" id="date" value="{{ now()->format("m-d-y H:i") }}">
+                                        <input type="text" class="form-control datepicker" name="date" id="date" value="{{ now()->format("Y-m-d H:i") }}">
                                     </form>
                                 </div>
                                 <div class="col-md-5">

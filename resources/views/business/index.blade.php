@@ -25,8 +25,6 @@
             </div>
         @endforeach
 
-
-
         <div class="col-xxl-4 col-xl-6 col-lg-12">
             <div class="card__wrapper height-equal" style="min-height: 459px;">
                 <div class="card__title-wrap d-flex align-items-center justify-content-between mb-20">
@@ -70,9 +68,12 @@
                             <p>Lorem ipsum dolor sit amet consecte</p>
                             <div class="avatar">
                                 <ul>
-                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar1.png" alt="image"></li>
-                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar2.png" alt="image"></li>
-                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar3.png" alt="image"></li>
+                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar1.png"
+                                            alt="image"></li>
+                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar2.png"
+                                            alt="image"></li>
+                                    <li><img class="img-48 border-circle" src="assets/images/avatar/avatar3.png"
+                                            alt="image"></li>
                                 </ul>
                             </div>
                         </div>
@@ -84,7 +85,8 @@
         <div class="col-xxl-8 col-xl-6 col-lg-12">
             <div class="card__wrapper height-equal" style="min-height: 459px;">
                 <div class="card-header border-0" style="margin-bottom: 50px">
-                    <h5 class="card__heading-title"> <i class="fa-solid fa-wallet"></i> Process Pay Roll for {{ date("F Y") }}! <span class="badge bg-success">READY</span> </h5>
+                    <h5 class="card__heading-title"> <i class="fa-solid fa-wallet"></i> Process Pay Roll for
+                        {{ date('F Y') }}! <span class="badge bg-success">READY</span> </h5>
                 </div>
 
                 <div class="row g-2" style="margin-bottom: 50px">
@@ -94,7 +96,7 @@
                     </div>
                     <div class="col-md-4">
                         <h5 class="card-title">PAYMENT DATE</h5> <br>
-                        <h5><strong> {{ date("d, F Y") }} </strong></h5>
+                        <h5><strong> {{ date('d, F Y') }} </strong></h5>
                     </div>
                     <div class="col-md-4">
                         <h5 class="card-title">TOTAL NET PAY</h5> <br>
@@ -104,7 +106,8 @@
 
                 <div class="row g-2">
                     <div class="col-md-12">
-                        <a href="" class="btn btn-primary btn-sm w-100"> <i class="fa-solid fa-arrow-right"></i> Run pay roll</a>
+                        <a href="" class="btn btn-primary btn-sm w-100"> <i class="fa-solid fa-arrow-right"></i>
+                            Run pay roll</a>
                     </div>
                 </div>
 

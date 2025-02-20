@@ -116,6 +116,12 @@
                                 Import Employees
                             </a>
                         </li>
+                        <li class="slide {{ request()->routeIs('business.employees.import') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.import') ? 'active' : '' }}"
+                                href="{{ route('business.employees.import', $currentBusiness->slug) }}">
+                                Warning
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
@@ -147,27 +153,27 @@
                         href="{{ route('business.payroll.payslips', $currentBusiness->slug) }}">
                         Payslips
                         </a>
-                </li> --}}
-                <li class="slide">
-                    <a class="sidebar__menu-item {{ request()->routeIs('business.advances.index') ? 'active' : '' }}"
-                        href="{{ route('business.advances.index', $currentBusiness->slug) }}">
-                        Salary Advances
-                    </a>
+                        </li> --}}
+                        <li class="slide">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.advances.index') ? 'active' : '' }}"
+                                href="{{ route('business.advances.index', $currentBusiness->slug) }}">
+                                Salary Advances
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.loans.index') ? 'active' : '' }}"
+                                href="{{ route('business.loans.index', $currentBusiness->slug) }}">
+                                Loans
+                            </a>
+                        </li>
+                        <li class="slide">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.import') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.import', $currentBusiness->slug) }}">
+                                Import Payrolls
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <li class="slide">
-                    <a class="sidebar__menu-item {{ request()->routeIs('business.loans.index') ? 'active' : '' }}"
-                        href="{{ route('business.loans.index', $currentBusiness->slug) }}">
-                        Loans
-                    </a>
-                </li>
-                <li class="slide">
-                    <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.import') ? 'active' : '' }}"
-                        href="{{ route('business.payroll.import', $currentBusiness->slug) }}">
-                        Import Payrolls
-                    </a>
-                </li>
-            </ul>
-            </li>
 
             <!-- Payroll Settings Management Dropdown -->
             <li
@@ -266,15 +272,15 @@
                         <li class="slide {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}"
                                href="{{ route('business.attendances.clock-in', $currentBusiness) }}">
-                                Clock In
+                                Clock In / Out
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}">
+                        {{-- <li class="slide {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}"
                                href="{{ route('business.attendances.clock-out', $currentBusiness) }}">
                                 Clock Out
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="slide {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}"
                                href="{{ route('business.attendances.index', $currentBusiness) }}">
@@ -287,16 +293,10 @@
                                 Overtime
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.overtime.rates') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.overtime.rates') ? 'active' : '' }}"
-                               href="{{ route('business.overtime.rates', $currentBusiness) }}">
-                                Overtime Rates
-                            </a>
-                        </li>
-                        <li class="slide {{ request()->routeIs('business.absenteeism.index') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.absenteeism.index') ? 'active' : '' }}"
-                               href="{{ route('business.absenteeism.index', $currentBusiness) }}">
-                                Absenteeism
+                        <li class="slide {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}"
+                               href="{{ route('business.attendances.monthly', $currentBusiness) }}">
+                                Monthly Attendance
                             </a>
                         </li>
                         <li class="slide {{ request()->routeIs('business.reports.index') ? 'active' : '' }}">
@@ -389,12 +389,13 @@
             </li>
 
             <!-- Settings Dropdown -->
-            <li class="sidebar__menu-category"><span class="category-name">Settings</span></li>
+            <li class="sidebar__menu-category"><span class="category-name">Account</span></li>
 
-            <li class="slide">
-                <a href="account-settings.html" class="sidebar__menu-item">
+            <li class="slide {{ request()->routeIs('business.profile.index') ? 'active' : '' }}">
+                <a href="{{ route('business.profile.index', $currentBusiness->slug) }}"
+                    class="sidebar__menu-item {{ request()->routeIs('business.profile.index') ? 'active' : '' }}">
                     <div class="side-menu__icon"><i class="fa-solid fa-user-cog"></i></div>
-                    <span class="sidebar__menu-label">Account Settings</span>
+                    <span class="sidebar__menu-label">My Account</span>
                 </a>
             </li>
 

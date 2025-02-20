@@ -5,9 +5,6 @@
             <th>Date</th>
             <th>Clock In</th>
             <th>Clock Out</th>
-            <th>Overtime</th>
-            <th>Remarks</th>
-            <th>Logged By</th>
         </tr>
     </thead>
     <tbody>
@@ -23,9 +20,6 @@
                     @endif
                 </td>
                 <td>{{ $attendance->clock_out ?? '-' }}</td>
-                <td>{{ $attendance->overtime_hours }} Hrs</td>
-                <td>{{ $attendance->remarks ?? '-' }}</td>
-                <td>{{ $attendance->loggedBy->name ?? '-' }}</td>
             </tr>
         @endforeach
     </tbody>
