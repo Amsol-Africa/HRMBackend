@@ -21,13 +21,17 @@
                 <td>{{ $location->physical_address }}</td>
                 <td>
                     <div class="btn-group" role="group">
-                        <button class="btn btn-info view-location" data-location="{{ $location->slug }}" data-bs-toggle="modal" data-bs-target="#locationDetailsModal">
+                        <button class="btn btn-primary view-location" data-location="{{ $location->slug }}"
+                            data-bs-toggle="modal" data-bs-target="#locationDetailsModal" data-bs-toggle="tooltip"
+                            title="View Location">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-warning edit-location" onclick="editLocation(this)" data-location="{{ $location->slug }}">
+                        <button class="btn btn-info edit-location" onclick="editLocation(this)"
+                            data-location="{{ $location->slug }}" data-bs-toggle="tooltip" title="Edit Location">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-danger delete-location" onclick="deleteLocation(this)" data-location="{{ $location->slug }}">
+                        <button class="btn btn-danger delete-location" onclick="deleteLocation(this)"
+                            data-location="{{ $location->slug }}" data-bs-toggle="tooltip" title="Delete Location">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>

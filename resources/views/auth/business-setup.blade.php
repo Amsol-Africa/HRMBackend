@@ -18,7 +18,8 @@
                         <img src="{{ asset('media/amsol-logo.png') }}" alt="{{ config('app.name') }}">
                     </a>
                     <h4 class="mb-15">Set Up Your HRM</h4>
-                    <p class="mb-15">Greate you are here, set up your organization. It's the first step to managing your HR processes efficiently and effectively.</p>
+                    <p class="mb-15">Great you are here, set up your organization. It's the first step to managing your
+                        HR processes efficiently and effectively.</p>
                 </div>
 
                 <form class="" id="hrmSetupForm">
@@ -30,7 +31,8 @@
                             <label for="name">Company / Organization name</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Company / organization Name" name="name" id="name" :value="old('name')" type="text" required autocomplete="name">
+                            <input class="form-control" placeholder="Company / organization Name" name="name"
+                                id="name" :value="old('name')" type="text" required autocomplete="name">
                         </div>
                     </div>
 
@@ -57,7 +59,7 @@
                         <div class="form__input">
                             <select id="industry" name="industry" required class="form-select">
                                 <option value="">Select Industry</option>
-                                @foreach($industries as $industry)
+                                @foreach ($industries as $industry)
                                     <option value="{{ $industry->slug }}">{{ $industry->name }}</option>
                                 @endforeach
                             </select>
@@ -69,7 +71,8 @@
                             <label for="phone">Contact phone</label>
                         </div>
                         <div class="form__input">
-                            <input class="phone-input-control" name="phone" id="phone" type="text" required autocomplete="phone">
+                            <input class="phone-input-control" name="phone" id="phone" type="text" required
+                                autocomplete="phone">
                             <input name="code" hidden id="code" type="text" required autocomplete="code">
                             <input name="country" hidden id="country" type="text" required autocomplete="country">
                         </div>
@@ -85,7 +88,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> Complete Setup <i class="ms-2 bi bi-check-circle"></i> </button>
+                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> Complete Setup <i
+                                class="ms-2 bi bi-check-circle"></i> </button>
                     </div>
                 </form>
 

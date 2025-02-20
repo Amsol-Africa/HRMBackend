@@ -8,7 +8,7 @@ class LocationsService {
             const response = await this.requestClient.post('/locations/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -19,7 +19,7 @@ class LocationsService {
             toastr.info(response.message, "Success");
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -29,7 +29,7 @@ class LocationsService {
             const response = await this.requestClient.post('/locations/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -39,7 +39,7 @@ class LocationsService {
             const response = await this.requestClient.post('/locations/store', data);
             toastr.success(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -49,7 +49,7 @@ class LocationsService {
             const response = await this.requestClient.post('/locations/delete', data);
             toastr.info(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }

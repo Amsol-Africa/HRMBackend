@@ -7,31 +7,161 @@ const locationsService = new LocationsService(requestClient);
 
 window.getLocations = async function (page = 1) {
     try {
-        let data = {page:page};
+        let data = { page: page };
         const locationTable = await locationsService.fetch(data);
         $("#locationsContainer").html(locationTable);
-        new DataTable('#locationsTable');
+
+        const exportTitle = "Locations Report";
+        const exportButtons = [
+            'copy', 'csv', 'excel', 'pdf', 'print'
+        ].map(type => ({
+            extend: type,
+            text: `<i class="fa fa-${type === 'copy' ? 'copy' : type}"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+            className: `btn btn-${type === 'copy' ? 'primary' : type === 'csv' ? 'secondary' : type === 'excel' ? 'success' : type === 'pdf' ? 'danger' : 'info'}`,
+            title: exportTitle,
+            exportOptions: {
+                columns: ':not(:last-child)'
+            }
+        }));
+
+        exportButtons.push({
+            text: '<i class="fa fa-envelope"></i> Email',
+            className: 'btn btn-warning',
+            action: function () {
+                sendEmailReport();
+            }
+        });
+
+        exportButtons.push({
+            text: '<i class="fa fa-trash"></i> Delete Selected',
+            className: 'btn btn-danger',
+            action: function () {
+                deleteSelectedLocations();
+            }
+        });
+
+        const table = new DataTable('#locationsTable', {
+            dom: 'Bfrtip',
+            buttons: exportButtons
+        });
+
+        let selectedIds = [];
+
+        $('#locationsTable tbody').on('click', 'tr', function () {
+            $(this).toggleClass('selected');
+
+            const id = $(this).find('.row-id').data('id');
+            if ($(this).hasClass('selected')) {
+                selectedIds.push(id);
+            } else {
+                selectedIds = selectedIds.filter(item => item !== id);
+            }
+
+            // console.log("Selected IDs:", selectedIds);
+        });
+
+        window.getSelectedIds = function () {
+            return selectedIds;
+        };
+
     } catch (error) {
         console.error("Error loading user data:", error);
     }
 };
+
+async function deleteSelectedLocations() {
+    let selectedIds = window.getSelectedIds();
+
+    if (selectedIds.length === 0) {
+        Swal.fire({
+            title: "No Selection",
+            text: "Please select at least one location to delete.",
+            icon: "info",
+            confirmButtonColor: "#3085d6",
+            confirmButtonText: "OK",
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#068f6d",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete them!",
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                await locationsService.delete({ ids: selectedIds });
+
+                Swal.fire({
+                    title: "Deleted!",
+                    text: "Selected locations have been deleted.",
+                    icon: "success",
+                    confirmButtonColor: "#3085d6",
+                    confirmButtonText: "OK",
+                });
+
+                getLocations();
+            } catch (error) {
+                console.error("Error deleting locations:", error);
+
+                Swal.fire({
+                    title: "Error!",
+                    text: "Something went wrong while deleting locations.",
+                    icon: "error",
+                    confirmButtonColor: "#d33",
+                    confirmButtonText: "OK",
+                });
+            }
+        }
+    });
+}
+
+function sendEmailReport() {
+    const subject = encodeURIComponent("Locations Report");
+    const body = encodeURIComponent("Here is the locations report. Please find the attached file or download it from the system.");
+
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+
 window.saveLocation = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("locationsForm"));
+    let form = document.getElementById("locationsForm");
+    let formData = new FormData(form);
 
     try {
-        if (formData.has('location_slug')) {
+        if (formData.has('location_slug') && formData.get('location_slug')) {
             await locationsService.update(formData);
+
+            form.reset();
+            $("#location_slug").val("");
+
+            $("#location_slug").val("");
+            $("#name").val("");
+            $("#company_size").val("");
+            $("#address").val("");
+
+            $("#card-header").text("Add New Location");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Location');
+            }, 100);
+
         } else {
             await locationsService.save(formData);
         }
+
         getLocations();
     } finally {
         btn_loader(btn, false);
     }
 };
+
 window.editLocation = async function (btn) {
     btn = $(btn);
 
@@ -40,10 +170,17 @@ window.editLocation = async function (btn) {
 
     try {
         const form = await locationsService.edit(data);
-        $('#locationsFormContainer').html(form)
+        $('#locationsFormContainer').html(form);
+
+        setTimeout(() => {
+            $("#submitButton").html('<i class="bi bi-check-circle"></i> Update Location');
+        }, 100);
+
+        $("#card-header").text("Edit Location");
     } finally {
     }
 };
+
 window.deleteLocation = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);

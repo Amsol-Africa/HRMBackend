@@ -134,7 +134,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [LocationController::class, 'store'])->name('store');
         Route::post('fetch', [LocationController::class, 'fetch'])->name('fetch');
         Route::post('show', [LocationController::class, 'show'])->name('show');
-        Route::post('destroy', [LocationController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [LocationController::class, 'destroy'])->name('delete');
         Route::post('update', [LocationController::class, 'update'])->name('update');
     });
     Route::name('payroll.')->prefix('payroll')->group(function () {

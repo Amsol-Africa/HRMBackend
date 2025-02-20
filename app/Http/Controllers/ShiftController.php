@@ -20,8 +20,8 @@ class ShiftController extends Controller
         $business = Business::findBySlug(session('active_business_slug'));
 
         $shifts = Shift::where('business_id', $business->id)->get();
-        $shift_cards = view('shifts._cards', compact('shifts'))->render();
-        return RequestResponse::ok('Ok', $shift_cards);
+        $shift_table = view('shifts._table', compact('shifts'))->render();
+        return RequestResponse::ok('Ok', $shift_table);
     }
     public function store(Request $request)
     {
