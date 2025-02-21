@@ -28,7 +28,7 @@
                         <i class="bi bi-pencil"></i> Edit
                     </a>
                     
-                    <button class="btn btn-danger btn-sm" type="button" data-job="{{ $job->slug }}" onclick="deleteJob(this)">
+                    <button class="btn btn-danger btn-sm" type="button" data-job-post="{{ $job->slug }}" onclick="deleteJobPost(this)">
                             <i class="bi bi-trash"></i> Delete
                       </button>
                    
