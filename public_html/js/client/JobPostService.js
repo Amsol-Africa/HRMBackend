@@ -46,7 +46,7 @@ class JobPostService {
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/job-posts/delete', data);
+            const response = await this.requestClient.post('/job-posts/destroy', data);
             toastr.info(response.message, "Success");
         } catch (error) {
             console.log(error)

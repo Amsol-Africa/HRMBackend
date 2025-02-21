@@ -24,7 +24,7 @@ window.saveJobPost = async function (btn) {
     let formData = new FormData(document.getElementById("jobPostForm"));
 
     try {
-        if (formData.has('_period_slug')) {
+        if (formData.has('job_post_slug')) {
             await jobPostService.update(formData);
         } else {
             await jobPostService.save(formData);

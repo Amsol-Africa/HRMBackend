@@ -77,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/applicants', [DashboardController::class, 'applicants'])->name('applicants');
             Route::get('/job-posts', [DashboardController::class, 'jobPosts'])->name('jobs.index');
             Route::get('/job-posts/create', [DashboardController::class, 'createJobPosts'])->name('jobs.create');
+            Route::get('/job-posts/{jobpost}/edit', [DashboardController::class, 'editJobPosts'])->name('jobs.edit');
             Route::get('/interviews', [DashboardController::class, 'interviews'])->name('interviews');
             Route::get('/reports', [DashboardController::class, 'recruitmentReports'])->name('reports');
         });

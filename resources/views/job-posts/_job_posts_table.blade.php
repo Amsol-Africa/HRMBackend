@@ -24,14 +24,14 @@
                     </span>
                 </td>
                 <td>
-                    <a href="" class="btn btn-warning btn-sm">
+                    <a href="{{ route('business.recruitment.jobs.edit', ['business' => $currentBusiness->slug, 'jobpost' => $job->slug]) }}" class="btn btn-warning btn-sm">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
-                    
+
                     <button class="btn btn-danger btn-sm" type="button" data-job-post="{{ $job->slug }}" onclick="deleteJobPost(this)">
                             <i class="bi bi-trash"></i> Delete
                       </button>
-                   
+
                     <a href="" class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i> View
                     </a>

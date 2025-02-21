@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JobPost;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Module;
@@ -435,6 +436,14 @@ class DashboardController extends Controller
         $page = 'Add Job Posts';
         $description = 'Manage job postings and vacancies.';
         return view('job-posts.create', compact('page', 'description'));
+    }
+
+    public function editJobPosts(Request $request, string $business_slug, string $job_post_slug)
+    {
+        $page = 'Edit Job Posts';
+        $description = 'Manage job postings and vacancies.';
+        $job_post = JobPost::findBySlug($job_post_slug);
+        return view('job-posts.create', compact('page', 'description', 'job_post'));
     }
 
     public function jobApplicants(Request $request)

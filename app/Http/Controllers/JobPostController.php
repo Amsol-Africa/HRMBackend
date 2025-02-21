@@ -127,7 +127,7 @@ class JobPostController extends Controller
     public function update(Request $request)
     {
         $validatedData = $request->validate([
-            'job_post_id' => 'required|exists:job_posts,id',
+            'job_post_slug' => 'required|exists:job_posts,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'requirements' => 'nullable|string',
@@ -160,11 +160,11 @@ class JobPostController extends Controller
     public function destroy(Request $request)
     {
         $validatedData = $request->validate([
-            'job_post_id' => 'required|exists:job_posts,id',
+            'job_post' => 'required|exists:job_posts,slug',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $jobPost = JobPost::findOrFail($validatedData['job_post_id']);
+            $jobPost = JobPost::findBySlug($validatedData['job_post']);
 
             if ($jobPost) {
                 $jobPost->delete();
