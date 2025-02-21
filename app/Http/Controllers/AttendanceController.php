@@ -89,28 +89,62 @@ class AttendanceController extends Controller
             'is_absent' => 'sometimes|boolean',
             'remarks' => 'nullable|string',
         ]);
-
         return $this->handleTransaction(function () use ($validatedData) {
             $user = auth()->user();
             $business = Business::findBySlug(session('active_business_slug'));
 
-            $validatedData['date'] = now();
+            $today = now()->toDateString();
 
-            if (!empty($validatedData['is_absent'])) {
-                $validatedData['clock_in'] = null;
-            }
-
-            $attendance = Attendance::create([
+            $existingAttendance = Attendance::where([
                 'employee_id' => $validatedData['employee_id'],
                 'business_id' => $business->id,
-                'date' => $validatedData['date'],
-                'clock_in' => now()->format("H:i"),
-                'is_absent' => $validatedData['is_absent'] ?? false,
-                'remarks' => $validatedData['remarks'],
-                'logged_by' => $user->id,
-            ]);
+                'date' => $today,
+            ])->first();
 
-            return RequestResponse::created('Attendance logged successfully.');
+            if ($existingAttendance) {
+
+                if (!empty($validatedData['is_absent'])) {
+                    $existingAttendance->is_absent = $validatedData['is_absent'];
+                    $existingAttendance->clock_in = null;
+                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->logged_by = $user->id;
+                    $existingAttendance->save();
+                    return RequestResponse::created('Attendance updated successfully (Marked Absent).');
+
+                } else if ($existingAttendance->is_absent) {
+                    $existingAttendance->is_absent = false;
+                    $existingAttendance->clock_in = now()->format("H:i");
+                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->logged_by = $user->id;
+                    $existingAttendance->save();
+                    return RequestResponse::created('Attendance updated successfully (Clocked In).');
+
+                } else {
+                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->logged_by = $user->id;
+                    $existingAttendance->save();
+                    return RequestResponse::created('Attendance already recorder (Remarks Updated).');
+                }
+            } else {
+                $validatedData['date'] = $today;
+                if (!empty($validatedData['is_absent'])) {
+                    $validatedData['clock_in'] = null;
+                } else {
+                    $validatedData['clock_in'] = now()->format("H:i");
+                }
+
+                Attendance::create([
+                    'employee_id' => $validatedData['employee_id'],
+                    'business_id' => $business->id,
+                    'date' => $validatedData['date'],
+                    'clock_in' => $validatedData['clock_in'],
+                    'is_absent' => $validatedData['is_absent'] ?? false,
+                    'remarks' => $validatedData['remarks'],
+                    'logged_by' => $user->id,
+                ]);
+
+                return RequestResponse::created('Attendance logged successfully.');
+            }
         });
     }
 
@@ -119,11 +153,15 @@ class AttendanceController extends Controller
         $business = Business::findBySlug(session('active_business_slug'));
         $date = now()->format('Y-m-d');
 
-        $clockins = Attendance::where('business_id', $business->id)
+        $query = Attendance::where('business_id', $business->id)
             ->whereDate('date', $date)
-            ->with('employee')
-            ->orderBy('date', 'desc')
-            ->get();
+            ->with('employee');
+
+        if (auth()->user()->hasRole('employee')) {
+            $query->where('employee_id', auth()->user()->employee->id);
+        }
+
+        $clockins = $query->orderBy('date', 'desc')->get();
 
         $clockinsCards = view('attendances._clock_ins', compact('clockins'))->render();
         return RequestResponse::ok('Ok.', $clockinsCards);

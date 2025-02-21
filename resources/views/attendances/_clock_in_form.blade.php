@@ -1,15 +1,20 @@
 <form action="" id="clockInForm" method="POST">
     @csrf
 
-    <div class="form-group">
-        <label for="employee_id">Employee</label>
-        <select name="employee_id" id="employee_id" class="form-control" required>
-            <option value="">-- Select Employee --</option>
-            @foreach($employees as $employee)
-                <option value="{{ $employee->id }}">{{ $employee->user->name }}</option>
-            @endforeach
-        </select>
-    </div>
+    @if (auth()->user()->hasRole('employee') && str_contains(request()->url(), 'myaccount'))
+        <input type="hidden" name="employee_id" id="employee_id" value="{{ auth()->user()->employee->id }}">
+    @else
+        <div class="form-group">
+            <label for="employee_id">Employee</label>
+            <select name="employee_id" id="employee_id" class="form-control" required>
+                <option value="">-- Select Employee --</option>
+                @foreach($employees as $employee)
+                    <option value="{{ $employee->id }}">{{ $employee->user->name }}</option>
+                @endforeach
+            </select>
+        </div>
+    @endif
+
 
     <!-- Hidden Date (Auto-filled) -->
     <input type="hidden" name="date" id="date" value="{{ now()->format('Y-m-d') }}">
