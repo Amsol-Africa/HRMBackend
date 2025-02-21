@@ -49,42 +49,59 @@ class LeaveRequestController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'employee_id' => 'nullable|exists:employees,id',
-            'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date' => 'required|date',
-            // 'end_date' => 'required|date|after_or_equal:start_date',
-            // 'half_day' => 'boolean',
-            // 'half_day_type' => 'nullable|in:first_half,second_half',
-            'reason' => 'nullable|string',
-        ]);
+{
+    $validatedData = $request->validate([
+        'employee_id' => 'nullable|exists:employees,id',
+        'leave_type_id' => 'required|exists:leave_types,id',
+        'start_date' => 'required|date',
+        'reason' => 'nullable|string',
+    ]);
 
-        return $this->handleTransaction(function () use ($validatedData) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            $leave_type = LeaveType::findOrFail($validatedData['leave_type_id']);
-            $duration = $leave_type->max_continuous_days;
+    return $this->handleTransaction(function () use ($validatedData) {
+        $business = Business::findBySlug(session('active_business_slug'));
+        $leave_type = LeaveType::findOrFail($validatedData['leave_type_id']);
+        $duration = $leave_type->max_continuous_days;
 
-            $leaveRequest = new LeaveRequest();
-            $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
-            $leaveRequest->employee_id = auth()->user()->employee->id;
-            $leaveRequest->business_id = $business->id;
-            $leaveRequest->leave_type_id = $validatedData['leave_type_id'];
-            $leaveRequest->start_date = $validatedData['start_date'];
-            $leaveRequest->total_days = $duration;
-            $leaveRequest->reason = $validatedData['reason'];
-            $leaveRequest->end_date = date('Y-m-d', strtotime($validatedData['start_date'] . " +$duration days"));
-            // $leaveRequest->end_date = $validatedData['end_date'];
-            // $leaveRequest->total_days = $this->calculateTotalDays($validatedData['start_date'], $validatedData['end_date'], $validatedData['half_day']);
-            // $leaveRequest->half_day = $validatedData['half_day'];
-            // $leaveRequest->half_day_type = $validatedData['half_day_type'];
-            $leaveRequest->save();
+        $employeeId = auth()->user()->employee->id;
+        $startDate = $validatedData['start_date'];
+        $endDate = date('Y-m-d', strtotime("$startDate +$duration days"));
 
-            $leaveRequest->setStatus(Status::PENDING);
+        $existingLeave = LeaveRequest::where('employee_id', $employeeId)
+            ->whereHas('statuses', function ($query) {
+                $query->whereNotIn('name', ['rejected', 'used_up']);
+            })
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('start_date', [$startDate, $endDate]) // Existing leave starts within the new leave period
+                      ->orWhereBetween('end_date', [$startDate, $endDate]) // Existing leave ends within the new leave period
+                      ->orWhere(function ($query) use ($startDate, $endDate) {
+                          $query->where('start_date', '<=', $startDate)
+                                ->where('end_date', '>=', $endDate); // New leave is fully within an existing leave
+                      });
+            })
+            ->exists();
 
-            return RequestResponse::created('Leave request created successfully.');
-        });
-    }
+        if ($existingLeave) {
+            return RequestResponse::badRequest('You already have a leave request that overlaps with these dates.');
+        }
+
+        // Create new leave request
+        $leaveRequest = new LeaveRequest();
+        $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
+        $leaveRequest->employee_id = $employeeId;
+        $leaveRequest->business_id = $business->id;
+        $leaveRequest->leave_type_id = $validatedData['leave_type_id'];
+        $leaveRequest->start_date = $startDate;
+        $leaveRequest->total_days = $duration;
+        $leaveRequest->reason = $validatedData['reason'];
+        $leaveRequest->end_date = $endDate;
+        $leaveRequest->save();
+
+        $leaveRequest->setStatus(Status::PENDING);
+
+        return RequestResponse::created('Leave request created successfully.');
+    });
+}
+
 
     public function approve(Request $request, $referenceNumber)
     {
