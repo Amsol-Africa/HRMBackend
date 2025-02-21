@@ -58,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('edit', [ShiftController::class, 'edit'])->name('edit');
         Route::post('store', [ShiftController::class, 'store'])->name('store');
         Route::post('fetch', [ShiftController::class, 'fetch'])->name('fetch');
-        Route::post('destroy', [ShiftController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [ShiftController::class, 'destroy'])->name('delete');
         Route::post('update', [ShiftController::class, 'update'])->name('update');
     });
     //manage payroll formulas
@@ -76,7 +76,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [EmployeeController::class, 'store'])->name('store');
         Route::post('fetch', [EmployeeController::class, 'fetch'])->name('fetch');
         Route::post('filter', [EmployeeController::class, 'filter'])->name('filter');
-        Route::post('destroy', [EmployeeController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [EmployeeController::class, 'destroy'])->name('delete');
         Route::post('update', [EmployeeController::class, 'update'])->name('update');
         Route::post('list', [EmployeeController::class, 'list'])->name('list');
     });
@@ -86,7 +86,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [LeaveTypeController::class, 'store'])->name('store');
         Route::post('fetch', [LeaveTypeController::class, 'fetch'])->name('fetch');
         Route::post('show', [LeaveTypeController::class, 'show'])->name('show');
-        Route::post('destroy', [LeaveTypeController::class, 'destroy'])->name('destroy');
+        Route::post('destroy', [LeaveTypeController::class, 'destroy'])->name('delete');
         Route::post('update', [LeaveTypeController::class, 'update'])->name('update');
         Route::post('suggestions', [LeaveTypeListController::class, 'suggestions'])->name('suggestions');
     });
@@ -94,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('edit', [LeaveRequestController::class, 'edit'])->name('edit');
         Route::post('store', [LeaveRequestController::class, 'store'])->name('store');
         Route::post('fetch', [LeaveRequestController::class, 'fetch'])->name('fetch');
-        Route::post('destroy', [LeaveRequestController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [LeaveRequestController::class, 'destroy'])->name('delete');
         Route::post('update', [LeaveRequestController::class, 'update'])->name('update');
     });
     Route::name('leave-periods.')->prefix('leave-periods')->group(function () {
@@ -102,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [LeavePeriodController::class, 'store'])->name('store');
         Route::post('fetch', [LeavePeriodController::class, 'fetch'])->name('fetch');
         Route::post('show', [LeavePeriodController::class, 'show'])->name('show');
-        Route::post('destroy', [LeavePeriodController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [LeavePeriodController::class, 'destroy'])->name('delete');
         Route::post('update', [LeavePeriodController::class, 'update'])->name('update');
     });
     Route::name('leave-entitlements.')->prefix('leave-entitlements')->group(function () {
@@ -134,7 +134,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [LocationController::class, 'store'])->name('store');
         Route::post('fetch', [LocationController::class, 'fetch'])->name('fetch');
         Route::post('show', [LocationController::class, 'show'])->name('show');
-        Route::post('destroy', [LocationController::class, 'destroy'])->name('destroy');
+        Route::post('delete', [LocationController::class, 'destroy'])->name('delete');
         Route::post('update', [LocationController::class, 'update'])->name('update');
     });
     Route::name('payroll.')->prefix('payroll')->group(function () {

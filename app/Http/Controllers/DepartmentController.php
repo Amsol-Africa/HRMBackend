@@ -19,8 +19,8 @@ class DepartmentController extends Controller
         $business = Business::findBySlug(session('active_business_slug'));
 
         $departments = Department::where('business_id', $business->id)->get();
-        $department_cards = view('departments._cards', compact('departments'))->render();
-        return RequestResponse::ok('Ok', $department_cards);
+        $department_table = view('departments._table', compact('departments'))->render();
+        return RequestResponse::ok('Ok', $department_table);
     }
     public function store(Request $request)
     {

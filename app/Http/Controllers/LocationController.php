@@ -95,6 +95,24 @@ class LocationController extends Controller
         });
     }
 
+    public function bulkDelete(Request $request)
+    {
+        $validatedData = $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:locations,id'
+        ]);
+
+        return $this->handleTransaction(function () use ($validatedData) {
+            $deleted = Location::whereIn('id', $validatedData['ids'])->delete();
+
+            if ($deleted) {
+                return RequestResponse::ok('Selected locations deleted successfully.');
+            }
+
+            return RequestResponse::badRequest('Failed to delete locations.', 500);
+        });
+    }
+
     public function destroy(Request $request)
     {
         $validatedData = $request->validate([

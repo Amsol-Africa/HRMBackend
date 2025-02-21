@@ -10,6 +10,7 @@ use App\Models\Business;
 use App\Models\Industry;
 use App\Models\Department;
 use App\Models\JobCategory;
+use App\Models\Employee;
 use Illuminate\Http\Request;
 use App\Models\PayrollFormula;
 use Spatie\Permission\Models\Role;
@@ -161,8 +162,12 @@ class DashboardController extends Controller
         $shifts = $business->shifts;
         $roles = Role::where('name', '!=', 'admin')->get();
         $locations = $business->locations;
-        return view('employees.create', compact('page', 'description', 'departments', 'job_categories', 'shifts', 'roles', 'locations'));
+
+        $employee = new Employee();
+
+        return view('employees.create', compact('page', 'description', 'departments', 'job_categories', 'shifts', 'roles', 'locations', 'employee'));
     }
+
     public function editEmployees(Request $request, User $user)
     {
         $page = 'Update Employee - ' . $user->name;

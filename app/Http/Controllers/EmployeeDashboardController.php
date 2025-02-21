@@ -21,6 +21,7 @@ class EmployeeDashboardController extends Controller
         $employee = Auth::user();
         $leave_count = LeaveRequest::where('employee_id', $employee->id)->count();
         $pending_leaves = LeaveRequest::where('employee_id', $employee->id)->where('approved_by', 'pending')->count();
+
         // $work_days = Attendance::where('employee_id', $employee->id)->count();
         // $payslips = Payslip::where('employee_id', $employee->id)->count();
 
@@ -47,13 +48,18 @@ class EmployeeDashboardController extends Controller
         return back()->with('success', 'Profile updated successfully!');
     }
     // Leave Requests
-    public function requestLeave(Request $request)
+    public function requestLeave()
     {
         $page = "Request Leave";
         $description = "";
+
         $business = Business::findBySlug(session('active_business_slug'));
         $leaveTypes = $business->leaveTypes;
-        return view('leave.request-leave', compact('page', 'description', 'leaveTypes'));
+
+        // Fetch all leave requests for the logged-in user
+        $leaveRequests = LeaveRequest::where('employee_id', Auth::id())->latest()->get();
+
+        return view('leave.request-leave', compact('page', 'description', 'leaveTypes', 'leaveRequests'));
     }
 
     public function viewLeaves()
