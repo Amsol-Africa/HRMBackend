@@ -27,12 +27,11 @@
                     <a href="" class="btn btn-warning btn-sm">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
-                    <form action="" method="POST" style="display:inline;">
-                        @csrf @method('DELETE')
-                        <button class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this job?')">
+                    
+                    <button class="btn btn-danger btn-sm" type="button" data-job="{{ $job->slug }}" onclick="deleteJob(this)">
                             <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </form>
+                      </button>
+                   
                     <a href="" class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i> View
                     </a>
