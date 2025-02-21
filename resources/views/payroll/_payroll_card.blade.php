@@ -2,8 +2,8 @@
     <div class="card-header border-0">
         <h5 class="card__heading-title">
             <?php
-                $payrunMonth = DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F');
-                echo '<i class="fa-solid fa-wallet"></i> Payroll for ' . $payrunMonth . ' ' . $payroll->payrun_year;
+            $payrunMonth = DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F');
+            echo '<i class="fa-solid fa-wallet"></i> Payroll for ' . $payrunMonth . ' ' . $payroll->payrun_year;
             ?>
 
             @if ($payroll->employeePayrolls()->count() > 0)
@@ -22,13 +22,15 @@
             </div>
             <div class="col-md-4">
                 <h6 class="card-title">PAYRUN MONTH</h6>
-                <p><strong>{{ DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F') }}, {{ $payroll->payrun_year }}</strong></p>
+                <p><strong>{{ DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F') }},
+                        {{ $payroll->payrun_year }}</strong></p>
             </div>
             <div class="col-md-4">
                 <h6 class="card-title">TOTAL NET PAY</h6>
                 <p>
                     @if ($payroll->employeePayrolls()->count() > 0)
-                        <a href="{{ route('business.payroll.payslips', ['business' => $currentBusiness->slug, 'payroll' => $payroll->id]) }}" class="btn btn-info">View Payslips</a>
+                        <a href="{{ route('business.payroll.payslips', ['business' => $currentBusiness->slug, 'payroll' => $payroll->id]) }}"
+                            class="btn btn-info">View Payslips</a>
                     @else
                         <span class="text-muted">Not Processed</span>
                     @endif

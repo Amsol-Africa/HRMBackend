@@ -10,9 +10,11 @@ window.getEmployees = async function (page = 1, status = null) {
         let data = { page: page, status: status };
         const employeesTable = await employeesService.fetch(data);
 
-        $("#employeesContainer").html(employeesTable);
+        // Ensure the right tab container gets updated
+        const containerId = `#${status}Employees`;
+        $(containerId).html(employeesTable);
 
-        const exportTitle = "Employees Report";
+        const exportTitle = `Employees Report - ${status.charAt(0).toUpperCase() + status.slice(1)}`;
         const exportButtons = [
             'copy', 'csv', 'excel', 'pdf', 'print'
         ].map(type => ({
@@ -35,8 +37,11 @@ window.getEmployees = async function (page = 1, status = null) {
             action: function () { deleteSelectedEmployees(); }
         });
 
-        const table = new DataTable('#employeesTable', {
-            dom: 'Bfrtip',
+        const table = new DataTable(`${containerId} table`, {
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            order: [[3, 'desc']],
+            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            pageLength: 10,
             buttons: exportButtons
         });
 
@@ -44,30 +49,21 @@ window.getEmployees = async function (page = 1, status = null) {
 
         $('#employeesTable tbody').on('click', 'tr', function () {
             $(this).toggleClass('selected');
+
             const id = $(this).find('.row-id').data('id');
-            selectedIds = $(this).hasClass('selected') ? [...selectedIds, id] : selectedIds.filter(item => item !== id);
+            if ($(this).hasClass('selected')) {
+                selectedIds.push(id);
+            } else {
+                selectedIds = selectedIds.filter(item => item !== id);
+            }
         });
 
-        window.getSelectedIds = function () { return selectedIds; };
+        window.getSelectedIds = function () {
+            return selectedIds;
+        };
+
     } catch (error) {
         console.error("Error loading employees data:", error);
-    }
-};
-
-window.saveEmployee = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-
-    let formData = new FormData(document.getElementById("employeesForm"));
-
-    try {
-        if (formData.has('employee_id')) {
-            await employeesService.update(formData);
-        } else {
-            await employeesService.save(formData);
-        }
-    } finally {
-        btn_loader(btn, false);
     }
 };
 
@@ -91,7 +87,7 @@ async function deleteSelectedEmployees() {
             try {
                 await employeesService.delete({ ids: selectedIds });
                 Swal.fire("Deleted!", "Selected employees have been deleted.", "success");
-                getEmployees();
+                getEmployees(1, localStorage.getItem('employeeStatus'));
             } catch (error) {
                 console.error("Error deleting employees:", error);
                 Swal.fire("Error!", "Something went wrong while deleting employees.", "error");
@@ -102,9 +98,10 @@ async function deleteSelectedEmployees() {
 
 function sendEmailReport() {
     const subject = encodeURIComponent("Employees Report");
-    const body = encodeURIComponent("Here is the employees report. Please find the attached file or download it from the system.");
+    const body = encodeURIComponent("Here is the employees report.");
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
+
 
 window.searchEmployees = async function () {
     let data = {
@@ -121,6 +118,23 @@ window.searchEmployees = async function () {
         $("#employeesContainer").html(employeesTable);
     } catch (error) {
         console.error("Error filtering employees:", error);
+    }
+};
+
+window.saveEmployee = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    let formData = new FormData(document.getElementById("employeesForm"));
+
+    try {
+        if (formData.has('employee_id')) {
+            await employeesService.update(formData);
+        } else {
+            await employeesService.save(formData);
+        }
+    } finally {
+        btn_loader(btn, false);
     }
 };
 

@@ -41,7 +41,10 @@ window.getDepartments = async function (page = 1) {
         });
 
         const table = new DataTable('#departmentsTable', {
-            dom: 'Bfrtip',
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            order: [[3, 'desc']],
+            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            pageLength: 10,
             buttons: exportButtons
         });
 
@@ -138,8 +141,6 @@ window.saveDepartment = async function (btn) {
 
             form.reset();
             $("#department_slug").val("");
-
-            $("#department_slug").val("");
             $("#department_name").val("");
             $("#description").val("");
 
@@ -150,6 +151,13 @@ window.saveDepartment = async function (btn) {
 
         } else {
             await departmentsService.save(formData);
+            $("#department_name").val("");
+            $("#description").val("");
+
+            $("#card-header").text("Add New Department");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Department');
+            }, 100);
         }
 
         getDepartments();

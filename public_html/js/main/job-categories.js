@@ -41,7 +41,10 @@ window.getJobCategories = async function (page = 1) {
         });
 
         const table = new DataTable('#jobCategoriesTable', {
-            dom: 'Bfrtip',
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            order: [[3, 'desc']],
+            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            pageLength: 10,
             buttons: exportButtons
         });
 
@@ -138,8 +141,6 @@ window.saveJobCategory = async function (btn) {
 
             form.reset();
             $("#job_category_slug").val("");
-
-            $("#job_category_slug").val("");
             $("#job_category").val("");
             $("#description").val("Enter some description...");
 
@@ -150,6 +151,15 @@ window.saveJobCategory = async function (btn) {
 
         } else {
             await jobCategoriesService.save(formData);
+            form.reset();
+            $("#job_category_slug").val("");
+            $("#job_category").val("");
+            $("#description").val("Enter some description...");
+
+            $("#card-header").text("Add New Job Category");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Job Category');
+            }, 100);
         }
 
         getJobCategories();

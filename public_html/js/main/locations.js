@@ -41,7 +41,10 @@ window.getLocations = async function (page = 1) {
         });
 
         const table = new DataTable('#locationsTable', {
-            dom: 'Bfrtip',
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            order: [[3, 'desc']],
+            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            pageLength: 10,
             buttons: exportButtons
         });
 
@@ -154,6 +157,19 @@ window.saveLocation = async function (btn) {
 
         } else {
             await locationsService.save(formData);
+
+            form.reset();
+            $("#location_slug").val("");
+
+            $("#location_slug").val("");
+            $("#name").val("");
+            $("#company_size").val("");
+            $("#address").val("");
+
+            $("#card-header").text("Add New Location");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Location');
+            }, 100);
         }
 
         getLocations();

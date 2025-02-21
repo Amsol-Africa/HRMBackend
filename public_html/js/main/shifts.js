@@ -41,7 +41,10 @@ window.getShifts = async function (page = 1) {
         });
 
         const table = new DataTable('#shiftsTable', {
-            dom: 'Bfrtip',
+            dom: '<"top"lBf>rt<"bottom"ip>',
+            order: [[3, 'desc']],
+            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            pageLength: 10,
             buttons: exportButtons
         });
 
@@ -83,6 +86,15 @@ window.saveShift = async function (btn) {
             }, 100);
         } else {
             await shiftsService.save(formData);
+            $("#shift_name").val("");
+            $("#description").val("");
+            $("#start_time").val("");
+            $("#end_time").val("");
+
+            $("#card-header").text("Add New Shift");
+            setTimeout(() => {
+                $("#submitButton").html('<i class="bi bi-check-circle"></i> Save Shift');
+            }, 100);
         }
 
         getShifts();

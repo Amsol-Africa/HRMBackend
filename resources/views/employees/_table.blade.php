@@ -3,44 +3,46 @@
         <tr>
             <th>#</th>
             <th>Emp. Code</th>
+            <th>ID. No.</th>
+            <th>Location</th>
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
             <th>Department</th>
             <th>Job Title</th>
+            <th>Sex</th>
             <th>Status</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         @foreach ($employees as $index => $employee)
-            @php
-                echo '<pre>';
-                var_dump($employees);
-                echo '</pre>';
-            @endphp
             <tr>
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $employee->employee_code }}</td>
-                <td>{{ $employees->name }} </td>
-                <td>{{ $employee->email }}</td>
-                <td>{{ $employee->phone }}</td>
-                <td>{{ $employee->department->name ?? 'N/A' }}</td>
-                <td>{{ $employee->jobTitle->name ?? 'N/A' }}</td>
+                <td>{{ $employee->national_id }}</td>
                 <td>
-                    @if ($employee->status == 'active')
-                        <span class="badge bg-success">Active</span>
-                    @elseif ($employee->status == 'on_leave')
-                        <span class="badge bg-warning">On Leave</span>
-                    @elseif ($employee->status == 'notice_exit')
-                        <span class="badge bg-info">Notice of Exit</span>
-                    @elseif ($employee->status == 'inactive')
-                        <span class="badge bg-secondary">Inactive</span>
-                    @elseif ($employee->status == 'exited')
-                        <span class="badge bg-danger">Exited</span>
-                    @else
-                        <span class="badge bg-light text-dark">{{ ucfirst($employee->status) }}</span>
-                    @endif
+                    {{ is_array($employee->location) || is_object($employee->location)
+                        ? $employee->location->name ?? ($employee->business->company_name ?? 'N/A')
+                        : $employee->business->company_name ?? 'N/A' }}
+                </td>
+                <td>{{ $employee->user->name }} </td>
+                <td>{{ $employee->user->email }}</td>
+                <td>{{ $employee->user->phone }}</td>
+                <td>{{ $employee->department->name ?? 'N/A' }}</td>
+                <td>{{ $employee->job_title ?? 'N/A' }}</td>
+                <td>{{ strtoupper($employee->gender) }}</td>
+                <td>
+                    <span
+                        class="badge
+                        @if ($employee->status == 'active') bg-success
+                        @elseif ($employee->status == 'on_leave') bg-warning
+                        @elseif ($employee->status == 'notice_exit') bg-info
+                        @elseif ($employee->status == 'inactive') bg-secondary
+                        @elseif ($employee->status == 'exited') bg-danger
+                        @else bg-light text-dark @endif">
+                        {{ ucfirst($employee->status) }}
+                    </span>
                 </td>
                 <td>
                     <div class="btn-group" role="group">
