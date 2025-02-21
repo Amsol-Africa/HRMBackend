@@ -1,16 +1,35 @@
-<div class="row g-3">
-    @foreach ($payrolls as $payroll)
-        <div class="col-md-8">
-            @include('payroll._payroll_card', ['payroll' => $payroll])
-        </div>
-    @endforeach
-
-    @if ($payrolls->isEmpty())
-        <div class="col-md-12">
-            <div class="card shadow-sm border border-secondary text-center p-4">
-                <h5>No Payrolls Available</h5>
-                <p>There are currently no payrolls to display for {{ $disp_location }}.</p>
-            </div>
-        </div>
-    @endif
-</div>
+<table id="payrollTable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Payroll Month</th>
+            <th>Year</th>
+            <th>No. of Employees</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach ($payrolls as $payroll)
+            <tr data-id="{{ $payroll->id }}">
+                <td>{{ DateTime::createFromFormat('!m', $payroll->payrun_month)->format('F') }}</td>
+                <td>{{ $payroll->payrun_year }}</td>
+                <td>{{ $payroll->staff }}</td>
+                <td>
+                    @if ($payroll->employeePayrolls()->count() > 0)
+                        <span class="badge bg-success">PROCESSED</span>
+                    @else
+                        <span class="badge bg-warning">READY</span>
+                    @endif
+                </td>
+                <td>
+                    @if ($payroll->employeePayrolls()->count() > 0)
+                        <a href="{{ route('business.payroll.payslips', ['business' => $currentBusiness->slug, 'payroll' => $payroll->id]) }}"
+                            class="btn btn-info btn-sm">View Payslips</a>
+                    @else
+                        <a href="#" class="btn btn-primary btn-sm">Run Payroll</a>
+                    @endif
+                </td>
+            </tr>
+        @endforeach
+    </tbody>
+</table>

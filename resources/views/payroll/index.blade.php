@@ -13,9 +13,9 @@
         </ul>
 
         <div class="row g-20">
-            <div class="col-md-12" id="payrollsContainer">
+            <div class="col-md-12">
                 <div class="card">
-                    <div class="card-body">
+                    <div class="card-body" id="payrollsContainer">
                         {{ loader() }}
                     </div>
                 </div>
@@ -26,13 +26,9 @@
     @push('scripts')
         <script src="{{ asset('js/main/payroll.js') }}" type="module"></script>
         <script>
-
             document.addEventListener('DOMContentLoaded', function () {
-
                 getPayrolls();
-
             });
-
         </script>
 
     @endpush

@@ -59,8 +59,6 @@ window.getLocations = async function (page = 1) {
             } else {
                 selectedIds = selectedIds.filter(item => item !== id);
             }
-
-            // console.log("Selected IDs:", selectedIds);
         });
 
         window.getSelectedIds = function () {
