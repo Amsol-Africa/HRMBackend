@@ -323,12 +323,6 @@
                             Tasks
                         </a>
                     </li>
-                    <li class="slide {{ request()->routeIs('business.performance.tasks.progress') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.performance.tasks.progress') ? 'active' : '' }}"
-                            href="{{ route('business.performance.tasks.progress', $currentBusiness->slug) }}">
-                            Task Progress
-                        </a>
-                    </li>
                     <li class="slide {{ request()->routeIs('business.performance.tasks.reports') ? 'active' : '' }}">
                         <a class="sidebar__menu-item {{ request()->routeIs('business.performance.tasks.reports') ? 'active' : '' }}"
                             href="{{ route('business.performance.tasks.reports', $currentBusiness->slug) }}">

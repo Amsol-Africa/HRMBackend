@@ -1,4 +1,4 @@
-class TasksService {
+ class TasksService {
     constructor(requestClient) {
         this.requestClient = requestClient;
     }
@@ -34,6 +34,16 @@ class TasksService {
         }
     }
 
+    async timelines(data) {
+        try {
+            const response = await this.requestClient.post('/tasks/timelines', data);
+            return response.data;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
     async save(data) {
         try {
             const response = await this.requestClient.post('/tasks/store', data);
@@ -44,9 +54,19 @@ class TasksService {
         }
     }
 
+    async progress(data) {
+        try {
+            const response = await this.requestClient.post('/tasks/progress', data);
+            toastr.success(response.message, "Success");
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/tasks/delete', data);
+            const response = await this.requestClient.post('/tasks/destroy', data);
             toastr.info(response.message, "Success");
         } catch (error) {
             console.log(error);

@@ -209,7 +209,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('edit', [TaskController::class, 'edit'])->name('edit');
         Route::post('store', [TaskController::class, 'store'])->name('store');
         Route::post('update/{task}', [TaskController::class, 'update'])->name('update');
-        Route::post('delete/{task}', [TaskController::class, 'destroy'])->name('delete');
+        Route::post('destroy', [TaskController::class, 'destroy'])->name('destroy');
+        Route::post('progress', [TaskController::class, 'progress'])->name('progress');
+        Route::post('timelines', [TaskController::class, 'timelines'])->name('timelines');
     });
 
     // Applicant Management

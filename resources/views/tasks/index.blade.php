@@ -9,7 +9,7 @@
             </div>
         </div>
 
-        <div class="col-md-8 mt-3">
+        <div class="col-md-8">
             <div class="row" id="tasksContainer">
                 <div class="col-md-12">
                     <div class="card">

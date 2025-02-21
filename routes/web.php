@@ -94,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('tasks')->name('tasks.')->group(function () {
                 Route::get('/', [DashboardController::class, 'tasks'])->name('index');
                 Route::get('/create', [DashboardController::class, 'create'])->name('create');
-                Route::get('/progress', [DashboardController::class, 'progress'])->name('progress');
+                Route::get('/progress/{task}', [DashboardController::class, 'progress'])->name('progress');
                 Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
                 Route::get('/{task}', [DashboardController::class, 'show'])->name('show');
             });

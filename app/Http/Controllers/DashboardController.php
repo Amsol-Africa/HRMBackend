@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Applicant;
+use App\Models\Task;
+use App\Models\User;
 use App\Models\Module;
 use App\Models\Payroll;
-use App\Models\User;
 use App\Models\Business;
 use App\Models\Industry;
+use App\Models\Applicant;
 use App\Models\Department;
 use App\Models\JobCategory;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use App\Models\PayrollFormula;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -410,7 +412,22 @@ class DashboardController extends Controller
     {
         $page = 'Tasks';
         $description = 'Create and assign tasks to employees';
-        return view('tasks.index', compact('page', 'description'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+        return view('tasks.index', compact('page', 'description', 'employees'));
+    }
+    public function progress(Request $request, string $business_slug, String $task_slug)
+    {
+        $page = 'Tasks';
+        $description = 'Create and assign tasks to employees';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = $business->employees;
+
+        $task = Task::findBySlug($task_slug);
+
+        Log::debug($task_slug);
+
+        return view('tasks.progress', compact('page', 'description', 'employees', 'task'));
     }
 
     public function createJobPosts(Request $request)

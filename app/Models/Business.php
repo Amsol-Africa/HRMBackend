@@ -143,5 +143,9 @@ class Business extends Model implements HasMedia
             'business_id'
         );
     }
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
 
 }

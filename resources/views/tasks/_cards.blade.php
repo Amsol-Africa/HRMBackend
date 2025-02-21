@@ -1,10 +1,8 @@
-<div class="row g-2">
-    @forelse ($tasks as $task)
+@forelse ($tasks as $task)
     <div class="col-md-4">
         <x-task-card :task="$task" />
     </div>
-    @empty
-    <!-- Card to display when no tasks are available -->
+@empty
     <div class="col-md-12">
         <div class="card">
             <div class="card-body text-center"
@@ -13,5 +11,4 @@
             </div>
         </div>
     </div>
-    @endforelse
-</div>
+@endforelse

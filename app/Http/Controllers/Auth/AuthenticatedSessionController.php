@@ -32,7 +32,7 @@ class AuthenticatedSessionController extends Controller
 
                 $user = Auth::user();
                 $redirectUrl = $this->getRedirectUrlForRole($user);
-                return RequestResponse::ok('Welcome back.'.$user->status, ['redirect_url' => $redirectUrl]);
+                return RequestResponse::ok('Welcome back.', ['redirect_url' => $redirectUrl]);
             }
 
             throw ValidationException::withMessages([

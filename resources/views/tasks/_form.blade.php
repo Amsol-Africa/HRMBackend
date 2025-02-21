@@ -4,7 +4,7 @@ $employees = $employees ?? collect();
 <form id="tasksForm" method="post">
     @csrf
     @if(isset($task))
-    <input type="hidden" name="task_id" value="{{ $task->id }}">
+    <input type="hidden" name="task_slug" value="{{ $task->slug }}">
     @endif
 
     <div class="form-group mb-3">
@@ -39,11 +39,11 @@ $employees = $employees ?? collect();
 
     <div class="form-group mb-3">
         <label for="employee_ids">Assign Employees</label>
-        <select class="form-control select2" id="employee_ids" name="employee_ids[]" multiple>
+        <select class="form-select select2-multiple" id="employee_ids" name="employee_ids[]" multiple>
             @foreach($employees as $employee)
             <option value="{{ $employee->id }}"
                 {{ isset($task) && $task->employees->contains($employee->id) ? 'selected' : '' }}>
-                {{ $employee->name }}
+                {{ $employee->user->name }}
             </option>
             @endforeach
         </select>
@@ -51,16 +51,7 @@ $employees = $employees ?? collect();
 
     <div>
         <button onclick="saveTask(this)" type="button" class="btn btn-primary w-100">
-            <i class="bi bi-check-circle"></i> {{ isset($task) ? 'Update Task' : 'Save Task' }}
+            <i class="bi bi-check-circle me-2"></i> {{ isset($task) ? 'Update Task' : 'Save Task' }}
         </button>
     </div>
 </form>
-
-<script>
-$(document).ready(function() {
-    $('#employee_ids').select2({
-        placeholder: "Select employees",
-        allowClear: true
-    });
-});
-</script>

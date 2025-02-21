@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Task;
+use App\Models\Business;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
@@ -16,9 +17,17 @@ class TaskController extends Controller
     // Fetch all tasks
     public function fetch(Request $request)
     {
-        $tasks = Task::with('employees')->get();
+        $business = Business::findBySlug(session('active_business_slug'));
+        $tasks = $business->tasks()->with('employees')->get();
         $task_cards = view('tasks._cards', compact('tasks'))->render();
         return RequestResponse::ok('Tasks fetched successfully.', $task_cards);
+    }
+
+    public function timelines(Request $request)
+    {
+        $taskprogresses = Task::where('slug', $request->task_slug)->with('employees')->get();
+        $timelines = view('tasks._timelines', compact('taskprogresses'))->render();
+        return RequestResponse::ok('Ok.', $timelines);
     }
 
     public function create()
@@ -32,24 +41,44 @@ class TaskController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'title'       => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status'      => 'required|in:pending,in_progress,completed',
-            'due_date'    => 'required|date',
+            'status' => 'required|in:pending,in_progress,completed',
+            'due_date' => 'required|date',
             'employee_ids' => 'nullable|array',
             'employee_ids.*' => 'exists:employees,id',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
+            $business = Business::findBySlug(session('active_business_slug'));
             $task = Task::create([
-                'title'       => $validatedData['title'],
+                'business_id' => $business->id,
+                'title' => $validatedData['title'],
                 'description' => $validatedData['description'] ?? null,
-                'status'      => $validatedData['status'],
-                'due_date'    => $validatedData['due_date'] ?? null,
-            ]);
+                'due_date' => $validatedData['due_date'] ?? null,
+            ])->setStatus($validatedData['status'] ?? 'pending');
 
             if (!empty($validatedData['employee_ids'])) {
-                $task->employees()->attach($validatedData['employee_ids']);
+                $task->employees()->sync($validatedData['employee_ids']);
+            }
+
+            return RequestResponse::created('Task created successfully.');
+        });
+    }
+    public function progress(Request $request)
+    {
+        $validatedData = $request->validate([
+            'task_slug' => 'required|exists:tasks,slug',
+            'description' => 'nullable|string',
+            'status' => 'required|in:pending,in_progress,completed',
+        ]);
+
+        return $this->handleTransaction(function () use ($validatedData) {
+            $task = Task::findBySlug($validatedData['task_slug']);
+            $task->setStatus($validatedData['status'], $validatedData['description']);
+
+            if (!empty($validatedData['employee_ids'])) {
+                $task->employees()->sync($validatedData['employee_ids']);
             }
 
             return RequestResponse::created('Task created successfully.');
@@ -60,10 +89,10 @@ class TaskController extends Controller
     public function edit(Request $request)
     {
         $validatedData = $request->validate([
-            'task_id' => 'required|exists:tasks,id',
+            'task_slug' => 'required|exists:tasks,slug',
         ]);
 
-        $task = Task::with('employees')->findOrFail($validatedData['task_id']);
+        $task = Task::where('slug', $validatedData['task_slug'])->with('employees')->firstOrFail();
         $employees = Employee::all();
         $task_form = view('tasks._form', compact('task', 'employees'))->render();
 
@@ -74,24 +103,24 @@ class TaskController extends Controller
     public function update(Request $request)
     {
         $validatedData = $request->validate([
-            'task_id'     => 'required|exists:tasks,id',
-            'title'       => 'required|string|max:255',
+            'task_slug' => 'required|exists:tasks,slug',
+            'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status'      => 'required|in:pending,in_progress,completed',
-            'due_date'    => 'nullable|date',
+            'status' => 'required|in:pending,in_progress,completed',
+            'due_date' => 'nullable|date',
             'employee_ids' => 'nullable|array',
             'employee_ids.*' => 'exists:employees,id',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $task = Task::findOrFail($validatedData['task_id']);
+            $task = Task::findBySlug($validatedData['task_slug']);
 
             $task->update([
-                'title'       => $validatedData['title'],
+                'title' => $validatedData['title'],
                 'description' => $validatedData['description'] ?? null,
-                'status'      => $validatedData['status'],
-                'due_date'    => $validatedData['due_date'] ?? null,
-            ]);
+                'status' => $validatedData['status'],
+                'due_date' => $validatedData['due_date'] ?? null,
+            ])->setStatus($validatedData['status']);
 
             if (isset($validatedData['employee_ids'])) {
                 $task->employees()->sync($validatedData['employee_ids']);
@@ -105,16 +134,29 @@ class TaskController extends Controller
     public function assignEmployees(Request $request)
     {
         $validatedData = $request->validate([
-            'task_id'     => 'required|exists:tasks,id',
+            'task_slug' => 'required|exists:tasks,slug',
             'employee_ids' => 'required|array',
             'employee_ids.*' => 'exists:employees,id',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $task = Task::findOrFail($validatedData['task_id']);
+            $task = Task::findBySlug($validatedData['task_slug']);
             $task->employees()->sync($validatedData['employee_ids']);
 
             return RequestResponse::ok('Employees assigned successfully.');
+        });
+    }
+
+    public function destroy(Request $request)
+    {
+        $validatedData = $request->validate([
+            'task_slug' => 'required|exists:tasks,slug',
+        ]);
+
+        return $this->handleTransaction(function () use ($validatedData) {
+            $task = Task::findBySlug($validatedData['task_slug']);
+            $task->delete();
+            return RequestResponse::ok('Task deleted & de-assigned.');
         });
     }
 }

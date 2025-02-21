@@ -120,15 +120,13 @@ class PayrollController extends Controller
 
             $business = Business::findBySlug(session('active_business_slug'));
 
-            // Get the first location from the locations array, if any
             $locationSlug = $validatedData['locations'][0] ?? null;
 
-            // If locationSlug exists, find the location ID
             $locationId = $locationSlug ? Location::where('slug', $locationSlug)->first()->id : null;
 
             $payroll = Payroll::create([
                 'business_id' => $business->id,
-                'location_id' => $locationId, // Set location_id based on the first element in locations[]
+                'location_id' => $locationId,
                 'payroll_type' => 'monthly',
                 'currency' => 'KSH',
                 'staff' => count($validatedData['employees']),

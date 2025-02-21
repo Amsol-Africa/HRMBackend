@@ -13,6 +13,7 @@ class Task extends Model
     use HasFactory, HasSlug, HasStatuses;
 
     protected $fillable = [
+        'business_id',
         'title',
         'slug',
         'description',
@@ -32,5 +33,9 @@ class Task extends Model
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()->generateSlugsFrom('title')->saveSlugsTo('slug');
+    }
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
     }
 }
