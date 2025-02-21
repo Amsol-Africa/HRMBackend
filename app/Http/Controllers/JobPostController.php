@@ -13,7 +13,7 @@ use App\Http\Controllers\Controller;
 class JobPostController extends Controller
 {
     use HandleTransactions;
-    
+
     // Fetch Job Posts
     public function fetch(Request $request)
     {
@@ -26,7 +26,7 @@ class JobPostController extends Controller
             $job_posts = JobPost::with('business')->orderBy('created_at', 'desc')->get();
         }
 
-        if ($request->expectsJson() || $request->is('api/*')) {
+        if ($request->is('api/*')) {
             return RequestResponse::ok('Ok', $job_posts);
         }
 
