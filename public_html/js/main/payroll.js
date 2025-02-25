@@ -85,13 +85,13 @@ window.getPayslips = async function (page = 1, payroll = null) {
         exportButtons.push({
             text: '<i class="fa fa-envelope"></i> Email',
             className: 'btn btn-warning',
-            action: function () { sendEmailReport("Payslips", window.getSelectedPayslipIds()); }
+            action: function () { sendEmailReport("Payslips", window.getSelectedIds()); }
         });
 
         exportButtons.push({
             text: '<i class="fa fa-trash"></i> Delete Selected',
             className: 'btn btn-danger',
-            action: function () { deleteSelectedRecords("Payslip", window.getSelectedPayslipIds(), getPayslips); }
+            action: function () { deleteSelectedRecords("Payslip", window.getSelectedIds(), getPayslips); }
         });
 
         const table = new DataTable('#payslipsTable', {
@@ -115,7 +115,7 @@ window.getPayslips = async function (page = 1, payroll = null) {
             }
         });
 
-        window.getSelectedPayslipIds = function () {
+        window.getSelectedIds = function () {
             return selectedIds;
         };
 
@@ -126,7 +126,7 @@ window.getPayslips = async function (page = 1, payroll = null) {
 };
 
 async function deleteSelectedRecords(type, getSelectedIds, refreshFunction) {
-    let selectedIds = getSelectedIds();
+    let selectedIds = getSelectedIds;
     if (selectedIds.length === 0) {
         Swal.fire("No Selection", `Please select at least one ${type.toLowerCase()} to delete.`, "info");
         return;
@@ -155,7 +155,7 @@ async function deleteSelectedRecords(type, getSelectedIds, refreshFunction) {
 }
 
 function sendEmailReport(reportType, getSelectedIds) {
-    let selectedIds = getSelectedIds();
+    let selectedIds = getSelectedIds;
     let selectionText = selectedIds.length > 0 ? "for selected records" : "for all records";
     const subject = encodeURIComponent(`${reportType} Report`);
     const body = encodeURIComponent(`Hello,\n\nPlease find attached the ${reportType} report ${selectionText}.\n\nBest regards,\n[Your Company Name]`);

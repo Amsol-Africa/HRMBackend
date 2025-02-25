@@ -10,7 +10,6 @@ window.getEmployees = async function (page = 1, status = null) {
         let data = { page: page, status: status };
         const employeesTable = await employeesService.fetch(data);
 
-        // Ensure the right tab container gets updated
         const containerId = `#${status}Employees`;
         $(containerId).html(employeesTable);
 
@@ -126,7 +125,6 @@ window.saveEmployee = async function (btn) {
     btn_loader(btn, true);
 
     let formData = new FormData(document.getElementById("employeesForm"));
-
     try {
         if (formData.has('employee_id')) {
             await employeesService.update(formData);
