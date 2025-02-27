@@ -40,50 +40,17 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('leave_requests.show', $request->reference_number) }}"
-                                class="btn btn-sm btn-primary">
+                            <a href="" class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> View
                             </a>
                             @if (is_null($request->approved_by))
-                                <a href="{{ route('leave_requests.approve', $request->reference_number) }}"
-                                    class="btn btn-sm btn-success">
+                                <button type="button" onclick="approve(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-success">
                                     <i class="fas fa-check"></i> Approve
-                                </a>
-                                <button type="button" class="btn btn-sm btn-danger" data-toggle="modal"
-                                    data-target="#rejectModal{{ $request->id }}">
-                                    <i class="fas fa-times"></i> Reject
                                 </button>
 
-                                <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1"
-                                    role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title" id="rejectModalLabel">Reject Leave Request</h5>
-                                                <button type="button" class="close" data-dismiss="modal"
-                                                    aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <form
-                                                action="{{ route('leave_requests.reject', $request->reference_number) }}"
-                                                method="POST">
-                                                @csrf
-                                                <div class="modal-body">
-                                                    <div class="form-group">
-                                                        <label for="rejection_reason">Rejection Reason</label>
-                                                        <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="3" required></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-dismiss="modal">Close</button>
-                                                    <button type="submit" class="btn btn-danger">Reject</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+                                <button type="button" onclick="reject(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times"></i> Reject
+                                </button>
                             @endif
                         </td>
                     </tr>
