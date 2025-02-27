@@ -10,13 +10,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-body">
-                    @include('leave._cards')
-                </div>
-            </div>
-        </div>
     </div>
 
     @push('scripts')

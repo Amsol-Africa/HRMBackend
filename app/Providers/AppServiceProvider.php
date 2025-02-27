@@ -24,19 +24,25 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::composer('*', function ($view) {
-
-        });
-
-        View::composer('*', function ($view) {
             $user = auth()->user();
 
             if ($user) {
                 $businessSlug = session('active_business_slug');
                 $business = $businessSlug ? Business::findBySlug($businessSlug) : $user->business;
-                $view->with('currentBusiness', $business);
+
+                $managedBusinesses = $business ? $business->managedBusinesses : collect();
+
+                $view->with([
+                    'currentBusiness' => $business,
+                    'managedBusinesses' => $managedBusinesses
+                ]);
             } else {
-                $view->with('currentBusiness', null);
+                $view->with([
+                    'currentBusiness' => null,
+                    'managedBusinesses' => collect()
+                ]);
             }
         });
     }
+
 }

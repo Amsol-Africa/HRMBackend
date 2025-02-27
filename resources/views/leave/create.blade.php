@@ -1,11 +1,15 @@
 <x-app-layout>
 
 
-    <card>
-        <div class="card-body">
-            {{ loader() }}
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-body">
+                    @include('leave._request_leave_form')
+                </div>
+            </div>
         </div>
-    </card>
+    </div>
 
     @push('scripts')
         <script src="{{ asset('js/main/leave.js') }}" type="module"></script>

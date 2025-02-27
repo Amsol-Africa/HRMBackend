@@ -2,14 +2,18 @@
 
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Leave Requests</h5>
-        <a href="" class="btn btn-primary btn-sm">
-            <i class="fa-solid fa-plus"></i>
-            @if (auth()->user()->hasRole('admin'))
-                Create Leave Request
-            @else
-                Request Leave
-            @endif
-        </a>
+
+
+        @if (auth()->user()->hasRole('business-admin'))
+            <a href="{{ route('business.leave.create', $currentBusiness->slug) }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> Create Leave Request
+            </a>
+        @else
+            <a href="{{ route('myaccount.leave.requests.create', $currentBusiness->slug) }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> Request Leave
+            </a>
+        @endif
+
     </div>
 
     <div class="card-body">
@@ -48,7 +52,7 @@
                             <a href="" class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            @if (is_null($request->approved_by) && auth()->user()->hasRole('admin'))
+                            @if (is_null($request->approved_by) && auth()->user()->hasRole('business-admin'))
                                 <button type="button" onclick="approve(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-success">
                                     <i class="fas fa-check"></i> Approve
                                 </button>

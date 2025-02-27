@@ -336,7 +336,11 @@ class DashboardController extends Controller
     {
         $page = 'Leave Applications';
         $description = '';
-        return view('leave.create', compact('page', 'description'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        $locations = $business->locations;
+        $leaveTypes = $business->leaveTypes;
+        $employees = $business->employees;
+        return view('leave.create', compact('page', 'description', 'leaveTypes', 'employees', 'locations'));
     }
     public function leaveApplications(Request $request)
     {

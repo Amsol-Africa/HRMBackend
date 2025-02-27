@@ -11,22 +11,32 @@
                 </a>
             </div>
             <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center ms-3">
+                <div class="d-flex align-items-center me-3">
                     <img src="{{ $currentBusiness->getImageUrl() }}" style="height: 20px" alt="">
                     <h2 class="header__title ms-1">{{ $currentBusiness->company_name }}. <span> </h2>
                 </div>
 
                 @if (auth()->user()->hasRole('business-admin'))
-                <div>
-                    <form action="">
-                        <select name="active_business" class="form-select" id="active_business">
-                            <option value="">Switch</option>
-                            <option value="">Anzar KE</option>
-                            <option value="">Ongod Designs</option>
-                            <option value="">KRA</option>
-                        </select>
-                    </form>
-                </div>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Switch Business
+                        </a>
+                        <ul class="dropdown-menu">
+                            @if ($managedBusinesses->isNotEmpty())
+                                @foreach ($managedBusinesses as $managed_business)
+                                    <li>
+                                        <a class="dropdown-item" onclick="event.preventDefault(); bsImpersonate(this)" data-business="{{ $managed_business->slug }}" href="#"> {{ $managed_business->company_name }} </a>
+                                    </li>
+                                @endforeach
+                            @else
+                                <li>
+                                    <a class="dropdown-item" onclick="event.preventDefault()" href="#"> No managed businesses found </a>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
+
                 @endif
 
             </div>
