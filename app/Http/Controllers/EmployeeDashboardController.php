@@ -21,31 +21,7 @@ class EmployeeDashboardController extends Controller
         $employee = Auth::user();
         $leave_count = LeaveRequest::where('employee_id', $employee->id)->count();
         $pending_leaves = LeaveRequest::where('employee_id', $employee->id)->where('approved_by', 'pending')->count();
-
-        // $work_days = Attendance::where('employee_id', $employee->id)->count();
-        // $payslips = Payslip::where('employee_id', $employee->id)->count();
-
         return view('employee.index', compact('page', 'leave_count', 'pending_leaves'));
-    }
-
-    // Profile Management
-    public function profile()
-    {
-        $page = "Profile";
-        return view('employee.profile', compact('page'));
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $employee = Auth::user();
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:employees,email,' . $employee->id,
-            'phone' => 'nullable|string|max:15',
-        ]);
-
-        $employee->update($request->only(['name', 'email', 'phone']));
-        return back()->with('success', 'Profile updated successfully!');
     }
     // Leave Requests
     public function requestLeave()
@@ -69,25 +45,11 @@ class EmployeeDashboardController extends Controller
         return view('leave.index', compact('page', 'leaves'));
     }
 
-    // Employee Sign-in (Attendance)
-    public function checkIn()
+    public function clockInOut(Request $request)
     {
-        $employee = Auth::user();
-
-        $existingCheckIn = Attendance::where('employee_id', $employee->id)
-            ->whereDate('created_at', Carbon::today())
-            ->first();
-
-        if ($existingCheckIn) {
-            return back()->with('error', 'You have already checked in today!');
-        }
-
-        Attendance::create([
-            'employee_id' => $employee->id,
-            'check_in' => Carbon::now(),
-        ]);
-
-        return back()->with('success', 'Successfully checked in!');
+        $page = 'Clock In';
+        $description = '';
+        return view('attendances.employee-clockin', compact('page', 'description'));
     }
 
     // Download P9 Form
@@ -126,5 +88,6 @@ class EmployeeDashboardController extends Controller
         }
 
         return response()->download($filePath);
-    }
+
+   }
 }

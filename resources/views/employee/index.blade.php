@@ -64,8 +64,8 @@
                     <div class="card-body text-center">
                         <i class="bi bi-clock text-success" style="font-size: 2.5rem;"></i>
                         <h6 class="mt-2">Sign-in</h6>
-                        <a href="{{ route('myaccount.attendances.clock-in', $currentBusiness->slug) }}"
-                            class="btn btn-outline-success btn-sm mt-3">Check In</a>
+                        <a href="{{ route('myaccount.attendances.clock-in-out.index', $currentBusiness->slug) }}"
+                            class="btn btn-outline-success btn-sm mt-3">Check In / Out</a>
                     </div>
                 </div>
             </div>

@@ -84,15 +84,14 @@ class AttendanceController extends Controller
     {
         $validatedData = $request->validate([
             'employee_id' => 'required|exists:employees,id',
-            'date' => 'required|date',
             'clock_in' => 'nullable|date_format:H:i',
             'is_absent' => 'sometimes|boolean',
             'remarks' => 'nullable|string',
         ]);
+
         return $this->handleTransaction(function () use ($validatedData) {
             $user = auth()->user();
             $business = Business::findBySlug(session('active_business_slug'));
-
             $today = now()->toDateString();
 
             $existingAttendance = Attendance::where([
@@ -101,29 +100,31 @@ class AttendanceController extends Controller
                 'date' => $today,
             ])->first();
 
-            if ($existingAttendance) {
+            // **Check if the employee has already clocked out**
+            if ($existingAttendance && !is_null($existingAttendance->clock_out)) {
+                return RequestResponse::badRequest('Employee has already clocked out for today.');
+            }
 
+            if ($existingAttendance) {
                 if (!empty($validatedData['is_absent'])) {
                     $existingAttendance->is_absent = $validatedData['is_absent'];
                     $existingAttendance->clock_in = null;
-                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
                     $existingAttendance->logged_by = $user->id;
                     $existingAttendance->save();
                     return RequestResponse::created('Attendance updated successfully (Marked Absent).');
-
-                } else if ($existingAttendance->is_absent) {
+                } elseif ($existingAttendance->is_absent) {
                     $existingAttendance->is_absent = false;
                     $existingAttendance->clock_in = now()->format("H:i");
-                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
                     $existingAttendance->logged_by = $user->id;
                     $existingAttendance->save();
                     return RequestResponse::created('Attendance updated successfully (Clocked In).');
-
                 } else {
-                    $existingAttendance->remarks = $validatedData['remarks'];
+                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
                     $existingAttendance->logged_by = $user->id;
                     $existingAttendance->save();
-                    return RequestResponse::created('Attendance already recorder (Remarks Updated).');
+                    return RequestResponse::created('Attendance already recorded (Remarks Updated).');
                 }
             } else {
                 $validatedData['date'] = $today;
@@ -139,7 +140,7 @@ class AttendanceController extends Controller
                     'date' => $validatedData['date'],
                     'clock_in' => $validatedData['clock_in'],
                     'is_absent' => $validatedData['is_absent'] ?? false,
-                    'remarks' => $validatedData['remarks'],
+                    'remarks' => $validatedData['remarks'] ?? null,
                     'logged_by' => $user->id,
                 ]);
 

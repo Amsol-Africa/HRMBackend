@@ -12428,6 +12428,11 @@ table.dataTable tbody tr:last-child {
   height: 150px;
   border-radius: 50%;
 }
+.employee__thumb_2 img {
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+}
 .employee__digi {
   color: var(--clr-text-body);
   font-size: 14px;

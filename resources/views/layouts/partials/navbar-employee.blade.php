@@ -43,8 +43,8 @@
                     </a>
                 </li>
 
-                <li class="slide {{ request()->routeIs('myaccount.attendances.clock-in') ? 'active' : '' }}">
-                    <a href="{{ route('myaccount.attendances.clock-in', $currentBusiness->slug) }}"
+                <li class="slide {{ request()->routeIs('myaccount.attendances.clock-in-out.index') ? 'active' : '' }}">
+                    <a href="{{ route('myaccount.attendances.clock-in-out.index', $currentBusiness->slug) }}"
                         class="sidebar__menu-item">
                         <div class="side-menu__icon"><i class="fa-solid fa-clock"></i></div>
                         <span class="sidebar__menu-label">Attendance</span>

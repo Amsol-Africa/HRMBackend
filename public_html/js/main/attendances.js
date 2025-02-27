@@ -50,27 +50,39 @@ window.clockIn = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("clockInForm"));
+    let formData;
+
+    if ($("#clockInForm").length) {
+        formData = new FormData(document.getElementById("clockInForm"));
+    } else {
+        const employee = btn.data('employee');
+        formData = new FormData();
+        formData.append('employee_id', employee);
+    }
 
     try {
         await attendancesService.clockIn(formData);
     } finally {
-        getClockins()
+        getClockins();
         btn_loader(btn, false);
     }
 };
+
 window.clockOut = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
+
     const employee = btn.data('employee');
-    const data = {employee : employee}
+    const data = { employee: employee };
+
     try {
         await attendancesService.clockOut(data);
     } finally {
-        getClockins()
+        getClockins();
         btn_loader(btn, false);
     }
 };
+
 window.editAttendance = async function (btn) {
     btn = $(btn);
 

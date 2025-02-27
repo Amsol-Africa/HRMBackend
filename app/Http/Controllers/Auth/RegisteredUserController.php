@@ -100,7 +100,7 @@ class RegisteredUserController extends Controller
     private function getRedirectUrlForRole($user)
     {
         if ($user->hasRole('business-admin')) {
-
+            session(['active_role' => 'business-admin']);
             if($user->status === "setup") {
                 return route('setup.business');
             }elseif($user->status === "module") {
