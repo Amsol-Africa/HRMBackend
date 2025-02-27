@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Illuminate\Database\Eloquent\Model;
@@ -35,21 +36,29 @@ class PayrollFormula extends Model
     {
         return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
     }
-    public static function calculate($slug, $amount)
+    public static function calculateForBusiness($formulaName, $amount, $business_id = null)
     {
-        // Fetch formula by slug (e.g., 'paye', 'nhif', 'nssf', 'housing-levy')
-        $formula = self::where('slug', $slug)->first();
+        // Attempt to get the formula specific to the business
+        $formulaQuery = self::where('name', 'LIKE', "%{$formulaName}%");
 
-        if (!$formula) {
-            throw new \Exception("Payroll formula '{$slug}' not found.");
+        if ($business_id) {
+            $businessFormula = (clone $formulaQuery)->where('business_id', $business_id)->first();
+            if ($businessFormula) {
+                return $businessFormula->is_progressive
+                    ? self::calculateProgressive($amount, $businessFormula->brackets)
+                    : self::calculateFlat($amount, $businessFormula);
+            }
         }
 
-        // Determine calculation type (Flat Rate or Progressive)
-        if ($formula->is_progressive) {
-            return self::calculateProgressive($amount, $formula->brackets);
+        // If no business-specific formula exists, fallback to system-wide formula
+        $systemFormula = $formulaQuery->whereNull('business_id')->first();
+        if (!$systemFormula) {
+            return 0; // No formula found, return zero deduction
         }
 
-        return self::calculateFlat($amount, $formula);
+        return $systemFormula->is_progressive
+            ? self::calculateProgressive($amount, $systemFormula->brackets)
+            : self::calculateFlat($amount, $systemFormula);
     }
 
     private static function calculateFlat($amount, $formula)

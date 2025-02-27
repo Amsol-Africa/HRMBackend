@@ -16,6 +16,7 @@ class PayrollService
     {
         return $this->handleTransaction(function () use ($employee, $startDate, $endDate, $payroll_id) {
 
+            $business_id = $employee->business_id;
             $grossPay = $employee->paymentDetails->basic_salary;
 
             // Include allowances in gross pay
@@ -34,14 +35,29 @@ class PayrollService
                 }
             }
 
-            // Compute statutory deductions
-            $paye = PayrollFormula::calculate('paye', $taxableIncome);
-            $nssf = PayrollFormula::calculate('nssf', $grossPay);
-            $nhif = PayrollFormula::calculate('nhif', $grossPay);
-            $housingLevy = PayrollFormula::calculate('housing-levy', $grossPay);
+            // Fetch all payroll formulas for the business
+            $payrollDeductions = PayrollFormula::where('business_id', $business_id)
+                ->orWhereNull('business_id') // Allow system-wide formulas if business-specific ones don't exist
+                ->get();
 
-            // Calculate Pay After Tax
-            $payAfterTax = $grossPay - $paye;
+            // Compute deductions dynamically
+            $deductions = [];
+            foreach ($payrollDeductions as $formula) {
+                $basis = ($formula->calculation_basis === 'taxable_income') ? $taxableIncome : $grossPay;
+                $deductions[$formula->slug] = PayrollFormula::calculateForBusiness($formula->name, $basis, $business_id);
+            }
+
+            // Dynamically find PAYE formula
+            $payeFormula = PayrollFormula::where('business_id', $business_id)
+                ->orWhereNull('business_id') // Allow system-wide PAYE formula
+                ->where('name', 'LIKE', '%PAYE%') // Find any formula that contains "PAYE"
+                ->first();
+
+            $payeSlug = $payeFormula ? $payeFormula->slug : null;
+
+            // Compute pay after tax
+            $payAfterTax = $grossPay - ($deductions[$payeSlug] ?? 0);
+
 
             // Calculate Other Deductions (Non-statutory deductions)
             $otherDeductions = 0;
@@ -49,7 +65,7 @@ class PayrollService
                 $otherDeductions += $deduction->amount ?? 0;
             }
 
-            // Process Loans: Deduct active loan repayments and record in loan_repayments table
+            // Process Loans
             $loanDeductions = 0;
             $activeLoans = $employee->loans()->whereHas('statuses', function ($query) {
                 $query->where('name', 'active');
@@ -79,13 +95,12 @@ class PayrollService
             }
             $otherDeductions += $loanDeductions;
 
-            // Process Advances: Deduct any unpaid advances and mark as "paid"
+            // Process Advances
             $advanceDeductions = $employee->advances()->whereHas('statuses', function ($query) {
                 $query->where('name', 'unpaid');
             })->sum('amount');
 
             if ($advanceDeductions > 0) {
-                // Mark all unpaid advances as "paid"
                 $employee->advances()->whereHas('statuses', function ($query) {
                     $query->where('name', 'unpaid');
                 })->each(function ($advance) {
@@ -111,26 +126,19 @@ class PayrollService
                 'basic_salary' => $employee->paymentDetails->basic_salary,
                 'gross_pay' => $grossPay,
                 'taxable_income' => $taxableIncome,
-                'paye' => $paye,
-                'nssf' => $nssf,
-                'nhif' => $nhif,
-                'housing_levy' => $housingLevy,
                 'pay_after_tax' => $payAfterTax,
                 'deductions_after_tax' => $otherDeductions,
                 'net_pay' => $netPay,
+                'deductions' => json_encode($deductions), // Store all calculated deductions
             ]);
 
-            return [
+            return array_merge([
                 'gross_pay' => $grossPay,
                 'taxable_income' => $taxableIncome,
-                'paye' => $paye,
-                'nssf' => $nssf,
-                'nhif' => $nhif,
-                'housing_levy' => $housingLevy,
                 'pay_after_tax' => $payAfterTax,
                 'other_deductions' => $otherDeductions,
                 'net_pay' => $netPay,
-            ];
+            ], $deductions);
         });
     }
 }

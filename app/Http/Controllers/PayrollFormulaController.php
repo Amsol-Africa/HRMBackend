@@ -18,7 +18,6 @@ class PayrollFormulaController extends Controller
     {
         $business = Business::findBySlug(session('active_business_slug'));
         $payroll_formulas = $business->payrollFormulas;
-
         $payroll_formulas_table = view('payroll._table', compact('payroll_formulas'))->render();
         return RequestResponse::ok('Ok', $payroll_formulas_table);
     }
