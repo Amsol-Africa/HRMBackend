@@ -11,6 +11,8 @@
             <ul class="main-menu" style="padding-top: 70px">
                 <li class="sidebar__menu-category"><span class="category-name">Main</span></li>
 
+                @include('layouts.partials.switch-role')
+
                 <!-- Dashboard -->
                 <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
                     <a href="{{ route('business.index', $currentBusiness->slug) }}"
@@ -340,8 +342,7 @@
 
 
             <!-- Asset Management Dropdown -->
-            <li
-                class="slide has-sub {{ request()->routeIs('business.recruitment.*') || request()->routeIs('business.job-applications.*') ? 'active open' : '' }}">
+            <li class="slide has-sub {{ request()->routeIs('business.recruitment.*') || request()->routeIs('business.job-applications.*') ? 'active open' : '' }}">
                 <a href="javascript:void(0);" class="sidebar__menu-item">
                     <i class="fa-solid fa-angle-down side-menu__angle"></i>
                     <div class="side-menu__icon"><i class="fa-solid fa-briefcase"></i></div>

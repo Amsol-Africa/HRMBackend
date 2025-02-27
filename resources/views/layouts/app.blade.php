@@ -69,15 +69,16 @@
 
     <div class="page__full-wrapper">
 
-        @if (auth()->user()->hasRole('business-admin'))
+        @php
+            $activeRole = session('active_role');
+        @endphp
+
+        @if (in_array($activeRole, ['business-admin', 'business-hr', 'business-finance']))
             @include('layouts.partials.navbar')
-        @elseif (auth()->user()->hasRole('business-hr'))
-            @include('layouts.partials.navbar')
-        @elseif (auth()->user()->hasRole('business-finance'))
-            @include('layouts.partials.navbar')
-        @elseif (auth()->user()->hasRole('business-employee'))
+        @elseif ($activeRole === 'business-employee')
             @include('layouts.partials.navbar-employee')
         @endif
+
 
         <div class="page__body-wrapper">
 
@@ -182,6 +183,28 @@
                     }
                 });
             });
+
+
+            $(".switch-role").click(function() {
+                let selectedRole = $(this).data("role");
+
+                $.ajax({
+                    url: $("#switchRoleForm").attr("action"),
+                    method: "POST",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                        role: selectedRole
+                    },
+                    success: function(response) {
+                        window.location.href = response.redirect;
+                    },
+                    error: function(error) {
+                        console.log(error);
+                        alert("You do not have permission to switch to this role.");
+                    }
+                });
+            });
+
         });
 
         // Select all phone input fields

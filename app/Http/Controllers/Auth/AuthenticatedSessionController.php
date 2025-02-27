@@ -63,6 +63,7 @@ class AuthenticatedSessionController extends Controller
 
             $business = $user->business;
             session(['active_business_slug' => $business->slug]);
+            session(['active_role' => 'business-admin']);
 
             if ($user->status === "setup") {
                 return route('setup.business');
@@ -76,18 +77,22 @@ class AuthenticatedSessionController extends Controller
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
+            session(['active_role' => 'business-hr']);
             return route('business.index', $business->slug);
 
         } elseif ($user->hasRole('business-finance')) {
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
+            session(['active_role' => 'business-finance']);
             return route('business.index', $business->slug);
 
         } elseif ($user->hasRole('business-employee')) {
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
+            session(['active_role' => 'business-employee']);
+
             return route('myaccount.index', $business->slug);
 
         }

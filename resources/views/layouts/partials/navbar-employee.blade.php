@@ -11,6 +11,8 @@
             <ul class="main-menu" style="padding-top: 70px">
                 <li class="sidebar__menu-category"><span class="category-name">Main</span></li>
 
+                @include('layouts.partials.switch-role')
+
                 <li class="slide {{ request()->routeIs('myaccount.index') ? 'active' : '' }}">
                     <a href="{{ route('myaccount.index', $currentBusiness->slug) }}" class="sidebar__menu-item">
                         <div class="side-menu__icon"><i class="fa-solid fa-home"></i></div>

@@ -1,18 +1,21 @@
 <?php
 
-use App\Http\Controllers\JobPostController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\RoleSwitchController;
 use App\Http\Controllers\EmployeeDashboardController;
-use App\Http\Controllers\TaskController;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetch'])->name('jobs.openings');
 
 Route::middleware(['auth'])->group(function () {
+
+    Route::post('/switch-role', [RoleSwitchController::class, 'switchRole'])->name('switch.role');
 
     //setup busines & modules
     Route::name('setup.')->prefix('setup')->group(function () {
@@ -20,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('modules', [ModuleController::class, 'create'])->name('modules');
     });
 
-    Route::middleware(['role:business-admin'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+    Route::middleware(['ensure_role', 'role:business-admin'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [DashboardController::class, 'clients'])->name('clients.index');
         Route::get('/locations', [DashboardController::class, 'locations'])->name('locations.index');
@@ -127,7 +130,7 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-    Route::middleware(['role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
+    Route::middleware(['ensure_role','role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
         Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
 
         // Profile Routes

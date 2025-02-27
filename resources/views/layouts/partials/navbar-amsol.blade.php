@@ -11,6 +11,8 @@
             <ul class="main-menu" style="padding-top: 70px">
                 <li class="sidebar__menu-category"><span class="category-name">Main</span></li>
 
+                @include('layouts.partials.switch-role')
+
                 <!-- Dashboard -->
                 <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
                     <a href="{{ route('business.index', $currentBusiness->slug) }}" class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">

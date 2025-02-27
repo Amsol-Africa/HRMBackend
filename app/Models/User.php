@@ -74,14 +74,34 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     }
     public function businessesAsManager()
     {
-        return $this->hasManyThrough(Business::class,Client::class,'employee_id','id','id','client_business');
+        return $this->hasManyThrough(Business::class, Client::class, 'employee_id', 'id', 'id', 'client_business');
     }
     public function clientBusinesses()
     {
-        return $this->hasManyThrough(Client::class,Business::class,'user_id','business_id','id','id');
+        return $this->hasManyThrough(Client::class, Business::class, 'user_id', 'business_id', 'id', 'id');
     }
     public function notificationPreference()
     {
         return $this->hasOne(NotificationPreference::class);
     }
+
+    public function getAvailableContexts()
+    {
+        return $this->roles->pluck('name')->toArray();
+    }
+
+    public function setActiveContext($role)
+    {
+        if ($this->hasRole($role)) {
+            session(['active_role' => $role]);
+            return true;
+        }
+        return false;
+    }
+
+    public function getActiveContext()
+    {
+        return session('active_role', null);
+    }
+
 }
