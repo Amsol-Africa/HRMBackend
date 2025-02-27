@@ -26,15 +26,21 @@ class PayrollFormulaController extends Controller
     public function create(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $business_formulas = $business->formulas()->with('brackets')->get();
-        $system_payroll_formulas = PayrollFormula::with('brackets')->whereNull('business_id')->get();
-        $payroll_formulas = $business_formulas->merge($system_payroll_formulas);
+
+        $business_formulas = $business->payrollFormulas()->with('brackets')->get();
+
+        // Fetch system-wide formulas
+        $system_payroll_formulas = PayrollFormula::with('brackets')
+            ->whereNull('business_id')
+            ->whereNotIn('name', $business_formulas->pluck('name'))
+            ->get();
+
+        $payroll_formulas = $business_formulas->concat($system_payroll_formulas);
+
         $formulaCreate = view('payroll._create_formulas', compact('payroll_formulas'))->render();
 
-        Log::debug($payroll_formulas);
         return RequestResponse::ok('Ok', $formulaCreate);
     }
-
 
     public function store(Request $request)
     {
@@ -109,32 +115,46 @@ class PayrollFormulaController extends Controller
     public function update(Request $request)
     {
         Log::debug($request->all());
+
         $validatedData = $request->validate([
             'payroll_formula_slug' => 'required|exists:payroll_formulas,slug',
             'name' => 'required|string|max:255',
             'calculation_basis' => 'required|in:basic_pay,gross_pay,cash_pay,taxable_pay',
             'is_progressive' => 'required|boolean',
             'minimum_amount' => 'nullable|numeric|min:0',
-            'min.*' => 'required_if:is_progressive,1|numeric|min:0',
-            'max.*' => 'required_if:is_progressive,1|numeric|gt:min.*',
-            'rate.*' => 'required_if:is_progressive,1|nullable|numeric|min:0',
-            'amount.*' => 'required_if:is_progressive,1|nullable|numeric|min:0',
+            'min.*' => 'required_if:is_progressive,true|numeric|min:0',
+            'max.*' => 'required_if:is_progressive,true|numeric|gt:min.*',
+            'rate.*' => 'nullable|required_if:is_progressive,true|numeric|min:0|max:100',
+            'amount.*' => 'nullable|required_if:is_progressive,true|numeric|min:0',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
+            $business = Business::findBySlug(session('active_business_slug'));
+            $payroll_formula = PayrollFormula::where('slug', $validatedData['payroll_formula_slug'])->firstOrFail();
 
-            $payroll_formula = PayrollFormula::where('slug', $validatedData['payroll_formula_slug'])->first();
+            if ($business) {
+                $existingFormula = PayrollFormula::where('business_id', $business->id)
+                    ->where('name', $validatedData['name'])
+                    ->first();
 
-            if (!$payroll_formula) {
-                return RequestResponse::badRequest('Payroll formula not found.');
+                if ($existingFormula) {
+                    $payroll_formula = $existingFormula;
+                } else {
+                    $payroll_formula = $business->payrollFormulas()->create([
+                        'name' => $validatedData['name'],
+                        'calculation_basis' => $validatedData['calculation_basis'],
+                        'is_progressive' => $validatedData['is_progressive'],
+                        'minimum_amount' => $validatedData['minimum_amount'],
+                    ]);
+                }
+            } else {
+                $payroll_formula->update([
+                    'name' => $validatedData['name'],
+                    'calculation_basis' => $validatedData['calculation_basis'],
+                    'is_progressive' => $validatedData['is_progressive'],
+                    'minimum_amount' => $validatedData['minimum_amount'],
+                ]);
             }
-
-            $payroll_formula->update([
-                'formula_name' => $validatedData['name'],
-                'calculation_basis' => $validatedData['calculation_basis'],
-                'is_progressive' => $validatedData['is_progressive'],
-                'minimum_amount' => $validatedData['minimum_amount'],
-            ]);
 
             if ($validatedData['is_progressive']) {
                 $payroll_formula->brackets()->delete();
@@ -144,15 +164,13 @@ class PayrollFormulaController extends Controller
                 $rateValues = $validatedData['rate'];
                 $amountValues = $validatedData['amount'];
 
-                if (is_array($minValues)) {
-                    foreach ($minValues as $index => $minValue) {
-                        $payroll_formula->brackets()->create([
-                            'min_value' => $minValue,
-                            'max_value' => $maxValues[$index],
-                            'rate' => isset($rateValues[$index]) ? $rateValues[$index] : null,
-                            'amount' => isset($amountValues[$index]) ? $amountValues[$index] : null,
-                        ]);
-                    }
+                foreach ($minValues as $index => $minValue) {
+                    $payroll_formula->brackets()->create([
+                        'min' => $minValue,
+                        'max' => $maxValues[$index] ?? null,
+                        'rate' => $rateValues[$index] ?? null,
+                        'amount' => $amountValues[$index] ?? null,
+                    ]);
                 }
             }
 
