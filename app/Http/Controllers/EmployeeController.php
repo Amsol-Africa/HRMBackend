@@ -16,6 +16,7 @@ use App\Models\EmploymentDetail;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -446,6 +447,34 @@ class EmployeeController extends Controller
         $business = Business::findBySlug($business_slug);
         $employees = Employee::with('user')->where('business_id', $business->id)->get();
         return RequestResponse::ok('Ok', $employees);
+    }
+
+    public function sendAlert(NotificationService $notificationService)
+    {
+        $user = User::find(1);
+
+        // Get user preferences
+        $preferences = $notificationService->getUserNotificationPreferences($user);
+
+        // Filter channels based on preferences
+        $channels = $notificationService->filterChannelsByUserPreferences($user, ['mail', 'database', 'slack']);
+
+        $notificationService->sendNotification(
+            $user,
+            SystemAlertNotification::class,
+            ['System maintenance scheduled.', ['details' => 'Server will be down for 2 hours.']],
+            [],
+            $channels
+        );
+
+        return response()->json(['message' => 'Notification sent.']);
+    }
+
+    public function setUserPreferences(NotificationService $notificationService)
+    {
+        $user = auth()->user();
+        $notificationService->setUserNotificationPreferences($user, ['email' => false, 'database' => true]);
+        return response()->json(['message' => 'User preferences updated.']);
     }
 
 }

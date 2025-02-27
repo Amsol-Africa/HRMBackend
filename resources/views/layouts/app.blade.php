@@ -55,6 +55,8 @@
 
 <body class="body-area">
 
+    <input type="text" id="receipient_id" value="{{ auth()->user()->id }}" hidden>
+
     <div class="preloader" id="preloader">
         <div class="loading">
             <span></span>
@@ -157,8 +159,10 @@
     <script src="{{ asset('assets/js/main.js') }}"></script>
     <script src="{{ asset('assets/js/vendor/sidebar.js') }}"></script>
     <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
     <script src="{{ asset('js/init.js') }}"></script>
+    {{-- <script src="{{ asset('js/pusher.js') }}"></script> --}}
     <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
 
     <script type="text/javascript">

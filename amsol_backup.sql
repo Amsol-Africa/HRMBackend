@@ -49,8 +49,7 @@ INSERT INTO `academic_qualifications` VALUES
 (2,1,'2010-02-19','2014-02-19','Highest of Schools','KCSE','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (3,2,'2010-01-01','2014-12-31','XYZ University','MBA','2025-02-04 23:22:26','2025-02-04 23:22:26'),
 (4,2,'2015-05-01','2020-12-31','ABC Institute','HR Certification','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(5,3,'2010-01-01','2014-12-31','ABC University','Accounting Degree','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(6,4,'2025-02-18','2025-02-18','Pariatur Molestiae','Dolores recusandae','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(5,3,'2010-01-01','2014-12-31','ABC University','Accounting Degree','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `academic_qualifications` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -301,7 +300,7 @@ CREATE TABLE `attendances` (
   CONSTRAINT `attendances_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
   CONSTRAINT `attendances_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `attendances_logged_by_foreign` FOREIGN KEY (`logged_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -313,7 +312,10 @@ LOCK TABLES `attendances` WRITE;
 INSERT INTO `attendances` VALUES
 (1,1,1,'2025-02-18','00:00:00',NULL,0.00,0,NULL,1,'2025-02-17 21:00:23','2025-02-17 21:00:23'),
 (2,2,1,'2025-02-18','00:01:00','03:25:00',0.00,0,NULL,1,'2025-02-17 21:01:14','2025-02-18 00:25:18'),
-(3,3,1,'2025-02-18','00:08:00','03:20:00',0.00,0,NULL,1,'2025-02-17 21:08:25','2025-02-18 00:20:13');
+(3,3,1,'2025-02-18','00:08:00','03:20:00',0.00,0,NULL,1,'2025-02-17 21:08:25','2025-02-18 00:20:13'),
+(4,1,1,'2025-02-19','14:19:00','14:19:00',0.00,0,NULL,1,'2025-02-19 11:19:40','2025-02-19 11:19:45'),
+(5,3,1,'2025-02-21','06:55:00',NULL,0.00,0,NULL,1,'2025-02-21 03:44:11','2025-02-21 03:55:16'),
+(7,1,1,'2025-02-21','07:00:00',NULL,0.00,0,NULL,1,'2025-02-21 04:00:57','2025-02-21 04:00:57');
 /*!40000 ALTER TABLE `attendances` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -337,7 +339,7 @@ CREATE TABLE `business_modules` (
   KEY `business_modules_module_id_foreign` (`module_id`),
   CONSTRAINT `business_modules_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
   CONSTRAINT `business_modules_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -360,7 +362,9 @@ INSERT INTO `business_modules` VALUES
 (11,2,1,1,NULL,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
 (12,2,9,1,NULL,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
 (13,2,2,1,NULL,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
-(14,2,3,1,NULL,'2025-02-18 03:23:48','2025-02-18 03:23:48');
+(14,2,3,1,NULL,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
+(15,3,1,1,NULL,'2025-02-18 05:29:28','2025-02-18 05:29:28'),
+(16,3,2,1,NULL,'2025-02-18 05:29:28','2025-02-18 05:29:28');
 /*!40000 ALTER TABLE `business_modules` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -392,7 +396,7 @@ CREATE TABLE `businesses` (
   UNIQUE KEY `businesses_slug_unique` (`slug`),
   KEY `businesses_user_id_foreign` (`user_id`),
   CONSTRAINT `businesses_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -403,7 +407,8 @@ LOCK TABLES `businesses` WRITE;
 /*!40000 ALTER TABLE `businesses` DISABLE KEYS */;
 INSERT INTO `businesses` VALUES
 (1,1,'Anzar KE','anzar-ke','information-technology','1-10','+254797702066','Kenya','254',NULL,NULL,NULL,NULL,NULL,'2025-02-04 03:35:20','2025-02-04 03:35:20'),
-(2,9,'Unlimited Informatics','unlimited-informatics','telecommunications','11-50','+254711616012','Kenya','254',NULL,NULL,NULL,NULL,NULL,'2025-02-18 03:23:39','2025-02-18 03:23:39');
+(2,9,'Unlimited Informatics','unlimited-informatics','telecommunications','11-50','+254711616012','Kenya','254',NULL,NULL,NULL,NULL,NULL,'2025-02-18 03:23:39','2025-02-18 03:23:39'),
+(3,11,'Hays and Phillips Co','hays-and-phillips-co','retail','11-50','+254711616918','Kenya','254',NULL,NULL,NULL,NULL,NULL,'2025-02-18 05:29:22','2025-02-18 05:29:22');
 /*!40000 ALTER TABLE `businesses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -584,9 +589,7 @@ INSERT INTO `emergency_contacts` VALUES
 (3,2,'Mary Johnson','Mother','123 Elm St, NY','1234567893',NULL,'2025-02-04 23:22:26','2025-02-04 23:22:26'),
 (4,2,'Anna Doe','Sister','456 Maple St, NY','1234567894',NULL,'2025-02-04 23:22:26','2025-02-04 23:22:26'),
 (5,3,'John Smith','Father','456 Oak St, CA','1245678904',NULL,'2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(6,3,'Anna Doe','Sister','456 Maple St, NY','1234567894',NULL,'2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(7,4,'TaShya Carroll','Libero sed officia i','55 Fabien Lane','87568114217',NULL,'2025-02-18 03:32:39','2025-02-18 03:32:39'),
-(8,4,'Gisela Tyson','Sint ut dignissimos','Autem impedit eos','87568114217',NULL,'2025-02-18 03:32:39','2025-02-18 03:32:39');
+(6,3,'Anna Doe','Sister','456 Maple St, NY','1234567894',NULL,'2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `emergency_contacts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -742,8 +745,7 @@ LOCK TABLES `employee_family_members` WRITE;
 INSERT INTO `employee_family_members` VALUES
 (1,1,'Melinda Knowles Korean','Wife','1995-02-23','Contact address 36','744158621','254','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (2,2,'Anna Doe','Sister','1992-07-25','456 Maple St, NY','1234567894','254','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(3,3,'James Smith','Brother','1995-12-15','789 Pine St, CA','1245678905','254','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(4,4,'Vance Kirby','Qui sit dolore rati','2005-01-01','Proident occaecat d','87568114217','254','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(3,3,'James Smith','Brother','1995-12-15','789 Pine St, CA','1245678905','254','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `employee_family_members` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -783,8 +785,7 @@ LOCK TABLES `employee_payment_details` WRITE;
 INSERT INTO `employee_payment_details` VALUES
 (1,1,68000.00,'KES','bank','Arnold W Zahara','398456382984','Diamond Trust','B9487','Delta Ware','DT625','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (2,2,60000.00,'KES','bank','John Doe','123456789012','ABC Bank','ABC123','Main Branch','MB123','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(3,3,55000.00,'KES','bank','Emily Smith','987654321098','XYZ Bank','XYZ123','Downtown Branch','DB123','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(4,4,60000.00,'KES','bank','Isadora Whitfield','2763563563','Lael Shepard','Ips','Magni qui dolorum ad','occ','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(3,3,55000.00,'KES','bank','Emily Smith','987654321098','XYZ Bank','XYZ123','Downtown Branch','DB123','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `employee_payment_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -815,7 +816,7 @@ CREATE TABLE `employee_payrolls` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -831,7 +832,10 @@ INSERT INTO `employee_payrolls` VALUES
 (4,4,1,68000,NULL,68000,15183,4400,840,NULL,1020,68000,NULL,52817,0,52817,'2025-02-07 03:49:28','2025-02-07 03:49:28'),
 (5,4,3,55000,NULL,55000,11283,4400,840,NULL,825,55000,NULL,43717,0,43717,'2025-02-07 03:49:28','2025-02-07 03:49:28'),
 (6,5,1,68000,NULL,68000,15183,4400,840,NULL,1020,68000,NULL,52817,0,52817,'2025-02-11 04:05:11','2025-02-11 04:05:11'),
-(7,5,3,55000,NULL,55000,11283,4400,840,NULL,825,55000,NULL,43717,0,43717,'2025-02-11 04:05:11','2025-02-11 04:05:11');
+(7,5,3,55000,NULL,55000,11283,4400,840,NULL,825,55000,NULL,43717,0,43717,'2025-02-11 04:05:11','2025-02-11 04:05:11'),
+(8,6,4,60000,NULL,60000,12783,4400,840,NULL,900,60000,NULL,47217,0,47217,'2025-02-18 03:42:32','2025-02-18 03:42:32'),
+(9,7,4,60000,NULL,60000,12783,4400,840,NULL,900,60000,NULL,47217,0,47217,'2025-02-18 03:45:17','2025-02-18 03:45:17'),
+(10,8,4,60000,NULL,60000,12783,4400,840,NULL,900,60000,NULL,47217,0,47217,'2025-02-18 03:50:35','2025-02-18 03:50:35');
 /*!40000 ALTER TABLE `employee_payrolls` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -880,7 +884,7 @@ CREATE TABLE `employee_task` (
   KEY `employee_task_employee_id_foreign` (`employee_id`),
   CONSTRAINT `employee_task_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE,
   CONSTRAINT `employee_task_task_id_foreign` FOREIGN KEY (`task_id`) REFERENCES `tasks` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -889,6 +893,11 @@ CREATE TABLE `employee_task` (
 
 LOCK TABLES `employee_task` WRITE;
 /*!40000 ALTER TABLE `employee_task` DISABLE KEYS */;
+INSERT INTO `employee_task` VALUES
+(3,2,2,'2025-02-19 21:47:52','2025-02-19 21:47:52'),
+(4,2,3,'2025-02-19 21:47:52','2025-02-19 21:47:52'),
+(5,3,2,'2025-02-21 08:29:15','2025-02-21 08:29:15'),
+(6,3,3,'2025-02-21 08:29:15','2025-02-21 08:29:15');
 /*!40000 ALTER TABLE `employee_task` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -951,8 +960,7 @@ LOCK TABLES `employees` WRITE;
 INSERT INTO `employees` VALUES
 (1,2,1,1,'EMP7836','male','+25474589631','1992-09-16',NULL,'married','3655874','Another place','TX68734653L','N4T67365','NST73256','PS9867','2023-08-16','2028-02-16','The river side ST, 353','Home River Street, 872','AB+','2025-02-04 23:11:27','2025-02-04 23:11:27',NULL),
 (2,3,1,2,'EMP1023','male','+2541234567891','1985-04-15',NULL,'single','1234567890','New York','TAX12345','NHIF12345','NSSF12345','P123456','2010-05-01','2025-05-01','123 Main St, New York, NY','456 Park Ave, New York, NY','O+','2025-02-04 23:22:26','2025-02-04 23:22:26',3),
-(3,4,1,3,'EMP1002','female','+2541245678902','1990-08-10',NULL,'married','2233445566','California','TAX22345','NHIF22345','NSSF22345','P223456','2012-03-15','2027-03-15','456 Oak St, Los Angeles, CA','789 Pine St, Los Angeles, CA','A+','2025-02-04 23:30:46','2025-02-04 23:30:46',NULL),
-(4,10,1,4,'Sed do officiis quas','male','+254711616019','1998-02-28',NULL,'married','2578847','Another Place','TXN737646','NH376356','NS7634563','PS29374','2019-02-27','2025-02-28','Some Address','Another Address','B-','2025-02-18 03:32:39','2025-02-18 03:32:39',5);
+(3,4,1,3,'EMP1002','female','+2541245678902','1990-08-10',NULL,'married','2233445566','California','TAX22345','NHIF22345','NSSF22345','P223456','2012-03-15','2027-03-15','456 Oak St, Los Angeles, CA','789 Pine St, Los Angeles, CA','A+','2025-02-04 23:30:46','2025-02-04 23:30:46',NULL);
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -998,8 +1006,7 @@ LOCK TABLES `employment_details` WRITE;
 INSERT INTO `employment_details` VALUES
 (1,1,1,1,4,'2025-02-05','2025-04-16','2028-02-24','2055-02-25','fulltime','Plenty of animals are semi-aquatic, just like hippos! Here are some cool ones:\r\n\r\n    Capybaras – The world’s largest rodents love both land and water, chilling in South American wetlands.\r\n    Beavers – Master engineers that build dams and lodges in rivers while still roaming on land.\r\n    Crocodiles & Alligators – Apex predators that dominate both environments, lurking in the water but hunting on land too.\r\n    Otters – Playful swimmers that also move comfortably on land.\r\n    Penguins – Flightless birds that waddle on land but are like torpedoes in the water.\r\n    Turtles – Some, like sea turtles, only come on land to lay eggs, while others (like snapping turtles) split their time.\r\n    Frogs – Amphibians that need water to reproduce but are often hopping around on land.\r\n\r\nNature really loves mixing things up! Any particular creature you\'re curious about?','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (2,2,2,2,1,'2020-01-01','2020-06-01','2025-01-01','2045-01-01','permanent','You can replicate the structure for more data sets with slight variations for testing. Just ensure the values match the expected types and formats for the fields.','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(3,3,3,5,4,'2019-02-20','2019-08-20','2024-02-20','2050-02-20','permanent','Accounting and bookkeeping','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(4,4,4,4,4,'2025-02-18','2025-02-18','2025-04-22','2031-02-27','fulltime','Another description','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(3,3,3,5,4,'2019-02-20','2019-08-20','2024-02-20','2050-02-20','permanent','Accounting and bookkeeping','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `employment_details` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1267,7 +1274,7 @@ CREATE TABLE `job_posts` (
   UNIQUE KEY `job_posts_slug_unique` (`slug`),
   KEY `job_posts_created_by_foreign` (`created_by`),
   CONSTRAINT `job_posts_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1767,7 +1774,7 @@ CREATE TABLE `media` (
   UNIQUE KEY `media_uuid_unique` (`uuid`),
   KEY `media_model_type_model_id_index` (`model_type`,`model_id`),
   KEY `media_order_column_index` (`order_column`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1793,7 +1800,9 @@ INSERT INTO `media` VALUES
 (15,'App\\Models\\User',9,'40cd77e2-3d6b-4c0b-8412-a380c5288e7f','avatars','media-library2sBRIC','media-library2sBRIC','image/png','public','public',389,'[]','[]','[]','[]',1,'2025-02-18 03:22:59','2025-02-18 03:22:59'),
 (16,'App\\Models\\Business',2,'2db3be86-a22e-4c33-ae5f-7031a0146b7b','businesses','avatar','avatar.png','image/png','public','public',53546,'[]','[]','[]','[]',1,'2025-02-18 03:23:39','2025-02-18 03:23:39'),
 (17,'App\\Models\\User',10,'aaf85ffd-f1ef-4211-acf8-c6cafd9eaa59','avatars','person2','person2.jpeg','image/jpeg','public','public',5716,'[]','[]','[]','[]',1,'2025-02-18 03:32:39','2025-02-18 03:32:39'),
-(18,'App\\Models\\Employee',4,'9c0f1532-4d80-4320-bc67-adf37ed3d019','academic_files','Letterhead','Letterhead.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',37920,'[]','[]','[]','[]',1,'2025-02-18 03:32:39','2025-02-18 03:32:39');
+(18,'App\\Models\\Employee',4,'9c0f1532-4d80-4320-bc67-adf37ed3d019','academic_files','Letterhead','Letterhead.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document','public','public',37920,'[]','[]','[]','[]',1,'2025-02-18 03:32:39','2025-02-18 03:32:39'),
+(19,'App\\Models\\User',11,'7ed667fa-b610-4c47-a3ed-bccd27c27f6a','avatars','media-libraryshJFk2','media-libraryshJFk2','image/png','public','public',399,'[]','[]','[]','[]',1,'2025-02-18 05:28:51','2025-02-18 05:28:51'),
+(20,'App\\Models\\Business',3,'9a3702a5-9ae0-4d11-8377-bde92cb85db5','businesses','avatar','avatar.png','image/png','public','public',53546,'[]','[]','[]','[]',1,'2025-02-18 05:29:22','2025-02-18 05:29:22');
 /*!40000 ALTER TABLE `media` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1809,7 +1818,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=87 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1876,9 +1885,9 @@ INSERT INTO `migrations` VALUES
 (79,'2025_02_11_031751_add_timestamps_to_applicants_table',7),
 (80,'2025_02_11_065712_update_payrolls_table',8),
 (81,'2025_02_14_044514_add_unique_constraint_to_payrolls',9),
-(84,'2025_02_12_070910_create_tasks_table',10),
 (85,'2025_02_16_084350_create_attendances_table',10),
-(86,'2025_02_16_104550_create_overtimes_table',10);
+(86,'2025_02_16_104550_create_overtimes_table',10),
+(88,'2025_02_12_070910_create_tasks_table',11);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1940,7 +1949,9 @@ INSERT INTO `model_has_roles` VALUES
 (12,'App\\Models\\User',7),
 (12,'App\\Models\\User',8),
 (7,'App\\Models\\User',9),
-(6,'App\\Models\\User',10);
+(6,'App\\Models\\User',10),
+(11,'App\\Models\\User',10),
+(7,'App\\Models\\User',11);
 /*!40000 ALTER TABLE `model_has_roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2156,7 +2167,7 @@ CREATE TABLE `payrolls` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `payroll_unique` (`payrun_year`,`payrun_month`,`business_id`,`location_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2169,7 +2180,10 @@ INSERT INTO `payrolls` VALUES
 (2,1,NULL,'monthly','KSH',3,2025,1,'2025-02-05 01:53:40','2025-02-05 01:53:40'),
 (3,1,NULL,'monthly','KSH',3,2024,12,'2025-02-06 00:42:01','2025-02-06 00:42:01'),
 (4,1,NULL,'monthly','KSH',2,2024,11,'2025-02-07 03:49:28','2025-02-07 03:49:28'),
-(5,1,NULL,'monthly','KSH',2,2025,3,'2025-02-11 04:05:11','2025-02-11 04:05:11');
+(5,1,NULL,'monthly','KSH',2,2025,3,'2025-02-11 04:05:11','2025-02-11 04:05:11'),
+(6,1,NULL,'monthly','KSH',1,2025,2,'2025-02-18 03:42:32','2025-02-18 03:42:32'),
+(7,1,NULL,'monthly','KSH',1,2025,2,'2025-02-18 03:45:17','2025-02-18 03:45:17'),
+(8,1,5,'monthly','KSH',1,2025,2,'2025-02-18 03:50:35','2025-02-18 03:50:35');
 /*!40000 ALTER TABLE `payrolls` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2234,8 +2248,7 @@ LOCK TABLES `previous_employments` WRITE;
 INSERT INTO `previous_employments` VALUES
 (1,1,'Employer de\' IT','InfoWars Tech Abys','Work Adress 9826','Tech Lead','Just because...','2022-02-23','2024-02-19','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (2,2,'Employer de\' IT','InfoWars Tech Abys','Work Adress 9826','Tech Lead','Just because...','2022-02-23','2024-02-19','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(3,3,'ABC Corp','Accounting','123 Business St, LA','Accountant','N/A','2015-01-01','2024-02-20','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(4,4,'Lenore Oliver','Deserunt dolorum eiu','Mollit repellendus','Laudantium sunt no','SOme reason for leaving','2025-02-18','2025-02-18','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(3,3,'ABC Corp','Accounting','123 Business St, LA','Accountant','N/A','2015-01-01','2024-02-20','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `previous_employments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2369,7 +2382,8 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('q9gpuopRfc6p9B7Ndx4ciJv5wGjuf4IEIf5gGz7v',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoibW5QWjZGTDZ4TzMzT2lkZkRrZXBnalZmeU5EU0dKZ3FuMldoVWV5cSI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDY6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9lbXBsb3llZXMiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO3M6MjA6ImFjdGl2ZV9idXNpbmVzc19zbHVnIjtzOjg6ImFuemFyLWtlIjt9',1739849569);
+('HniaOilNa0Z2GN29ml5KavfBkTZBa4wZkq0rjTOc',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo1OntzOjY6Il90b2tlbiI7czo0MDoiUFRIN3dnSW1XcWhReFFTbHRGZEZObFpRYW5MSThvOXlqUUx2RDJSaiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Nzc6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9wZXJmb3JtYW5jZS90YXNrcy9wcm9ncmVzcy9hbWFuZGEtc2F3eWVyIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjIwOiJhY3RpdmVfYnVzaW5lc3Nfc2x1ZyI7czo4OiJhbnphci1rZSI7fQ==',1740126579),
+('taiJ1OoXqdlv0KxtI4czFDMPrfty6I2BujFo5uuj',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoib3ByYVB5RUE5RXlYbHI2ZHY1aUlEbVp0ajlnV3ladnBNSlo1U3lzViI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo1MToiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLWtlL2xlYXZlL3JlcXVlc3RzIjt9czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MTA2OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXIta2UvcmVjcnVpdG1lbnQvam9iLXBvc3RzL3NvZnR3YXJlLWVuZ2luZWVyLWZ1bGwtc3RhY2stbGFyYXZlbC12dWVqcy9lZGl0Ijt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTtzOjIwOiJhY3RpdmVfYnVzaW5lc3Nfc2x1ZyI7czo4OiJhbnphci1rZSI7fQ==',1740119025);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2475,8 +2489,7 @@ LOCK TABLES `spouses` WRITE;
 INSERT INTO `spouses` VALUES
 (1,1,'Melinda','Knowles','Korean','1995-02-23','325874','Self Employed','+254755123984','00100','Home Address 21763','2025-02-04 23:11:27','2025-02-04 23:11:27'),
 (2,2,'Doe','Jane','Ann','1988-09-20','0987654321','XYZ Corp','+2541234567892','1234 Elm St, NY','1234 Elm St, NY','2025-02-04 23:22:26','2025-02-04 23:22:26'),
-(3,3,'Smith','David','John','1985-06-05','6677889900','ABC Corp','+2541245678903','789 Oak St, CA','789 Oak St, CA','2025-02-04 23:30:46','2025-02-04 23:30:46'),
-(4,4,'Hinton','Willa','Colette Garner','1977-01-01','793','Reprehenderit quia c','+2547656549198','At eos nobis quia re','Lorem vel incididunt','2025-02-18 03:32:39','2025-02-18 03:32:39');
+(3,3,'Smith','David','John','1985-06-05','6677889900','ABC Corp','+2541245678903','789 Oak St, CA','789 Oak St, CA','2025-02-04 23:30:46','2025-02-04 23:30:46');
 /*!40000 ALTER TABLE `spouses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2497,7 +2510,7 @@ CREATE TABLE `statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `statuses_model_type_model_id_index` (`model_type`,`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2544,7 +2557,18 @@ INSERT INTO `statuses` VALUES
 (36,'module',NULL,'App\\Models\\User',9,'2025-02-18 03:23:39','2025-02-18 03:23:39'),
 (37,'active',NULL,'App\\Models\\User',9,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
 (38,'active',NULL,'App\\Models\\Business',2,'2025-02-18 03:23:48','2025-02-18 03:23:48'),
-(39,'active',NULL,'App\\Models\\User',10,'2025-02-18 03:32:39','2025-02-18 03:32:39');
+(39,'active',NULL,'App\\Models\\User',10,'2025-02-18 03:32:39','2025-02-18 03:32:39'),
+(40,'setup',NULL,'App\\Models\\User',11,'2025-02-18 05:28:51','2025-02-18 05:28:51'),
+(41,'module',NULL,'App\\Models\\Business',3,'2025-02-18 05:29:22','2025-02-18 05:29:22'),
+(42,'module',NULL,'App\\Models\\User',11,'2025-02-18 05:29:22','2025-02-18 05:29:22'),
+(43,'active',NULL,'App\\Models\\User',11,'2025-02-18 05:29:28','2025-02-18 05:29:28'),
+(44,'active',NULL,'App\\Models\\Business',3,'2025-02-18 05:29:28','2025-02-18 05:29:28'),
+(45,'pending',NULL,'App\\Models\\Task',1,'2025-02-19 21:41:39','2025-02-19 21:41:39'),
+(46,'pending',NULL,'App\\Models\\Task',1,'2025-02-19 21:44:35','2025-02-19 21:44:35'),
+(47,'pending',NULL,'App\\Models\\Task',2,'2025-02-19 21:47:52','2025-02-19 21:47:52'),
+(48,'in_progress','It\'s also more consistent with Laravel\'s collection-handling style. We chain it directly after the pluck.\r\n\r\nThis version is cleaner, more idiomatic Laravel, and achieves the same result.  It\'s a small change, but it improves readability and maintainability.','App\\Models\\Task',2,'2025-02-19 23:49:55','2025-02-19 23:49:55'),
+(49,'open',NULL,'App\\Models\\JobPost',4,'2025-02-21 04:09:58','2025-02-21 04:09:58'),
+(50,'pending',NULL,'App\\Models\\Task',3,'2025-02-21 08:29:15','2025-02-21 08:29:15');
 /*!40000 ALTER TABLE `statuses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2557,16 +2581,16 @@ DROP TABLE IF EXISTS `tasks`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `tasks` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `business_id` bigint(20) unsigned DEFAULT NULL,
   `title` varchar(255) NOT NULL,
   `slug` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `status` enum('pending','in_progress','completed') NOT NULL DEFAULT 'pending',
   `due_date` date DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `tasks_slug_unique` (`slug`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2575,6 +2599,9 @@ CREATE TABLE `tasks` (
 
 LOCK TABLES `tasks` WRITE;
 /*!40000 ALTER TABLE `tasks` DISABLE KEYS */;
+INSERT INTO `tasks` VALUES
+(2,1,'Bradley Walker','bradley-walker','What is Lorem Ipsum?\r\n\r\nLorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry\'s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.\r\nWhy do we use it?\r\n\r\nIt is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using \'Content here, content here\', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for \'lorem ipsum\' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).','2025-02-22','2025-02-19 21:47:52','2025-02-19 21:47:52'),
+(3,1,'Amanda Sawyer','amanda-sawyer','Laravel 11 provides a world best framework for building APIs, and Passport is a powerful package that adds OAuth2 authentication to Laravel applications. In this blog post, we will teach how to set up and configure Passport for API authentication step by step for apply seurity in laravel 11','2025-02-25','2025-02-21 08:29:15','2025-02-21 08:29:15');
 /*!40000 ALTER TABLE `tasks` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2604,7 +2631,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_email_unique` (`email`),
   UNIQUE KEY `users_phone_unique` (`phone`),
   UNIQUE KEY `users_social_id_unique` (`social_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2622,7 +2649,7 @@ INSERT INTO `users` VALUES
 (7,'John Michael Doe','johndoe@example.com','+254712345678','Kenya',NULL,NULL,NULL,NULL,NULL,'$2y$12$3dCTqMsvobRzriVumuDq1.neoOWf5TVSfr3R9YzlZ6SVyPnP0Pkru',NULL,'2025-02-11 00:32:30','2025-02-11 00:32:30'),
 (8,'Alice  ','alice@example.com','+254723456789','Kenya',NULL,NULL,NULL,NULL,NULL,'$2y$12$jDkc9j9eUSMv9um/RyJ9a.yM77pjpLOpH4tOFkbmzn4/GzPi.wcsW',NULL,'2025-02-11 00:33:38','2025-02-11 00:33:38'),
 (9,'Ben Shapiro','info@anzar.co.ke','+254711616012','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$04qhLAQBZHFazL7rcw2t9.lpDdx49d6WnFl3FT1oDzEm7IU8.bIFy',NULL,'2025-02-18 03:22:59','2025-02-18 03:22:59'),
-(10,'Tun Odhiambo Erick','erick@anzar.co.ke','+743048147','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$JyuDMhF0lkW1SEx2lgup5uN8DUuP2hedOzELJFM0Xa/QoybpBlswu',NULL,'2025-02-18 03:32:39','2025-02-18 03:32:39');
+(11,'Curran Logan','erick@anzar.co.ke','+254711616018','Kenya','254',NULL,NULL,NULL,NULL,'$2y$12$XTcyS30hLa2a5TS2zk66B.cfq5c7kil499V1Xzy3kaJ6yYkvD3hhi',NULL,'2025-02-18 05:28:51','2025-02-18 05:28:51');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -2635,4 +2662,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-02-18  6:37:18
+-- Dump completed on 2025-02-21 11:30:22

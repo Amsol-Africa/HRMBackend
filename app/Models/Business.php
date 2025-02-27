@@ -109,6 +109,10 @@ class Business extends Model implements HasMedia
     }
 
     //managed businesses
+    public function formulas()
+    {
+        return $this->hasMany(PayrollFormula::class, 'business_id');
+    }
     public function clients()
     {
         return $this->hasMany(Client::class, 'business_id');

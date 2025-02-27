@@ -69,6 +69,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('delete', [PayrollFormulaController::class, 'destroy'])->name('delete');
         Route::post('update', [PayrollFormulaController::class, 'update'])->name('update');
         Route::post('show', [PayrollFormulaController::class, 'show'])->name('show');
+        Route::post('create', [PayrollFormulaController::class, 'create'])->name('create');
     });
     //manage employees
     Route::name('employees.')->prefix('employees')->group(function () {

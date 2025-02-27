@@ -249,8 +249,6 @@ class DashboardController extends Controller
         $page = 'Payroll Formula';
         $description = '';
 
-        $deductions = [];
-
         // NHIF
         $deductions['nhif'] = PayrollFormula::where('slug', 'nhif')->with('brackets')->first();
 

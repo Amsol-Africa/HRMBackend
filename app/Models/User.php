@@ -80,4 +80,8 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     {
         return $this->hasManyThrough(Client::class,Business::class,'user_id','business_id','id','id');
     }
+    public function notificationPreference()
+    {
+        return $this->hasOne(NotificationPreference::class);
+    }
 }

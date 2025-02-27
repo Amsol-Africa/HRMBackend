@@ -2,13 +2,17 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\User;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Services\NotificationService;
 use App\Http\Requests\Auth\LoginRequest;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\SystemAlertNotification;
 use Illuminate\Validation\ValidationException;
 
 class AuthenticatedSessionController extends Controller
@@ -22,9 +26,9 @@ class AuthenticatedSessionController extends Controller
         return view('auth.login', compact('page', 'description'));
     }
 
-    public function store(LoginRequest $request)
+    public function store(LoginRequest $request, NotificationService $notificationService)
     {
-        return $this->handleTransaction(function () use ($request) {
+        return $this->handleTransaction(function () use ($request, $notificationService) {
             $credentials = $request->only('email', 'password');
             $remember = $request->boolean('remember');
 
@@ -32,6 +36,17 @@ class AuthenticatedSessionController extends Controller
 
                 $user = Auth::user();
                 $redirectUrl = $this->getRedirectUrlForRole($user);
+
+                $channels = $notificationService->filterChannelsByUserPreferences($user->id, ['mail', 'database', 'slack']);
+
+                $notificationService->sendNotification(
+                    $user,
+                    SystemAlertNotification::class,
+                    ['System maintenance scheduled.', ['details' => 'Server will be down for 2 hours.']],
+                    [],
+                    $channels
+                );
+
                 return RequestResponse::ok('Welcome back.', ['redirect_url' => $redirectUrl]);
             }
 
@@ -49,27 +64,27 @@ class AuthenticatedSessionController extends Controller
             $business = $user->business;
             session(['active_business_slug' => $business->slug]);
 
-            if($user->status === "setup") {
+            if ($user->status === "setup") {
                 return route('setup.business');
-            }elseif($user->status === "module") {
+            } elseif ($user->status === "module") {
                 return route('setup.modules');
             }
 
             return route('business.index', $business->slug);
 
-        } elseif($user->hasRole('business-hr')) {
+        } elseif ($user->hasRole('business-hr')) {
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
             return route('business.index', $business->slug);
 
-        } elseif($user->hasRole('business-finance')) {
+        } elseif ($user->hasRole('business-finance')) {
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);
             return route('business.index', $business->slug);
 
-        } elseif($user->hasRole('business-employee')) {
+        } elseif ($user->hasRole('business-employee')) {
 
             $business = $user->employee->business;
             session(['active_business_slug' => $business->slug]);

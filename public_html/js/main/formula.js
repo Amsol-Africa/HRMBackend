@@ -5,6 +5,16 @@ import PayrollFormulasService from "/js/client/PayrollFormulasService.js";
 const requestClient = new RequestClient();
 const payrollFormulasService = new PayrollFormulasService(requestClient);
 
+window.loadFormulas = async function () {
+    try {
+        let data = {};
+        const payrollFormulasForm = await payrollFormulasService.create(data);
+        $("#payrollformulasFormContainer").html(payrollFormulasForm)
+    } catch (error) {
+        console.error("Error loading user data:", error);
+    }
+};
+
 window.getPayrollFormulas = async function (formula = 'nhif') {
     try {
         let data = {formula:formula};
@@ -40,25 +50,9 @@ window.savePayrollFormula = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("payrollFormulasForm"));
+    const formID = btn.data('form');
 
-    const formulaType = document.getElementById('formula_type').value;
-
-    const brackets = document.querySelectorAll('[name^="brackets"]');
-    brackets.forEach(bracket => {
-        const rate = bracket.querySelector('[name$="[rate]"]');
-        const amount = bracket.querySelector('[name$="[amount]"]');
-
-        if (formulaType === 'amount') {
-            if (rate) {
-                formData.delete(rate.name);
-            }
-        } else {
-            if (amount) {
-                formData.delete(amount.name);
-            }
-        }
-    });
+    let formData = new FormData(document.getElementById(formID));
 
     try {
         if (formData.has('payroll_formula_slug')) {

@@ -13,6 +13,16 @@ class PayrollFormulasService {
         }
     }
 
+    async create(data) {
+        try {
+            const response = await this.requestClient.post('/payroll-formulas/create', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async show(data) {
         try {
             const response = await this.requestClient.post('/payroll-formulas/show', data);
