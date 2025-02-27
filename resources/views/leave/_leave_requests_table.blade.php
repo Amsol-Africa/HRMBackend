@@ -43,7 +43,7 @@
                             <a href="" class="btn btn-sm btn-primary">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            @if (is_null($request->approved_by))
+                            @if (is_null($request->approved_by) && auth()->user()->hasRole('admin'))
                                 <button type="button" onclick="approve(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-success">
                                     <i class="fas fa-check"></i> Approve
                                 </button>
