@@ -20,7 +20,7 @@
 
             <div class="form-group">
                 <x-input-label for="phone0" :value="__('Phone')" />
-                <input id="phone0" name="phone" type="text" class="phone-input-control" :value="old('name', $user->phone)" required autofocus autocomplete="phone" />
+                <input id="phone0" name="phone" type="text" class="phone-input-control" :value="old('phone', $user->phone)" required autofocus autocomplete="phone" />
                 <x-text-input id="code0" name="code" type="text" hidden :value="old('name', $user->code)" required autofocus autocomplete="code" />
                 <x-text-input id="country0" name="country" type="text" hidden :value="old('name', $user->country)" required autofocus autocomplete="country" />
             </div>

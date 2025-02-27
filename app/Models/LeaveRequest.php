@@ -28,7 +28,13 @@ class LeaveRequest extends Model
 
     protected $casts = [
         'half_day' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'total_days' => 'integer',
+        'approved_by' => 'integer',
+        'approved_at' => 'datetime',
     ];
+
 
     public function employee()
     {

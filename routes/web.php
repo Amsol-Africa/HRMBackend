@@ -134,7 +134,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
 
         // Profile Routes
-        Route::get('/profile', [EmployeeDashboardController::class, 'profile'])->name('profile');
+        Route::get('profile', [ProfileController::class, 'edit'])->name('profile');
 
         // Leave Management
         Route::prefix('leave')->name('leave.')->group(function () {
