@@ -3,7 +3,12 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Leave Requests</h5>
         <a href="" class="btn btn-primary btn-sm">
-            <i class="fa-solid fa-plus"></i> Create Leave Request
+            <i class="fa-solid fa-plus"></i>
+            @if (auth()->user()->hasRole('admin'))
+                Create Leave Request
+            @else
+                Request Leave
+            @endif
         </a>
     </div>
 
