@@ -112,7 +112,7 @@ class PayrollFormulaController extends Controller
         $validatedData = $request->validate([
             'payroll_formula_slug' => 'required|exists:payroll_formulas,slug',
             'name' => 'required|string|max:255',
-            'calculation_basis' => 'required|in:basic pay,gross pay,cash pay,taxable pay',
+            'calculation_basis' => 'required|in:basic_pay,gross_pay,cash_pay,taxable_pay',
             'is_progressive' => 'required|boolean',
             'minimum_amount' => 'nullable|numeric|min:0',
             'min.*' => 'required_if:is_progressive,1|numeric|min:0',

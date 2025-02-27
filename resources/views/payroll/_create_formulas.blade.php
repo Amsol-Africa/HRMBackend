@@ -24,10 +24,10 @@
                     <div class="form-group">
                         <label>Calculation Basis</label>
                         <select name="calculation_basis" class="form-select">
-                            <option value="basic pay" @if($formula->calculation_basis == 'basic pay') selected @endif>Basic Pay</option>
-                            <option value="gross pay" @if($formula->calculation_basis == 'gross pay') selected @endif>Gross Pay</option>
-                            <option value="cash pay" @if($formula->calculation_basis == 'cash pay') selected @endif>Cash Pay</option>
-                            <option value="taxable pay" @if($formula->calculation_basis == 'taxable pay') selected @endif>Taxable Pay</option>
+                            <option value="basic_pay" @if($formula->calculation_basis == 'basic_pay') selected @endif>Basic Pay</option>
+                            <option value="gross_pay" @if($formula->calculation_basis == 'gross_pay') selected @endif>Gross Pay</option>
+                            <option value="cash_pay" @if($formula->calculation_basis == 'cash_pay') selected @endif>Cash Pay</option>
+                            <option value="taxable_pay" @if($formula->calculation_basis == 'taxable_pay') selected @endif>Taxable Pay</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -89,10 +89,10 @@
                         <div class="form-group">
                             <label>Calculation Basis</label>
                             <select name="calculation_basis" class="form-select">
-                                <option value="basic pay">Basic Pay</option>
-                                <option value="gross pay">Gross Pay</option>
-                                <option value="cash pay">Cash Pay</option>
-                                <option value="taxable pay">Taxable Pay</option>
+                                <option value="basic_pay">Basic Pay</option>
+                                <option value="gross_pay">Gross Pay</option>
+                                <option value="cash_pay">Cash Pay</option>
+                                <option value="taxable_pay">Taxable Pay</option>
                             </select>
                         </div>
                         <div class="form-group">
