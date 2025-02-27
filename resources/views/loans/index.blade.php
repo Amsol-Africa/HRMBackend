@@ -4,6 +4,9 @@
 
         <div class="col-md-7">
             <div class="card">
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0" id="card-header">Create a new loan</h5>
+                </div>
                 <div class="card-body" id="loansFormContainer">
                     @include('loans._form')
                 </div>
@@ -15,7 +18,14 @@
 
         <div class="col-md-12">
             <div class="card">
-                <div class="card-body" id="loansContainer"> {{ loader() }} </div>
+                <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Loans</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="table-responsive" id="loansContainer">
+                        <div class="text-center py-4">{{ loader() }}</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -28,7 +38,6 @@
                 getLoans()
             })
         </script>
-
     @endpush
 
 </x-app-layout>

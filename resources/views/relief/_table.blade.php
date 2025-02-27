@@ -1,4 +1,4 @@
-<table class="table table-striped table-bordered" id=reliefsTable">
+<table class="table table-striped table-bordered" id="reliefsTable">
     <thead>
         <tr>
             <th>#</th>
@@ -21,8 +21,10 @@
                 <td>{{ $relief->is_mandatory ? 'Yes' : 'No' }}</td>
                 <td>
                     <a href="" class="btn btn-primary btn-sm"> <i class="bi bi-pencil-square"></i> Edit</a>
-                    <button type="button"  class="btn btn-danger btn-sm" data-relief="{{ $relief->slug }}" onclick="deleteRelief(this)""> <i class="bi bi-trash"></i> Delete</button>
-                    <button type="button" class="btn btn-success btn-sm" data-relief="{{ $relief->slug }}" onclick="showRelief(this)" class="view-btn"> <i class="bi bi-view-list"></i> View</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-relief="{{ $relief->slug }}"
+                        onclick="deleteRelief(this)""> <i class="bi bi-trash"></i> Delete</button>
+                    <button type="button" class="btn btn-success btn-sm" data-relief="{{ $relief->slug }}"
+                        onclick="showRelief(this)" class="view-btn"> <i class="bi bi-view-list"></i> View</button>
                 </td>
             </tr>
         @endforeach
