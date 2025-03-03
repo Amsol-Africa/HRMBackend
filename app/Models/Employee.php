@@ -155,6 +155,11 @@ class Employee extends Model implements HasMedia
         return $this->hasMany(Advance::class);
     }
 
+    public function overtimes()
+    {
+        return $this->hasMany(Overtime::class);
+    }
+
     public function loans()
     {
         return $this->hasMany(Loan::class);

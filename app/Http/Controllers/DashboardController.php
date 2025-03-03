@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\JobPost;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Module;
+use App\Models\JobPost;
 use App\Models\Payroll;
 use App\Models\Business;
+use App\Models\Employee;
 use App\Models\Industry;
 use App\Models\Applicant;
+use App\Models\Deduction;
 use App\Models\Department;
 use App\Models\JobCategory;
-use App\Models\Employee;
 use Illuminate\Http\Request;
 use App\Models\PayrollFormula;
 use Spatie\Permission\Models\Role;
@@ -282,11 +283,17 @@ class DashboardController extends Controller
         return view('relief.create', compact('page', 'description'));
     }
 
-    public function deductions(Request $request)
+    public function payrollDeductions(Request $request)
     {
         $page = 'Payroll Deductions';
         $description = '';
-        return view('deductions.index', compact('page', 'description'));
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        // Fetch system-wide deductions
+        $deductions = Deduction::all();
+        $employees = $business->employees;
+        $locations = $business->locations;
+        return view('payroll.employee-deductions', compact('page', 'description', 'deductions', 'employees', 'locations'));
     }
 
     public function createDeductions(Request $request)

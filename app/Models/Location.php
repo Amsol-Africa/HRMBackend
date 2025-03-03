@@ -40,6 +40,10 @@ class Location extends Model
     {
         return $this->hasMany(Department::class);
     }
+    public function employeeDeductions()
+    {
+        return $this->hasManyThrough(EmployeeDeduction::class, Employee::class, 'location_id', 'employee_id', 'id', 'id');
+    }
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');

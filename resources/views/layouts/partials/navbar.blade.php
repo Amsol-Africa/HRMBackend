@@ -179,15 +179,14 @@
 
             <!-- Payroll Settings Management Dropdown -->
             <li
-                class="slide has-sub {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active open' : '' }}">
+                class="slide has-sub {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active open' : '' }}">
                 <a href="javascript:void(0);"
-                    class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
+                    class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
                     <i class="fa-solid fa-angle-down side-menu__angle"></i>
                     <div class="side-menu__icon"><i class="fa-solid fa-sack-dollar"></i></div>
                     <span class="sidebar__menu-label">Payroll Settings</span>
                 </a>
-                <ul
-                    class="sidebar-menu child1 {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.deductions.*') ? 'active' : '' }}">
+                <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
                     <li
                         class="slide {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
                         <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}"
@@ -201,10 +200,10 @@
                             Relief
                         </a>
                     </li>
-                    <li class="slide {{ request()->routeIs('business.deductions.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.deductions.index') ? 'active' : '' }}"
-                            href="{{ route('business.deductions.index', $currentBusiness->slug) }}">
-                            Deductions
+                    <li class="slide {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}"
+                            href="{{ route('business.payroll.deductions', $currentBusiness->slug) }}">
+                            Deduction Adjustments
                         </a>
                     </li>
                     <li class="slide {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}">

@@ -17,6 +17,8 @@ return new class extends Migration {
             $table->foreignIdFor(Employee::class);
             $table->foreignIdFor(Deduction::class);
             $table->decimal('amount', 15, 2);
+            $table->date('date');
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
     }

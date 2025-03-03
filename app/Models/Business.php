@@ -151,5 +151,13 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(Task::class);
     }
+    public function deductions()
+    {
+        return $this->hasMany(Deduction::class);
+    }
+    public function employeeDeductions()
+    {
+        return $this->hasManyThrough(EmployeeDeduction::class, Employee::class, 'business_id', 'employee_id', 'id', 'id');
+    }
 
 }

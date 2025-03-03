@@ -13,6 +13,7 @@ class Overtime extends Model
     protected $fillable = [
         'employee_id',
         'business_id',
+        'location_id',
         'date',
         'overtime_hours',
         'rate',
@@ -40,5 +41,9 @@ class Overtime extends Model
     public function business()
     {
         return $this->belongsTo(Business::class);
+    }
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }

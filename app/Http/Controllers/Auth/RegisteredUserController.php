@@ -91,7 +91,7 @@ class RegisteredUserController extends Controller
             Auth::login($user);
 
             $redirect_url = route('setup.business');
-            $redirectUrl = $this->getRedirectUrlForRole($user);
+            $redirect_url = $this->getRedirectUrlForRole($user);
 
             return RequestResponse::created('Account created successfully.', ['redirect_url' => $redirect_url]);
         });

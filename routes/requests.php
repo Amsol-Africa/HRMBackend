@@ -1,22 +1,24 @@
 <?php
 
-use App\Http\Controllers\AttendanceController;
-use App\Http\Controllers\OvertimeController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ReliefController;
 use App\Http\Controllers\AdvanceController;
 use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\ApplicantController;
+use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\JobCategoryController;
@@ -25,7 +27,7 @@ use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveTypeListController;
 use App\Http\Controllers\PayrollFormulaController;
 use App\Http\Controllers\LeaveEntitlementController;
-use App\Http\Controllers\TaskController;
+use App\Http\Controllers\EmployeeDeductionController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -70,6 +72,25 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [PayrollFormulaController::class, 'update'])->name('update');
         Route::post('show', [PayrollFormulaController::class, 'show'])->name('show');
         Route::post('create', [PayrollFormulaController::class, 'create'])->name('create');
+    });
+    //manage deductions
+    Route::name('deductions.')->prefix('deductions')->group(function () {
+        Route::post('edit', [DeductionController::class, 'edit'])->name('edit');
+        Route::post('store', [DeductionController::class, 'store'])->name('store');
+        Route::post('fetch', [DeductionController::class, 'fetch'])->name('fetch');
+        Route::post('delete', [DeductionController::class, 'destroy'])->name('delete');
+        Route::post('update', [DeductionController::class, 'update'])->name('update');
+        Route::post('show', [DeductionController::class, 'show'])->name('show');
+    });
+    //manage empliyee deductions
+    Route::name('employee-deductions.')->prefix('employee-deductions')->group(function () {
+        Route::post('create', [EmployeeDeductionController::class, 'create'])->name('create');
+        Route::post('edit', [EmployeeDeductionController::class, 'edit'])->name('edit');
+        Route::post('store', [EmployeeDeductionController::class, 'store'])->name('store');
+        Route::post('fetch', [EmployeeDeductionController::class, 'fetch'])->name('fetch');
+        Route::post('delete', [EmployeeDeductionController::class, 'destroy'])->name('delete');
+        Route::post('update', [EmployeeDeductionController::class, 'update'])->name('update');
+        Route::post('show', [EmployeeDeductionController::class, 'show'])->name('show');
     });
     //manage employees
     Route::name('employees.')->prefix('employees')->group(function () {

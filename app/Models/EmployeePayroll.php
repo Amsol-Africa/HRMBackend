@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class EmployeePayroll extends Model
+class EmployeePayroll extends Model //problem with this model methods
 {
     protected $fillable = [
         'payroll_id',
@@ -15,15 +15,16 @@ class EmployeePayroll extends Model
         'overtime',
         'nhif',
         'nssf',
+        'paye',
         'housing_levy',
         'taxable_income',
-        'paye',
         'personal_relief',
         'pay_after_tax',
         'loan_repayment',
         'advance_recovery',
         'deductions_after_tax',
-        'net_pay'
+        'net_pay',
+        'deductions' //json for all deductions - backup
     ];
 
     public function payroll()

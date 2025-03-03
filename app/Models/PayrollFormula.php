@@ -34,7 +34,7 @@ class PayrollFormula extends Model
 
     public function getSlugOptions(): SlugOptions
     {
-        return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
+        return SlugOptions::create()->generateSlugsFrom(fieldName: 'name')->saveSlugsTo('slug');
     }
     public static function calculateForBusiness($formulaName, $amount, $business_id = null)
     {
@@ -94,7 +94,7 @@ class PayrollFormula extends Model
         $formula = self::where('slug', $slug)->first();
 
         if (!$formula) {
-            throw new \Exception("Payroll formula '{$slug}' not found.");
+            throw new Exception("Payroll formula '{$slug}' not found.");
         }
 
         return $formula->minimum_amount;

@@ -34,6 +34,8 @@ class AuthenticatedSessionController extends Controller
 
             if (Auth::attempt($credentials, $remember)) {
 
+                $request->session()->regenerate();
+
                 $user = Auth::user();
                 $redirectUrl = $this->getRedirectUrlForRole($user);
 

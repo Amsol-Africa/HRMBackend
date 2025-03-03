@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
@@ -50,12 +49,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payroll/process', [DashboardController::class, 'processPayrolls'])->name('payroll.process');
         Route::get('/payrolls', [DashboardController::class, 'payrolls'])->name('payroll.index');
         Route::get('/payrolls/payslips/{payroll?}', [DashboardController::class, 'payslips'])->name('payroll.payslips');
+        Route::get('/payrolls/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
 
         Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
         Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');
 
-        Route::get('/deductions', [DashboardController::class, 'deductions'])->name('deductions.index');
-        Route::get('/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
 
         Route::get('/allowances', [DashboardController::class, 'allowances'])->name('allowances.index');
         Route::get('/allowances/create', [DashboardController::class, 'createAllowances'])->name('allowances.create');
