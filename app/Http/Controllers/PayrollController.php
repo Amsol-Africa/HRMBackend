@@ -88,6 +88,12 @@ class PayrollController extends Controller
     public function showSlip(Request $request)
     {
         $payslip = EmployeePayroll::findOrFail($request->payslip);
+        Log::debug($payslip);
+        Log::debug($payslip->deductions);
+
+        // Decode the deductions JSON string into a PHP array
+        $payslip->deductions = json_decode($payslip->deductions, true);
+
         $payslipData = view('payroll._payslip_details', compact('payslip'))->render();
         return RequestResponse::ok('Payslip retrieved successfully.', $payslipData);
     }

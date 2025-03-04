@@ -21,13 +21,33 @@ class PayrollService
             $grossPay = $this->calculateGrossPay($employee, $overtimePay);
             $taxableIncome = $this->calculateTaxableIncome($employee, $grossPay);
             $deductions = $this->calculateDeductions($employee, $business_id, $taxableIncome, $grossPay);
-            $payeData = $this->calculatePayeData($employee, $grossPay, $deductions);
-            $payAfterTax = $payeData['payAfterTax'];
-            $personalRelief = $payeData['personalRelief'];
+            $payData = $this->calculatePayData($employee, $grossPay, $deductions);
+            $payAfterTax = $payData['payAfterTax'];
+            $personalRelief = $payData['personalRelief'];
+            $totalDeductions = $payData['totalDeductions'];
             $otherDeductions = $this->calculateOtherDeductions($employee);
-            $netPay = $this->calculateNetPay($employee, $payAfterTax, $otherDeductions);
+            $totalOtherDeductions = array_sum(array_column($otherDeductions, 'amount'));
+            Log::debug($payAfterTax);
+            Log::debug($totalDeductions);
+            Log::debug($totalOtherDeductions);
+            $netPay = $this->calculateNetPay($employee, $payAfterTax, $totalOtherDeductions);
 
-            $this->storePayrollData($employee, $payroll_id, $grossPay, $taxableIncome, $payAfterTax, $otherDeductions, $netPay, $deductions, $overtimePay, $deductions['nhif'], $deductions['nssf'], $deductions['housing-levy'], $deductions['paye'], $personalRelief);
+            $this->storePayrollData(
+                $employee,
+                $payroll_id,
+                $grossPay,
+                $taxableIncome,
+                $payAfterTax,
+                $totalOtherDeductions,
+                $netPay,
+                $otherDeductions,
+                $overtimePay,
+                $deductions['nhif'],
+                $deductions['nssf'],
+                $deductions['housing-levy'],
+                $deductions['paye'],
+                $personalRelief
+            );
 
             return array_merge([
                 'gross_pay' => $grossPay,
@@ -75,42 +95,57 @@ class PayrollService
         return $deductions;
     }
 
-    private function calculatePayeData(Employee $employee, float $grossPay, array $deductions): array
+    private function calculatePayData(Employee $employee, float $grossPay, array $deductions): array
     {
-        $payeFormula = PayrollFormula::where('business_id', $employee->business_id)
-            ->orWhereNull('business_id')
-            ->where('name', 'LIKE', '%PAYE%')
-            ->first();
+        // Sum all statutory deductions
+        $totalDeductions = array_sum($deductions);
+        $payAfterTax = $grossPay - $totalDeductions;
 
-        $payeSlug = $payeFormula ? $payeFormula->slug : null;
-        $payeAmount = $deductions[$payeSlug] ?? 0;
-        $payAfterTax = $grossPay - $payeAmount;
+        $payAfterTax = max(0, $payAfterTax);
 
         $personalRelief = PayrollFormula::getFixedAmount('personal-relief');
-        $payAfterTax = max(0, $payAfterTax);
 
         foreach ($employee->reliefs as $relief) {
             if ($relief->tax_application === 'after_tax') {
                 $payAfterTax += $relief->pivot->amount ?? 0;
             }
         }
-        return ['payAfterTax' => $payAfterTax, 'personalRelief' => $personalRelief];
+
+        return [
+            'payAfterTax' => $payAfterTax,
+            'personalRelief' => $personalRelief,
+            'totalDeductions' => $totalDeductions,
+        ];
     }
 
-    private function calculateOtherDeductions(Employee $employee): float
+    private function calculateOtherDeductions(Employee $employee): array
     {
-        $otherDeductions = 0;
+        $otherDeductions = [];
+
+        // Employee Deductions
         foreach ($employee->deductions as $deduction) {
-            $otherDeductions += $deduction->amount ?? 0;
+            $otherDeductions[] = [
+                'type' => 'Employee Deduction',
+                'name' => $deduction->deduction->name,
+                'amount' => $deduction->amount,
+                'notes' => $deduction->notes,
+            ];
         }
-        $otherDeductions += $this->processLoans($employee);
-        $otherDeductions += $this->processAdvances($employee);
+
+        // Loans
+        $loanDetails = $this->processLoans($employee);
+        $otherDeductions = array_merge($otherDeductions, $loanDetails);
+
+        // Advances
+        $advanceDetails = $this->processAdvances($employee);
+        $otherDeductions = array_merge($otherDeductions, $advanceDetails);
+
         return $otherDeductions;
     }
 
-    private function processLoans(Employee $employee): float
+    private function processLoans(Employee $employee): array
     {
-        $loanDeductions = 0;
+        $loanDeductions = [];
         $activeLoans = $employee->loans()->whereHas('statuses', function ($query) {
             $query->where('name', 'active');
         })->get();
@@ -120,7 +155,6 @@ class PayrollService
             $repaidAmount = $loan->repayments()->sum('amount_paid');
             $remainingBalance = $loan->amount - $repaidAmount;
             $deductionAmount = min($monthlyInstallment, $remainingBalance);
-            $loanDeductions += $deductionAmount;
 
             if ($deductionAmount > 0) {
                 LoanRepayment::create([
@@ -129,6 +163,13 @@ class PayrollService
                     'amount_paid' => $deductionAmount,
                     'notes' => "Automated payroll deduction",
                 ]);
+
+                $loanDeductions[] = [
+                    'type' => 'Loan Repayment',
+                    'name' => $loan->name,
+                    'amount' => $deductionAmount,
+                    'loan_id' => $loan->id,
+                ];
             }
 
             if ($repaidAmount + $deductionAmount >= $loan->amount) {
@@ -138,19 +179,23 @@ class PayrollService
         return $loanDeductions;
     }
 
-    private function processAdvances(Employee $employee): float
+    private function processAdvances(Employee $employee): array
     {
-        $advanceDeductions = $employee->advances()->whereHas('statuses', function ($query) {
+        $advanceDeductions = [];
+        $advances = $employee->advances()->whereHas('statuses', function ($query) {
             $query->where('name', 'unpaid');
-        })->sum('amount');
+        })->get();
 
-        if ($advanceDeductions > 0) {
-            $employee->advances()->whereHas('statuses', function ($query) {
-                $query->where('name', 'unpaid');
-            })->each(function ($advance) {
-                $advance->setStatus('paid');
-            });
+        foreach ($advances as $advance) {
+            $advanceDeductions[] = [
+                'type' => 'Advance Payment',
+                'name' => 'Advance',
+                'amount' => $advance->amount,
+                'advance_id' => $advance->id,
+            ];
+            $advance->setStatus('paid');
         }
+
         return $advanceDeductions;
     }
 

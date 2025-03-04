@@ -1,6 +1,6 @@
 <div class="payslip-container" style="margin: 0 auto; border: 1px solid #000; font-family: Arial, sans-serif; max-width: 300px; font-size: 12px;">
     <div class="payslip-header text-center" style="border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px;">
-        <h4 style="margin: 0; font-size: 14px;">{{ $payslip->employee->business->company_name }}</h4>
+        <h4 style="margin: 0; font-size: 14px; ">{{ $payslip->employee->business->company_name }}</h4>
         <h6 style="color: red; margin: 5px 0; font-size: 12px;">Pay-Slip ({{ \Carbon\Carbon::parse($payslip->end_date)->format('F Y') }})</h6>
         <small style="font-size: 10px;">Ref: {{ date('YmdHis') }}</small>
     </div>
@@ -29,14 +29,25 @@
         <p style="margin: 0; font-size: 10px;">PAYE: -{{ number_format($payslip->paye, 2) }}</p>
         <p style="margin: 0; font-size: 10px;">NHIF Contribution: -{{ number_format($payslip->nhif, 2) }}</p>
         <p style="margin: 0; font-size: 10px;">NSSF Contribution: -{{ number_format($payslip->nssf, 2) }}</p>
-        <p style="margin: 0; font-size: 10px;">Other Deductions: -{{ number_format($payslip->other_deductions, 2) }}</p>
+
+        @php
+        $totalDeductions = $payslip->paye + $payslip->nhif + $payslip->nssf; // Initialize with PAYE, NHIF, NSSF
+        @endphp
+
+        @if($payslip->deductions)
+            @foreach($payslip->deductions as $deduction)
+                <p style="margin: 0; font-size: 10px;">{{ $deduction['name'] }}: -{{ number_format($deduction['amount'], 2) }}</p>
+                @php $totalDeductions += $deduction['amount']; @endphp
+            @endforeach
+        @endif
+
+        <p style="margin: 0; font-size: 10px; font-weight: bold;">Total Deductions: -{{ number_format($totalDeductions, 2) }}</p>
     </div>
 
     <div class="section">
         <h6 style="margin-bottom: 5px; font-size: 12px;">Tax & Reliefs</h6>
         <p style="margin: 0; font-size: 10px;">Taxable Income: {{ number_format($payslip->taxable_income, 2) }}</p>
-        <p style="margin: 0; font-size: 10px;">Tax Relief: {{ number_format($payslip->tax_relief, 2) }}</p>
-        <p style="margin: 0; font-size: 10px;">Final PAYE Tax: {{ number_format($payslip->paye, 2) }}</p>
+        <p style="margin: 0; font-size: 10px;">Tax Relief: {{ number_format($payslip->personal_relief, 2) }}</p>
     </div>
 
     <div class="section">
