@@ -43,4 +43,10 @@ class Payroll extends Model
     {
         return $this->employeePayrolls;
     }
+    public function getPayrollNameAttribute()
+    {
+        $monthName = date('M', mktime(0, 0, 0, $this->payrun_month, 1));
+        return "Payroll - {$monthName} / {$this->payrun_year}";
+    }
+
 }

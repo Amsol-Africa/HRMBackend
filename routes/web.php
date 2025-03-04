@@ -50,6 +50,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payrolls', [DashboardController::class, 'payrolls'])->name('payroll.index');
         Route::get('/payrolls/payslips/{payroll?}', [DashboardController::class, 'payslips'])->name('payroll.payslips');
         Route::get('/payrolls/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
+        Route::get('/payrolls/downloads', [DashboardController::class, 'downloads'])->name('payroll.downloads');
 
         Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
         Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');

@@ -12,29 +12,35 @@ window.getPayrolls = async function (page = 1, location = null) {
         $("#payrollsContainer").html(payrollTable);
 
         const exportTitle = `Payrolls Report - ${location ? location : 'All'}`;
-        const exportButtons = ['copy', 'csv', 'excel', 'pdf', 'print'].map(type => ({
-            extend: type,
-            text: `<i class="fa fa-${type === 'copy' ? 'copy' : type}"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            className: `btn btn-${type}`,
-            title: exportTitle,
-            exportOptions: { columns: ':not(:last-child)' }
-        }));
 
-        exportButtons.push({
-            text: '<i class="fa fa-envelope"></i> Email',
-            className: 'btn btn-warning',
-            action: function () { sendEmailReport("Payrolls", window.getSelectedPayrollIds()); }
-        });
-
-        exportButtons.push({
-            text: '<i class="fa fa-trash"></i> Delete Selected',
-            className: 'btn btn-danger',
-            action: function () { deleteSelectedRecords("Payroll", window.getSelectedPayrollIds(), getPayrolls); }
-        });
+        const exportButtons = [
+            {
+                extend: 'collection',
+                text: '<i class="fa fa-download"></i> Export',
+                className: 'btn btn-success',
+                buttons: [
+                    { extend: 'copy', text: '<i class="fa fa-copy"></i> Copy', className: 'btn btn-light', title: exportTitle, exportOptions: { columns: ':not(:last-child)' } },
+                    { extend: 'csv', text: '<i class="fa fa-file-csv"></i> CSV', className: 'btn btn-light', title: exportTitle, exportOptions: { columns: ':not(:last-child)' } },
+                    { extend: 'excel', text: '<i class="fa fa-file-excel"></i> Excel', className: 'btn btn-light', title: exportTitle, exportOptions: { columns: ':not(:last-child)' } },
+                    { extend: 'pdf', text: '<i class="fa fa-file-pdf"></i> PDF', className: 'btn btn-light', title: exportTitle, exportOptions: { columns: ':not(:last-child)' } },
+                    { extend: 'print', text: '<i class="fa fa-print"></i> Print', className: 'btn btn-light', title: exportTitle, exportOptions: { columns: ':not(:last-child)' } }
+                ]
+            },
+            {
+                text: '<i class="fa fa-envelope"></i> Email',
+                className: 'btn btn-warning',
+                action: function () { sendEmailReport("Payrolls", window.getSelectedPayrollIds()); }
+            },
+            {
+                text: '<i class="fa fa-trash"></i> Delete',
+                className: 'btn btn-danger',
+                action: function () { deleteSelectedRecords("Payroll", window.getSelectedPayrollIds(), getPayrolls); }
+            }
+        ];
 
         const table = new DataTable('#payrollTable', {
-            dom: '<"top"lBf>rt<"bottom"ip>',
-            order: [[1, 'desc'], [0, 'desc']], // Sort by year then month
+            dom: 'Bfrtip',
+            order: [[1, 'desc'], [0, 'desc']],
             lengthMenu: [[5, 10, 20, 50, 100], [5, 10, 20, 50, 100]],
             pageLength: 10,
             buttons: exportButtons
@@ -62,7 +68,6 @@ window.getPayrolls = async function (page = 1, location = null) {
     }
 };
 
-
 window.getPayslips = async function (page = 1, payroll = null) {
     try {
         let data = { page: page, payroll: payroll };
@@ -74,7 +79,7 @@ window.getPayslips = async function (page = 1, payroll = null) {
         $("#payslipsContainer").html(payslipsTable);
 
         const exportTitle = `Payslips Report - ${payroll ? payroll : 'All'}`;
-        const exportButtons = ['copy', 'csv', 'excel', 'pdf', 'print'].map(type => ({
+        const exportButtons = ['csv', 'excel', 'pdf', 'print'].map(type => ({
             extend: type,
             text: `<i class="fa fa-${type === 'copy' ? 'copy' : type}"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}`,
             className: `btn btn-${type}`,
@@ -89,15 +94,17 @@ window.getPayslips = async function (page = 1, payroll = null) {
         });
 
         exportButtons.push({
-            text: '<i class="fa fa-trash"></i> Delete Selected',
+            text: '<i class="fa fa-trash"></i> Delete',
             className: 'btn btn-danger',
             action: function () { deleteSelectedRecords("Payslip", window.getSelectedIds(), getPayslips); }
         });
 
         const table = new DataTable('#payslipsTable', {
-            dom: '<"top"lBf>rt<"bottom"ip>',
+            dom: "<'row'<'col-md-4 text-center'B><'col-md-4'><'col-md-4 text-end'f>>" +
+                 "<'row'<'col-md-12'tr>>" +
+                 "<'row'<'col-md-5'i><'col-md-7'p>>",
             order: [[3, 'desc']],
-            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
+            lengthMenu: [[5, 10, 20, 50, 100], [5, 10, 20, 50, 100]],
             pageLength: 10,
             buttons: exportButtons
         });
@@ -176,6 +183,7 @@ window.processPayroll = async function (btn) {
         btn_loader(btn, false);
     }
 };
+
 window.editPayroll = async function (btn) {
     btn = $(btn);
 
@@ -188,6 +196,7 @@ window.editPayroll = async function (btn) {
     } finally {
     }
 };
+
 window.deletePayroll = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -216,6 +225,7 @@ window.deletePayroll = async function (btn) {
         }
     });
 };
+
 window.viewPayslipDetails = async function (btn) {
     btn = $(btn);
 
@@ -229,6 +239,7 @@ window.viewPayslipDetails = async function (btn) {
     } finally {
     }
 };
+
 window.printPayslip = async function () {
     var printContents = document.querySelector('.payslip-container').innerHTML;
     var originalContents = document.body.innerHTML;

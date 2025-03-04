@@ -129,15 +129,15 @@
 
                 <!-- Payroll Management Dropdown -->
                 <li
-                    class="slide has-sub {{ request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.advances.index') || request()->routeIs('business.loans.index') || request()->routeIs('business.payroll.index') || request()->routeIs('business.payroll.payslips') ? 'active open' : '' }}">
+                    class="slide has-sub {{ request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.advances.index') || request()->routeIs('business.loans.index') || request()->routeIs('business.payroll.index') || request()->routeIs('business.payroll.downloads') ? 'active open' : '' }}">
                     <a href="javascript:void(0);"
-                        class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
+                        class="sidebar__menu-item {{ request()->routeIs('business.payroll.downloads') || request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
                         <i class="fa-solid fa-angle-down side-menu__angle"></i>
                         <div class="side-menu__icon"><i class="fa-solid fa-folder-open"></i></div>
                         <span class="sidebar__menu-label">Payrolls</span>
                     </a>
 
-                    <ul class="sidebar-menu child1">
+                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.downloads') || request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
                         <li class="slide {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}"
                                 href="{{ route('business.payroll.process', $currentBusiness->slug) }}">
@@ -150,12 +150,12 @@
                                 Past Payrolls
                             </a>
                         </li>
-                        {{-- <li class="slide">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.payslips') ? 'active' : '' }}"
-                        href="{{ route('business.payroll.payslips', $currentBusiness->slug) }}">
-                        Payslips
-                        </a>
-                        </li> --}}
+                        <li class="slide">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.downloads') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.downloads', $currentBusiness->slug) }}">
+                                Payroll Downloads
+                            </a>
+                        </li>
                         <li class="slide">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.advances.index') ? 'active' : '' }}"
                                 href="{{ route('business.advances.index', $currentBusiness->slug) }}">

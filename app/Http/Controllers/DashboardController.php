@@ -269,6 +269,15 @@ class DashboardController extends Controller
     }
 
 
+    public function downloads(Request $request)
+    {
+        $page = 'Downloads';
+        $description = '';
+        $business = Business::findBySlug(session('active_business_slug'));
+        $locations = $business->locations;
+        $payrolls = $business->payrolls()->latest()->get();
+        return view('downloads.index', compact('page', 'description', 'payrolls', 'locations'));
+    }
     public function relief(Request $request)
     {
         $page = 'Reliefs';
