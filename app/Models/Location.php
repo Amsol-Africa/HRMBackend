@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Spatie\ModelStatus\HasStatuses;
+use App\Traits\LogsActivity;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Location extends Model
 {
-    use HasFactory, HasSlug, HasStatuses;
+    use HasFactory, HasSlug, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'business_id',

@@ -24,81 +24,91 @@ class DashboardController extends Controller
     function index(Request $request)
     {
 
-        $cards =
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        $business_employees = $business->employees->count();
+        $on_leave_employees = $business->employees()->onLeave()->count();
+        $locations = $business->locations()->count();
+        $clients = $business->managedBusinesses()->count();
+        $active_loans_count = $business->activeLoanCount();
+        $pending_leave_requests = $business->leaveRequestsByStatus('pending')->count();
+        $active_advances = $business->advancesByStatus('approved')->count();
+        $employee_turnover = $business->employeesByStatus('resigned')->count();
+
+        $cards = [
             [
-                [
-                    'title' => 'Total Employees',
-                    'icon' => 'fa-sharp fa-solid fa-user',
-                    'value' => 313,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+10%',
-                    'time_period' => 'Year',
-                ],
-                [
-                    'title' => 'On Leave Employees',
-                    'icon' => 'fa-sharp fa-solid fa-user-group',
-                    'value' => 55,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+2.15%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Total Projects',
-                    'icon' => 'fa-sharp fa-solid fa-gear',
-                    'value' => 313,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+5.15%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Complete Projects',
-                    'icon' => 'fa-light fa-badge-check',
-                    'value' => 150,
-                    'trend_class' => 'price-decrease',
-                    'trend_icon' => 'fa-arrow-down',
-                    'trend_value' => '+5.5%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Total Clients',
-                    'icon' => 'fa-sharp fa-solid fa-users',
-                    'value' => 151,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+2.15%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Total Revenues',
-                    'icon' => 'fa-solid fa-arrow-up-right-dots',
-                    'value' => '$55',
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+2.15%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Total Jobs',
-                    'icon' => 'fa-sharp fa-light fa-suitcase',
-                    'value' => 55,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+2.15%',
-                    'time_period' => 'Month',
-                ],
-                [
-                    'title' => 'Total Tickets',
-                    'icon' => 'fa-solid fa-ticket',
-                    'value' => 55,
-                    'trend_class' => 'price-increase',
-                    'trend_icon' => 'fa-arrow-up',
-                    'trend_value' => '+2.15%',
-                    'time_period' => 'Month',
-                ],
-            ];
+                'title' => 'Business Employees',
+                'icon' => 'fa-solid fa-users', // or fa-solid fa-user-tie
+                'value' => number_format($business_employees),
+                'trend_class' => 'text-success', // Green
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+10%',
+                'time_period' => 'Year',
+            ],
+            [
+                'title' => 'On Leave Employees',
+                'icon' => 'fa-solid fa-user-slash', // or fa-solid fa-bed
+                'value' => number_format($on_leave_employees),
+                'trend_class' => 'text-danger', // Red
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+2.15%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Locations',
+                'icon' => 'fa-solid fa-location-dot',
+                'value' => number_format($locations),
+                'trend_class' => 'text-success',
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+5.15%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Total Clients',
+                'icon' => 'fa-solid fa-users-gear', // or fa-solid fa-user-group
+                'value' => number_format($clients),
+                'trend_class' => 'text-success',
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+2.15%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Active Loans',
+                'icon' => 'fa-solid fa-hand-holding-dollar', // or fa-solid fa-money-bill-transfer
+                'value' => number_format($active_loans_count),
+                'trend_class' => 'text-danger',
+                'trend_icon' => 'fa-solid fa-arrow-down',
+                'trend_value' => '-5.5%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Active Advances',
+                'icon' => 'fa-solid fa-arrow-trend-up', // or fa-solid fa-coins
+                'value' => number_format($active_advances),
+                'trend_class' => 'text-success',
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+2.15%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Leave Requests',
+                'icon' => 'fa-solid fa-calendar-plus', // or fa-solid fa-file-pen
+                'value' => number_format($pending_leave_requests),
+                'trend_class' => 'text-success',
+                'trend_icon' => 'fa-solid fa-arrow-up',
+                'trend_value' => '+2.15%',
+                'time_period' => 'Month',
+            ],
+            [
+                'title' => 'Employee Turnover',
+                'icon' => 'fa-solid fa-right-left', // or fa-solid fa-user-minus
+                'value' => number_format($employee_turnover),
+                'trend_class' => 'text-danger',
+                'trend_icon' => 'fa-solid fa-arrow-down',
+                'trend_value' => '-3%',
+                'time_period' => 'Year',
+            ],
+        ];
 
         return view('business.index', compact('cards'));
     }

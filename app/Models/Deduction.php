@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Spatie\ModelStatus\HasStatuses;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Deduction extends Model
 {
-    use HasFactory, HasStatuses, HasSlug;
+    use HasFactory, HasStatuses, HasSlug, LogsActivity;
 
     protected $fillable = [
         'business_id',

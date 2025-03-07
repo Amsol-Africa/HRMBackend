@@ -43,7 +43,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" type="button" onclick="login(this)"> <i class="bi bi-check-circle"></i> Login</button>
+                        <button class="btn btn-primary w-100" type="button" onclick="login(this)"> <i class="bi bi-check-circle me-1"></i> Login</button>
                     </div>
                 </form>
 

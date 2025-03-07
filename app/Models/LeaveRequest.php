@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\ModelStatus\HasStatuses;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class LeaveRequest extends Model
 {
@@ -54,6 +54,15 @@ class LeaveRequest extends Model
     public function approvedBy()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function scopeCurrentStatus($query, $statusName)
+    {
+        return $query->whereHas('statuses', function ($statusQuery) use ($statusName) {
+            $statusQuery->where('name', $statusName)
+                ->orderByDesc('created_at')
+                ->limit(1);
+        });
     }
 
     public static function generateUniqueReferenceNumber($businessId)

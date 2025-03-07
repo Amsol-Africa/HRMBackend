@@ -2,20 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Client;
+use App\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Support\Facades\File;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
-    use HasFactory, Notifiable, HasRoles, InteractsWithMedia, HasStatuses;
+    use HasFactory, Notifiable, HasRoles, InteractsWithMedia, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'name',

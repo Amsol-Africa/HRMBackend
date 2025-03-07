@@ -38,3 +38,4 @@ class EmployeePayroll extends Model //problem with this model methods
     }
 
 }
+

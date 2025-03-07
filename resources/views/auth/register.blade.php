@@ -59,7 +59,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle"></i> Sign Up</button>
+                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle me-1"></i> Sign Up</button>
                     </div>
                 </form>
 

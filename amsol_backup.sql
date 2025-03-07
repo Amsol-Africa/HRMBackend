@@ -88,6 +88,75 @@ INSERT INTO `access_requests` VALUES
 UNLOCK TABLES;
 
 --
+-- Table structure for table `activity_log`
+--
+
+DROP TABLE IF EXISTS `activity_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `activity_log` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `log_name` varchar(255) DEFAULT NULL,
+  `description` text NOT NULL,
+  `subject_type` varchar(255) DEFAULT NULL,
+  `event` varchar(255) DEFAULT NULL,
+  `subject_id` bigint(20) unsigned DEFAULT NULL,
+  `causer_type` varchar(255) DEFAULT NULL,
+  `causer_id` bigint(20) unsigned DEFAULT NULL,
+  `properties` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`properties`)),
+  `batch_uuid` uuid DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `subject` (`subject_type`,`subject_id`),
+  KEY `causer` (`causer_type`,`causer_id`),
+  KEY `activity_log_log_name_index` (`log_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `activity_log`
+--
+
+LOCK TABLES `activity_log` WRITE;
+/*!40000 ALTER TABLE `activity_log` DISABLE KEYS */;
+/*!40000 ALTER TABLE `activity_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `activity_logs`
+--
+
+DROP TABLE IF EXISTS `activity_logs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `activity_logs` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) unsigned DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `loggable_type` varchar(255) NOT NULL,
+  `loggable_id` bigint(20) unsigned NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `activity_logs_user_id_foreign` (`user_id`),
+  KEY `activity_logs_loggable_type_loggable_id_index` (`loggable_type`,`loggable_id`),
+  CONSTRAINT `activity_logs_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `activity_logs`
+--
+
+LOCK TABLES `activity_logs` WRITE;
+/*!40000 ALTER TABLE `activity_logs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `activity_logs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `advances`
 --
 
@@ -441,6 +510,11 @@ CREATE TABLE `cache` (
 
 LOCK TABLES `cache` WRITE;
 /*!40000 ALTER TABLE `cache` DISABLE KEYS */;
+INSERT INTO `cache` VALUES
+('trends_Attendance_1_2025','O:39:\"Illuminate\\Database\\Eloquent\\Collection\":2:{s:8:\"\0*\0items\";a:1:{i:0;O:21:\"App\\Models\\Attendance\":30:{s:13:\"\0*\0connection\";s:7:\"mariadb\";s:8:\"\0*\0table\";s:11:\"attendances\";s:13:\"\0*\0primaryKey\";s:2:\"id\";s:10:\"\0*\0keyType\";s:3:\"int\";s:12:\"incrementing\";b:1;s:7:\"\0*\0with\";a:0:{}s:12:\"\0*\0withCount\";a:0:{}s:19:\"preventsLazyLoading\";b:0;s:10:\"\0*\0perPage\";i:15;s:6:\"exists\";b:1;s:18:\"wasRecentlyCreated\";b:0;s:28:\"\0*\0escapeWhenCastingToString\";b:0;s:13:\"\0*\0attributes\";a:1:{s:5:\"month\";s:7:\"2025-02\";}s:11:\"\0*\0original\";a:1:{s:5:\"month\";s:7:\"2025-02\";}s:10:\"\0*\0changes\";a:0:{}s:8:\"\0*\0casts\";a:4:{s:4:\"date\";s:4:\"date\";s:8:\"clock_in\";s:8:\"datetime\";s:9:\"clock_out\";s:8:\"datetime\";s:9:\"is_absent\";s:7:\"boolean\";}s:17:\"\0*\0classCastCache\";a:0:{}s:21:\"\0*\0attributeCastCache\";a:0:{}s:13:\"\0*\0dateFormat\";N;s:10:\"\0*\0appends\";a:0:{}s:19:\"\0*\0dispatchesEvents\";a:0:{}s:14:\"\0*\0observables\";a:0:{}s:12:\"\0*\0relations\";a:0:{}s:10:\"\0*\0touches\";a:0:{}s:10:\"timestamps\";b:1;s:13:\"usesUniqueIds\";b:0;s:9:\"\0*\0hidden\";a:0:{}s:10:\"\0*\0visible\";a:0:{}s:11:\"\0*\0fillable\";a:9:{i:0;s:11:\"employee_id\";i:1;s:11:\"business_id\";i:2;s:4:\"date\";i:3;s:8:\"clock_in\";i:4;s:9:\"clock_out\";i:5;s:14:\"overtime_hours\";i:6;s:9:\"is_absent\";i:7;s:7:\"remarks\";i:8;s:9:\"logged_by\";}s:10:\"\0*\0guarded\";a:1:{i:0;s:1:\"*\";}}}s:28:\"\0*\0escapeWhenCastingToString\";b:0;}',1741336357),
+('trends_EmployeePayroll_1_2025','O:39:\"Illuminate\\Database\\Eloquent\\Collection\":2:{s:8:\"\0*\0items\";a:2:{i:0;O:26:\"App\\Models\\EmployeePayroll\":30:{s:13:\"\0*\0connection\";s:7:\"mariadb\";s:8:\"\0*\0table\";s:17:\"employee_payrolls\";s:13:\"\0*\0primaryKey\";s:2:\"id\";s:10:\"\0*\0keyType\";s:3:\"int\";s:12:\"incrementing\";b:1;s:7:\"\0*\0with\";a:0:{}s:12:\"\0*\0withCount\";a:0:{}s:19:\"preventsLazyLoading\";b:0;s:10:\"\0*\0perPage\";i:15;s:6:\"exists\";b:1;s:18:\"wasRecentlyCreated\";b:0;s:28:\"\0*\0escapeWhenCastingToString\";b:0;s:13:\"\0*\0attributes\";a:3:{s:5:\"month\";s:7:\"2025-02\";s:13:\"total_net_pay\";s:6:\"336819\";s:15:\"total_gross_pay\";s:6:\"429000\";}s:11:\"\0*\0original\";a:3:{s:5:\"month\";s:7:\"2025-02\";s:13:\"total_net_pay\";s:6:\"336819\";s:15:\"total_gross_pay\";s:6:\"429000\";}s:10:\"\0*\0changes\";a:0:{}s:8:\"\0*\0casts\";a:0:{}s:17:\"\0*\0classCastCache\";a:0:{}s:21:\"\0*\0attributeCastCache\";a:0:{}s:13:\"\0*\0dateFormat\";N;s:10:\"\0*\0appends\";a:0:{}s:19:\"\0*\0dispatchesEvents\";a:0:{}s:14:\"\0*\0observables\";a:0:{}s:12:\"\0*\0relations\";a:0:{}s:10:\"\0*\0touches\";a:0:{}s:10:\"timestamps\";b:1;s:13:\"usesUniqueIds\";b:0;s:9:\"\0*\0hidden\";a:0:{}s:10:\"\0*\0visible\";a:0:{}s:11:\"\0*\0fillable\";a:18:{i:0;s:10:\"payroll_id\";i:1;s:11:\"employee_id\";i:2;s:12:\"basic_salary\";i:3;s:17:\"housing_allowance\";i:4;s:9:\"gross_pay\";i:5;s:8:\"overtime\";i:6;s:4:\"nhif\";i:7;s:4:\"nssf\";i:8;s:4:\"paye\";i:9;s:12:\"housing_levy\";i:10;s:14:\"taxable_income\";i:11;s:15:\"personal_relief\";i:12;s:13:\"pay_after_tax\";i:13;s:14:\"loan_repayment\";i:14;s:16:\"advance_recovery\";i:15;s:20:\"deductions_after_tax\";i:16;s:7:\"net_pay\";i:17;s:10:\"deductions\";}s:10:\"\0*\0guarded\";a:1:{i:0;s:1:\"*\";}}i:1;O:26:\"App\\Models\\EmployeePayroll\":30:{s:13:\"\0*\0connection\";s:7:\"mariadb\";s:8:\"\0*\0table\";s:17:\"employee_payrolls\";s:13:\"\0*\0primaryKey\";s:2:\"id\";s:10:\"\0*\0keyType\";s:3:\"int\";s:12:\"incrementing\";b:1;s:7:\"\0*\0with\";a:0:{}s:12:\"\0*\0withCount\";a:0:{}s:19:\"preventsLazyLoading\";b:0;s:10:\"\0*\0perPage\";i:15;s:6:\"exists\";b:1;s:18:\"wasRecentlyCreated\";b:0;s:28:\"\0*\0escapeWhenCastingToString\";b:0;s:13:\"\0*\0attributes\";a:3:{s:5:\"month\";s:7:\"2025-03\";s:13:\"total_net_pay\";s:5:\"66443\";s:15:\"total_gross_pay\";s:6:\"123006\";}s:11:\"\0*\0original\";a:3:{s:5:\"month\";s:7:\"2025-03\";s:13:\"total_net_pay\";s:5:\"66443\";s:15:\"total_gross_pay\";s:6:\"123006\";}s:10:\"\0*\0changes\";a:0:{}s:8:\"\0*\0casts\";a:0:{}s:17:\"\0*\0classCastCache\";a:0:{}s:21:\"\0*\0attributeCastCache\";a:0:{}s:13:\"\0*\0dateFormat\";N;s:10:\"\0*\0appends\";a:0:{}s:19:\"\0*\0dispatchesEvents\";a:0:{}s:14:\"\0*\0observables\";a:0:{}s:12:\"\0*\0relations\";a:0:{}s:10:\"\0*\0touches\";a:0:{}s:10:\"timestamps\";b:1;s:13:\"usesUniqueIds\";b:0;s:9:\"\0*\0hidden\";a:0:{}s:10:\"\0*\0visible\";a:0:{}s:11:\"\0*\0fillable\";a:18:{i:0;s:10:\"payroll_id\";i:1;s:11:\"employee_id\";i:2;s:12:\"basic_salary\";i:3;s:17:\"housing_allowance\";i:4;s:9:\"gross_pay\";i:5;s:8:\"overtime\";i:6;s:4:\"nhif\";i:7;s:4:\"nssf\";i:8;s:4:\"paye\";i:9;s:12:\"housing_levy\";i:10;s:14:\"taxable_income\";i:11;s:15:\"personal_relief\";i:12;s:13:\"pay_after_tax\";i:13;s:14:\"loan_repayment\";i:14;s:16:\"advance_recovery\";i:15;s:20:\"deductions_after_tax\";i:16;s:7:\"net_pay\";i:17;s:10:\"deductions\";}s:10:\"\0*\0guarded\";a:1:{i:0;s:1:\"*\";}}}s:28:\"\0*\0escapeWhenCastingToString\";b:0;}',1741333212),
+('trends_LeaveRequest_1_2025','O:39:\"Illuminate\\Database\\Eloquent\\Collection\":2:{s:8:\"\0*\0items\";a:1:{i:0;O:23:\"App\\Models\\LeaveRequest\":30:{s:13:\"\0*\0connection\";s:7:\"mariadb\";s:8:\"\0*\0table\";s:14:\"leave_requests\";s:13:\"\0*\0primaryKey\";s:2:\"id\";s:10:\"\0*\0keyType\";s:3:\"int\";s:12:\"incrementing\";b:1;s:7:\"\0*\0with\";a:0:{}s:12:\"\0*\0withCount\";a:0:{}s:19:\"preventsLazyLoading\";b:0;s:10:\"\0*\0perPage\";i:15;s:6:\"exists\";b:1;s:18:\"wasRecentlyCreated\";b:0;s:28:\"\0*\0escapeWhenCastingToString\";b:0;s:13:\"\0*\0attributes\";a:1:{s:5:\"month\";s:7:\"2025-03\";}s:11:\"\0*\0original\";a:1:{s:5:\"month\";s:7:\"2025-03\";}s:10:\"\0*\0changes\";a:0:{}s:8:\"\0*\0casts\";a:6:{s:8:\"half_day\";s:7:\"boolean\";s:10:\"start_date\";s:4:\"date\";s:8:\"end_date\";s:4:\"date\";s:10:\"total_days\";s:7:\"integer\";s:11:\"approved_by\";s:7:\"integer\";s:11:\"approved_at\";s:8:\"datetime\";}s:17:\"\0*\0classCastCache\";a:0:{}s:21:\"\0*\0attributeCastCache\";a:0:{}s:13:\"\0*\0dateFormat\";N;s:10:\"\0*\0appends\";a:0:{}s:19:\"\0*\0dispatchesEvents\";a:0:{}s:14:\"\0*\0observables\";a:0:{}s:12:\"\0*\0relations\";a:0:{}s:10:\"\0*\0touches\";a:0:{}s:10:\"timestamps\";b:1;s:13:\"usesUniqueIds\";b:0;s:9:\"\0*\0hidden\";a:0:{}s:10:\"\0*\0visible\";a:0:{}s:11:\"\0*\0fillable\";a:13:{i:0;s:16:\"reference_number\";i:1;s:11:\"employee_id\";i:2;s:11:\"business_id\";i:3;s:13:\"leave_type_id\";i:4;s:10:\"start_date\";i:5;s:8:\"end_date\";i:6;s:10:\"total_days\";i:7;s:8:\"half_day\";i:8;s:13:\"half_day_type\";i:9;s:6:\"reason\";i:10;s:11:\"approved_by\";i:11;s:11:\"approved_at\";i:12;s:16:\"rejection_reason\";}s:10:\"\0*\0guarded\";a:1:{i:0;s:1:\"*\";}}}s:28:\"\0*\0escapeWhenCastingToString\";b:0;}',1741336491),
+('trends_Loan_1_2025','O:39:\"Illuminate\\Database\\Eloquent\\Collection\":2:{s:8:\"\0*\0items\";a:0:{}s:28:\"\0*\0escapeWhenCastingToString\";b:0;}',1741336491);
 /*!40000 ALTER TABLE `cache` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1333,7 +1407,7 @@ CREATE TABLE `jobs` (
   `created_at` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   KEY `jobs_queue_index` (`queue`)
-) ENGINE=InnoDB AUTO_INCREMENT=56 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1397,7 +1471,19 @@ INSERT INTO `jobs` VALUES
 (52,'default','{\"uuid\":\"3ee381cd-2fbe-48dd-a661-6f586edaeaf3\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1740971347,1740971347),
 (53,'default','{\"uuid\":\"8d7c66f3-8e31-4104-974b-0584472c5aa0\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"0a1af690-d793-4fda-aea5-450491f59a4d\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1741035027,1741035027),
 (54,'default','{\"uuid\":\"16e8295d-cedd-48fb-a4e6-77f24c5efd4d\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"0a1af690-d793-4fda-aea5-450491f59a4d\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:5:\\\"email\\\";}}\"}}',0,NULL,1741035027,1741035027),
-(55,'default','{\"uuid\":\"c6ba6331-a042-48b8-a75e-5c9523ba1e49\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741035027,1741035027);
+(55,'default','{\"uuid\":\"c6ba6331-a042-48b8-a75e-5c9523ba1e49\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741035027,1741035027),
+(56,'default','{\"uuid\":\"8eeee92b-0067-42f6-962e-1875ffdd607f\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"0a3a2a6d-a98e-4ad9-ac28-538f34c7f77e\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1741239674,1741239674),
+(57,'default','{\"uuid\":\"e8f83f65-b8a6-4ba7-8426-88f22e91757d\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"0a3a2a6d-a98e-4ad9-ac28-538f34c7f77e\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:5:\\\"email\\\";}}\"}}',0,NULL,1741239674,1741239674),
+(58,'default','{\"uuid\":\"5b3884a7-ef83-4615-8800-130f2571ecbc\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741239674,1741239674),
+(59,'default','{\"uuid\":\"26728a90-361b-4321-8f08-f30f47d7c09f\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"1f40033b-4308-44de-acb1-39ce2c7826f0\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1741292717,1741292717),
+(60,'default','{\"uuid\":\"74253316-05a7-4b3d-b728-9b5e186bd6c1\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"1f40033b-4308-44de-acb1-39ce2c7826f0\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:5:\\\"email\\\";}}\"}}',0,NULL,1741292717,1741292717),
+(61,'default','{\"uuid\":\"411babe1-3fb7-4a91-ae71-a8e72a48494b\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741292717,1741292717),
+(62,'default','{\"uuid\":\"360187a8-6842-42a2-a1a0-14d79fd6ae2e\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:2;}s:9:\\\"relations\\\";a:3:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"employee\\\";i:2;s:17:\\\"employee.business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"003dd813-b50f-46da-a464-5d2e3b154dc1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1741297264,1741297264),
+(63,'default','{\"uuid\":\"3e3e4e14-3245-4d47-ab47-c75271e68685\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:2;}s:9:\\\"relations\\\";a:3:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"employee\\\";i:2;s:17:\\\"employee.business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"003dd813-b50f-46da-a464-5d2e3b154dc1\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:5:\\\"email\\\";}}\"}}',0,NULL,1741297264,1741297264),
+(64,'default','{\"uuid\":\"e3b0e026-4182-4b31-906f-9d3cb41fcc68\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:2;s:9:\\\"relations\\\";a:3:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"employee\\\";i:2;s:17:\\\"employee.business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741297264,1741297264),
+(65,'default','{\"uuid\":\"94e18cda-7d8b-4b8e-a29a-56f9b339cd31\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"23c27005-09c3-4853-9b40-76c0db178fe3\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:8:\\\"database\\\";}}\"}}',0,NULL,1741298392,1741298392),
+(66,'default','{\"uuid\":\"d0112b50-4f51-40ad-b74b-a09646178979\",\"displayName\":\"App\\\\Notifications\\\\SystemAlertNotification\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\",\"command\":\"O:48:\\\"Illuminate\\\\Notifications\\\\SendQueuedNotifications\\\":3:{s:11:\\\"notifiables\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";a:1:{i:0;i:1;}s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":3:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}s:2:\\\"id\\\";s:36:\\\"23c27005-09c3-4853-9b40-76c0db178fe3\\\";}s:8:\\\"channels\\\";a:1:{i:0;s:5:\\\"email\\\";}}\"}}',0,NULL,1741298392,1741298392),
+(67,'default','{\"uuid\":\"a30afbbc-ca3c-4f1a-b30f-a62e48bdcc14\",\"displayName\":\"App\\\\Events\\\\NotificationSent\",\"job\":\"Illuminate\\\\Queue\\\\CallQueuedHandler@call\",\"maxTries\":null,\"maxExceptions\":null,\"failOnTimeout\":false,\"backoff\":null,\"timeout\":null,\"retryUntil\":null,\"data\":{\"commandName\":\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\",\"command\":\"O:38:\\\"Illuminate\\\\Broadcasting\\\\BroadcastEvent\\\":14:{s:5:\\\"event\\\";O:27:\\\"App\\\\Events\\\\NotificationSent\\\":2:{s:4:\\\"user\\\";O:45:\\\"Illuminate\\\\Contracts\\\\Database\\\\ModelIdentifier\\\":5:{s:5:\\\"class\\\";s:15:\\\"App\\\\Models\\\\User\\\";s:2:\\\"id\\\";i:1;s:9:\\\"relations\\\";a:2:{i:0;s:5:\\\"roles\\\";i:1;s:8:\\\"business\\\";}s:10:\\\"connection\\\";s:7:\\\"mariadb\\\";s:15:\\\"collectionClass\\\";N;}s:12:\\\"notification\\\";O:41:\\\"App\\\\Notifications\\\\SystemAlertNotification\\\":2:{s:10:\\\"\\u0000*\\u0000message\\\";s:29:\\\"System maintenance scheduled.\\\";s:7:\\\"\\u0000*\\u0000data\\\";a:1:{s:7:\\\"details\\\";s:32:\\\"Server will be down for 2 hours.\\\";}}}s:5:\\\"tries\\\";N;s:7:\\\"timeout\\\";N;s:7:\\\"backoff\\\";N;s:13:\\\"maxExceptions\\\";N;s:10:\\\"connection\\\";N;s:5:\\\"queue\\\";N;s:5:\\\"delay\\\";N;s:11:\\\"afterCommit\\\";N;s:10:\\\"middleware\\\";a:0:{}s:7:\\\"chained\\\";a:0:{}s:15:\\\"chainConnection\\\";N;s:10:\\\"chainQueue\\\";N;s:19:\\\"chainCatchCallbacks\\\";N;}\"}}',0,NULL,1741298392,1741298392);
 /*!40000 ALTER TABLE `jobs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1620,7 +1706,7 @@ CREATE TABLE `leave_requests` (
   CONSTRAINT `leave_requests_business_id_foreign` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`),
   CONSTRAINT `leave_requests_employee_id_foreign` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
   CONSTRAINT `leave_requests_leave_type_id_foreign` FOREIGN KEY (`leave_type_id`) REFERENCES `leave_types` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1629,6 +1715,8 @@ CREATE TABLE `leave_requests` (
 
 LOCK TABLES `leave_requests` WRITE;
 /*!40000 ALTER TABLE `leave_requests` DISABLE KEYS */;
+INSERT INTO `leave_requests` VALUES
+(1,'LR36D253',1,1,6,'2025-03-07','2025-03-27',20.00,0,NULL,'Just a reason',1,'2025-03-06 22:30:08',NULL,'2025-03-06 21:41:39','2025-03-06 22:30:08');
 /*!40000 ALTER TABLE `leave_requests` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1897,7 +1985,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=98 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=103 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1970,7 +2058,12 @@ INSERT INTO `migrations` VALUES
 (91,'2025_02_24_041640_create_notification_logs_table',12),
 (94,'2025_01_17_050013_create_deductions_table',13),
 (95,'2025_01_17_050014_create_employee_deductions_table',13),
-(97,'2025_03_03_090714_add_deductions_to_employee_payrolls',14);
+(97,'2025_03_03_090714_add_deductions_to_employee_payrolls',14),
+(98,'2025_03_05_080459_create_reports_table',15),
+(99,'2025_03_07_044156_create_activity_log_table',15),
+(100,'2025_03_07_044157_add_event_column_to_activity_log_table',15),
+(101,'2025_03_07_044158_add_batch_uuid_column_to_activity_log_table',15),
+(102,'2025_03_07_045135_create_activity_logs_table',15);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2472,6 +2565,30 @@ LOCK TABLES `reliefs` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `reports`
+--
+
+DROP TABLE IF EXISTS `reports`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `reports` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `reports`
+--
+
+LOCK TABLES `reports` WRITE;
+/*!40000 ALTER TABLE `reports` DISABLE KEYS */;
+/*!40000 ALTER TABLE `reports` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `role_has_permissions`
 --
 
@@ -2564,8 +2681,9 @@ CREATE TABLE `sessions` (
 LOCK TABLES `sessions` WRITE;
 /*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
 INSERT INTO `sessions` VALUES
-('5C9pWrNnVDGZlAESQ4SEi7gqlM32XbOQphCkT77K',NULL,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTozOntzOjY6Il90b2tlbiI7czo0MDoiMUpHY1NZQUJad0Y3YjgwUzlIQUtmWGNtemRwRmdLYjBsT2JFcUZ5QyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjQ6Imh0dHA6Ly9hbXNvbC5sb2NhbC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1741151130),
-('XAgODwXbqiy0JP91qfbViVnalg4qY1ESo6RyFjhA',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiZ0pWelNqNWVJdDFWbEVnaW9WRjdZbHlNR2YzZEZDcGFTZjFDTElyRSI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTU6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci1rZS9wYXlyb2xsL2RlZHVjdGlvbnMiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO3M6MjA6ImFjdGl2ZV9idXNpbmVzc19zbHVnIjtzOjg6ImFuemFyLWtlIjtzOjExOiJhY3RpdmVfcm9sZSI7czoxNDoiYnVzaW5lc3MtYWRtaW4iO30=',1741059177);
+('45sARFBNqK9tymvp4vSPqmfLjmgl72xEm4J9VCp8',NULL,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0','YTo0OntzOjY6Il90b2tlbiI7czo0MDoiMThIa2dUd2duaFQwOWkwYktPN0pyZzZFRUxsVThJSHdJVnkzQ0EwMCI7czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czo0NjoiaHR0cDovL2Ftc29sLmxvY2FsL2J1c2luZXNzL2FuemFyLXRlY2hub2xvZ2llcyI7fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjQ2OiJodHRwOi8vYW1zb2wubG9jYWwvYnVzaW5lc3MvYW56YXItdGVjaG5vbG9naWVzIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==',1741308039),
+('bjNRyS9pW7gXcpFd4pWWabBqNphsacBMSAtqlHY9',1,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0','YTo2OntzOjY6Il90b2tlbiI7czo0MDoiWlZzeHIwVkdrUlVLOW5lcE1kenVIN3AzWmZiWlVHeXpmaTJNSU5GcyI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NDY6Imh0dHA6Ly9hbXNvbC5sb2NhbC9idXNpbmVzcy9hbnphci10ZWNobm9sb2dpZXMiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aToxO3M6MjA6ImFjdGl2ZV9idXNpbmVzc19zbHVnIjtzOjg6ImFuemFyLWtlIjtzOjExOiJhY3RpdmVfcm9sZSI7czoxNDoiYnVzaW5lc3MtYWRtaW4iO30=',1741314891),
+('w72SIAQk4F54kOImbhJVDlNS5Jckm9kQlXwRkvhY',NULL,'127.0.0.1','Mozilla/5.0 (X11; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0','YTozOntzOjY6Il90b2tlbiI7czo0MDoibnNnalpHeHl2bXV5NDJwWUxPQWFNNzFFZVJENzI5S2tFanRPRWd4cyI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjQ6Imh0dHA6Ly9hbXNvbC5sb2NhbC9sb2dpbiI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fX0=',1741308039);
 /*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2692,7 +2810,7 @@ CREATE TABLE `statuses` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `statuses_model_type_model_id_index` (`model_type`,`model_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=67 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2763,7 +2881,8 @@ INSERT INTO `statuses` VALUES
 (60,'active',NULL,'App\\Models\\Deduction',3,'2025-03-03 05:06:10','2025-03-03 05:06:10'),
 (61,'active',NULL,'App\\Models\\EmployeeDeduction',2,'2025-03-03 05:45:56','2025-03-03 05:45:56'),
 (62,'active',NULL,'App\\Models\\EmployeeDeduction',3,'2025-03-03 05:46:26','2025-03-03 05:46:26'),
-(63,'active',NULL,'App\\Models\\EmployeeDeduction',4,'2025-03-03 05:49:58','2025-03-03 05:49:58');
+(63,'active',NULL,'App\\Models\\EmployeeDeduction',4,'2025-03-03 05:49:58','2025-03-03 05:49:58'),
+(64,'pending',NULL,'App\\Models\\LeaveRequest',1,'2025-03-06 21:41:39','2025-03-06 21:41:39');
 /*!40000 ALTER TABLE `statuses` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2858,4 +2977,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
 
--- Dump completed on 2025-03-05 17:07:47
+-- Dump completed on 2025-03-07  5:36:24

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
+use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Spatie\ModelStatus\HasStatuses;
 
 class Advance extends Model
 {
-    use HasFactory, HasStatuses;
+    use HasFactory, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'employee_id',

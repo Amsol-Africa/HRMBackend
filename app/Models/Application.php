@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Support\Facades\File;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Application extends Model implements HasMedia {
 
-    use HasFactory, HasStatuses, InteractsWithMedia;
+    use HasFactory, HasStatuses, InteractsWithMedia, LogsActivity;
 
     protected $fillable = [
         'business_id',

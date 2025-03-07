@@ -12,8 +12,7 @@
                             <!-- Year Input -->
                             <div class="col-md-6">
                                 <label for="payrun_year" class="form-label">Year</label>
-                                <input type="number" id="payrun_year" name="payrun_year" class="form-control"
-                                       min="{{ now()->year - 5 }}" max="{{ now()->year + 1 }}" value="{{ now()->year }}">
+                                <input type="number" id="payrun_year" name="payrun_year" class="form-control" min="{{ now()->year - 5 }}" max="{{ now()->year + 1 }}" value="{{ now()->year }}">
                             </div>
 
                             <!-- Month Dropdown -->

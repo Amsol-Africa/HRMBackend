@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Loan extends Model
 {
-    use HasFactory, HasStatuses;
+    use HasFactory, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'employee_id',
@@ -39,4 +40,10 @@ class Loan extends Model
     {
         return $this->hasMany(LoanRepayment::class);
     }
+
+    public function scopeActive($query)
+    {
+        return $query->currentStatus('active');
+    }
+
 }

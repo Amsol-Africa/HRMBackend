@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Spatie\Sluggable\HasSlug;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\Sluggable\SlugOptions;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Business extends Model implements HasMedia
 {
-    use HasFactory, HasSlug, HasStatuses, InteractsWithMedia;
+    use HasFactory, HasSlug, HasStatuses, InteractsWithMedia, LogsActivity;
 
     protected $fillable = [
         'user_id',
@@ -99,6 +100,19 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(Employee::class);
     }
+    public function employeesByStatus($status)
+    {
+        return Employee::where('business_id', $this->id)
+            ->whereHas('statuses', function ($query) use ($status) {
+                $query->where('name', $status)
+                    ->orderByDesc('created_at')
+                    ->limit(1);
+            })
+            ->get();
+    }
+
+
+    // leaves
     public function leaveTypes()
     {
         return $this->hasMany(LeaveType::class);
@@ -111,6 +125,24 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(LeaveEntitlement::class);
     }
+    public function leaveRequestsByStatus($status)
+    {
+        return LeaveRequest::where('business_id', $this->id)
+            ->currentStatus($status)
+            ->get();
+    }
+
+
+    // Advances
+    public function advancesByStatus($status)
+    {
+        return Advance::whereHas('employee', function ($query) {
+            $query->where('business_id', $this->id);
+        })
+            ->currentStatus($status)
+            ->get();
+    }
+
 
     //managed businesses
     public function formulas()
@@ -163,5 +195,41 @@ class Business extends Model implements HasMedia
     {
         return $this->hasManyThrough(EmployeeDeduction::class, Employee::class, 'business_id', 'employee_id', 'id', 'id');
     }
+
+    //loans
+    public function activeLoanCount()
+    {
+        return Loan::whereHas('employee', function ($query) {
+            $query->where('business_id', $this->id);
+        })->whereHas('statuses', function ($subQuery) {
+            $subQuery->where('name', 'active');
+        })->count();
+    }
+
+    public function totalActiveLoanAmount()
+    {
+        return Loan::whereHas('employee', function ($query) {
+            $query->where('business_id', $this->id);
+        })->whereHas('statuses', function ($subQuery) {
+            $subQuery->where('name', 'active');
+        })->sum('amount');
+    }
+
+    public function totalActiveRepaidAmount()
+    {
+        return LoanRepayment::whereHas('loan', function ($query) {
+            $query->whereHas('employee', function ($subQuery) {
+                $subQuery->where('business_id', $this->id);
+            })->whereHas('statuses', function ($statusQuery) {
+                $statusQuery->where('name', 'active');
+            });
+        })->sum('amount_paid');
+    }
+
+    public function remainingActiveLoanBalance()
+    {
+        return $this->totalActiveLoanAmount() - $this->totalActiveRepaidAmount();
+    }
+
 
 }

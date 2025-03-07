@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 class EmploymentDetail extends Model
 {
+    use LogsActivity;
     protected $fillable = [
         'employee_id',
         'department_id',

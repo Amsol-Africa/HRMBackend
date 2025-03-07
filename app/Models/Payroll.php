@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 use Spatie\ModelStatus\HasStatuses;
+use Illuminate\Database\Eloquent\Model;
 
 class Payroll extends Model
 {
-    use HasStatuses;
+    use HasStatuses, LogsActivity;
 
     protected $fillable = [
         'business_id',

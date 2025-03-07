@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Exception;
+use App\Traits\LogsActivity;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class PayrollFormula extends Model
 {
-    use HasFactory, HasSlug;
+    use HasFactory, HasSlug, LogsActivity;
 
     protected $fillable = [
         'business_id',

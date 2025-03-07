@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\TrendController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ReliefController;
 use App\Http\Controllers\AdvanceController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\InterviewController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\JobCategoryController;
 use App\Http\Controllers\LeavePeriodController;
@@ -118,6 +120,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [LeaveRequestController::class, 'fetch'])->name('fetch');
         Route::post('delete', [LeaveRequestController::class, 'destroy'])->name('delete');
         Route::post('update', [LeaveRequestController::class, 'update'])->name('update');
+        Route::post('status', [LeaveRequestController::class, 'status'])->name('status');
     });
     Route::name('leave-periods.')->prefix('leave-periods')->group(function () {
         Route::post('edit', [LeavePeriodController::class, 'edit'])->name('edit');
@@ -261,6 +264,20 @@ Route::middleware(['auth'])->group(function () {
         Route::post('store', [ProfileController::class, 'store'])->name('store');
         Route::post('destroy', [ProfileController::class, 'destroy'])->name('destroy');
         Route::post('password', [ProfileController::class, 'password'])->name('password');
+    });
+
+    // trends
+    // trends
+    Route::name('trends.')->prefix('trends')->group(function () {
+        Route::post('payroll', [TrendController::class, 'payroll'])->name('payroll');
+        Route::post('attendance', [TrendController::class, 'attendance'])->name('attendance');
+        Route::post('leave', [TrendController::class, 'leave'])->name('leave');
+        Route::post('loans', [TrendController::class, 'loans'])->name('loans');
+    });
+
+    // activities
+    Route::name('activities.')->prefix('activities')->group(function () {
+        Route::post('fetch', [ActivityLogController::class, 'index'])->name('fetch');
     });
 
     //print

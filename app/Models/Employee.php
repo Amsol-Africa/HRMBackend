@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use App\Traits\LogsActivity;
 use Spatie\MediaLibrary\HasMedia;
+use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Support\Facades\File;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -10,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Employee extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'user_id',
@@ -170,4 +173,32 @@ class Employee extends Model implements HasMedia
     {
         return $this->belongsToMany(Task::class, 'employee_task')->withTimestamps();
     }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+    public function scopeOnLeave($query)
+    {
+        \Log::debug('Starting onLeave scope - Model: ' . $query->getModel()->getTable()); // Log the initial model (Employee)
+
+        return $query->whereHas('leaveRequests', function ($query) {
+            \Log::debug('Inside whereHas - Model: ' . $query->getModel()->getTable()); // Log the related model (LeaveRequest)
+
+            $query->where('approved_at', '!=', null)
+                ->whereDate('start_date', '<=', Carbon::today())
+                ->whereDate('end_date', '>=', Carbon::today())
+                ->currentStatus('active');
+        });
+    }
+    public function getRemainingLeaveDaysAttribute()
+    {
+        $totalAllocated = $this->total_leave_days ?? 0; // Assuming a column storing total leave entitlement
+        $usedLeave = $this->leaveRequests()->where('status', 'Approved')->sum('total_days');
+
+        return max($totalAllocated - $usedLeave, 0);
+    }
+
+
+
 }

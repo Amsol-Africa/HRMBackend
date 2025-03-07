@@ -72,3 +72,64 @@ window.deleteLeave = async function (btn) {
         }
     });
 };
+window.manageLeave = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const leave = btn.data("leave");
+    const action = btn.data("action");
+    const status = action === "reject" ? "rejected" : "approved";
+
+    let data = { reference_number: leave, status: status };
+
+    if (action === "reject") {
+        const { value: reject_reason } = await Swal.fire({
+            title: "Enter Rejection Reason",
+            input: "textarea",
+            inputPlaceholder: "Provide a reason for rejection...",
+            inputAttributes: {
+                maxlength: "200",
+                autocapitalize: "off",
+                autocorrect: "off",
+            },
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Reject Leave",
+            cancelButtonText: "Cancel",
+            inputValidator: (value) => {
+                if (!value) {
+                    return "Rejection reason is required!";
+                }
+            },
+        });
+
+        if (!reject_reason) {
+            btn_loader(btn, false);
+            return;
+        }
+
+        data.reject_reason = reject_reason;
+    }
+
+    Swal.fire({
+        title: `Are you sure you want to ${action} this leave?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: action === "approve" ? "#068f6d" : "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: `Yes, ${action} it!`,
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                await leaveService.status(data);
+                getLeave(1, status);
+            } finally {
+                btn_loader(btn, false);
+            }
+        } else {
+            btn_loader(btn, false);
+        }
+    });
+};
+

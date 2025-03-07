@@ -24,8 +24,9 @@
                     <th>Employee</th>
                     <th>Leave Type</th>
                     <th>Start Date</th>
-                    <th>End Date</th>
                     <th>Days</th>
+                    <th>End Date</th>
+                    <th>Remaining</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -35,32 +36,53 @@
                     <tr>
                         <td>{{ $request->reference_number }}</td>
                         <td>{{ $request->employee->user->name }}</td>
-                        <td>{{ $request->leaveType->name }}</td>
-                        <td>{{ $request->start_date->format('Y-m-d') }}</td>
-                        <td>{{ $request->end_date->format('Y-m-d') }}</td>
+                        <td class="text-white @if ($request->leaveType->name == 'Sick Leave') bg-danger
+                            @elseif ($request->leaveType->name == 'Annual Leave') bg-primary
+                            @else bg-secondary @endif">
+                            {{ $request->leaveType->name }}
+                        </td>
+
+                        <td class="fw-bold text-primary">{{ $request->start_date->format('Y-m-d') }}</td>
                         <td>{{ $request->total_days }}</td>
+                        <td class="fw-bold text-danger">{{ $request->end_date->format('Y-m-d') }}</td>
+                        <td class="fw-bold
+                            @if ($request->end_date->isPast()) text-danger
+                            @elseif ($request->end_date->diffInDays(today()) <= 2) text-warning
+                            @else text-success
+                            @endif">
+                            {{ max($request->end_date->diffInDays(today()), 0) }}
+                        </td>
+
                         <td>
                             @if (is_null($request->approved_by))
-                                <span class="badge badge-warning">Pending</span>
+                                <span class="badge bg-warning">
+                                    <i class="fa-solid me-1 fa-clock"></i> Pending
+                                </span>
                             @elseif (!is_null($request->approved_by))
-                                <span class="badge badge-success">Approved</span>
+                                <span class="badge bg-success">
+                                    <i class="fa-solid me-1 fa-check-circle"></i> Approved
+                                </span>
                             @else
-                                <span class="badge badge-danger">Rejected</span>
+                                <span class="badge bg-danger">
+                                    <i class="fa-solid me-1 fa-times-circle"></i> Rejected
+                                </span>
                             @endif
                         </td>
                         <td>
-                            <a href="" class="btn btn-sm btn-primary">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            @if (is_null($request->approved_by) && auth()->user()->hasRole('business-admin'))
-                                <button type="button" onclick="approve(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check"></i> Approve
-                                </button>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="" class="btn btn-primary">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                @if (is_null($request->approved_by) && auth()->user()->hasRole('business-admin'))
+                                    <button type="button" onclick="manageLeave(this)" data-action="approve" data-leave="{{ $request->reference_number }}" class="btn btn-success">
+                                        <i class="fa-solid fa-check"></i>
+                                    </button>
 
-                                <button type="button" onclick="reject(this)" data-leave="{{ $request->id }}" class="btn btn-sm btn-danger">
-                                    <i class="fas fa-times"></i> Reject
-                                </button>
-                            @endif
+                                    <button type="button" onclick="manageLeave(this)" data-action="reject" data-leave="{{ $request->reference_number }}" class="btn btn-danger">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @endforeach

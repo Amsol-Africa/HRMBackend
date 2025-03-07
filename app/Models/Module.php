@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Spatie\ModelStatus\HasStatuses;
+use App\Traits\LogsActivity;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
+use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Module extends Model
 {
-    use HasFactory, HasSlug ,HasStatuses;
+    use HasFactory, HasSlug ,HasStatuses, LogsActivity;
     protected $fillable = [
         'name',
         'slug',

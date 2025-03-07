@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\LogsActivity;
 use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use App\Notifications\InterviewCanceledNotification;
@@ -12,7 +13,7 @@ use App\Notifications\InterviewRescheduledNotification;
 
 class Interview extends Model
 {
-    use HasFactory, HasStatuses;
+    use HasFactory, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'application_id',
