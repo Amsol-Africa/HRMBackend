@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LeaveRequest;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Module;
@@ -259,14 +260,8 @@ class DashboardController extends Controller
     {
         $page = 'Payroll Formula';
         $description = '';
-
-        // NHIF
         $deductions['nhif'] = PayrollFormula::where('slug', 'nhif')->with('brackets')->first();
-
-        // NSSF
         $deductions['nssf'] = PayrollFormula::where('slug', 'nssf')->first();
-
-        // Housing Levy
         $deductions['housing_levy'] = PayrollFormula::where('slug', 'housing_levy')->first();
 
         return view('payroll.formula', compact('page', 'description', 'deductions'));
@@ -367,6 +362,39 @@ class DashboardController extends Controller
         $leaveTypes = $business->leaveTypes;
         $employees = $business->employees;
         return view('leave.create', compact('page', 'description', 'leaveTypes', 'employees', 'locations'));
+    }
+    public function leaveApplication(Request $request, String $business_slug, String $reference_number)
+    {
+        $business = Business::findBySlug($business_slug);
+        $leaveRequest = LeaveRequest::where('reference_number', $reference_number)->where('business_id', $business->id)->first();
+        $page = 'Leave - #' . $reference_number;
+        $description = '';
+
+        $statusHistory = $leaveRequest->statuses()->orderBy('created_at')->get();
+
+        Log::debug($statusHistory);
+
+        $timelineItem = [
+            'reference_number' => $leaveRequest->reference_number,
+            'employee_name' => $leaveRequest->employee->user->name,
+            'leave_type' => $leaveRequest->leaveType->name,
+            'approved_by' => $leaveRequest->approved_by,
+            'start_date' => $leaveRequest->start_date->format('Y-m-d'),
+            'end_date' => $leaveRequest->end_date->format('Y-m-d'),
+            'statuses' => [],
+        ];
+
+        foreach ($statusHistory as $status) {
+            $timelineItem['statuses'][] = [
+                'name' => $status->name,
+                'created_at' => $status->created_at->format('Y-m-d H:i:s'),
+                'reason' => $status->reason,
+            ];
+        }
+
+        $timelineData = [(object) $timelineItem];
+
+        return view('leave.show', compact('page', 'description', 'timelineData'));
     }
     public function leaveApplications(Request $request)
     {

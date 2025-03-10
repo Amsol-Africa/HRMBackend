@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Employee;
-use App\Models\LeaveRequest;
-use App\Models\LeaveType;
-use App\Models\Business;
-use App\Models\Attendance;
-use App\Models\Payslip;
 use Carbon\Carbon;
+use App\Models\Payslip;
+use App\Models\Business;
+use App\Models\Employee;
+use App\Models\LeaveType;
+use App\Models\Attendance;
+use App\Models\LeaveRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class EmployeeDashboardController extends Controller
@@ -28,11 +29,8 @@ class EmployeeDashboardController extends Controller
     {
         $page = "Request Leave";
         $description = "";
-
         $business = Business::findBySlug(session('active_business_slug'));
         $leaveTypes = $business->leaveTypes;
-
-        // Fetch all leave requests for the logged-in user
         $leaveRequests = LeaveRequest::where('employee_id', Auth::id())->latest()->get();
 
         return view('leave.request-leave', compact('page', 'description', 'leaveTypes', 'leaveRequests'));
@@ -45,6 +43,37 @@ class EmployeeDashboardController extends Controller
         return view('leave.index', compact('page', 'leaves'));
     }
 
+    public function leaveApplication(Request $request, String $business_slug, String $reference_number)
+    {
+        $business = Business::findBySlug($business_slug);
+        $leaveRequest = LeaveRequest::where('reference_number', $reference_number)->where('business_id', $business->id)->first();
+        $page = 'Leave - #' . $reference_number;
+        $description = '';
+
+        $statusHistory = $leaveRequest->statuses()->orderBy('created_at')->get();
+
+        $timelineItem = [
+            'reference_number' => $leaveRequest->reference_number,
+            'employee_name' => $leaveRequest->employee->user->name,
+            'leave_type' => $leaveRequest->leaveType->name,
+            'approved_by' => $leaveRequest->approved_by,
+            'start_date' => $leaveRequest->start_date->format('Y-m-d'),
+            'end_date' => $leaveRequest->end_date->format('Y-m-d'),
+            'statuses' => [],
+        ];
+
+        foreach ($statusHistory as $status) {
+            $timelineItem['statuses'][] = [
+                'name' => $status->name,
+                'created_at' => $status->created_at->format('Y-m-d H:i:s'),
+                'reason' => $status->reason,
+            ];
+        }
+
+        $timelineData = [(object) $timelineItem];
+
+        return view('leave.show', compact('page', 'description', 'timelineData'));
+    }
     public function clockInOut(Request $request)
     {
         $page = 'Clock In';

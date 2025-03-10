@@ -240,6 +240,30 @@ window.viewPayslipDetails = async function (btn) {
     }
 };
 
+window.downloadPayslip = async function (btn) {
+    btn = $(btn);
+
+    const payslip = btn.data("payslip");
+    const data = { payslip: payslip };
+
+    try {
+        await payrollService.downloadPayslip(data);
+    } finally {
+    }
+};
+
+window.emailPayslip = async function (btn) {
+    btn = $(btn);
+
+    const payslip = btn.data("payslip");
+    const data = { payslip: payslip };
+
+    try {
+        await payrollService.emailPayslip(data);
+    } finally {
+    }
+};
+
 window.printPayslip = async function () {
     var printContents = document.querySelector('.payslip-container').innerHTML;
     var originalContents = document.body.innerHTML;

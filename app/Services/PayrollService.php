@@ -32,7 +32,7 @@ class PayrollService
             Log::debug($totalOtherDeductions);
             $netPay = $this->calculateNetPay($employee, $payAfterTax, $totalOtherDeductions);
 
-            $this->storePayrollData(
+            $payrollRecord = $this->storePayrollData(
                 $employee,
                 $payroll_id,
                 $grossPay,
@@ -49,13 +49,7 @@ class PayrollService
                 $personalRelief
             );
 
-            return array_merge([
-                'gross_pay' => $grossPay,
-                'taxable_income' => $taxableIncome,
-                'pay_after_tax' => $payAfterTax,
-                'other_deductions' => $otherDeductions,
-                'net_pay' => $netPay,
-            ], $deductions);
+            return $payrollRecord;
         });
     }
 
@@ -204,9 +198,9 @@ class PayrollService
         return $payAfterTax - $otherDeductions;
     }
 
-    private function storePayrollData(Employee $employee, $payroll_id, $grossPay, $taxableIncome, $payAfterTax, $otherDeductions, $netPay, $deductions, $overtimePay, $nhif, $nssf, $housingLevy, $paye, $personalRelief): void
+    private function storePayrollData(Employee $employee, $payroll_id, $grossPay, $taxableIncome, $payAfterTax, $otherDeductions, $netPay, $deductions, $overtimePay, $nhif, $nssf, $housingLevy, $paye, $personalRelief)
     {
-        $employee->payrolls()->create([
+        return $employee->payrolls()->create([
             'payroll_id' => $payroll_id,
             'employee_id' => $employee->id,
             'basic_salary' => $employee->paymentDetails->basic_salary,

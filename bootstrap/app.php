@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\SetCurrentBusiness;
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\SetCurrentBusiness;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 

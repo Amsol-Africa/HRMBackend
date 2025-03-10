@@ -168,6 +168,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [PayrollController::class, 'fetch'])->name('fetch');
         Route::post('slips', [PayrollController::class, 'slips'])->name('slips');
         Route::post('slips/show', [PayrollController::class, 'showSlip'])->name('slips.show');
+        Route::post('slips/download', [PayrollController::class, 'downloadSlip'])->name('slips.download');
+        Route::post('slips/email', [PayrollController::class, 'emailSlip'])->name('slips.email');
         Route::post('show', [PayrollController::class, 'show'])->name('show');
         Route::post('destroy', [PayrollController::class, 'destroy'])->name('destroy');
         Route::post('update', [PayrollController::class, 'update'])->name('update');

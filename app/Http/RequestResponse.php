@@ -4,20 +4,20 @@ namespace App\Http;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Contracts\Support\Responsable;
+use Symfony\Component\HttpFoundation\BinaryFileResponse; // Import BinaryFileResponse
 
 /**
  * Class RequestResponse
  * @package App\Http\Responses
  */
-
 class RequestResponse implements Responsable
 {
-
     protected int $httpCode;
     protected mixed $data;
     protected string $message;
+    protected bool $isDownload;
 
-    public function __construct(int $httpCode, mixed $data = [], string $message = '')
+    public function __construct(int $httpCode, mixed $data = [], string $message = '', bool $isDownload = false)
     {
         if (!in_array($httpCode, range(100, 599))) {
             throw new \RuntimeException("$httpCode is not a valid HTTP status code");
@@ -26,10 +26,15 @@ class RequestResponse implements Responsable
         $this->httpCode = $httpCode;
         $this->data = $data;
         $this->message = $message;
+        $this->isDownload = $isDownload;
     }
 
-    public function toResponse($request): JsonResponse
+    public function toResponse($request): mixed
     {
+        if ($this->isDownload) {
+            return $this->data; // Return the BinaryFileResponse directly
+        }
+
         $payload = match (true) {
             $this->httpCode >= 500 => ['message' => 'Server error'],
             $this->httpCode >= 400 => ['message' => $this->message, 'errors' => $this->data ?: null],
@@ -46,11 +51,11 @@ class RequestResponse implements Responsable
 
     protected function formatData(mixed $data): mixed
     {
-        if ($data instanceof JsonResource) {
+        if ($data instanceof \Illuminate\Http\Resources\Json\JsonResource) {
             return $data->toArray(request());
         }
 
-        if ($data instanceof Collection) {
+        if ($data instanceof \Illuminate\Support\Collection) {
             return $data->toArray();
         }
 
@@ -92,4 +97,10 @@ class RequestResponse implements Responsable
         return new static(500, [], $message);
     }
 
+    public static function download(string $filePath, string $filename): static
+    {
+        $response = new BinaryFileResponse($filePath);
+        $response->setContentDisposition('attachment', $filename);
+        return new static(200, $response, '', true);
+    }
 }

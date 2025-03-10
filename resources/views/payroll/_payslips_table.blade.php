@@ -41,12 +41,12 @@
                 <a href="#" class="btn btn-info btn-sm" title="View Details" data-payslip="{{ $payslip->id }}"  onclick="viewPayslipDetails(this)">
                     <i class="bi bi-view-list"></i>
                 </a>
-                <a href="#" class="btn btn-success btn-sm" title="Download">
+                <button type="button" class="btn btn-success btn-sm" title="Download" data-payslip="{{ $payslip->id }}"  onclick="downloadPayslip(this)">
                     <i class="bi bi-download"></i>
-                </a>
-                <a href="#" class="btn btn-warning btn-sm" title="Send Email">
-                    <i class="bi bi-share"></i>
-                </a>
+                </button>
+                <button href="#" class="btn btn-warning btn-sm" title="Email Payslip" data-payslip="{{ $payslip->id }}"  onclick="emailPayslip(this)">
+                    <i class="bi bi-envelope-paper"></i>
+                </button>
             </td>
         </tr>
         @endforeach

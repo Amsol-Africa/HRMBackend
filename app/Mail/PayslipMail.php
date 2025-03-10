@@ -2,25 +2,29 @@
 
 namespace App\Mail;
 
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
 use App\Models\Payroll;
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Spatie\LaravelPdf\Facades\Pdf;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Attachment;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
 class PayslipMail extends Mailable
 {
     use Queueable, SerializesModels;
+    public $employee;
+    public $payslipData;
+    public $pdfPath;
 
-    public $payslip;
-
-    public function __construct(Payroll $payslip)
+    public function __construct($employee, $payslipData, $pdfPath)
     {
-        $this->payslip = $payslip;
+        $this->employee = $employee;
+        $this->payslipData = $payslipData;
+        $this->pdfPath = $pdfPath;
     }
 
     public function envelope(): Envelope
@@ -34,19 +38,14 @@ class PayslipMail extends Mailable
     {
         return new Content(
             view: 'emails.payslip-email',
-            with: ['payslip' => $this->payslip]
+            with: ['payslipData' => $this->payslipData]
         );
     }
 
     public function attachments(): array
     {
-        $pdf = Pdf::loadView('payroll._payslip_pdf', ['payslip' => $this->payslip]);
-        $pdfPath = storage_path("app/payslips/Payslip_{$this->payslip->employee->employee_code}.pdf");
-
-        file_put_contents($pdfPath, $pdf->output());
-
         return [
-            Attachment::fromPath($pdfPath)->as("Payslip_{$this->payslip->employee->employee_code}.pdf")->withMime('application/pdf'),
+            Attachment::fromPath($this->pdfPath)->as("payslip_{$this->employee->employee_code}.pdf")->withMime('application/pdf'),
         ];
     }
 }

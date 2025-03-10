@@ -33,6 +33,17 @@
             </thead>
             <tbody>
                 @foreach ($leaveRequests as $request)
+
+                @if (auth()->user()->hasRole('business-admin'))
+                    @php
+                        $viewUrl = route('business.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number])
+                    @endphp
+                @else
+                    @php
+                        $viewUrl = route('myaccount.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number])
+                    @endphp
+                @endif
+
                     <tr>
                         <td>{{ $request->reference_number }}</td>
                         <td>{{ $request->employee->user->name }}</td>
@@ -70,7 +81,7 @@
                         </td>
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <a href="" class="btn btn-primary">
+                                <a href="{{  $viewUrl  }}" class="btn btn-primary">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
                                 @if (is_null($request->approved_by) && auth()->user()->hasRole('business-admin'))

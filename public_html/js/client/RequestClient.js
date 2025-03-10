@@ -19,7 +19,7 @@ class RequestClient {
         return headers;
     }
 
-    async request(method, endpoint, data = null) {
+    async request(method, endpoint, data = null, isDownload = false) {
         const config = {
             method,
             headers: this.getHeaders(data instanceof FormData),
@@ -37,34 +37,50 @@ class RequestClient {
 
         try {
             const response = await fetch(`${this.baseURL}${endpoint}`, config);
-
             if (!response.ok) {
-                const jsonResponse = await response.json();
-                const status = response.status;
-                const message = jsonResponse.message || 'Something went wrong';
-                const errors = jsonResponse.errors || {};
+                const contentType = response.headers.get('content-type');
 
-                if (status === 400 || status === 422) {
-                    if (errors) {
-                        Object.values(errors).forEach(errorMessages => {
-                            errorMessages.forEach(errorMessage => {
-                                toastr.error(errorMessage);
+                if (contentType && contentType.includes('application/json')) {
+                    const jsonResponse = await response.json();
+                    const status = response.status;
+                    const message = jsonResponse.message || 'Something went wrong';
+                    const errors = jsonResponse.errors || {};
+
+                    if (status === 400 || status === 422) {
+                        if (errors) {
+                            Object.values(errors).forEach(errorMessages => {
+                                errorMessages.forEach(errorMessage => {
+                                    toastr.error(errorMessage);
+                                });
                             });
-                        });
+                        } else {
+                            toastr.error(message);
+                        }
+                    } else if (status === 401) {
+                        Swal.fire('Unauthorized', message, 'error');
+                    } else if (status === 403) {
+                        Swal.fire('Forbidden', message, 'error');
                     } else {
-                        toastr.error(message);
+                        toastr.error('Something went wrong');
                     }
-                } else if (status === 401) {
-                    Swal.fire('Unauthorized', message, 'error');
-                } else if (status === 403) {
-                    Swal.fire('Forbidden', message, 'error');
+                    throw new Error(message);
                 } else {
-                    toastr.error('Something went wrong');
+                    const textResponse = await response.text();
+                    toastr.error('An error occurred. Please try again.');
+                    console.error('Non-JSON error:', textResponse);
+                    throw new Error('Non-JSON error');
                 }
-                throw new Error(message);
             }
 
-            return await response.json();
+            if (isDownload) {
+                const blob = await response.blob();
+                return blob;
+            }
+
+            if (!isDownload) {
+                console.log('sammy')
+                return await response.json();
+            }
 
         } catch (error) {
             console.error('Request failed:', error.message);
@@ -76,8 +92,8 @@ class RequestClient {
         return this.request('GET', endpoint);
     }
 
-    post(endpoint, data) {
-        return this.request('POST', endpoint, data);
+    post(endpoint, data, isDownload = false) {
+        return this.request('POST', endpoint, data, isDownload);
     }
 
     put(endpoint, data) {

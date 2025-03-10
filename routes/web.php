@@ -55,7 +55,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
         Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');
 
-
         Route::get('/allowances', [DashboardController::class, 'allowances'])->name('allowances.index');
         Route::get('/allowances/create', [DashboardController::class, 'createAllowances'])->name('allowances.create');
 
@@ -64,8 +63,9 @@ Route::middleware(['auth'])->group(function () {
 
         //leave management
         Route::prefix('leave')->name('leave.')->group(function () {
-            Route::get('/requests/create', [DashboardController::class, 'requestLeave'])->name('create');
             Route::get('/requests', [DashboardController::class, 'leaveApplications'])->name('index');
+            Route::get('/requests/create', [DashboardController::class, 'requestLeave'])->name('create');
+            Route::get('/view/{leave}', [DashboardController::class, 'leaveApplication'])->name('show');
             Route::get('/types', [DashboardController::class, 'leaveTypes'])->name('types');
             Route::get('/periods', [DashboardController::class, 'leavePeriods'])->name('periods');
             Route::get('/entitlements', [DashboardController::class, 'leaveEntitlements'])->name('entitlements.index');
@@ -139,6 +139,7 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('leave')->name('leave.')->group(function () {
             Route::get('/requests', [EmployeeDashboardController::class, 'viewLeaves'])->name('requests.index');
             Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
+            Route::get('/view/{leave}', [EmployeeDashboardController::class, 'leaveApplication'])->name('show');
         });
         // Attendance Module
         Route::prefix('attendances')->name('attendances.')->group(function () {

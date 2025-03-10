@@ -54,6 +54,35 @@ class PayrollService {
         }
     }
 
+    async emailPayslip(data) {
+        try {
+            const response = await this.requestClient.post('/payroll/slips/email', data);
+            toastr.success(response.message, "Success");
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
+    async downloadPayslip(data) {
+        try {
+            const blob = await this.requestClient.post('/payroll/slips/download', data, true);
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `payslip_${data.payslip}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+
     async save(data) {
         try {
             const response = await this.requestClient.post('/payroll/store', data);
@@ -79,6 +108,14 @@ class PayrollService {
         if (route) {
             setTimeout(() => {
                 window.location.href = route;
+            }, 1500);
+        }
+    }
+
+    handleRedirectToTab(route) {
+        if (route) {
+            setTimeout(() => {
+                window.open(route, '_blank');
             }, 1500);
         }
     }

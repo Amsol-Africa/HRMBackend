@@ -65,6 +65,14 @@ class AuthService {
             }, 1500);
         }
     }
+
+    handleRedirectToTab(route) {
+        if (route) {
+            setTimeout(() => {
+                window.open(route, '_blank');
+            }, 1500);
+        }
+    }
 }
 
 export default AuthService;

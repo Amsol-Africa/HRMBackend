@@ -6,14 +6,16 @@ use App\Models\Payroll;
 use App\Models\Business;
 use App\Models\Employee;
 use App\Models\Location;
+use App\Mail\PayslipMail;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Models\EmployeePayroll;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\PayrollService;
 use App\Services\PayslipService;
 use App\Traits\HandleTransactions;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class PayrollController extends Controller
 {
@@ -115,8 +117,8 @@ class PayrollController extends Controller
             ],
             'employees' => 'required|array',
             'employees.*' => 'exists:employees,id',
-            'locations' => 'nullable|array',  // Adjusted to locations[] instead of location[]
-            'locations.*' => 'exists:locations,slug', // Check each element in locations[]
+            'locations' => 'nullable|array',
+            'locations.*' => 'exists:locations,slug',
             'repay_loans' => 'nullable|boolean',
             'recover_advance' => 'nullable|boolean',
             'pay_overtime' => 'nullable|boolean',
@@ -143,25 +145,45 @@ class PayrollController extends Controller
             $employeeIds = $validatedData['employees'];
             $employees = Employee::whereIn('id', $employeeIds)->get();
 
-            $payrollResults = [];
             $errors = "";
 
             foreach ($employees as $employee) {
                 try {
+
+                    $businessSlug = $business->slug;
+                    $directoryPath = storage_path('app/payslips/' . $businessSlug);
+                    $pdfPath = $directoryPath . '/' . $employee->employee_code . '_' . $validatedData['payrun_year'] . '_' . $validatedData['payrun_month'] . '.pdf';
+
+                    Log::debug("PDF Save Path: " . $pdfPath);
                     Log::debug("Calculating payroll for employee ID: {$employee->id}");
 
-                    $payrollData = $this->payrollService->calculatePayroll(
+                    // Create directory if it doesn't exist
+                    if (!is_dir($directoryPath)) {
+                        mkdir($directoryPath, 0755, true);
+                        Log::debug("Created directory: " . $directoryPath);
+                    }
+
+                    $payslipData = $this->payrollService->calculatePayroll(
                         $employee,
                         $validatedData['payrun_year'],
                         $validatedData['payrun_month'],
                         $payroll->id
                     );
 
-                    $payrollResults[] = [
-                        'employee_id' => $employee->id,
-                        'name' => $employee->name,
-                        'net_pay' => $payrollData['net_pay'],
-                    ];
+                    $payslipData->deductions = json_decode($payslipData->deductions, true);
+
+                    $payslipData['payrun_year'] = $validatedData['payrun_year'];
+                    $payslipData['payrun_month'] = $validatedData['payrun_month'];
+
+                    Log::debug($payslipData);
+                    $pdf = Pdf::loadView('pdf.payslip', ['payslip' => $payslipData]);
+                    $pdf->save($pdfPath);
+
+                    Mail::to($employee->user->email)->send(new PayslipMail($employee, [
+                        'month' => $validatedData['payrun_month'],
+                        'year' => $validatedData['payrun_year'],
+                        'business' => $business,
+                    ], $pdfPath));
 
                 } catch (\Exception $e) {
                     Log::error("Payroll calculation failed for employee ID {$employee->id}: " . $e->getMessage());
@@ -177,11 +199,69 @@ class PayrollController extends Controller
         });
     }
 
-
     public function printPayslip($id)
     {
         $payslip = EmployeePayroll::findOrFail($id);
         return $this->payslipService->generatePayslipPdf($payslip->id);
+    }
+
+    public function downloadSlip(Request $request)
+    {
+        $payslip = EmployeePayroll::findOrFail($request->payslip);
+        $employee = $payslip->employee;
+        $payrun_year = $payslip->payroll->payrun_year;
+        $payrun_month = $payslip->payroll->payrun_month;
+
+        $business = Business::findBySlug(session('active_business_slug'));
+        $businessSlug = $business->slug;
+        $directoryPath = storage_path('app/payslips/' . $businessSlug);
+        $pdfPath = $directoryPath . '/' . $employee->employee_code . '_' . $payrun_year . '_' . $payrun_month . '.pdf';
+
+        if (!file_exists($pdfPath)){
+            if (!is_dir($directoryPath)) {
+                mkdir($directoryPath, 0755, true);
+            }
+
+            $pdf = Pdf::loadView('pdf.payslip', ['payslip' => $payslip]);
+            $pdf->save($pdfPath);
+        }
+
+        return RequestResponse::download($pdfPath, $employee->employee_code . '_' . $payrun_year . '_' . $payrun_month . '.pdf');
+    }
+
+    public function emailSlip(Request $request)
+    {
+        $payslip = EmployeePayroll::findOrFail($request->payslip);
+        $employee = $payslip->employee;
+        $payrun_year = $payslip->payroll->payrun_year;
+        $payrun_month = $payslip->payroll->payrun_month;
+
+        $business = Business::findBySlug(session('active_business_slug'));
+        $businessSlug = $business->slug;
+        $directoryPath = storage_path('app/payslips/' . $businessSlug);
+        $pdfPath = $directoryPath . '/' . $employee->employee_code . '_' . $payrun_year . '_' . $payrun_month . '.pdf';
+
+        if (!file_exists($pdfPath)){
+            if (!is_dir($directoryPath)) {
+                mkdir($directoryPath, 0755, true);
+            }
+
+            $pdf = Pdf::loadView('pdf.payslip', ['payslip' => $payslip]);
+            $pdf->save($pdfPath);
+        }
+
+        try {
+            Mail::to($employee->user->email)->send(new PayslipMail($employee, [
+                'month' => $payrun_month,
+                'year' => $payrun_year,
+                'business' => $business,
+            ], $pdfPath));
+
+            return RequestResponse::ok('Payslip emailed successfully.');
+        } catch (\Exception $e) {
+            Log::error("Failed to email payslip for employee ID {$employee->id}: " . $e->getMessage());
+            return RequestResponse::internalServerError('Failed to email payslip.');
+        }
     }
 
     public function downloadCsvTemplate()

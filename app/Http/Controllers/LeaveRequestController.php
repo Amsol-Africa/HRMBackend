@@ -24,13 +24,19 @@ class LeaveRequestController extends Controller
         if ($request->has('status')) {
             switch ($status) {
                 case 'pending':
-                    $leaveRequests->whereNull('approved_by');
+                    $leaveRequests->currentStatus('pending');
                     break;
                 case 'approved':
-                    $leaveRequests->whereNotNull('approved_by');
+                    $leaveRequests->currentStatus('approved');
                     break;
-                case 'rejected':
-                    $leaveRequests->whereNotNull('rejection_reason');
+                case 'declined':
+                    $leaveRequests->currentStatus('declined');
+                    break;
+                case 'active':
+                    $leaveRequests->currentStatus('active');
+                    break;
+                case 'used_up':
+                    $leaveRequests->currentStatus('used_up');
                     break;
             }
         }
