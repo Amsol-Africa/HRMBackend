@@ -7,7 +7,7 @@ const attendancesService = new AttendancesService(requestClient);
 
 window.getAttendances = async function (date = null) {
     try {
-        let data = {date: date};
+        let data = { date: date };
         const attendances = await attendancesService.fetch(data);
         $("#attendancesContainer").html(attendances);
         new DataTable('#attendancesTable');
@@ -18,7 +18,7 @@ window.getAttendances = async function (date = null) {
 
 window.getMonthly = async function (month = null) {
     try {
-        let data = {month: month};
+        let data = { month: month };
         const attendances = await attendancesService.monthly(data);
         $("#attendancesContainer").html(attendances);
         new DataTable('#attendancesTable');
@@ -29,7 +29,7 @@ window.getMonthly = async function (month = null) {
 
 window.getOvertime = async function (date = null) {
     try {
-        let data = {date: date};
+        let data = { date: date };
         const overtime = await attendancesService.overtime(data);
         $("#overtimeContainer").html(overtime);
         new DataTable('#overtimeTable');
@@ -37,21 +37,21 @@ window.getOvertime = async function (date = null) {
         console.error("Error loading user data:", error);
     }
 };
+
 window.getClockins = async function () {
     try {
-        let data = {};
-        const clockins = await attendancesService.clockins(data);
+        const clockins = await attendancesService.clockins({});
         $("#clockinsContainer").html(clockins);
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error("Error loading clock-ins:", error);
     }
 };
+
+
 window.clockIn = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-
     let formData;
-
     if ($("#clockInForm").length) {
         formData = new FormData(document.getElementById("clockInForm"));
     } else {
@@ -59,7 +59,6 @@ window.clockIn = async function (btn) {
         formData = new FormData();
         formData.append('employee_id', employee);
     }
-
     try {
         await attendancesService.clockIn(formData);
     } finally {

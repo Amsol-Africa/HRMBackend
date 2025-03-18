@@ -4,16 +4,22 @@
         <div class="breadcrumb__wrapper mb-25">
             <nav>
                 <ol class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{{ route('business.index', $currentBusiness->slug) }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('business.index', $currentBusiness->slug) }}">Home</a>
+                    </li>
                     <li class="breadcrumb-item active" aria-current="page">{{ $page }}</li>
                 </ol>
             </nav>
+            <a href="javascript:void(0);" id="startTour" class="text-primary" data-bs-toggle="tooltip"
+                title="Need Help? Click for a guide">
+                <i class="bi bi-question-circle fs-4"></i>
+            </a>
         </div>
+
     </div>
 
     <div class="row">
         <div class="col-md-8">
-            <form action="" id="businessDetailsForm">
+            <form action="" id="businessDetailsForm" enctype="multipart/form-data">
 
                 <input type="text" value="{{ $currentBusiness->slug }}" hidden name="business_slug" id="business_slug">
 
@@ -25,7 +31,9 @@
                                 <label for="name">Company / Organization name</label>
                             </div>
                             <div class="form__input">
-                                <input class="form-control" placeholder="Company / organization Name" name="name" id="name" value="{{ $currentBusiness->company_name }}" type="text" required autocomplete="name">
+                                <input class="form-control" placeholder="Company / organization Name" name="name"
+                                    id="name" value="{{ $currentBusiness->company_name }}" type="text" required
+                                    autocomplete="name">
                             </div>
                         </div>
 
@@ -36,11 +44,21 @@
                             <div class="form__input">
                                 <select id="company_size" name="company_size" required class="form-select">
                                     <option value="">Select Company Size</option>
-                                    <option value="1-10" {{ $currentBusiness->company_size == '1-10' ? 'selected' : '' }}>1-10 employees</option>
-                                    <option value="11-50" {{ $currentBusiness->company_size == '11-50' ? 'selected' : '' }}>11-50 employees</option>
-                                    <option value="51-200" {{ $currentBusiness->company_size == '51-200' ? 'selected' : '' }}>51-200 employees</option>
-                                    <option value="201-500" {{ $currentBusiness->company_size == '201-500' ? 'selected' : '' }}>201-500 employees</option>
-                                    <option value="500+" {{ $currentBusiness->company_size == '500+' ? 'selected' : '' }}>500+ employees</option>
+                                    <option value="1-10"
+                                        {{ $currentBusiness->company_size == '1-10' ? 'selected' : '' }}>1-10 employees
+                                    </option>
+                                    <option value="11-50"
+                                        {{ $currentBusiness->company_size == '11-50' ? 'selected' : '' }}>11-50
+                                        employees</option>
+                                    <option value="51-200"
+                                        {{ $currentBusiness->company_size == '51-200' ? 'selected' : '' }}>51-200
+                                        employees</option>
+                                    <option value="201-500"
+                                        {{ $currentBusiness->company_size == '201-500' ? 'selected' : '' }}>201-500
+                                        employees</option>
+                                    <option value="500+"
+                                        {{ $currentBusiness->company_size == '500+' ? 'selected' : '' }}>500+ employees
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -53,10 +71,10 @@
                                 <select id="industry" name="industry" required class="form-select">
                                     <option value="">Select Industry</option>
                                     @foreach($industries as $industry)
-                                        <option value="{{ $industry->slug }}"
-                                            {{ $industry->slug === $currentBusiness->industry ? 'selected' : '' }}>
-                                            {{ $industry->name }}
-                                        </option>
+                                    <option value="{{ $industry->slug }}"
+                                        {{ $industry->slug === $currentBusiness->industry ? 'selected' : '' }}>
+                                        {{ $industry->name }}
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -67,9 +85,12 @@
                                 <label for="phone0">Contact phone</label>
                             </div>
                             <div class="form__input">
-                                <input class="phone-input-control" name="phone" id="phone0" value="{{ $currentBusiness->phone }}" type="text" required autocomplete="phone">
-                                <input name="code" hidden id="code0" type="text" required value="{{ $currentBusiness->code }}" autocomplete="code">
-                                <input name="country" hidden id="country0" type="text" required value="{{ $currentBusiness->country }}" autocomplete="country">
+                                <input class="phone-input-control" name="phone" id="phone0"
+                                    value="{{ $currentBusiness->phone }}" type="text" required autocomplete="phone">
+                                <input name="code" hidden id="code0" type="text" required
+                                    value="{{ $currentBusiness->code }}" autocomplete="code">
+                                <input name="country" hidden id="country0" type="text" required
+                                    value="{{ $currentBusiness->country }}" autocomplete="country">
                             </div>
                         </div>
 
@@ -81,7 +102,9 @@
                                         <label for="registration_no">Registration No.</label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" placeholder="Company Registration No" name="registration_no" id="registration_no" value="" type="text" required autocomplete="registration_no">
+                                        <input class="form-control" placeholder="Company Registration No"
+                                            name="registration_no" id="registration_no" value="" type="text" required
+                                            autocomplete="registration_no">
                                     </div>
                                 </div>
                             </div>
@@ -89,10 +112,11 @@
                             <div class="col-md-6">
                                 <div class="from__input-box">
                                     <div class="form__input-title">
-                                        <label for="logo">Upload registration certificate </label>
+                                        <label for="registration_certificate">Upload registration certificate </label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" type="file" name="logo" required id="logo">
+                                        <input class="form-control" type="file" name="registration_certificate" required
+                                            id="registration_certificate">
                                     </div>
                                 </div>
                             </div>
@@ -105,7 +129,9 @@
                                         <label for="business_license_no">Business License Number</label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" placeholder="Business License Number" name="business_license_no" id="business_license_no" value="" type="text" required autocomplete="business_license_no">
+                                        <input class="form-control" placeholder="Business License Number"
+                                            name="business_license_no" id="business_license_no" value="" type="text"
+                                            required autocomplete="business_license_no">
                                     </div>
                                 </div>
                             </div>
@@ -113,10 +139,12 @@
                             <div class="col-md-6">
                                 <div class="from__input-box">
                                     <div class="form__input-title">
-                                        <label for="business_license_certificate">Upload Business License Certificate</label>
+                                        <label for="business_license_certificate">Upload Business License
+                                            Certificate</label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" type="file" name="business_license_certificate" required id="business_license_certificate">
+                                        <input class="form-control" type="file" name="business_license_certificate"
+                                            required id="business_license_certificate">
                                     </div>
                                 </div>
                             </div>
@@ -127,7 +155,8 @@
                                 <label for="physical_address">Physical Address</label>
                             </div>
                             <div class="form__input">
-                                <input class="form-control" placeholder="Building, Street, Town" name="physical_address" id="physical_address" value="" type="text" required autocomplete="physical_address">
+                                <input class="form-control" placeholder="Building, Street, Town" name="physical_address"
+                                    id="physical_address" value="" type="text" required autocomplete="physical_address">
                             </div>
                         </div>
 
@@ -140,7 +169,8 @@
                                         <label for="tax_pin_no">Tax Pin No.</label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" placeholder="Tax Pin No" name="tax_pin_no" id="tax_pin_no" value="" type="text" required autocomplete="tax_pin_no">
+                                        <input class="form-control" placeholder="Tax Pin No" name="tax_pin_no"
+                                            id="tax_pin_no" value="" type="text" required autocomplete="tax_pin_no">
                                     </div>
                                 </div>
                             </div>
@@ -151,7 +181,8 @@
                                         <label for="tax_pin_certificate">Tax Pin Certificate </label>
                                     </div>
                                     <div class="form__input">
-                                        <input class="form-control" type="file" name="tax_pin_certificate" required id="tax_pin_certificate">
+                                        <input class="form-control" type="file" name="tax_pin_certificate" required
+                                            id="tax_pin_certificate">
                                     </div>
                                 </div>
                             </div>
@@ -159,7 +190,7 @@
 
                         <div class="from__input-box">
                             <div class="form__input-title">
-                                <label for="logo">Upload your logo (Optional) </label>
+                                <label for="logo">Upload your logo</label>
                             </div>
                             <div class="form__input">
                                 <input class="form-control" type="file" name="logo" required id="logo">
@@ -167,7 +198,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <button class="btn btn-primary w-100" onclick="updateBusiness(this)" type="button"> Complete Setup <i class="ms-2 bi bi-check-circle"></i> </button>
+                            <button class="btn btn-primary w-100" onclick="updateBusiness(this)" type="button"> Complete
+                                Setup <i class="ms-2 bi bi-check-circle"></i> </button>
                         </div>
 
                     </div>
@@ -176,15 +208,19 @@
             </form>
         </div>
         <div class="col-md-2">
+            <p>Business logo</p>
             <div class="card mb-3">
                 <div class="card-body text-center">
-                    <div style="height: 200px; width: 200px">
-                        <img src="{{ $currentBusiness->getImageUrl() }}" alt="{{ $currentBusiness->company_name }}" class="img-fluid">
+                    <div style="overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img src="{{ $currentBusiness->getImageUrl() }}" alt="{{ $currentBusiness->company_name }}"
+                            class="img-fluid" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                     </div>
                 </div>
             </div>
 
+
             <!-- Registration Certificate (Non-image file) -->
+            <p>Registration Certificate</p>
             <div class="card mb-3">
                 <div class="card-body text-center">
                     <a href="{{ $currentBusiness->getFirstMediaUrl('registration_certificates') }}" target="_blank">
@@ -194,6 +230,7 @@
             </div>
 
             <!-- Tax Pin Certificate (Non-image file) -->
+            <p>Tax Pin Certificate</p>
             <div class="card mb-3">
                 <div class="card-body text-center">
                     <a href="{{ $currentBusiness->getFirstMediaUrl('tax_pin_certificates') }}" target="_blank">
@@ -203,6 +240,7 @@
             </div>
 
             <!-- Business License Certificate (Non-image file) -->
+            <p>Business License Certificate</p>
             <div class="card">
                 <div class="card-body text-center">
                     <a href="{{ $currentBusiness->getFirstMediaUrl('business_license_certificates') }}" target="_blank">
@@ -215,7 +253,52 @@
     </div>
 
     @push('scripts')
-        <script src="{{ asset('/js/main/businesses.js') }}" type="module"></script>
+    <script src="{{ asset('/js/main/businesses.js') }}" type="module"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("startTour").addEventListener("click", function() {
+                introJs()
+                    .setOptions({
+                        steps: [{
+                                element: "#tax_pin_no", // Corrected ID
+                                intro: "Enter your KRA Tax PIN here. It is required for tax compliance.",
+                                position: "bottom"
+                            },
+                            {
+                                element: "#business_license_no", // Corrected ID
+                                intro: "Provide your valid business license number for verification.",
+                                position: "bottom"
+                            },
+                            {
+                                element: "#tax_pin_certificate", // Corrected ID
+                                intro: "Upload your KRA Tax PIN Certificate to confirm compliance.",
+                                position: "bottom"
+                            },
+                            {
+                                element: "#registration_no", // Corrected ID
+                                intro: "Enter your business registration number as per official records.",
+                                position: "bottom"
+                            },
+                            {
+                                element: "#phone0", // Corrected ID
+                                intro: "Provide a valid phone number for contact and verification purposes.",
+                                position: "bottom"
+                            },
+                            {
+                                element: "#name", // Corrected ID
+                                intro: "Enter the full name of your business or organization.",
+                                position: "bottom"
+                            }
+                        ],
+                        showProgress: true, // Show progress bar
+                        showBullets: false, // Hide step bullets
+                        exitOnOverlayClick: false, // Prevent accidental exit
+                        disableInteraction: true // Prevent user input while tour is active
+                    })
+                    .start();
+            });
+        });
+    </script>
     @endpush
 
 </x-app-layout>

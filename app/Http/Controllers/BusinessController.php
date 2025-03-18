@@ -132,10 +132,10 @@ class BusinessController extends Controller
             'business_license_no' => 'required|string',
             'physical_address' => 'required|string',
 
-            'logo' => 'nullable|file|image|max:1024',
-            'registration_certificate' => 'nullable|file|max:2048',
-            'tax_pin_certificate' => 'nullable|file|max:2048',
-            'business_license_certificate' => 'nullable|file|max:2048',
+            'logo' => 'required|file|image|max:1024',
+            'registration_certificate' => 'required|file|max:2048',
+            'tax_pin_certificate' => 'required|file|max:2048',
+            'business_license_certificate' => 'required|file|max:2048',
         ]);
 
         return $this->handleTransaction(function () use ($request, $validatedData) {
@@ -186,7 +186,4 @@ class BusinessController extends Controller
             return RequestResponse::created('Business updated successfully.');
         });
     }
-
-
-
 }
