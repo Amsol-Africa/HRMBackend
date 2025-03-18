@@ -253,7 +253,7 @@ class PayrollController extends Controller
         try {
             Mail::to($employee->user->email)->send(new PayslipMail($employee, [
                 'month' => $payrun_month,
-                'year' => $payrun_year,
+                'year' => $payrun_year, 
                 'business' => $business,
             ], $pdfPath));
 

@@ -1,4 +1,5 @@
 <div class="row">
+
     <div class="col-xxl-7">
         <div class="card__wrapper height-equal">
             <div class="employee__profile-single-box p-relative">

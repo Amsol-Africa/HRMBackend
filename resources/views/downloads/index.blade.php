@@ -8,7 +8,6 @@
                         <div class="form-group">
                             <label for="payroll_id">Select a payroll for Downloads</label>
                             <select name="payroll_id" id="payroll_id" class="form-select">
-                                <option value="">Select a payroll</option>
                                 @foreach($payrolls as $payroll)
                                     <option value="{{ $payroll->id }}">{{ $payroll->payroll_name }}</option>
                                 @endforeach
@@ -25,7 +24,13 @@
                 <div class="card-header">ITAX Payroll Downloads</div>
                 <div class="card-body mb-0">
                     <div class="row g-2">
-                     <div class="col-md-4">
+                        <div class="col-md-4">
+                            <button type="button" onclick="download(this)" data-name="bankAdviceTemplate" class="btn w-100 btn-primary" > <i class="fa-solid fa-download me-2"></i> Bank Advice Template</button>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" onclick="download(this)" data-name="payrollReport" class="btn w-100 btn-primary" > <i class="fa-solid fa-download me-2"></i> Payroll Report Template</button>
+                        </div>
+                        <div class="col-md-4">
                             <a href="" class="btn w-100 btn-primary"> <i class="fa-solid fa-download me-2"></i> ITax Employee Details (Return/Remittance)</a>
                         </div>
                         <div class="col-md-3">
@@ -54,7 +59,7 @@
                 <div class="card-header">SHIF/NHIF</div>
                 <div class="card-body mb-0">
                     <div class="row g-2">
-                     <div class="col-md-3">
+                        <div class="col-md-3">
                             <a href="" class="btn btn-primary w-100" id="idNhif" title="Export SHIF/NHIF report">SHIF/NHIF (Return/Remittance) report</a>
                         </div>
                         <div class="col-md-3">
@@ -83,7 +88,7 @@
                 <div class="card-header">NSSF</div>
                 <div class="card-body mb-0">
                     <div class="row g-2">
-                     <div class="col-md-3">
+                        <div class="col-md-3">
                             <a href="" class="btn btn-primary w-100" id="idNssf" title="Export NSSF report">New NSSF (Return/Remittance) format</a>
                         </div>
                         <div class="col-md-3">
@@ -414,6 +419,11 @@
 
         </div>
     </div>
+
+
+    @push('scripts')
+        <script src="{{ asset('js/main/downloads.js') }}" type="module"></script>
+    @endpush
 
 
 </x-app-layout>

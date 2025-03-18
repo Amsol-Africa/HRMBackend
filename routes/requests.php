@@ -12,6 +12,7 @@ use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OvertimeController;
@@ -269,12 +270,20 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // trends
-    // trends
     Route::name('trends.')->prefix('trends')->group(function () {
         Route::post('payroll', [TrendController::class, 'payroll'])->name('payroll');
         Route::post('attendance', [TrendController::class, 'attendance'])->name('attendance');
         Route::post('leave', [TrendController::class, 'leave'])->name('leave');
         Route::post('loans', [TrendController::class, 'loans'])->name('loans');
+    });
+
+    // downloads
+    Route::name('downloads.')->prefix('downloads')->group(function () {
+        Route::post('/', [DownloadController::class, 'downloads'])->name('downloads');
+        Route::post('payroll', [DownloadController::class, 'payroll'])->name('payroll');
+        Route::post('attendance', [DownloadController::class, 'attendance'])->name('attendance');
+        Route::post('leave', [DownloadController::class, 'leave'])->name('leave');
+        Route::post('loans', [DownloadController::class, 'loans'])->name('loans');
     });
 
     // activities

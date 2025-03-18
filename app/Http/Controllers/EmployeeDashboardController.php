@@ -81,6 +81,13 @@ class EmployeeDashboardController extends Controller
         return view('attendances.employee-clockin', compact('page', 'description'));
     }
 
+    public function updateDetails(Request $request)
+    {
+        $page = 'Update Your Details';
+        $description = '';
+        return view('employees.update-details', compact('page', 'description'));
+    }
+
     // Download P9 Form
     public function downloadP9()
     {
