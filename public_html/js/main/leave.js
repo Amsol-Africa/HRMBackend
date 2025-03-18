@@ -18,9 +18,7 @@ window.getLeave = async function (page = 1, status = 'pending') {
 window.saveLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-
     let formData = new FormData(document.getElementById("leaveForm"));
-
     try {
         if (formData.has('leave_slug')) {
             await leaveService.update(formData);

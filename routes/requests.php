@@ -293,4 +293,7 @@ Route::middleware(['auth'])->group(function () {
 
     //print
     Route::get('/payslip/print/{id}', [PayrollController::class, 'printPayslip'])->name('payslip.print');
+
+    // Gen AI
+    Route::post('/generate-job-description', [JobPostController::class, 'generateDescription'])->middleware('auth');
 });

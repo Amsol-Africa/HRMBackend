@@ -39,8 +39,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/import', [DashboardController::class, 'importEmployees'])->name('employees.import');
         Route::get('/job-categories', [DashboardController::class, 'jobCategories'])->name('job-categories.index');
         Route::get('/shifts', [DashboardController::class, 'shifts'])->name('shifts.index');
-        // Route::get('/tasks', [DashboardController::class, 'tasks'])->name('tasks.index');
 
+        // Route::get('/tasks', [DashboardController::class, 'tasks'])->name('tasks.index');
         Route::get('/payroll/formula/create', [DashboardController::class, 'createPayrollFormula'])->name('payroll.formula.create');
         Route::get('/payroll/formula', [DashboardController::class, 'payrollFormula'])->name('payroll.formula');
         Route::get('/payroll/import', [DashboardController::class, 'payrollImport'])->name('payroll.import');
@@ -131,10 +131,9 @@ Route::middleware(['auth'])->group(function () {
 
 
         Route::get('profile', [ProfileController::class, 'edit'])->name('profile.index');
-
     });
 
-    Route::middleware(['ensure_role','role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
+    Route::middleware(['ensure_role', 'role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
         Route::get('/', [EmployeeDashboardController::class, 'index'])->name('index');
 
         // Profile Routes
@@ -161,7 +160,6 @@ Route::middleware(['auth'])->group(function () {
         // Absenteeism Route
         Route::get('absenteeism', [DashboardController::class, 'absenteeism'])->name('absenteeism.index');
 
-
         // Attendance Reports Route
         Route::get('reports', [DashboardController::class, 'attendanceReport'])->name('reports.index');
 
@@ -175,16 +173,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payslips', [EmployeeDashboardController::class, 'viewPayslips'])->name('payslips');
         Route::get('/payslips/download/{id}', [EmployeeDashboardController::class, 'downloadPayslip'])->name('payslips.download');
 
-        // Account & Notifications
-        Route::get('/account-settings', function () {
-            return view('employee.settings');
-        })->name('account.settings');
+        Route::middleware('auth')->group(function () {
+            Route::get('/account-settings', [EmployeeDashboardController::class, 'accountSettings'])->name('account.settings');
+        });
 
         Route::get('/notifications', function () {
             return view('employee.notifications');
         })->name('notifications');
     });
-
 });
 
 Route::middleware('auth')->group(function () {

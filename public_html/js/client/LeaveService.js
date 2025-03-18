@@ -39,7 +39,12 @@ class LeaveService {
             const response = await this.requestClient.post('/leave/store', data);
             toastr.success(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            if (error.response && error.response.data) {
+                toastr.error(error.response.data.message, "Error");
+            } else {
+                toastr.error("You already have a leave request that overlaps with these dates.", "Error");
+            }
+            console.log(error);
             throw error;
         }
     }

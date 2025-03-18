@@ -100,52 +100,24 @@ class AttendanceController extends Controller
                 'date' => $today,
             ])->first();
 
-            // **Check if the employee has already clocked out**
-            if ($existingAttendance && !is_null($existingAttendance->clock_out)) {
-                return RequestResponse::badRequest('Employee has already clocked out for today.');
-            }
-
             if ($existingAttendance) {
-                if (!empty($validatedData['is_absent'])) {
-                    $existingAttendance->is_absent = $validatedData['is_absent'];
-                    $existingAttendance->clock_in = null;
-                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
-                    $existingAttendance->logged_by = $user->id;
-                    $existingAttendance->save();
-                    return RequestResponse::created('Attendance updated successfully (Marked Absent).');
-                } elseif ($existingAttendance->is_absent) {
-                    $existingAttendance->is_absent = false;
-                    $existingAttendance->clock_in = now()->format("H:i");
-                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
-                    $existingAttendance->logged_by = $user->id;
-                    $existingAttendance->save();
-                    return RequestResponse::created('Attendance updated successfully (Clocked In).');
-                } else {
-                    $existingAttendance->remarks = $validatedData['remarks'] ?? null;
-                    $existingAttendance->logged_by = $user->id;
-                    $existingAttendance->save();
-                    return RequestResponse::created('Attendance already recorded (Remarks Updated).');
+                if (!is_null($existingAttendance->clock_out)) {
+                    return RequestResponse::badRequest('You have already completed today’s attendance.');
                 }
-            } else {
-                $validatedData['date'] = $today;
-                if (!empty($validatedData['is_absent'])) {
-                    $validatedData['clock_in'] = null;
-                } else {
-                    $validatedData['clock_in'] = now()->format("H:i");
-                }
-
-                Attendance::create([
-                    'employee_id' => $validatedData['employee_id'],
-                    'business_id' => $business->id,
-                    'date' => $validatedData['date'],
-                    'clock_in' => $validatedData['clock_in'],
-                    'is_absent' => $validatedData['is_absent'] ?? false,
-                    'remarks' => $validatedData['remarks'] ?? null,
-                    'logged_by' => $user->id,
-                ]);
-
-                return RequestResponse::created('Attendance logged successfully.');
+                return RequestResponse::badRequest('You are already clocked in.');
             }
+
+            Attendance::create([
+                'employee_id' => $validatedData['employee_id'],
+                'business_id' => $business->id,
+                'date' => $today,
+                'clock_in' => now()->format("H:i"),
+                'is_absent' => $validatedData['is_absent'] ?? false,
+                'remarks' => $validatedData['remarks'] ?? null,
+                'logged_by' => $user->id,
+            ]);
+
+            return RequestResponse::created('Clock-in successful.');
         });
     }
 
@@ -163,8 +135,8 @@ class AttendanceController extends Controller
         }
 
         $clockins = $query->orderBy('date', 'desc')->get();
-
         $clockinsCards = view('attendances._clock_ins', compact('clockins'))->render();
+
         return RequestResponse::ok('Ok.', $clockinsCards);
     }
 
@@ -177,37 +149,24 @@ class AttendanceController extends Controller
 
         return $this->handleTransaction(function () use ($validatedData) {
             $business = Business::findBySlug(session('active_business_slug'));
-
-            $attendance = Attendance::where('employee_id', $validatedData['employee'])
-                ->where('business_id', $business->id)
-                ->whereDate('date', now()->format('Y-m-d'))
-                ->first();
+            $attendance = Attendance::where([
+                'employee_id' => $validatedData['employee'],
+                'business_id' => $business->id,
+                'date' => now()->format('Y-m-d'),
+            ])->first();
 
             if (!$attendance || !$attendance->clock_in) {
-                return RequestResponse::badRequest('Clock-in record not found.');
+                return RequestResponse::badRequest('You need to clock in first.');
             }
 
-            $clockIn = Carbon::parse($attendance->clock_in);
-            $clockOut = now()->format('H:i');
-            $workHours = $clockIn->diffInHours($clockOut);
-
-            $overtimeHours = max(0, $workHours - 8);
+            if ($attendance->clock_out) {
+                return RequestResponse::badRequest('You have already clocked out today.');
+            }
 
             $attendance->update([
-                'clock_out' => $clockOut,
-                'overtime_hours' => $overtimeHours,
+                'clock_out' => now()->format('H:i'),
+                'overtime_hours' => max(0, Carbon::parse($attendance->clock_in)->diffInHours(now()) - 8),
             ]);
-
-            if ($overtimeHours > 0) {
-                Overtime::create([
-                    'employee_id' => $validatedData['employee'],
-                    'business_id' => $business->id,
-                    'date' => now()->format('Y-m-d'),
-                    'overtime_hours' => $overtimeHours,
-                    'rate' => $this->getOvertimeRate($business),
-                    'total_pay' => $overtimeHours * $this->getOvertimeRate($business),
-                ]);
-            }
 
             return RequestResponse::created('Clock-out recorded successfully.');
         });
@@ -217,5 +176,4 @@ class AttendanceController extends Controller
     {
         return $business->overtime_rate ?? 1.5;
     }
-
 }

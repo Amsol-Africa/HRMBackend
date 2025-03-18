@@ -59,10 +59,13 @@ class AttendancesService {
             const response = await this.requestClient.post('/attendances/clockin', data);
             toastr.success(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            console.log(error);
+            toastr.error('Employee already clocked in', "Error");
             throw error;
         }
     }
+
+
     async clockOut(data) {
         try {
             const response = await this.requestClient.post('/attendances/clockout', data);

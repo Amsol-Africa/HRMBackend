@@ -124,6 +124,71 @@ class EmployeeDashboardController extends Controller
         }
 
         return response()->download($filePath);
+    }
 
-   }
+    public function accountSettings()
+    {
+        $user = Auth::user();
+        $employee = Employee::where('user_id', $user->id)->firstOrFail();
+
+        return view('employee.settings', compact('employee'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        $employee = Employee::where('user_id', $user->id)->firstOrFail();
+
+        // Validate the incoming data
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'gender' => 'required|in:male,female',
+            'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
+            'alternate_phone' => 'nullable|string|max:20',
+            'date_of_birth' => 'required|date',
+            'place_of_birth' => 'nullable|string|max:255',
+            'marital_status' => 'required|in:single,married,divorced,widowed',
+            'address' => 'required|string|max:255',
+            'permanent_address' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
+            'avatar' => 'nullable|image|max:2048', // Max 2MB for profile picture
+            'spouse_surname_name' => 'nullable|string|max:255',
+            'spouse_first_name' => 'nullable|string|max:255',
+            'spouse_middle_name' => 'nullable|string|max:255',
+            'spouse_date_of_birth' => 'nullable|date',
+            'spouse_phone' => 'nullable|string|max:20',
+            'emmergency_contact_name.*' => 'required|string|max:255',
+            'emmergency_contact_relationship.*' => 'required|string|max:255',
+            'emmergency_contact_phone.*' => 'required|string|max:20',
+        ]);
+
+        // Handle file upload for avatar
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validated['avatar'] = $avatarPath;
+        }
+
+        // Update employee details
+        $employee->update($validated);
+
+        // Handle emergency contacts (assuming a separate table or JSON column)
+        if ($request->has('emmergency_contact_name')) {
+            $emergencyContacts = [];
+            foreach ($request->emmergency_contact_name as $index => $name) {
+                $emergencyContacts[] = [
+                    'name' => $name,
+                    'relationship' => $request->emmergency_contact_relationship[$index],
+                    'phone' => $request->emmergency_contact_phone[$index],
+                ];
+            }
+            // Save to a JSON column or related table
+            $employee->emergency_contacts = json_encode($emergencyContacts); // If using JSON column
+            $employee->save();
+        }
+
+        return redirect()->route('account.settings')->with('success', 'Profile updated successfully!');
+    }
 }

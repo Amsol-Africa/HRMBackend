@@ -50,6 +50,8 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.default.min.css" />
+    <!-- Intro.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
 
 </head>
 
@@ -70,13 +72,13 @@
     <div class="page__full-wrapper">
 
         @php
-            $activeRole = session('active_role');
+        $activeRole = session('active_role');
         @endphp
 
         @if (in_array($activeRole, ['business-admin', 'business-hr', 'business-finance']))
-            @include('layouts.partials.navbar')
+        @include('layouts.partials.navbar')
         @elseif ($activeRole === 'business-employee')
-            @include('layouts.partials.navbar-employee')
+        @include('layouts.partials.navbar-employee')
         @endif
 
 
@@ -93,8 +95,8 @@
         </div>
 
     </div>
-
-
+    <!-- Intro.js JS -->
+    <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
     <script src="{{ asset('assets/js/vendor/jquery-3.7.0.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
