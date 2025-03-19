@@ -16,6 +16,7 @@ use App\Http\Controllers\DownloadController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\OvertimeController;
+use App\Http\Controllers\AllowanceController;
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\DeductionController;
 use App\Http\Controllers\InterviewController;
@@ -31,6 +32,9 @@ use App\Http\Controllers\LeaveTypeListController;
 use App\Http\Controllers\PayrollFormulaController;
 use App\Http\Controllers\LeaveEntitlementController;
 use App\Http\Controllers\EmployeeDeductionController;
+use App\Http\Controllers\KPIsController;
+use App\Http\Controllers\WarningController;
+use App\Http\Controllers\PayGradesController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -105,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [EmployeeController::class, 'update'])->name('update');
         Route::post('list', [EmployeeController::class, 'list'])->name('list');
     });
+
+    Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
     //manage leaves
     Route::name('leave-types.')->prefix('leave-types')->group(function () {
         Route::post('edit', [LeaveTypeController::class, 'edit'])->name('edit');
@@ -181,6 +187,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [AdvanceController::class, 'fetch'])->name('fetch');
         Route::post('delete', [AdvanceController::class, 'destroy'])->name('delete');
         Route::post('update', [AdvanceController::class, 'update'])->name('update');
+    });
+    Route::name('allowances.')->prefix('allowances')->group(function () {
+        Route::post('edit', [AllowanceController::class, 'edit'])->name('edit');
+        Route::post('store', [AllowanceController::class, 'store'])->name('store');
+        Route::post('fetch', [AllowanceController::class, 'fetch'])->name('fetch');
+        Route::post('delete', [AllowanceController::class, 'destroy'])->name('delete');
+        Route::post('update', [AllowanceController::class, 'update'])->name('update');
     });
     Route::name('loans.')->prefix('loans')->group(function () {
         Route::post('edit', [LoanController::class, 'edit'])->name('edit');
@@ -296,4 +309,32 @@ Route::middleware(['auth'])->group(function () {
 
     // Gen AI
     Route::post('/generate-job-description', [JobPostController::class, 'generateDescription'])->middleware('auth');
+
+    // KPIs
+    Route::name('kpis.')->prefix('kpis')->group(function () {
+        Route::post('/fetch', [KpisController::class, 'fetch'])->name('fetch');
+        Route::post('/store', [KpisController::class, 'store'])->name('store');
+        Route::post('/calculate', [KpisController::class, 'calculate'])->name('calculate');
+        Route::post('/edit', [KpisController::class, 'edit'])->name('edit');
+        Route::post('/update', [KpisController::class, 'update'])->name('update');
+        Route::post('/destroy', [KpisController::class, 'destroy'])->name('destroy');
+    });
+
+    // Employee Warnings
+    Route::name('warning.')->prefix('warning')->group(function () {
+        Route::post('/store', [WarningController::class, 'store'])->name('store');
+        Route::post('/fetch', [WarningController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [WarningController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [WarningController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [WarningController::class, 'destroy'])->name('destroy');
+    });
+
+    // requests.php
+    Route::name('pay-grades.')->prefix('pay-grades')->group(function () {
+        Route::post('/store', [PayGradesController::class, 'store'])->name('store');
+        Route::post('/fetch', [PayGradesController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [PayGradesController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [PayGradesController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [PayGradesController::class, 'destroy'])->name('destroy');
+    });
 });

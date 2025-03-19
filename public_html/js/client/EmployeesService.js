@@ -23,6 +23,7 @@ class EmployeesService {
         }
     }
 
+    // check filter employee
     async filter(data) {
         try {
             const response = await this.requestClient.post('/employees/filter', data);
@@ -33,6 +34,7 @@ class EmployeesService {
         }
     }
 
+    // check update employee
     async update(data) {
         try {
             const response = await this.requestClient.post('/employees/update', data);
@@ -44,6 +46,7 @@ class EmployeesService {
         }
     }
 
+    // check editing employee
     async edit(data) {
         try {
             const response = await this.requestClient.post('/employees/edit', data);

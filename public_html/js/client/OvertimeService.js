@@ -1,3 +1,4 @@
+// OvertimeService.js
 class OvertimeService {
     constructor(requestClient) {
         this.requestClient = requestClient;
@@ -8,19 +9,18 @@ class OvertimeService {
             const response = await this.requestClient.post('/overtime/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw { response: error.response || { data: { message: 'Failed to fetch overtime data.', errors: [] } } };
         }
     }
 
     async save(data) {
         try {
             const response = await this.requestClient.post('/overtime/store', data);
-            Swal.fire('Congratulations..!', response.message, 'success');
-            this.handleRedirect(response.data.redirect_url);
+            Swal.fire('Congratulations!', response.message, 'success');
+            this.handleRedirect(response.data?.redirect_url);
+            return response;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw { response: error.response || { data: { message: 'Failed to save overtime.', errors: [] } } };
         }
     }
 
@@ -28,10 +28,10 @@ class OvertimeService {
         try {
             const response = await this.requestClient.post('/overtime/update', data);
             toastr.info(response.message, "Success");
-            this.handleRedirect(response.data.redirect_url);
+            this.handleRedirect(response.data?.redirect_url);
+            return response;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw { response: error.response || { data: { message: 'Failed to update overtime.', errors: [] } } };
         }
     }
 
@@ -40,18 +40,17 @@ class OvertimeService {
             const response = await this.requestClient.post('/overtime/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw { response: error.response || { data: { message: 'Failed to edit overtime.', errors: [] } } };
         }
     }
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/overtime/delete', data);
+            const response = await this.requestClient.post('/overtime/destroy', data);
             toastr.info(response.message, "Success");
+            return response;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw { response: error.response || { data: { message: 'Failed to delete overtime.', errors: [] } } };
         }
     }
 

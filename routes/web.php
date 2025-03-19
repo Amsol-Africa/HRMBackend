@@ -7,8 +7,10 @@ use App\Http\Controllers\PayrollController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\RoleSwitchController;
 use App\Http\Controllers\EmployeeDashboardController;
+use App\Http\Controllers\KPIsController;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetch'])->name('jobs.openings');
 
@@ -37,6 +39,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/employees/edit/{employee}', [DashboardController::class, 'editEmployees'])->name('employees.edit');
         Route::get('/employees/details/{employee}', [DashboardController::class, 'employeeDetails'])->name('employees.details');
         Route::get('/employees/import', [DashboardController::class, 'importEmployees'])->name('employees.import');
+        Route::get('/employees/warning', [DashboardController::class, 'warning'])->name('employees.warning');
+
+        // Added GET routes for downloading templates
+        Route::get('/employees/download-csv-template', [EmployeeController::class, 'downloadCsvTemplate'])->name('employees.downloadCsvTemplate');
+        Route::get('/employees/download-xlsx-template', [EmployeeController::class, 'downloadXlsxTemplate'])->name('employees.downloadXlsxTemplate');
+
         Route::get('/job-categories', [DashboardController::class, 'jobCategories'])->name('job-categories.index');
         Route::get('/shifts', [DashboardController::class, 'shifts'])->name('shifts.index');
 
@@ -92,7 +100,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/applicants/create', [DashboardController::class, 'createJobApplicants'])->name('applicants.create');
         });
 
-        // Tasks module
+        // Performance module
         Route::prefix('performance')->name('performance.')->group(function () {
             Route::prefix('tasks')->name('tasks.')->group(function () {
                 Route::get('/', [DashboardController::class, 'tasks'])->name('index');
@@ -102,6 +110,12 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/{task}', [DashboardController::class, 'show'])->name('show');
             });
             Route::get('/reviews', [DashboardController::class, 'reviews'])->name('reviews');
+            Route::prefix('kpis')->name('kpis.')->group(function () {
+                Route::get('/', [KpisController::class, 'index'])->name('index');
+                Route::get('/create', [KpisController::class, 'create'])->name('create');
+                Route::get('/results', [KpisController::class, 'results'])->name('results');
+                Route::get('/edit', [KpisController::class, 'edit'])->name('edit');
+            });
         });
 
         // Attendance Module
@@ -131,6 +145,8 @@ Route::middleware(['auth'])->group(function () {
 
 
         Route::get('profile', [ProfileController::class, 'edit'])->name('profile.index');
+
+        Route::get('pay-grades', [DashboardController::class, 'payGrades'])->name('pay-grades.index');
     });
 
     Route::middleware(['ensure_role', 'role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
@@ -138,6 +154,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Profile Routes
         Route::get('update-details', [EmployeeDashboardController::class, 'updateDetails'])->name('update');
+        Route::get('profile', [ProfileController::class, 'edit'])->name('profile');
 
         // Leave Management
         Route::prefix('leave')->name('leave.')->group(function () {

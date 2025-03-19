@@ -19,10 +19,16 @@ use Illuminate\Support\Facades\Hash;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
+use League\Csv\Reader;
+use League\Csv\Writer;
+use App\Imports\EmployeesImport;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeController extends Controller
 {
     use HandleTransactions;
+
     public function fetch(Request $request)
     {
         $user = $request->user();
@@ -195,7 +201,7 @@ class EmployeeController extends Controller
             $location = Location::findBySlug($validatedData['location']);
 
             $department = Department::findBySlug($validatedData['department']);
-            $phoneNumber = "+{$request->code}{$request->phone}";
+            $phoneNumber = "+{$request->phone_code}{$request->phone}"; // Fixed $request->code to $request->phone_code
             $validator = Validator::make(['phone' => $phoneNumber], [
                 'phone' => 'unique:users,phone',
             ]);
@@ -205,7 +211,7 @@ class EmployeeController extends Controller
             $alternatePhoneNumber = "+{$request->alternate_phone_code}{$request->alternate_phone}";
             $spousePhoneNumber = "+{$request->spouse_phone_code}{$request->spouse_phone}";
 
-            $name = $validatedData['first_name'] . ' ' . $validatedData['middle_name'] . ' ' . $validatedData['last_name'];
+            $name = trim($validatedData['first_name'] . ' ' . ($validatedData['middle_name'] ?? '') . ' ' . $validatedData['last_name']);
 
             $user = User::create([
                 'name' => $name,
@@ -217,7 +223,6 @@ class EmployeeController extends Controller
             ]);
 
             $user->setStatus(Status::ACTIVE);
-
             $user->assignRole('employee');
 
             $employee = $business->employees()->create([
@@ -225,14 +230,12 @@ class EmployeeController extends Controller
                 'employee_code' => $validatedData['employee_code'],
                 'department_id' => $department->id,
                 'location_id' => $location?->id,
-
                 'gender' => $validatedData['gender'],
                 'alternate_phone' => $alternatePhoneNumber,
                 'date_of_birth' => $validatedData['date_of_birth'],
                 'marital_status' => $validatedData['marital_status'],
                 'national_id' => $validatedData['national_id'],
                 'place_of_issue' => $validatedData['place_of_issue'],
-
                 'tax_no' => $validatedData['tax_no'],
                 'nhif_no' => $validatedData['nhif_no'],
                 'nssf_no' => $validatedData['nssf_no'],
@@ -242,7 +245,6 @@ class EmployeeController extends Controller
                 'address' => $validatedData['address'],
                 'permanent_address' => $validatedData['permanent_address'],
                 'blood_group' => $validatedData['blood_group'],
-
             ]);
 
             // Save next of kin details
@@ -260,7 +262,7 @@ class EmployeeController extends Controller
 
             // Save employment details
             $employee->employmentDetails()->create([
-                'department_id' => Department::where('slug', $validatedData['department'])->firstOrFail()->id,
+                'department_id' => $department->id,
                 'job_category_id' => JobCategory::where('slug', $validatedData['job_category'])->firstOrFail()->id,
                 'employment_date' => $validatedData['employment_date'],
                 'probation_end_date' => $validatedData['probation_end_date'],
@@ -339,7 +341,7 @@ class EmployeeController extends Controller
                 $employee->addMedia($request->file('academic_files'))->toMediaCollection('academic_files');
             }
 
-            return RequestResponse::created('Employee Added successfully.');
+            return RequestResponse::created('Employee added successfully.');
         });
     }
 
@@ -363,7 +365,6 @@ class EmployeeController extends Controller
                     }
                 },
             ],
-
             'departments' => 'array|nullable',
             'departments.*' => [
                 function ($attribute, $value, $fail) {
@@ -372,7 +373,6 @@ class EmployeeController extends Controller
                     }
                 },
             ],
-
             'job_categories' => 'array|nullable',
             'job_categories.*' => [
                 function ($attribute, $value, $fail) {
@@ -381,7 +381,6 @@ class EmployeeController extends Controller
                     }
                 },
             ],
-
             'employment_terms' => 'array|nullable',
             'employment_terms.*' => [
                 function ($attribute, $value, $fail) {
@@ -396,7 +395,7 @@ class EmployeeController extends Controller
         $query = $business->employees()->with(['user:id,name', 'department:id,name']);
 
         if (empty($validatedData['locations']) || in_array($business_slug, $validatedData['locations'])) {
-            $query->whereNull('location_id'); // Exclude employees with a location
+            $query->whereNull('location_id');
         }
 
         if (!empty($validatedData)) {
@@ -452,11 +451,7 @@ class EmployeeController extends Controller
     public function sendAlert(NotificationService $notificationService)
     {
         $user = User::find(1);
-
-        // Get user preferences
         $preferences = $notificationService->getUserNotificationPreferences($user);
-
-        // Filter channels based on preferences
         $channels = $notificationService->filterChannelsByUserPreferences($user, ['mail', 'database', 'slack']);
 
         $notificationService->sendNotification(
@@ -477,4 +472,210 @@ class EmployeeController extends Controller
         return response()->json(['message' => 'User preferences updated.']);
     }
 
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $business = Business::findBySlug(session('active_business_slug'));
+        $errors = [];
+        $successful = 0;
+
+        try {
+            DB::beginTransaction();
+
+            if ($file->getClientOriginalExtension() === 'csv') {
+                $csv = Reader::createFromPath($file->getPathname(), 'r');
+                $csv->setHeaderOffset(0);
+                $records = iterator_to_array($csv->getRecords()); // Convert to array for consistency
+            } else {
+                $records = Excel::toArray(new EmployeesImport, $file)[0];
+                if (empty($records)) {
+                    return RequestResponse::badRequest('The uploaded XLSX file is empty or invalid.', ['errors' => ['No data found in the file.']]);
+                }
+                $headers = array_shift($records); // Remove header row
+                $records = array_map(function ($row) use ($headers) {
+                    return array_combine($headers, $row);
+                }, $records);
+            }
+
+            Log::debug('Import records:', $records);
+
+            if (empty($records)) {
+                return RequestResponse::badRequest('No data found in the uploaded file.', ['errors' => ['The file contains no records to import.']]);
+            }
+
+            foreach ($records as $index => $row) {
+                try {
+                    $name = trim("{$row['first_name']} " . ($row['middle_name'] ?? '') . " {$row['last_name']}");
+                    $phone = "+{$row['phone_code']}{$row['phone']}";
+
+                    // Validate required fields
+                    $validator = Validator::make($row, [
+                        'first_name' => 'required|string|max:255',
+                        'last_name' => 'required|string|max:255',
+                        'email' => 'required|email|unique:users,email',
+                        'phone' => 'required|string|max:20',
+                        'phone_code' => 'required|string|max:10',
+                        'phone_country' => 'required|string',
+                        'password' => 'required|string|min:8',
+                        'employee_code' => 'required|string|unique:employees,employee_code|max:50',
+                        'gender' => 'required|in:male,female',
+                        'date_of_birth' => 'required|date|before:today',
+                        'marital_status' => 'required|in:single,married,divorced,widowed',
+                        'national_id' => 'required|string|unique:employees,national_id',
+                    ]);
+
+                    if ($validator->fails()) {
+                        $errors[] = "Row " . ($index + 2) . ": " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    // Create user
+                    $user = User::create([
+                        'name' => $name,
+                        'email' => $row['email'],
+                        'phone' => $phone,
+                        'code' => $row['phone_code'],
+                        'country' => $row['phone_country'],
+                        'password' => Hash::make($row['password']),
+                    ]);
+                    $user->setStatus(Status::ACTIVE);
+                    $user->assignRole('employee');
+
+                    // Create employee
+                    $employee = $business->employees()->create([
+                        'user_id' => $user->id,
+                        'employee_code' => $row['employee_code'],
+                        'gender' => $row['gender'],
+                        'alternate_phone' => $row['alternate_phone'] ?? null,
+                        'date_of_birth' => $row['date_of_birth'],
+                        'marital_status' => $row['marital_status'],
+                        'national_id' => $row['national_id'],
+                        'place_of_issue' => $row['place_of_issue'] ?? null,
+                        'tax_no' => $row['tax_no'] ?? null,
+                        'nhif_no' => $row['nhif_no'] ?? null,
+                        'nssf_no' => $row['nssf_no'] ?? null,
+                        'passport_no' => $row['passport_no'] ?? null,
+                        'passport_issue_date' => $row['passport_issue_date'] ?? null,
+                        'passport_expiry_date' => $row['passport_expiry_date'] ?? null,
+                        'address' => $row['address'] ?? null,
+                        'permanent_address' => $row['permanent_address'] ?? null,
+                        'blood_group' => $row['blood_group'] ?? null,
+                        'department_id' => Department::where('slug', $row['department'] ?? '')->first()?->id, // Updated to 'department'
+                        'location_id' => Location::where('slug', $row['location'] ?? '')->first()?->id,       // Updated to 'location'
+                    ]);
+
+                    $successful++;
+                } catch (\Exception $e) {
+                    $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            if ($successful === 0 && !empty($errors)) {
+                return RequestResponse::badRequest('Failed to import employees.', [
+                    'successful' => $successful,
+                    'errors' => $errors,
+                ]);
+            }
+
+            return RequestResponse::ok('Employees imported successfully.', [
+                'successful' => $successful,
+                'errors' => $errors,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return RequestResponse::badRequest('Failed to import employees.', ['errors' => [$e->getMessage()]]);
+        }
+    }
+
+    public function downloadCsvTemplate()
+    {
+        $headers = [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'email',
+            'phone',
+            'phone_code',
+            'phone_country',
+            'password',
+            'employee_code',
+            'gender',
+            'alternate_phone',
+            'date_of_birth',
+            'marital_status',
+            'national_id',
+            'place_of_issue',
+            'tax_no',
+            'nhif_no',
+            'nssf_no',
+            'passport_no',
+            'passport_issue_date',
+            'passport_expiry_date',
+            'address',
+            'permanent_address',
+            'blood_group',
+            'department',
+            'location'
+        ];
+
+        $csv = Writer::createFromString('');
+        $csv->insertOne($headers);
+
+        return response($csv->getContent(), 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="employees_template.csv"',
+        ]);
+    }
+
+    public function downloadXlsxTemplate()
+    {
+        $headers = [
+            'first_name',
+            'middle_name',
+            'last_name',
+            'email',
+            'phone',
+            'phone_code',
+            'phone_country',
+            'password',
+            'employee_code',
+            'gender',
+            'alternate_phone',
+            'date_of_birth',
+            'marital_status',
+            'national_id',
+            'place_of_issue',
+            'tax_no',
+            'nhif_no',
+            'nssf_no',
+            'passport_no',
+            'passport_issue_date',
+            'passport_expiry_date',
+            'address',
+            'permanent_address',
+            'blood_group',
+            'department',
+            'location'
+        ];
+
+        return Excel::download(new class($headers) implements \Maatwebsite\Excel\Concerns\FromArray {
+            private $headers;
+
+            public function __construct(array $headers)
+            {
+                $this->headers = $headers;
+            }
+
+            public function array(): array
+            {
+                return [$this->headers];
+            }
+        }, 'employees_template.xlsx');
+    }
 }

@@ -13,6 +13,7 @@ use App\Models\Employee;
 use App\Models\Industry;
 use App\Models\Applicant;
 use App\Models\Deduction;
+use App\Models\Warning;
 use App\Models\Department;
 use App\Models\JobCategory;
 use Illuminate\Http\Request;
@@ -273,7 +274,6 @@ class DashboardController extends Controller
         return view('payroll.create-formula', compact('page', 'description'));
     }
 
-
     public function downloads(Request $request)
     {
         $page = 'Downloads';
@@ -283,11 +283,31 @@ class DashboardController extends Controller
         $payrolls = $business->payrolls()->latest()->get();
         return view('downloads.index', compact('page', 'description', 'payrolls', 'locations'));
     }
+
+    public function warning(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new WarningController())->index($request);
+    }
+
+    public function payGrades(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayGradesController())->index($request);
+    }
+
     public function relief(Request $request)
     {
         $page = 'Reliefs';
         $description = '';
         return view('relief.index', compact('page', 'description'));
+    }
+
+    public function createWarning(Request $request)
+    {
+        $page = 'Create Warning';
+        $description = '';
+        return view('employees.warning-create', compact('page', 'description'));
     }
 
     public function createRelief(Request $request)
@@ -584,5 +604,17 @@ class DashboardController extends Controller
         $business = Business::findBySlug(session('active_business_slug'));
         $employees = $business->employees;
         return view('attendances.overtime', compact('page', 'description', 'employees'));
+    }
+    public function kpis(Request $request)
+    {
+        $page = 'KPIs';
+        $description = '';
+        return view('kpis.index', compact('page', 'description'));
+    }
+    public function createKpis(Request $request)
+    {
+        $page = 'Create KPIs';
+        $description = '';
+        return view('kpis.create', compact('page', 'description'));
     }
 }

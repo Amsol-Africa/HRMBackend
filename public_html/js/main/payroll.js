@@ -101,8 +101,8 @@ window.getPayslips = async function (page = 1, payroll = null) {
 
         const table = new DataTable('#payslipsTable', {
             dom: "<'row'<'col-md-4 text-center'B><'col-md-4'><'col-md-4 text-end'f>>" +
-                 "<'row'<'col-md-12'tr>>" +
-                 "<'row'<'col-md-5'i><'col-md-7'p>>",
+                "<'row'<'col-md-12'tr>>" +
+                "<'row'<'col-md-5'i><'col-md-7'p>>",
             order: [[3, 'desc']],
             lengthMenu: [[5, 10, 20, 50, 100], [5, 10, 20, 50, 100]],
             pageLength: 10,
@@ -177,8 +177,10 @@ window.processPayroll = async function (btn) {
     let formData = new FormData(document.getElementById("processPayroll"));
 
     try {
-        $payroll_id = await payrollService.save(formData);
+        let payroll_id = await payrollService.save(formData);
         getPayslips(1, payroll_id);
+
+        window.location.href = payrollRedirectUrl;
     } finally {
         btn_loader(btn, false);
     }

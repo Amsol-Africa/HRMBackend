@@ -191,6 +191,10 @@ class Business extends Model implements HasMedia
     {
         return $this->hasMany(Deduction::class);
     }
+    public function allowances()
+    {
+        return $this->hasMany(Allowance::class);
+    }
     public function employeeDeductions()
     {
         return $this->hasManyThrough(EmployeeDeduction::class, Employee::class, 'business_id', 'employee_id', 'id', 'id');
@@ -230,6 +234,4 @@ class Business extends Model implements HasMedia
     {
         return $this->totalActiveLoanAmount() - $this->totalActiveRepaidAmount();
     }
-
-
 }

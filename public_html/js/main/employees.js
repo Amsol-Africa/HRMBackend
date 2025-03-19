@@ -5,6 +5,7 @@ import EmployeesService from "/js/client/EmployeesService.js";
 const requestClient = new RequestClient();
 const employeesService = new EmployeesService(requestClient);
 
+// Fetch employees and initialize DataTable
 window.getEmployees = async function (page = 1, status = null) {
     try {
         let data = { page: page, status: status };
@@ -66,6 +67,7 @@ window.getEmployees = async function (page = 1, status = null) {
     }
 };
 
+// Delete selected employees
 async function deleteSelectedEmployees() {
     let selectedIds = window.getSelectedIds();
     if (selectedIds.length === 0) {
@@ -95,13 +97,14 @@ async function deleteSelectedEmployees() {
     });
 }
 
+// Send email report
 function sendEmailReport() {
     const subject = encodeURIComponent("Employees Report");
     const body = encodeURIComponent("Here is the employees report.");
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 
-
+// Search employees
 window.searchEmployees = async function () {
     let data = {
         page: 1,
@@ -120,6 +123,7 @@ window.searchEmployees = async function () {
     }
 };
 
+// Save employee
 window.saveEmployee = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -136,6 +140,7 @@ window.saveEmployee = async function (btn) {
     }
 };
 
+// Delete single employee
 window.deleteEmployee = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -163,4 +168,125 @@ window.deleteEmployee = async function (btn) {
             btn_loader(btn, false);
         }
     });
+};
+
+// Edit employee
+window.editEmployee = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    try {
+        const employeeId = btn.data("employee");
+        const employee = await employeesService.fetch(employeeId);
+
+        const form = document.getElementById("employeesForm");
+        form.reset();
+
+        Object.keys(employee).forEach(key => {
+            const input = form.querySelector(`[name="${key}"]`);
+            if (input) {
+                if (input.type === 'file') {
+                    return;
+                }
+                input.value = employee[key];
+            }
+        });
+
+        // Add employee_id to form for update operation
+        const employeeIdInput = document.createElement('input');
+        employeeIdInput.type = 'hidden';
+        employeeIdInput.name = 'employee_id';
+        employeeIdInput.value = employeeId;
+        form.appendChild(employeeIdInput);
+
+        // Show the modal if it exists
+        const modal = $('#employeeModal');
+        if (modal.length) {
+            modal.modal('show');
+        }
+
+    } catch (error) {
+        console.error("Error loading employee data:", error);
+        Swal.fire("Error!", "Failed to load employee data.", "error");
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
+// Import employees
+window.importEmployees = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const form = document.getElementById('importEmployeesForm');
+    const formData = new FormData(form);
+    const loadingDiv = $('#loading');
+    const resultDiv = $('#import-result');
+    const progressText = $('#progress');
+    const successCount = $('#success-count');
+    const errorCount = $('#error-count');
+    const errorList = $('#error-list');
+
+    loadingDiv.show();
+    resultDiv.hide();
+    progressText.text('');
+    successCount.text('');
+    errorCount.text('');
+    errorList.empty();
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        });
+
+        const result = await response.json();
+
+        loadingDiv.hide();
+        resultDiv.show();
+
+        // Normalize errors array
+        const errors = result.data?.errors || result.errors?.errors || [];
+        const message = result.message || 'An unknown error occurred.';
+
+        if (result.success) {
+            const successful = result.data?.successful || 0;
+            successCount.text(`Successfully added ${successful} employees.`);
+            errorCount.text(`Errors: ${errors.length}`);
+
+            if (errors.length > 0) {
+                errors.forEach(error => {
+                    errorList.append(`<li>${error}</li>`);
+                });
+            }
+
+            if (successful > 0) {
+                Swal.fire('Success!', message, 'success');
+            } else if (errors.length === 0) {
+                Swal.fire('Warning!', message, 'warning');
+            } else {
+                Swal.fire('Error!', message, 'error');
+            }
+        } else {
+            errorCount.text(`Errors: ${errors.length}`);
+            if (errors.length > 0) {
+                errors.forEach(error => {
+                    errorList.append(`<li>${error}</li>`);
+                });
+            }
+            Swal.fire('Error!', message, 'error');
+        }
+    } catch (error) {
+        loadingDiv.hide();
+        resultDiv.show();
+        errorCount.text('An unexpected error occurred.');
+        errorList.append(`<li>${error.message}</li>`);
+        Swal.fire('Error!', 'Something went wrong during import: ' + error.message, 'error');
+    } finally {
+        btn_loader(btn, false);
+    }
 };

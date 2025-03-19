@@ -82,8 +82,11 @@
                                 Work Shifts
                             </a>
                         </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="">Pay Grades</a>
+                        <li class="slide {{ request()->routeIs('business.pay-grades.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.pay-grades.index') ? 'active' : '' }}"
+                                href="{{ route('business.pay-grades.index', $currentBusiness->slug) }}">
+                                Pay Grades
+                            </a>
                         </li>
                         <li class="slide">
                             <a class="sidebar__menu-item" href="">Education Levels</a>
@@ -118,10 +121,10 @@
                                 Import Employees
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.employees.import') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.import') ? 'active' : '' }}"
-                                href="{{ route('business.employees.import', $currentBusiness->slug) }}">
-                                Warning
+                        <li class="slide {{ request()->routeIs('business.employees.warning') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.warning') ? 'active' : '' }}"
+                                href="{{ route('business.employees.warning', $currentBusiness->slug) }}">
+                                Employee Warnings
                             </a>
                         </li>
                     </ul>
@@ -137,7 +140,8 @@
                         <span class="sidebar__menu-label">Payrolls</span>
                     </a>
 
-                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.downloads') || request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
+                    <ul
+                        class="sidebar-menu child1 {{ request()->routeIs('business.payroll.downloads') || request()->routeIs('business.payroll.process') || request()->routeIs('business.payroll.import') || request()->routeIs('business.loans.index') || request()->routeIs('business.advances.index') || request()->routeIs('business.payroll.index') ? 'active' : '' }}">
                         <li class="slide {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.process') ? 'active' : '' }}"
                                 href="{{ route('business.payroll.process', $currentBusiness->slug) }}">
@@ -177,137 +181,135 @@
                     </ul>
                 </li>
 
-            <!-- Payroll Settings Management Dropdown -->
-            <li
-                class="slide has-sub {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active open' : '' }}">
-                <a href="javascript:void(0);"
-                    class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
-                    <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                    <div class="side-menu__icon"><i class="fa-solid fa-sack-dollar"></i></div>
-                    <span class="sidebar__menu-label">Payroll Settings</span>
-                </a>
-                <ul class="sidebar-menu child1 {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
-                    <li
-                        class="slide {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}"
-                            href="{{ route('business.payroll.formula', $currentBusiness->slug) }}">
-                            Statutory Deductions
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.relief.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.relief.index') ? 'active' : '' }}"
-                            href="{{ route('business.relief.index', $currentBusiness->slug) }}">
-                            Relief
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}"
-                            href="{{ route('business.payroll.deductions', $currentBusiness->slug) }}">
-                            Deduction Adjustments
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}"
-                            href="{{ route('business.allowances.index', $currentBusiness->slug) }}">
-                            Allowances
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->is('recruitment.html') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->is('recruitment.html') ? 'active' : '' }}"
-                            href="recruitment.html">
-                            Pay Grades
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-            <!-- Leave Management Dropdown -->
-            <li class="slide has-sub {{ request()->routeIs('business.leave.*') ? 'active open' : '' }}">
-                <a href="javascript:void(0);"
-                    class="sidebar__menu-item {{ request()->routeIs('business.leave.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                    <div class="side-menu__icon"><i class="fa-solid fa-calendar-check"></i></div>
-                    <span class="sidebar__menu-label">Leave Management</span>
-                </a>
-                <ul class="sidebar-menu child1 {{ request()->routeIs('business.leave.*') ? 'active' : '' }}">
-                    <li class="slide {{ request()->routeIs('business.leave.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.leave.index') ? 'active' : '' }}"
-                            href="{{ route('business.leave.index', $currentBusiness->slug) }}">
-                            Leave Requests
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.leave.types') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.leave.types') ? 'active' : '' }}"
-                            href="{{ route('business.leave.types', $currentBusiness->slug) }}">
-                            Leave Types
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.leave.periods') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.leave.periods') ? 'active' : '' }}"
-                            href="{{ route('business.leave.periods', $currentBusiness->slug) }}">
-                            Leave Periods
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.leave.entitlements.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.leave.entitlements.index') ? 'active' : '' }}"
-                            href="{{ route('business.leave.entitlements.index', $currentBusiness->slug) }}">
-                            Leave Entitlements
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.leave.reports') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.leave.reports') ? 'active' : '' }}"
-                            href="{{ route('business.leave.reports', $currentBusiness->slug) }}">
-                            Leave Reports
-                        </a>
-                    </li>
-                </ul>
-            </li>
-                <!-- Time & Attendance Dropdown -->
-                <li class="slide has-sub {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active open' : '' }}">
-                    <a href="javascript:void(0);" class="sidebar__menu-item {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active' : '' }}">
+                <!-- Payroll Settings Management Dropdown -->
+                <li
+                    class="slide has-sub {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);"
+                        class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
                         <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                        <div class="side-menu__icon"><i class="fa-solid fa-clock"></i></div>
-                        <span class="sidebar__menu-label">Time & Attendance</span>
+                        <div class="side-menu__icon"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <span class="sidebar__menu-label">Payroll Settings</span>
                     </a>
-                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active' : '' }}">
-                        <li class="slide {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}"
-                               href="{{ route('business.attendances.clock-in', $currentBusiness) }}">
-                                Clock In / Out
+                    <ul
+                        class="sidebar-menu child1 {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.relief.*') || request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
+                        <li
+                            class="slide {{ request()->routeIs('business.payroll.formula') || request()->routeIs('business.payroll.formula.create') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.formula') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.formula', $currentBusiness->slug) }}">
+                                Statutory Deductions
                             </a>
                         </li>
-                        {{-- <li class="slide {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}"
-                               href="{{ route('business.attendances.clock-out', $currentBusiness) }}">
-                                Clock Out
-                            </a>
-                        </li> --}}
-                        <li class="slide {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}"
-                               href="{{ route('business.attendances.index', $currentBusiness) }}">
-                                Attendances
+                        <li class="slide {{ request()->routeIs('business.relief.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.relief.index') ? 'active' : '' }}"
+                                href="{{ route('business.relief.index', $currentBusiness->slug) }}">
+                                Relief
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.overtime.index') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.overtime.index') ? 'active' : '' }}"
-                               href="{{ route('business.overtime.index', $currentBusiness) }}">
-                                Overtime
+                        <li class="slide {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.payroll.deductions') ? 'active' : '' }}"
+                                href="{{ route('business.payroll.deductions', $currentBusiness->slug) }}">
+                                Deduction Adjustments
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}"
-                               href="{{ route('business.attendances.monthly', $currentBusiness) }}">
-                                Monthly Attendance
-                            </a>
-                        </li>
-                        <li class="slide {{ request()->routeIs('business.reports.index') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.reports.index') ? 'active' : '' }}"
-                               href="{{ route('business.reports.index', $currentBusiness) }}">
-                                Attendance Reports
+                        <li class="slide {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.allowances.index') ? 'active' : '' }}"
+                                href="{{ route('business.allowances.index', $currentBusiness->slug) }}">
+                                Allowances
                             </a>
                         </li>
                     </ul>
                 </li>
+
+                <!-- Leave Management Dropdown -->
+                <li class="slide has-sub {{ request()->routeIs('business.leave.*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);"
+                        class="sidebar__menu-item {{ request()->routeIs('business.leave.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-angle-down side-menu__angle"></i>
+                        <div class="side-menu__icon"><i class="fa-solid fa-calendar-check"></i></div>
+                        <span class="sidebar__menu-label">Leave Management</span>
+                    </a>
+                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.leave.*') ? 'active' : '' }}">
+                        <li class="slide {{ request()->routeIs('business.leave.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.index') ? 'active' : '' }}"
+                                href="{{ route('business.leave.index', $currentBusiness->slug) }}">
+                                Leave Requests
+                            </a>
+                        </li>
+                        <li class="slide {{ request()->routeIs('business.leave.types') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.types') ? 'active' : '' }}"
+                                href="{{ route('business.leave.types', $currentBusiness->slug) }}">
+                                Leave Types
+                            </a>
+                        </li>
+                        <li class="slide {{ request()->routeIs('business.leave.periods') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.periods') ? 'active' : '' }}"
+                                href="{{ route('business.leave.periods', $currentBusiness->slug) }}">
+                                Leave Periods
+                            </a>
+                        </li>
+                        <li class="slide {{ request()->routeIs('business.leave.entitlements.index') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.entitlements.index') ? 'active' : '' }}"
+                                href="{{ route('business.leave.entitlements.index', $currentBusiness->slug) }}">
+                                Leave Entitlements
+                            </a>
+                        </li>
+                        <li class="slide {{ request()->routeIs('business.leave.reports') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.leave.reports') ? 'active' : '' }}"
+                                href="{{ route('business.leave.reports', $currentBusiness->slug) }}">
+                                Leave Reports
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- Time & Attendance Dropdown -->
+                <li
+                    class="slide has-sub {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active open' : '' }}">
+                    <a href="javascript:void(0);"
+                        class="sidebar__menu-item {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active' : '' }}">
+                        <i class="fa-solid fa-angle-down side-menu__angle"></i>
+                        <div class="side-menu__icon"><i class="fa-solid fa-clock"></i></div>
+                        <span class="sidebar__menu-label">Time & Attendance</span>
+                    </a>
+                    <ul
+                        class="sidebar-menu child1 {{ request()->routeIs('business.attendances.*', 'business.overtime.*', 'business.absenteeism.*', 'business.clock-in-out.*', 'business.reports.*') ? 'active' : '' }}">
+                        <li class="slide {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-in') ? 'active' : '' }}"
+                                href="{{ route('business.attendances.clock-in', $currentBusiness) }}">
+                                Clock In / Out
+                            </a>
+                        </li>
+                        {{-- <li class="slide {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.clock-out') ? 'active' : '' }}"
+                            href="{{ route('business.attendances.clock-out', $currentBusiness) }}">
+                            Clock Out
+                        </a>
+                </li> --}}
+                <li class="slide {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}">
+                    <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.index') ? 'active' : '' }}"
+                        href="{{ route('business.attendances.index', $currentBusiness) }}">
+                        Attendances
+                    </a>
+                </li>
+                <li class="slide {{ request()->routeIs('business.overtime.index') ? 'active' : '' }}">
+                    <a class="sidebar__menu-item {{ request()->routeIs('business.overtime.index') ? 'active' : '' }}"
+                        href="{{ route('business.overtime.index', $currentBusiness) }}">
+                        Overtime
+                    </a>
+                </li>
+                <li class="slide {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}">
+                    <a class="sidebar__menu-item {{ request()->routeIs('business.attendances.monthly') ? 'active' : '' }}"
+                        href="{{ route('business.attendances.monthly', $currentBusiness) }}">
+                        Monthly Attendance
+                    </a>
+                </li>
+                <li class="slide {{ request()->routeIs('business.reports.index') ? 'active' : '' }}">
+                    <a class="sidebar__menu-item {{ request()->routeIs('business.reports.index') ? 'active' : '' }}"
+                        href="{{ route('business.reports.index', $currentBusiness) }}">
+                        Attendance Reports
+                    </a>
+                </li>
+            </ul>
+            </li>
 
             <!-- Performance Management Dropdown -->
             <li class="slide has-sub {{ request()->routeIs('business.performance.*') ? 'active open' : '' }}">
@@ -336,12 +338,19 @@
                             Performance Reviews
                         </a>
                     </li>
+                    <li class="slide {{ request()->routeIs('business.performance.kpis') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item {{ request()->routeIs('business.performance.kpis') ? 'active' : '' }}"
+                            href="{{ route('business.performance.kpis.index', $currentBusiness->slug) }}">
+                            KPIs
+                        </a>
+                    </li>
+                    <li class="slide {{ request()->routeIs('business.performance.kpis.create') ? 'active' : '' }}">
                 </ul>
             </li>
 
-
             <!-- Asset Management Dropdown -->
-            <li class="slide has-sub {{ request()->routeIs('business.recruitment.*') || request()->routeIs('business.job-applications.*') ? 'active open' : '' }}">
+            <li
+                class="slide has-sub {{ request()->routeIs('business.recruitment.*') || request()->routeIs('business.job-applications.*') ? 'active open' : '' }}">
                 <a href="javascript:void(0);" class="sidebar__menu-item">
                     <i class="fa-solid fa-angle-down side-menu__angle"></i>
                     <div class="side-menu__icon"><i class="fa-solid fa-briefcase"></i></div>

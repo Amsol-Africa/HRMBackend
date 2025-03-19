@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Location;
 use App\Models\Business;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,9 +15,10 @@ return new class extends Migration {
         Schema::create('allowances', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Business::class)->nullable();
+            $table->foreignIdFor(Location::class)->nullable();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->boolean('is_taxable')->default(true); // Important for tax calculations
+            $table->boolean('is_taxable')->default(false);
             $table->timestamps();
         });
     }

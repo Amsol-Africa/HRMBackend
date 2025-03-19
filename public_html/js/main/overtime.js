@@ -7,14 +7,16 @@ const overtimeService = new OvertimeService(requestClient);
 
 window.getOvertime = async function (date = null) {
     try {
-        let data = {date: date};
+        let data = { date: date };
         const overtime = await overtimeService.fetch(data);
         $("#overtimeContainer").html(overtime);
         new DataTable('#overtimeTable');
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error("Error loading overtime data:", error);
+        Swal.fire('Error!', 'Failed to load overtime data.', 'error');
     }
 };
+
 window.saveOvertime = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -27,24 +29,38 @@ window.saveOvertime = async function (btn) {
         } else {
             await overtimeService.save(formData);
         }
-    } finally {
-        $('#addOvertimeModal').hide()
+        $('#addOvertimeModal').modal('hide');
         getOvertime();
+    } catch (error) {
+        console.error("Error saving overtime:", error);
+        const errors = error.response?.data?.errors || ['An unexpected error occurred.'];
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to save overtime.', 'error', {
+            html: `<ul>${errors.map(e => `<li>${e}</li>`).join('')}</ul>`
+        });
+    } finally {
         btn_loader(btn, false);
     }
 };
+
 window.editOvertime = async function (btn) {
     btn = $(btn);
+    btn_loader(btn, true);
 
     const overtime = btn.data("overtime");
     const data = { overtime: overtime };
 
     try {
         const form = await overtimeService.edit(data);
-        $('#overtimesFormContainer').html(form)
+        $('#overtimesFormContainer').html(form);
+        $('#addOvertimeModal').modal('show');
+    } catch (error) {
+        console.error("Error editing overtime:", error);
+        Swal.fire('Error!', 'Failed to load overtime form.', 'error');
     } finally {
+        btn_loader(btn, false);
     }
 };
+
 window.deleteOvertime = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -64,8 +80,11 @@ window.deleteOvertime = async function (btn) {
         if (result.isConfirmed) {
             try {
                 await overtimeService.delete(data);
-            } finally {
                 getOvertime();
+            } catch (error) {
+                console.error("Error deleting overtime:", error);
+                Swal.fire('Error!', 'Failed to delete overtime.', 'error');
+            } finally {
                 btn_loader(btn, false);
             }
         } else {
