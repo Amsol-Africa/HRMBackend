@@ -24,6 +24,8 @@ use League\Csv\Reader;
 use League\Csv\Writer;
 use App\Imports\EmployeesImport;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 
 class EmployeeController extends Controller
 {
@@ -475,7 +477,7 @@ class EmployeeController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx|max:2048',
+            'file' => 'required|file|max:2048|mimetypes:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ]);
 
         $file = $request->file('file');
@@ -483,23 +485,21 @@ class EmployeeController extends Controller
         $errors = [];
         $successful = 0;
 
+        // Pre-fetch departments and locations for faster lookups
+        $departments = $business->departments()->pluck('id', 'name')->toArray();
+        $locations = $business->locations()->pluck('id', 'name')->toArray();
+
         try {
             DB::beginTransaction();
 
-            if ($file->getClientOriginalExtension() === 'csv') {
-                $csv = Reader::createFromPath($file->getPathname(), 'r');
-                $csv->setHeaderOffset(0);
-                $records = iterator_to_array($csv->getRecords()); // Convert to array for consistency
-            } else {
-                $records = Excel::toArray(new EmployeesImport, $file)[0];
-                if (empty($records)) {
-                    return RequestResponse::badRequest('The uploaded XLSX file is empty or invalid.', ['errors' => ['No data found in the file.']]);
-                }
-                $headers = array_shift($records); // Remove header row
-                $records = array_map(function ($row) use ($headers) {
-                    return array_combine($headers, $row);
-                }, $records);
+            $records = Excel::toArray(new EmployeesImport, $file)[0];
+            if (empty($records)) {
+                return RequestResponse::badRequest('The uploaded XLSX file is empty or invalid.', ['errors' => ['No data found in the file.']]);
             }
+            $headers = array_shift($records);
+            $records = array_map(function ($row) use ($headers) {
+                return array_combine($headers, $row);
+            }, $records);
 
             Log::debug('Import records:', $records);
 
@@ -516,20 +516,39 @@ class EmployeeController extends Controller
                     $validator = Validator::make($row, [
                         'first_name' => 'required|string|max:255',
                         'last_name' => 'required|string|max:255',
-                        'email' => 'required|email|unique:users,email',
-                        'phone' => 'required|string|max:20',
-                        'phone_code' => 'required|string|max:10',
-                        'phone_country' => 'required|string',
-                        'password' => 'required|string|min:8',
+                        'email' => [
+                            'required',
+                            'email:rfc,dns',
+                            'unique:users,email',
+                            'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/'
+                        ],
+                        'phone' => 'required|numeric|digits_between:9,12',
+                        'phone_code' => 'nullable|numeric|digits_between:1,3',
+                        'phone_country' => 'nullable|string',
+                        'password' => 'nullable|string|min:8',
                         'employee_code' => 'required|string|unique:employees,employee_code|max:50',
                         'gender' => 'required|in:male,female',
                         'date_of_birth' => 'required|date|before:today',
-                        'marital_status' => 'required|in:single,married,divorced,widowed',
-                        'national_id' => 'required|string|unique:employees,national_id',
+                        'marital_status' => 'nullable|in:single,married,divorced,widowed',
+                        'national_id' => 'required|numeric|digits_between:5,10|unique:employees,national_id',
+                        'department' => 'required|string',
+                        'location' => 'nullable|string',
                     ]);
 
                     if ($validator->fails()) {
                         $errors[] = "Row " . ($index + 2) . ": " . implode(', ', $validator->errors()->all());
+                        continue;
+                    }
+
+                    // Validate department exists
+                    if (!isset($departments[$row['department']])) {
+                        $errors[] = "Row " . ($index + 2) . ": Department '{$row['department']}' not found.";
+                        continue;
+                    }
+
+                    // Validate location exists if provided
+                    if (!empty($row['location']) && !isset($locations[$row['location']])) {
+                        $errors[] = "Row " . ($index + 2) . ": Location '{$row['location']}' not found.";
                         continue;
                     }
 
@@ -545,10 +564,12 @@ class EmployeeController extends Controller
                     $user->setStatus(Status::ACTIVE);
                     $user->assignRole('employee');
 
-                    // Create employee
+                    // Create employee with department and location IDs
                     $employee = $business->employees()->create([
                         'user_id' => $user->id,
                         'employee_code' => $row['employee_code'],
+                        'department_id' => $departments[$row['department']],
+                        'location_id' => !empty($row['location']) ? $locations[$row['location']] : null,
                         'gender' => $row['gender'],
                         'alternate_phone' => $row['alternate_phone'] ?? null,
                         'date_of_birth' => $row['date_of_birth'],
@@ -564,8 +585,6 @@ class EmployeeController extends Controller
                         'address' => $row['address'] ?? null,
                         'permanent_address' => $row['permanent_address'] ?? null,
                         'blood_group' => $row['blood_group'] ?? null,
-                        'department_id' => Department::where('slug', $row['department'] ?? '')->first()?->id, // Updated to 'department'
-                        'location_id' => Location::where('slug', $row['location'] ?? '')->first()?->id,       // Updated to 'location'
                     ]);
 
                     $successful++;
@@ -593,48 +612,13 @@ class EmployeeController extends Controller
         }
     }
 
-    public function downloadCsvTemplate()
-    {
-        $headers = [
-            'first_name',
-            'middle_name',
-            'last_name',
-            'email',
-            'phone',
-            'phone_code',
-            'phone_country',
-            'password',
-            'employee_code',
-            'gender',
-            'alternate_phone',
-            'date_of_birth',
-            'marital_status',
-            'national_id',
-            'place_of_issue',
-            'tax_no',
-            'nhif_no',
-            'nssf_no',
-            'passport_no',
-            'passport_issue_date',
-            'passport_expiry_date',
-            'address',
-            'permanent_address',
-            'blood_group',
-            'department',
-            'location'
-        ];
-
-        $csv = Writer::createFromString('');
-        $csv->insertOne($headers);
-
-        return response($csv->getContent(), 200, [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="employees_template.csv"',
-        ]);
-    }
-
     public function downloadXlsxTemplate()
     {
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        $departments = $business->departments()->pluck('name')->toArray();
+        $locations = $business->locations()->pluck('name')->toArray();
+
         $headers = [
             'first_name',
             'middle_name',
@@ -664,17 +648,106 @@ class EmployeeController extends Controller
             'location'
         ];
 
-        return Excel::download(new class($headers) implements \Maatwebsite\Excel\Concerns\FromArray {
-            private $headers;
+        $sampleData = [
+            [
+                'John',
+                'Doe',
+                'Smith',
+                'john.smith@example.com',
+                '712345678',
+                '254',
+                'Kenya',
+                'password123',
+                'EMP001',
+                'male',
+                '0712345679',
+                '1990-05-15',
+                'single',
+                '12345678',
+                'Nairobi',
+                'KRA12345',
+                'NHIF56789',
+                'NSSF98765',
+                'A1234567',
+                '2015-06-20',
+                '2025-06-20',
+                'Olelengpu, Nairobi',
+                '456 Avenue, Mombasa',
+                'O+',
+                $departments[0] ?? '',
+                $locations[0] ?? ''
+            ]
+        ];
 
-            public function __construct(array $headers)
+        return Excel::download(new class($headers, $sampleData, $departments, $locations) implements
+            \Maatwebsite\Excel\Concerns\FromArray,
+            \Maatwebsite\Excel\Concerns\WithValidation,
+            \Maatwebsite\Excel\Concerns\WithEvents
+        {
+            private $headers;
+            private $sampleData;
+            private $departments;
+            private $locations;
+
+            public function __construct(array $headers, array $sampleData, array $departments, array $locations)
             {
                 $this->headers = $headers;
+                $this->sampleData = $sampleData;
+                $this->departments = $departments;
+                $this->locations = $locations;
             }
 
             public function array(): array
             {
-                return [$this->headers];
+                return [$this->headers, ...$this->sampleData];
+            }
+
+            public function registerEvents(): array
+            {
+                return [
+                    AfterSheet::class => function (AfterSheet $event) {
+                        $sheet = $event->sheet->getDelegate();
+
+                        // Gender dropdown
+                        $validation = $sheet->getCell('J2')->getDataValidation();
+                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+                        $validation->setAllowBlank(false);
+                        $validation->setShowInputMessage(true);
+                        $validation->setShowErrorMessage(true);
+                        $validation->setShowDropDown(true);
+                        $validation->setFormula1('"male,female"');
+
+                        // Department dropdown
+                        $validation = $sheet->getCell('Y2')->getDataValidation();
+                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+                        $validation->setAllowBlank(false);
+                        $validation->setShowInputMessage(true);
+                        $validation->setShowErrorMessage(true);
+                        $validation->setShowDropDown(true);
+                        $validation->setFormula1('"' . implode(',', $this->departments) . '"');
+
+                        // Location dropdown
+                        $validation = $sheet->getCell('Z2')->getDataValidation();
+                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
+                        $validation->setAllowBlank(false);
+                        $validation->setShowInputMessage(true);
+                        $validation->setShowErrorMessage(true);
+                        $validation->setShowDropDown(true);
+                        $validation->setFormula1('"' . implode(',', $this->locations) . '"');
+                    }
+                ];
+            }
+
+            public function rules(): array
+            {
+                return [
+                    'J' => 'in:male,female',
+                    'Y' => 'in:' . implode(',', $this->departments),
+                    'Z' => 'in:' . implode(',', $this->locations),
+                ];
             }
         }, 'employees_template.xlsx');
     }

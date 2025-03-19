@@ -6,7 +6,7 @@
                     <form action="{{ route('employees.import') }}" id="importEmployeesForm"
                         enctype="multipart/form-data">
                         @csrf
-                        <label for="csv_file" class="mb-2">Employees CSV/XLSX File</label>
+                        <label for="csv_file" class="mb-2">Employees XLSX File</label>
                         <div class="row">
                             <div class="col-md-8">
                                 <input type="file" name="file" id="csv_file" class="form-control" accept=".csv,.xlsx"
@@ -39,17 +39,7 @@
 
     <!-- Download buttons remain the same -->
     <div class="row align-items-center justify-content-center">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body mb-0 text-center">
-                    <a href="{{ route('business.employees.downloadCsvTemplate', $currentBusiness->slug) }}"
-                        class="btn btn-outline-info w-100">
-                        <i class="bi bi-file-earmark-arrow-down me-2"></i> Download CSV Template
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-body mb-0 text-center">
                     <a href="{{ route('business.employees.downloadXlsxTemplate', $currentBusiness->slug) }}"

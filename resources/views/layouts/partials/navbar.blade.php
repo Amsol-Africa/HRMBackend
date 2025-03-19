@@ -88,9 +88,6 @@
                                 Pay Grades
                             </a>
                         </li>
-                        <li class="slide">
-                            <a class="sidebar__menu-item" href="">Education Levels</a>
-                        </li>
                     </ul>
                 </li>
 
