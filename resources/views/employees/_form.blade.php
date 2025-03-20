@@ -169,19 +169,19 @@
                 <h6 class="text-muted fw-semibold mb-2">Salary</h6>
                 <div class="row g-2">
                     <div class="col-md-8">
-                        <input type="number" name="basic_salary" id="basic_salary" class="form-control border-primary"
-                            value="{{ optional($employee->paymentDetails)->basic_salary ?? '' }}"
+                        <input type="number" name="basic_salary" id="basic_salary" class="form-control border-light"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->basic_salary ?? '') : '' }}"
                             placeholder="Basic Salary">
                     </div>
                     <div class="col-md-4">
-                        <select name="currency" id="currency" class="form-select border-primary" required>
+                        <select name="currency" id="currency" class="form-select border-light" required>
                             <option value="">Select Currency</option>
                             <option value="KES"
-                                {{ optional($employee->paymentDetails)->currency === 'KES' ? 'selected' : '' }}>KES
-                            </option>
+                                {{ isset($employee) && optional($employee->paymentDetails)->currency === 'KES' ? 'selected' : '' }}>
+                                KES</option>
                             <option value="USD"
-                                {{ optional($employee->paymentDetails)->currency === 'USD' ? 'selected' : '' }}>USD
-                            </option>
+                                {{ isset($employee) && optional($employee->paymentDetails)->currency === 'USD' ? 'selected' : '' }}>
+                                USD</option>
                         </select>
                     </div>
                 </div>
@@ -192,28 +192,28 @@
                 <h6 class="text-muted fw-semibold mb-2">Bank Details</h6>
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <input type="text" name="account_name" id="account_name" class="form-control border-primary"
-                            value="{{ optional($employee->paymentDetails)->account_name ?? '' }}"
+                        <input type="text" name="account_name" id="account_name" class="form-control border-light"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->account_name ?? '') : '' }}"
                             placeholder="Account Name" required>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" name="account_number" id="account_number" class="form-control border-primary"
-                            value="{{ optional($employee->paymentDetails)->account_number ?? '' }}"
+                        <input type="text" name="account_number" id="account_number" class="form-control border-light"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->account_number ?? '') : '' }}"
                             placeholder="Account Number" required>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" name="bank_name" id="bank_name" class="form-control border-primary"
-                            value="{{ optional($employee->paymentDetails)->bank_name ?? '' }}" placeholder="Bank Name"
-                            required>
+                        <input type="text" name="bank_name" id="bank_name" class="form-control border-light"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->bank_name ?? '') : '' }}"
+                            placeholder="Bank Name" required>
                     </div>
                     <div class="col-md-6">
-                        <select name="payment_mode" id="payment_mode" class="form-select border-primary" required>
+                        <select name="payment_mode" id="payment_mode" class="form-select border-light" required>
                             <option value="">Select Payment Mode</option>
                             <option value="Bank"
-                                {{ optional($employee->paymentDetails)->payment_mode === 'Bank' ? 'selected' : '' }}>
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'Bank' ? 'selected' : '' }}>
                                 Bank</option>
                             <option value="M-Pesa"
-                                {{ optional($employee->paymentDetails)->payment_mode === 'M-Pesa' ? 'selected' : '' }}>
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'M-Pesa' ? 'selected' : '' }}>
                                 M-Pesa</option>
                         </select>
                     </div>

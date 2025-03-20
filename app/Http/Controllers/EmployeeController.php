@@ -165,7 +165,6 @@ class EmployeeController extends Controller
         }
     }
 
-
     public function edit(Request $request)
     {
         try {
@@ -173,25 +172,6 @@ class EmployeeController extends Controller
             $employee = $request->employee_id ? Employee::with('user', 'paymentDetails')->findOrFail($request->employee_id) : null;
             $departments = Department::where('business_id', $business->id)->get();
             $locations = Location::where('business_id', $business->id)->get();
-
-            if ($employee && !$employee->paymentDetails) {
-                $employee->paymentDetails()->create([
-                    'basic_salary' => '',
-                    'currency' => '',
-                    'payment_mode' => '',
-                    'account_name' => '',
-                    'account_number' => '',
-                    'bank_name' => ''
-                ]);
-            } elseif ($employee && $employee->paymentDetails) {
-                // Ensure null fields are empty strings
-                $employee->paymentDetails->basic_salary = $employee->paymentDetails->basic_salary ?? '';
-                $employee->paymentDetails->currency = $employee->paymentDetails->currency ?? '';
-                $employee->paymentDetails->payment_mode = $employee->paymentDetails->payment_mode ?? '';
-                $employee->paymentDetails->account_name = $employee->paymentDetails->account_name ?? '';
-                $employee->paymentDetails->account_number = $employee->paymentDetails->account_number ?? '';
-                $employee->paymentDetails->bank_name = $employee->paymentDetails->bank_name ?? '';
-            }
 
             $form = view('employees._form', compact('employee', 'departments', 'locations'))->render();
             return response()->json([
