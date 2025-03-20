@@ -99,15 +99,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [EmployeeDeductionController::class, 'update'])->name('update');
         Route::post('show', [EmployeeDeductionController::class, 'show'])->name('show');
     });
+
     //manage employees
     Route::name('employees.')->prefix('employees')->group(function () {
-        Route::post('edit', [EmployeeController::class, 'edit'])->name('edit');
-        Route::post('store', [EmployeeController::class, 'store'])->name('store');
-        Route::post('fetch', [EmployeeController::class, 'fetch'])->name('fetch');
-        Route::post('filter', [EmployeeController::class, 'filter'])->name('filter');
-        Route::post('delete', [EmployeeController::class, 'destroy'])->name('delete');
-        Route::post('update', [EmployeeController::class, 'update'])->name('update');
-        Route::post('list', [EmployeeController::class, 'list'])->name('list');
+        Route::post('/store', [EmployeeController::class, 'store'])->name('store');
+        Route::post('/fetch', [EmployeeController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [EmployeeController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [EmployeeController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [EmployeeController::class, 'destroy'])->name('destroy');
+        Route::post('/view', [EmployeeController::class, 'view'])->name('view');
     });
 
     Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');

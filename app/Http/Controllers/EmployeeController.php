@@ -2,349 +2,324 @@
 
 namespace App\Http\Controllers;
 
-use App\Enum\Status;
-use App\Models\User;
-use App\Models\Shift;
 use App\Models\Business;
 use App\Models\Employee;
-use App\Models\Location;
+use App\Models\User;
 use App\Models\Department;
+use App\Models\Location;
+use App\Models\EmployeePaymentDetail;
 use App\Models\JobCategory;
+use App\Imports\EmployeesImport;
+use App\Enums\Status;
+use App\Services\NotificationService;
+use App\Notifications\SystemAlertNotification;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
-use App\Models\EmploymentDetail;
-use App\Traits\HandleTransactions;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
-use App\Services\NotificationService;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use Maatwebsite\Excel\Facades\Excel;
-use League\Csv\Reader;
-use League\Csv\Writer;
-use App\Imports\EmployeesImport;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\WithEvents;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Events\AfterSheet;
 
 class EmployeeController extends Controller
 {
-    use HandleTransactions;
+    public function index(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employees = Employee::where('business_id', $business->id)->with('user')->get();
+        $departments = Department::where('business_id', $business->id)->get();
+        $locations = Location::where('business_id', $business->id)->get();
+
+        return view('employees.index', compact('employees', 'departments', 'locations'));
+    }
 
     public function fetch(Request $request)
     {
-        $user = $request->user();
         $business = Business::findBySlug(session('active_business_slug'));
+        $query = Employee::where('business_id', $business->id)->with('user', 'department', 'location', 'paymentDetails');
 
-        $employees = Employee::where('business_id', $business->id)
-            ->when($request->name, function ($query, $employeeName) {
-                return $query->whereHas('user', function ($query) use ($employeeName) {
-                    $query->where('name', 'like', '%' . $employeeName . '%');
-                });
-            })
-            ->when($request->employee_no, function ($query, $employeeNo) {
-                return $query->where('employee_code', 'like', '%' . $employeeNo . '%');
-            })
-            ->when($request->department, function ($query, $employeeDepartment) {
-                return $query->whereHas('department', function ($query) use ($employeeDepartment) {
-                    $query->where('slug', $employeeDepartment);
-                });
-            })
-            ->when($request->location, function ($query, $employeeLocation) {
-                return $query->whereHas('location', function ($query) use ($employeeLocation) {
-                    $query->where('slug', $employeeLocation);
-                });
-            })
-            ->when($request->status, function ($query, $employeeStatus) {
-                if ($employeeStatus !== 'all') {
-                    return $query->whereHas('user', function ($query) use ($employeeStatus) {
-                        $query->currentStatus($employeeStatus);
-                    });
-                }
-            })
-            ->when($request->gender, function ($query, $employeeGender) {
-                return $query->where('gender', $employeeGender);
-            })
-            ->get();
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+        if ($department = $request->input('department')) {
+            $query->where('department_id', $department);
+        }
+        if ($location = $request->input('location')) {
+            $query->where('location_id', $location);
+        }
 
-        $employee_table = view('employees._table', compact('employees'))->render();
+        $employees = $query->paginate(10);
+        $data = $employees->map(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'name' => $employee->user->name,
+                'employee_code' => $employee->employee_code,
+                'department' => $employee->department ? $employee->department->name : 'N/A',
+                'location' => $employee->location ? $employee->location->name : 'Main Business',
+                'basic_salary' => $employee->paymentDetails->basic_salary ?? 'N/A',
+                'actions' => '<div class="btn-group">' .
+                    '<button class="btn btn-sm btn-outline-primary" onclick="viewEmployee(' . $employee->id . ')"><i class="fa fa-eye"></i> View</button>' .
+                    '<button class="btn btn-sm btn-outline-warning" onclick="editEmployee(' . $employee->id . ')"><i class="fa fa-edit"></i> Edit</button>' .
+                    '<button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(' . $employee->id . ')"><i class="fa fa-trash"></i> Delete</button>' .
+                    '</div>'
+            ];
+        });
 
-        return RequestResponse::ok('Ok', $employee_table);
+        return response()->json([
+            'draw' => $request->input('draw'),
+            'recordsTotal' => Employee::where('business_id', $business->id)->count(),
+            'recordsFiltered' => $employees->total(),
+            'data' => $data->toArray(),
+            'message' => 'Employees fetched successfully.',
+            'count' => $employees->total(),
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'location' => 'nullable|string|exists:locations,slug',
-            // Personal Information
-            'last_name' => 'required|string|max:255',
+        $validated = $request->validate([
             'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'employee_code' => 'required|string|unique:employees,employee_code|max:50',
-            'gender' => 'required|in:male,female',
+            'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'phone_code' => 'required|string|max:10',
-            'phone_country' => 'required|string',
-            'alternate_phone' => 'required|string|max:20',
-            'alternate_phone_code' => 'required|string|max:10',
-            'date_of_birth' => 'required|date|before:today',
-            'place_of_birth' => 'required|string',
-            'marital_status' => 'required|in:single,married,divorced,widowed',
-            'national_id' => 'required|string|unique:employees,national_id',
-            'place_of_issue' => 'required|string',
-            'tax_no' => 'required|string|max:20',
-            'nhif_no' => 'required|string|max:20',
-            'nssf_no' => 'required|string|max:20',
-            'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-',
-            'passport_no' => 'nullable|string|max:20',
-            'passport_issue_date' => 'nullable|date|before:today',
-            'passport_expiry_date' => 'nullable|date|after:passport_issue_date',
-            'address' => 'required|string|max:255',
-            'permanent_address' => 'required|string|max:255',
-
-            // Spouse Information
-            'spouse_surname_name' => 'required|string',
-            'spouse_first_name' => 'required|string',
-            'spouse_middle_name' => 'required|string|',
-            'spouse_date_of_birth' => 'required|string|',
-            'spouse_national_id' => 'required|string',
-            'spouse_phone' => 'required|string',
-            'spouse_phone_code' => 'required|string',
-            'spouse_current_employer' => 'required|string',
-            'spouse_postal_address' => 'required|string',
-            'spouse_physical_address' => 'required|string',
-
-            // Work Information
-            'department' => 'required|string|exists:departments,slug',
-            'job_category' => 'required|string|exists:job_categories,slug',
-            'employment_date' => 'required|date',
-            'probation_end_date' => 'nullable|date',
-            'contract_end_date' => 'nullable|date',
-            'retirement_date' => 'nullable|date',
-            'shift' => 'required|string|exists:shifts,slug',
-            'employment_term' => 'required|string|max:50',
-            'job_description' => 'required|string',
-
-            // Payment Details
-            'basic_salary' => 'required|integer|min:0',
+            'gender' => 'required|string|max:20',
+            'employee_code' => 'required|string|unique:employees,employee_code|max:50',
+            'department_id' => 'nullable|exists:departments,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'basic_salary' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
             'payment_mode' => 'required|string|max:50',
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:employee_payment_details,account_number|max:50',
             'bank_name' => 'required|string|max:255',
-            'bank_code' => 'required|string|max:20',
-            'bank_branch' => 'required|string|max:255',
-            'bank_branch_code' => 'required|string|max:20',
-
-            // Academic & Professional Details
-            'certification' => 'required|array',
-            'certification.*' => 'required|string|max:255',
-            'institution' => 'required|array',
-            'institution.*' => 'required|string|max:255',
-            'from' => 'required|array',
-            'from.*' => 'required|date|before_or_equal:to.*',
-            'to' => 'required|array',
-            'to.*' => 'required|date|after_or_equal:from.*',
-
-            // Emergency contact validation
-            'emmergency_contact_name' => 'required|array',
-            'emmergency_contact_name.*' => 'required|string|max:255',
-            'emmergency_contact_relationship' => 'required|array',
-            'emmergency_contact_relationship.*' => 'required|string|max:255',
-            'emmergency_contact_address' => 'required|array',
-            'emmergency_contact_address.*' => 'required|string|max:255',
-            'emmergency_contact_phone' => 'required|array',
-            'emmergency_contact_phone.*' => 'required|string|max:15',
-            'emmergency_contact_phone_code' => 'required|array',
-            'emmergency_contact_phone_code.*' => 'required|string|max:10',
-            'emmergency_contact_phone_country' => 'required|array',
-            'emmergency_contact_phone_country.*' => 'required|string|max:100',
-
-            // Validation for family members
-            'family_member_name' => 'required|array',
-            'family_member_name.*' => 'required|string|max:255',
-            'family_member_relationship' => 'required|array',
-            'family_member_relationship.*' => 'required|string|max:255',
-            'family_member_date_of_birth' => 'required|array',
-            'family_member_date_of_birth.*' => 'required|date',
-            'family_member_contact_address' => 'required|array',
-            'family_member_contact_address.*' => 'required|string|max:255',
-            'family_member_contact_phone' => 'required|array',
-            'family_member_contact_phone.*' => 'required|string|max:15',
-            'family_member_contact_phone_code' => 'required|array',
-            'family_member_contact_phone_code.*' => 'required|string|max:10',
-            'family_member_contact_phone_country' => 'required|array',
-            'family_member_contact_phone_country.*' => 'required|string|max:100',
-
-            // Validation for single entry employment details
-            'employer_name' => 'required|string|max:255',
-            'business_or_profession' => 'required|string|max:255',
-            'employment_address' => 'required|string|max:255',
-            'employment_capacity' => 'required|string|max:255',
-            'employment_from' => 'required|date',
-            'employment_to' => 'nullable|date|after_or_equal:employment_from',
-            'reason_for_leaving' => 'nullable|string|max:500',
-
-            // Miscellaneous
-            'email_signature' => 'nullable|string|max:255',
+            'national_id' => 'nullable|string|unique:employees,national_id',
+            'tax_no' => 'nullable|string|max:20',
+            'date_of_birth' => 'required|date|before:today',
+            'marital_status' => 'required|string|max:20',
+            'nhif_no' => 'required|string|max:20',
+            'nssf_no' => 'required|string|max:20',
+            'permanent_address' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
             'profile_picture' => 'nullable|file|image|max:2048',
-            'cv_attachments' => 'nullable|file|mimes:pdf,doc,docx|max:2048',
-            'academic_files' => 'nullable|file|mimes:pdf,doc,docx,xlsx|max:2048',
-
-            // Authentication
-            'password' => 'required|string|min:8',
         ]);
 
-        return $this->handleTransaction(function () use ($request, $validatedData) {
-            $user = $request->user();
-            $business_slug = session('active_business_slug');
-            $business = Business::findBySlug($business_slug);
-            $location = Location::findBySlug($validatedData['location']);
+        $business = Business::findBySlug(session('active_business_slug'));
 
-            $department = Department::findBySlug($validatedData['department']);
-            $phoneNumber = "+{$request->phone_code}{$request->phone}"; // Fixed $request->code to $request->phone_code
-            $validator = Validator::make(['phone' => $phoneNumber], [
-                'phone' => 'unique:users,phone',
-            ]);
+        try {
+            DB::beginTransaction();
 
-            throw_if($validator->fails(), ValidationException::class, $validator);
-
-            $alternatePhoneNumber = "+{$request->alternate_phone_code}{$request->alternate_phone}";
-            $spousePhoneNumber = "+{$request->spouse_phone_code}{$request->spouse_phone}";
-
-            $name = trim($validatedData['first_name'] . ' ' . ($validatedData['middle_name'] ?? '') . ' ' . $validatedData['last_name']);
-
+            // Create user
             $user = User::create([
-                'name' => $name,
-                'email' => $validatedData['email'],
-                'password' => Hash::make($validatedData['password']),
-                'phone' => $phoneNumber,
-                'code' => $validatedData['phone_code'],
-                'country' => $validatedData['phone_country'],
+                'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
+                'email' => $validated['email'],
+                'password' => Hash::make(Str::random(16)),
             ]);
 
-            $user->setStatus(Status::ACTIVE);
-            $user->assignRole('employee');
-
-            $employee = $business->employees()->create([
+            // Create employee
+            $employee = Employee::create([
                 'user_id' => $user->id,
-                'employee_code' => $validatedData['employee_code'],
-                'department_id' => $department->id,
-                'location_id' => $location?->id,
-                'gender' => $validatedData['gender'],
-                'alternate_phone' => $alternatePhoneNumber,
-                'date_of_birth' => $validatedData['date_of_birth'],
-                'marital_status' => $validatedData['marital_status'],
-                'national_id' => $validatedData['national_id'],
-                'place_of_issue' => $validatedData['place_of_issue'],
-                'tax_no' => $validatedData['tax_no'],
-                'nhif_no' => $validatedData['nhif_no'],
-                'nssf_no' => $validatedData['nssf_no'],
-                'passport_no' => $validatedData['passport_no'],
-                'passport_issue_date' => $validatedData['passport_issue_date'],
-                'passport_expiry_date' => $validatedData['passport_expiry_date'],
-                'address' => $validatedData['address'],
-                'permanent_address' => $validatedData['permanent_address'],
-                'blood_group' => $validatedData['blood_group'],
+                'business_id' => $business->id,
+                'employee_code' => $validated['employee_code'],
+                'department_id' => $validated['department_id'] ?? null,
+                'location_id' => $validated['location_id'] ?? null,
+                'national_id' => $validated['national_id'] ?? null,
+                'marital_status' => $validated['marital_status'] ?? null,
+                'nhif_no' => $validated['nhif_no'] ?? null,
+                'nssf_no' => $validated['nssf_no'] ?? null,
+                'tax_no' => $validated['tax_no'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'phone' => $validated['phone'] ?? null,
             ]);
 
-            // Save next of kin details
-            $employee->spouse()->create([
-                'surname' => $validatedData['spouse_surname_name'],
-                'first_name' => $validatedData['spouse_first_name'],
-                'middle_name' => $validatedData['spouse_middle_name'],
-                'date_of_birth' => $validatedData['spouse_date_of_birth'],
-                'national_id' => $validatedData['spouse_national_id'],
-                'current_employer' => $validatedData['spouse_current_employer'],
-                'spouse_contact' => $spousePhoneNumber,
-                'spouse_postal_address' => $validatedData['spouse_postal_address'],
-                'spouse_physical_address' => $validatedData['spouse_physical_address'],
-            ]);
-
-            // Save employment details
-            $employee->employmentDetails()->create([
-                'department_id' => $department->id,
-                'job_category_id' => JobCategory::where('slug', $validatedData['job_category'])->firstOrFail()->id,
-                'employment_date' => $validatedData['employment_date'],
-                'probation_end_date' => $validatedData['probation_end_date'],
-                'contract_end_date' => $validatedData['contract_end_date'],
-                'retirement_date' => $validatedData['retirement_date'],
-                'shift_id' => Shift::where('slug', $validatedData['shift'])->firstOrFail()->id,
-                'employment_term' => $validatedData['employment_term'],
-                'job_description' => $validatedData['job_description'],
-            ]);
-
-            // Save payment / salary details
+            // Create payment details
             $employee->paymentDetails()->create([
-                'basic_salary' => $validatedData['basic_salary'],
-                'currency' => $validatedData['currency'],
-                'payment_mode' => $validatedData['payment_mode'],
-                'account_name' => $validatedData['account_name'],
-                'account_number' => $validatedData['account_number'],
-                'bank_name' => $validatedData['bank_name'],
-                'bank_code' => $validatedData['bank_code'],
-                'bank_branch' => $validatedData['bank_branch'],
-                'bank_branch_code' => $validatedData['bank_branch_code'],
+                'basic_salary' => $validated['basic_salary'],
+                'currency' => $validated['currency'],
+                'payment_mode' => $validated['payment_mode'],
+                'account_name' => $validated['account_name'],
+                'account_number' => $validated['account_number'],
+                'bank_name' => $validated['bank_name'],
             ]);
 
-            // Save Academic & Professional Details
-            foreach ($validatedData['certification'] as $index => $certification) {
-                $employee->academicDetails()->create([
-                    'start_date' => $validatedData['from'][$index],
-                    'end_date' => $validatedData['to'][$index],
-                    'institution_name' => $validatedData['institution'][$index],
-                    'certification_obtained' => $certification,
-                ]);
+            // Handle profile picture upload
+            if ($request->hasFile('profile_picture')) {
+                $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
             }
 
-            // Save emergency contacts
-            foreach ($validatedData['emmergency_contact_name'] as $index => $contactName) {
-                $employee->emergencyContacts()->create([
-                    'name' => $contactName,
-                    'relationship' => $validatedData['emmergency_contact_relationship'][$index],
-                    'contact_address' => $validatedData['emmergency_contact_address'][$index],
-                    'telephone' => $validatedData['emmergency_contact_phone'][$index],
-                ]);
+            DB::commit();
+
+            return RequestResponse::created('Employee created successfully.', $employee->id);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if (isset($user)) {
+                $user->delete();
             }
 
-            // Save each family member
-            foreach ($validatedData['family_member_name'] as $index => $name) {
-                $employee->familyMembers()->create([
-                    'name' => $name,
-                    'relationship' => $validatedData['family_member_relationship'][$index],
-                    'date_of_birth' => $validatedData['family_member_date_of_birth'][$index],
-                    'contact_address' => $validatedData['family_member_contact_address'][$index],
-                    'phone' => $validatedData['family_member_contact_phone'][$index],
-                    'code' => $validatedData['family_member_contact_phone_code'][$index],
+            return RequestResponse::badRequest('Failed to create employee. ' . $e->getMessage());
+        }
+    }
+
+
+    public function edit(Request $request)
+    {
+        try {
+            $business = Business::findBySlug(session('active_business_slug'));
+            $employee = $request->employee_id ? Employee::with('user', 'paymentDetails')->findOrFail($request->employee_id) : null;
+            $departments = Department::where('business_id', $business->id)->get();
+            $locations = Location::where('business_id', $business->id)->get();
+
+            if ($employee && !$employee->paymentDetails) {
+                $employee->paymentDetails()->create([
+                    'basic_salary' => '',
+                    'currency' => '',
+                    'payment_mode' => '',
+                    'account_name' => '',
+                    'account_number' => '',
+                    'bank_name' => ''
                 ]);
+            } elseif ($employee && $employee->paymentDetails) {
+                // Ensure null fields are empty strings
+                $employee->paymentDetails->basic_salary = $employee->paymentDetails->basic_salary ?? '';
+                $employee->paymentDetails->currency = $employee->paymentDetails->currency ?? '';
+                $employee->paymentDetails->payment_mode = $employee->paymentDetails->payment_mode ?? '';
+                $employee->paymentDetails->account_name = $employee->paymentDetails->account_name ?? '';
+                $employee->paymentDetails->account_number = $employee->paymentDetails->account_number ?? '';
+                $employee->paymentDetails->bank_name = $employee->paymentDetails->bank_name ?? '';
             }
 
-            // Create or update the employment information
-            $employee->previousEmployment()->create([
-                'employer_name' => $validatedData['employer_name'],
-                'business_or_profession' => $validatedData['business_or_profession'],
-                'address' => $validatedData['employment_address'],
-                'capacity_employed' => $validatedData['employment_capacity'],
-                'start_date' => $validatedData['employment_from'],
-                'end_date' => $validatedData['employment_to'],
-                'reason_for_leaving' => $validatedData['reason_for_leaving'],
+            $form = view('employees._form', compact('employee', 'departments', 'locations'))->render();
+            return response()->json([
+                'message' => 'Form loaded successfully.',
+                'data' => $form
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error loading employee edit form: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to load form: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email',
+            'gender' => 'required|string|max:20',
+            'employee_code' => 'required|string|unique:employees,employee_code,' . $id . ',id',
+            'department_id' => 'nullable|exists:departments,id',
+            'location_id' => 'nullable|exists:locations,id',
+            'basic_salary' => 'required|numeric|min:0',
+            'currency' => 'required|string|size:3',
+            'payment_mode' => 'required|string|max:50',
+            'account_name' => 'required|string|max:255',
+            'account_number' => 'required|string|unique:employee_payment_details,account_number,' . $id . ',employee_id',
+            'bank_name' => 'required|string|max:255',
+            'national_id' => 'required|string|unique:employees,national_id,' . $id . ',id',
+            'tax_no' => 'required|string|max:20',
+            'date_of_birth' => 'required|date|before:today',
+            'marital_status' => 'required|string|max:20',
+            'nhif_no' => 'required|string|max:20',
+            'nssf_no' => 'required|string|max:20',
+            'permanent_address' => 'required|string|max:255',
+            'phone' => 'required|string|max:20',
+            'profile_picture' => 'nullable|file|image|max:2048',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $employee = Employee::findOrFail($id);
+
+            $employee->update([
+                'employee_code' => $validated['employee_code'],
+                'department_id' => $validated['department_id'] ?? null,
+                'location_id' => $validated['location_id'] ?? null,
+                'national_id' => $validated['national_id'] ?? null,
+                'tax_no' => $validated['tax_no'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'marital_status' => $validated['marital_status'] ?? null,
+                'nhif_no' => $validated['nhif_no'] ?? null,
+                'nssf_no' => $validated['nssf_no'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'phone' => $validated['phone'] ?? null,
             ]);
 
-            // Save uploaded files if any
-            $request->hasFile('profile_picture')
-                ? $user->addMediaFromRequest('profile_picture')->toMediaCollection('avatars')
-                : $user->addMediaFromBase64(createAvatarImageFromName($name))->toMediaCollection('avatars');
+            $employee->user->update([
+                'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
+                'email' => $validated['email'],
+            ]);
 
-            if ($request->hasFile('cv_attachments')) {
-                $employee->addMedia($request->file('cv_attachments'))->toMediaCollection('cv_attachments');
-            }
-            if ($request->hasFile('academic_files')) {
-                $employee->addMedia($request->file('academic_files'))->toMediaCollection('academic_files');
+            $employee->paymentDetails()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'basic_salary' => $validated['basic_salary'],
+                    'currency' => $validated['currency'],
+                    'payment_mode' => $validated['payment_mode'],
+                    'account_name' => $validated['account_name'],
+                    'account_number' => $validated['account_number'],
+                    'bank_name' => $validated['bank_name'],
+                ]
+            );
+
+            if ($request->hasFile('profile_picture')) {
+                $employee->clearMediaCollection('avatars');
+                $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
             }
 
-            return RequestResponse::created('Employee added successfully.');
-        });
+            DB::commit();
+            return RequestResponse::ok('Employee updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return RequestResponse::badRequest('Failed to update employee: ' . $e->getMessage());
+        }
+    }
+
+
+    public function destroy(Request $request, $id)
+    {
+        try {
+            $employee = Employee::findOrFail($id);
+
+            // Delete related leave_entitlements directly
+            DB::table('leave_entitlements')->where('employee_id', $employee->id)->delete();
+
+            $employee->clearMediaCollection('avatars');
+            $employee->paymentDetails()->delete();
+            $employee->user->delete();
+            $employee->delete();
+
+            return RequestResponse::ok('Employee deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error deleting employee: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to delete employee: ' . $e->getMessage());
+        }
+    }
+
+    public function view(Request $request)
+    {
+        try {
+            $employee = Employee::with('user', 'department', 'location', 'paymentDetails')->findOrFail($request->employee_id);
+            $view = view('employees._view', compact('employee'))->render();
+            return response()->json([
+                'message' => 'Employee details loaded successfully.',
+                'data' => $view
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error loading employee view: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to load employee details: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
     }
 
     public function filter(Request $request)
@@ -440,14 +415,6 @@ class EmployeeController extends Controller
         });
 
         return RequestResponse::ok('Filtered employees retrieved successfully.', $employeesData);
-    }
-
-    public function list(Request $request)
-    {
-        $business_slug = session('active_business_slug');
-        $business = Business::findBySlug($business_slug);
-        $employees = Employee::with('user')->where('business_id', $business->id)->get();
-        return RequestResponse::ok('Ok', $employees);
     }
 
     public function sendAlert(NotificationService $notificationService)
@@ -561,7 +528,7 @@ class EmployeeController extends Controller
                         'country' => $row['phone_country'],
                         'password' => Hash::make($row['password']),
                     ]);
-                    $user->setStatus(Status::ACTIVE);
+                    $user->setStatus('active');
                     $user->assignRole('employee');
 
                     // Create employee with department and location IDs

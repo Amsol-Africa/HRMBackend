@@ -210,13 +210,8 @@ class DashboardController extends Controller
     }
     public function employees(Request $request)
     {
-        $page = 'Employee List';
-        $description = 'Here is a list of all employees in the system. You can view, edit, or delete records.';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $departments = $business->departments;
-        $job_categories = $business->job_categories;
-        $locations = $business->locations;
-        return view('employees.index', compact('page', 'description', 'departments', 'locations'));
+        session(['active_business_slug' => $request->route('business')]);
+        return (new EmployeeController())->index($request);
     }
     public function shifts(Request $request)
     {

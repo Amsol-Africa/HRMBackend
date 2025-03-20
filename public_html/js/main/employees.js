@@ -4,212 +4,145 @@ import EmployeesService from "/js/client/EmployeesService.js";
 
 const requestClient = new RequestClient();
 const employeesService = new EmployeesService(requestClient);
+let dataTable;
 
-// Fetch employees and initialize DataTable
-window.getEmployees = async function (page = 1, status = null) {
-    try {
-        let data = { page: page, status: status };
-        const employeesTable = await employeesService.fetch(data);
+document.addEventListener('DOMContentLoaded', () => {
+    initializeDataTable();
+    setupFilters();
+});
 
-        const containerId = `#${status}Employees`;
-        $(containerId).html(employeesTable);
-
-        const exportTitle = `Employees Report - ${status.charAt(0).toUpperCase() + status.slice(1)}`;
-        const exportButtons = [
-            'copy', 'csv', 'excel', 'pdf', 'print'
-        ].map(type => ({
-            extend: type,
-            text: `<i class="fa fa-${type === 'copy' ? 'copy' : type}"></i> ${type.charAt(0).toUpperCase() + type.slice(1)}`,
-            className: `btn btn-${type}`,
-            title: exportTitle,
-            exportOptions: { columns: ':not(:last-child)' }
-        }));
-
-        exportButtons.push({
-            text: '<i class="fa fa-envelope"></i> Email',
-            className: 'btn btn-warning',
-            action: function () { sendEmailReport(); }
-        });
-
-        exportButtons.push({
-            text: '<i class="fa fa-trash"></i> Delete Selected',
-            className: 'btn btn-danger',
-            action: function () { deleteSelectedEmployees(); }
-        });
-
-        const table = new DataTable(`${containerId} table`, {
-            dom: '<"top"lBf>rt<"bottom"ip>',
-            order: [[3, 'desc']],
-            lengthMenu: [[5, 10, 20, 50, 100, 500, 1000], [5, 10, 20, 50, 100, 500, 1000]],
-            pageLength: 10,
-            buttons: exportButtons
-        });
-
-        let selectedIds = [];
-
-        $('#employeesTable tbody').on('click', 'tr', function () {
-            $(this).toggleClass('selected');
-
-            const id = $(this).find('.row-id').data('id');
-            if ($(this).hasClass('selected')) {
-                selectedIds.push(id);
-            } else {
-                selectedIds = selectedIds.filter(item => item !== id);
+function initializeDataTable() {
+    dataTable = $('#employeesTable').DataTable({
+        responsive: true,
+        pageLength: 10,
+        searching: false,
+        serverSide: true,
+        processing: true,
+        ajax: {
+            url: '/employees/fetch',
+            type: 'POST',
+            data: function (d) {
+                d.search = $('#search').val();
+                d.department = $('#filterDepartment').val();
+                d.location = $('#filterLocation').val();
+            },
+            error: function (xhr, error, thrown) {
+                console.error('DataTables error:', xhr.responseText);
+                Swal.fire('Error!', 'Failed to load table data.', 'error');
             }
-        });
-
-        window.getSelectedIds = function () {
-            return selectedIds;
-        };
-
-    } catch (error) {
-        console.error("Error loading employees data:", error);
-    }
-};
-
-// Delete selected employees
-async function deleteSelectedEmployees() {
-    let selectedIds = window.getSelectedIds();
-    if (selectedIds.length === 0) {
-        Swal.fire("No Selection", "Please select at least one employee to delete.", "info");
-        return;
-    }
-
-    Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#068f6d",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete them!",
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                await employeesService.delete({ ids: selectedIds });
-                Swal.fire("Deleted!", "Selected employees have been deleted.", "success");
-                getEmployees(1, localStorage.getItem('employeeStatus'));
-            } catch (error) {
-                console.error("Error deleting employees:", error);
-                Swal.fire("Error!", "Something went wrong while deleting employees.", "error");
-            }
-        }
+        },
+        columns: [
+            { data: 'name' },
+            { data: 'employee_code' },
+            { data: 'department' },
+            { data: 'location' },
+            { data: 'basic_salary' },
+            { data: 'actions', orderable: false, searchable: false }
+        ]
     });
 }
 
-// Send email report
-function sendEmailReport() {
-    const subject = encodeURIComponent("Employees Report");
-    const body = encodeURIComponent("Here is the employees report.");
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+function setupFilters() {
+    $('#search, #filterDepartment, #filterLocation').on('change keyup', debounce(() => {
+        dataTable.ajax.reload();
+    }, 300));
 }
 
-// Search employees
-window.searchEmployees = async function () {
-    let data = {
-        page: 1,
-        status: localStorage.getItem('employeeStatus') || 'active',
-        name: $('#employeeName').val(),
-        employee_no: $('#employeeNo').val(),
-        department: $('#employeeDepartment').val(),
-        location: $('#location').val(),
-        gender: $('#employeeGender').val(),
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
     };
+}
+
+window.createEmployee = async function () {
     try {
-        const employeesTable = await employeesService.fetch(data);
-        $("#employeesContainer").html(employeesTable);
+        const response = await employeesService.edit({});
+        console.log('Create Employee Response:', response);
+        if (response) {
+            $('#employeeFormContainer').html(response);
+            $('#employeeModalLabel').text('Add Employee');
+            $('#employeeModal').modal('show');
+        } else {
+            throw new Error('No data returned from server');
+        }
     } catch (error) {
-        console.error("Error filtering employees:", error);
+        console.error('Create Employee Error:', error.response || error);
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to load create form.', 'error');
     }
 };
 
-// Save employee
 window.saveEmployee = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
+    const formData = new FormData(document.getElementById('employeeForm'));
 
-    let formData = new FormData(document.getElementById("employeesForm"));
     try {
         if (formData.has('employee_id')) {
             await employeesService.update(formData);
         } else {
             await employeesService.save(formData);
         }
+        $('#employeeModal').modal('hide');
+        dataTable.ajax.reload();
+    } catch (error) {
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to save employee.', 'error');
     } finally {
         btn_loader(btn, false);
     }
 };
 
-// Delete single employee
-window.deleteEmployee = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
+window.editEmployee = async function (id) {
+    try {
+        const response = await employeesService.edit({ employee_id: id });
+        console.log('Edit Employee Response:', response);
+        if (response) {
+            $('#employeeFormContainer').html(response);
+            $('#employeeModalLabel').text('Edit Employee');
+            $('#employeeModal').modal('show');
+        } else {
+            throw new Error('No data returned from server');
+        }
+    } catch (error) {
+        console.error('Edit Employee Error:', error.response || error);
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to load edit form.', 'error');
+    }
+};
 
-    const employee = btn.data("employee");
-    const data = { employee: employee };
-
+window.deleteEmployee = async function (id) {
     Swal.fire({
         title: "Are you sure?",
-        text: "You won't be able to revert this!",
+        text: "This action cannot be undone!",
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#068f6d",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                await employeesService.delete(data);
-                getEmployees();
-            } finally {
-                btn_loader(btn, false);
+                await employeesService.delete({ employee_id: id });
+                dataTable.ajax.reload();
+            } catch (error) {
+                Swal.fire('Error!', error.response?.data?.message || 'Failed to delete employee.', 'error');
             }
-        } else {
-            btn_loader(btn, false);
         }
     });
 };
 
-// Edit employee
-window.editEmployee = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-
+window.viewEmployee = async function (id) {
     try {
-        const employeeId = btn.data("employee");
-        const employee = await employeesService.fetch(employeeId);
-
-        const form = document.getElementById("employeesForm");
-        form.reset();
-
-        Object.keys(employee).forEach(key => {
-            const input = form.querySelector(`[name="${key}"]`);
-            if (input) {
-                if (input.type === 'file') {
-                    return;
-                }
-                input.value = employee[key];
-            }
-        });
-
-        // Add employee_id to form for update operation
-        const employeeIdInput = document.createElement('input');
-        employeeIdInput.type = 'hidden';
-        employeeIdInput.name = 'employee_id';
-        employeeIdInput.value = employeeId;
-        form.appendChild(employeeIdInput);
-
-        // Show the modal if it exists
-        const modal = $('#employeeModal');
-        if (modal.length) {
-            modal.modal('show');
+        const response = await employeesService.view({ employee_id: id });
+        console.log('View Employee Response:', response);
+        if (response) {
+            $('#viewEmployeeContainer').html(response);
+            $('#viewEmployeeModal').modal('show');
+        } else {
+            throw new Error('No data returned from server');
         }
-
     } catch (error) {
-        console.error("Error loading employee data:", error);
-        Swal.fire("Error!", "Failed to load employee data.", "error");
-    } finally {
-        btn_loader(btn, false);
+        console.error('View Employee Error:', error.response || error);
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to load employee details.', 'error');
     }
 };
 

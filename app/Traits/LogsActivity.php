@@ -29,8 +29,9 @@ trait LogsActivity
     public function logActivity($action)
     {
         $user = Auth::user();
-        $title = "{$user->name} {$action} " . class_basename($this);
-        $description = "{$user->name} has {$action} a " . class_basename($this) . " record.";
+        $modelName = class_basename($this);
+        $title = $user ? "{$user->name} {$action} {$modelName}" : "System {$action} {$modelName}";
+        $description = $user ? "{$user->name} has {$action} a {$modelName} record." : "System has {$action} a {$modelName} record.";
 
         ActivityLog::create([
             'user_id' => $user ? $user->id : null,

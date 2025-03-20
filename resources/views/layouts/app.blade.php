@@ -21,9 +21,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/vendor/dropzone.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/plugins/dropify.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/vendor/spacing.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/plugins/datatables.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/plugins/buttons.bootstrap5.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/plugins/jquery.dataTables.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/plugins/select2.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/plugins/jquery.timepicker.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/plugins/tagify.css') }}">
@@ -40,18 +38,18 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/v/dt/dt-2.0.8/datatables.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.15.2/css/selectize.default.min.css" />
     <!-- Intro.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+
 
 </head>
 
@@ -104,17 +102,13 @@
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
-    <script src="https://cdn.datatables.net/v/dt/dt-2.0.8/datatables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.tiny.cloud/1/3kfd12d1nvownxb4sd23epa9oexib4c3nzwidt83yg1m4xew/tinymce/7/tinymce.min.js"
         referrerpolicy="origin"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
     <script src="{{ asset('assets/js/vendor/isotope.pkgd.js') }}"></script>
     <script src="{{ asset('assets/js/vendor/bootstrap.bundle.min.js') }}"></script>
@@ -169,97 +163,97 @@
     <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
 
     <script type="text/javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
 
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const fieldId = this.id.replace('toggle', '').toLowerCase();
-                    const passwordField = document.getElementById(fieldId);
+        toggleButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const fieldId = this.id.replace('toggle', '').toLowerCase();
+                const passwordField = document.getElementById(fieldId);
 
-                    if (passwordField) {
-                        const type = passwordField.getAttribute('type') === 'password' ? 'text' :
-                            'password';
-                        passwordField.setAttribute('type', type);
-                        this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
-                    }
-                });
-            });
-
-
-            $(".switch-role").click(function() {
-                let selectedRole = $(this).data("role");
-
-                $.ajax({
-                    url: $("#switchRoleForm").attr("action"),
-                    method: "POST",
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr("content"),
-                        role: selectedRole
-                    },
-                    success: function(response) {
-                        window.location.href = response.redirect;
-                    },
-                    error: function(error) {
-                        console.log(error);
-                        alert("You do not have permission to switch to this role.");
-                    }
-                });
-            });
-
-        });
-
-        // Select all phone input fields
-        const phoneInputFields = document.querySelectorAll(".phone-input-control");
-
-        // Initialize each phone input with country code
-        phoneInputFields.forEach((phoneInputField, index) => {
-            initializePhoneInput(phoneInputField, index);
-
-            console.log(index)
-
-            phoneInputField.addEventListener("countrychange", function() {
-                const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
-                const selectedCountryData = phoneInput.getSelectedCountryData();
-                const codeField = document.querySelector(`#code${index}`);
-                const countryField = document.querySelector(`#country${index}`);
-
-                if (codeField) codeField.value = selectedCountryData.dialCode;
-                if (countryField) countryField.value = selectedCountryData.name;
-            });
-        });
-
-        function initializePhoneInput(phoneInputField, index) {
-            const phoneInput = window.intlTelInput(phoneInputField, {
-                preferredCountries: ["ke", "us", "ca"],
-                initialCountry: "auto",
-                nationalMode: true,
-                geoIpLookup: getIp,
-                separateDialCode: true,
-                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-            });
-
-            phoneInputField.addEventListener("countrychange", function() {
-                const selectedCountryData = phoneInput.getSelectedCountryData();
-                const codeField = document.querySelector(`#code${index}`);
-                const countryField = document.querySelector(`#country${index}`);
-
-                if (codeField) codeField.value = selectedCountryData.dialCode;
-                if (countryField) countryField.value = selectedCountryData.name;
-            });
-        }
-
-        function getIp(callback) {
-            fetch('https://ipinfo.io/json?token=a876c4d470b426', {
-                headers: {
-                    'Accept': 'application/json'
+                if (passwordField) {
+                    const type = passwordField.getAttribute('type') === 'password' ? 'text' :
+                        'password';
+                    passwordField.setAttribute('type', type);
+                    this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
                 }
-            }).then((resp) => resp.json()).catch(() => {
-                return {
-                    country: 'ke',
-                };
-            }).then((resp) => callback(resp.country));
-        }
+            });
+        });
+
+
+        $(".switch-role").click(function() {
+            let selectedRole = $(this).data("role");
+
+            $.ajax({
+                url: $("#switchRoleForm").attr("action"),
+                method: "POST",
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr("content"),
+                    role: selectedRole
+                },
+                success: function(response) {
+                    window.location.href = response.redirect;
+                },
+                error: function(error) {
+                    console.log(error);
+                    alert("You do not have permission to switch to this role.");
+                }
+            });
+        });
+
+    });
+
+    // Select all phone input fields
+    const phoneInputFields = document.querySelectorAll(".phone-input-control");
+
+    // Initialize each phone input with country code
+    phoneInputFields.forEach((phoneInputField, index) => {
+        initializePhoneInput(phoneInputField, index);
+
+        console.log(index)
+
+        phoneInputField.addEventListener("countrychange", function() {
+            const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
+            const selectedCountryData = phoneInput.getSelectedCountryData();
+            const codeField = document.querySelector(`#code${index}`);
+            const countryField = document.querySelector(`#country${index}`);
+
+            if (codeField) codeField.value = selectedCountryData.dialCode;
+            if (countryField) countryField.value = selectedCountryData.name;
+        });
+    });
+
+    function initializePhoneInput(phoneInputField, index) {
+        const phoneInput = window.intlTelInput(phoneInputField, {
+            preferredCountries: ["ke", "us", "ca"],
+            initialCountry: "auto",
+            nationalMode: true,
+            geoIpLookup: getIp,
+            separateDialCode: true,
+            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+        });
+
+        phoneInputField.addEventListener("countrychange", function() {
+            const selectedCountryData = phoneInput.getSelectedCountryData();
+            const codeField = document.querySelector(`#code${index}`);
+            const countryField = document.querySelector(`#country${index}`);
+
+            if (codeField) codeField.value = selectedCountryData.dialCode;
+            if (countryField) countryField.value = selectedCountryData.name;
+        });
+    }
+
+    function getIp(callback) {
+        fetch('https://ipinfo.io/json?token=a876c4d470b426', {
+            headers: {
+                'Accept': 'application/json'
+            }
+        }).then((resp) => resp.json()).catch(() => {
+            return {
+                country: 'ke',
+            };
+        }).then((resp) => callback(resp.country));
+    }
     </script>
 
     @stack('scripts')

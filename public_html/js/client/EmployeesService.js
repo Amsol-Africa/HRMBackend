@@ -3,86 +3,39 @@ class EmployeesService {
         this.requestClient = requestClient;
     }
 
-    async list(data) {
-        try {
-            const response = await this.requestClient.post('/employees/list', data);
-            return response.data;
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
     async fetch(data) {
-        try {
-            const response = await this.requestClient.post('/employees/fetch', data);
-            return response.data;
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
-    // check filter employee
-    async filter(data) {
-        try {
-            const response = await this.requestClient.post('/employees/filter', data);
-            return response.data;
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
-    // check update employee
-    async update(data) {
-        try {
-            const response = await this.requestClient.post('/employees/update', data);
-            toastr.info(response.message, "Success");
-            this.handleRedirect(response.data.redirect_url);
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
-    // check editing employee
-    async edit(data) {
-        try {
-            const response = await this.requestClient.post('/employees/edit', data);
-            return response.data;
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
+        const response = await this.requestClient.post('/employees/fetch', data);
+        return response.data;
     }
 
     async save(data) {
-        try {
-            const response = await this.requestClient.post('/employees/store', data);
-            toastr.success(response.message, "Success");
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
+        const response = await this.requestClient.post('/employees/store', data);
+        Swal.fire('Success!', response.message, 'success');
+        return response;
+    }
+
+    async update(data) {
+        const id = data.get('employee_id');
+        const response = await this.requestClient.post(`/employees/${id}/update`, data);
+        toastr.info(response.message, "Success");
+        return response;
+    }
+
+    async edit(data) {
+        const response = await this.requestClient.post('/employees/edit', data);
+        return response.data;
     }
 
     async delete(data) {
-        try {
-            const response = await this.requestClient.post('/employees/delete', data);
-            toastr.info(response.message, "Success");
-        } catch (error) {
-            console.log(error)
-            throw error;
-        }
+        const id = data.employee_id;
+        const response = await this.requestClient.post(`/employees/${id}/destroy`, data);
+        toastr.info(response.message, "Success");
+        return response;
     }
 
-    handleRedirect(route) {
-        if (route) {
-            setTimeout(() => {
-                window.location.href = route;
-            }, 1500);
-        }
+    async view(data) {
+        const response = await this.requestClient.post('/employees/view', data);
+        return response.data;
     }
 }
 

@@ -1,105 +1,99 @@
 <x-app-layout>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold text-dark">Employees</h2>
+                    <span id="employeeCount"
+                        class="badge bg-primary-soft text-primary px-3 py-2">{{ $employees->count() }} Employees</span>
+                </div>
 
-    <div class="col-md-12">
-        <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
-            @php
-                $tabs = [
-                    'active' => 'Active',
-                    'on-leave' => 'On Leave',
-                    'notice-exit' => 'On Notice of Exit',
-                    'inactive' => 'Inactive',
-                    'exited' => 'Exited',
-                    'all' => 'All',
-                ];
-            @endphp
+                <!-- Filters -->
+                <div class="card shadow-sm mb-4 border-0 rounded-3">
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <input type="text" id="search" class="form-control"
+                                    placeholder="Search by name or code...">
+                            </div>
+                            <div class="col-md-3">
+                                <select id="filterDepartment" class="form-select">
+                                    <option value="">All Departments</option>
+                                    @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="filterLocation" class="form-select">
+                                    <option value="">All Locations</option>
+                                    @foreach ($locations as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100" onclick="createEmployee()">Add Employee</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            @foreach ($tabs as $key => $value)
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="{{ $key }}-tab" data-status="{{ $key }}"
-                        data-bs-toggle="tab" data-bs-target="#{{ $key }}" type="button" role="tab"
-                        aria-controls="{{ $key }}" aria-selected="false">{{ $value }}</button>
-                </li>
-            @endforeach
-        </ul>
-
-        <div class="card__wrapper">
-            <div class="row">
-                <div class="col-md-2">
-                    <input type="text" class="form-control" id="employeeName" placeholder="Employee Name">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" class="form-control" id="employeeNo" placeholder="Employee No">
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="location">
-                        <option value="">Location</option>
-                        @foreach ($locations as $location)
-                            <option value="{{ $location->slug }}">{{ $location->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="employeeDepartment">
-                        <option value="">Department</option>
-                        @foreach ($departments as $department)
-                            <option value="{{ $department->slug }}">{{ $department->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" id="employeeGender">
-                        <option value="">Employee Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <div class="d-flex align-items-center gap-15">
-                        <button type="button" onclick="searchEmployees(this)" class="btn btn-secondary">
-                            <i class="bi bi-funnel"></i> Filter
-                        </button>
-                        <a href="{{ route('business.employees.create', $currentBusiness->slug) }}"
-                            class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNewEmployee">
-                            <i class="bi bi-plus-square"></i> Add
-                        </a>
+                <!-- Table -->
+                <div id="employeesContainer" class="card shadow-sm border-0 rounded-3">
+                    <div class="card-body p-4">
+                        @include('employees._table')
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="tab-content" id="myTabContent">
-            @foreach ($tabs as $key => $value)
-                <div class="tab-pane fade" id="{{ $key }}" role="tabpanel"
-                    aria-labelledby="{{ $key }}-tab">
-                    <div class="card-body">
-                        <div class="table-responsive" id="{{ $key }}Employees">
-                            <div class="text-center">{{ loader() }}</div>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
     </div>
 
-    @push('scripts')
-        <script src="{{ asset('js/main/employees.js') }}" type="module"></script>
-        <script>
-            $(document).ready(() => {
-                let savedStatus = localStorage.getItem('employeeStatus') || 'active';
+    <!-- Employee Modal -->
+    <div class="modal fade" id="employeeModal" tabindex="-1" aria-labelledby="employeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="employeeModalLabel">Employee Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="employeeFormContainer">
+                    <!-- Form will be loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
 
-                // Load employees based on saved tab
-                getEmployees(1, savedStatus);
-                $(`#${savedStatus}-tab`).addClass('active');
-                $(`#${savedStatus}`).addClass('show active');
+    <!-- View Modal -->
+    <div class="modal fade" id="viewEmployeeModal" tabindex="-1" aria-labelledby="viewEmployeeModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewEmployeeModalLabel">Employee Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="viewEmployeeContainer"></div>
+            </div>
+        </div>
+    </div>
 
-                $('#myTab button').on('click', function() {
-                    const status = $(this).data('status');
-                    localStorage.setItem('employeeStatus', status);
-                    getEmployees(1, status);
-                });
-            });
-        </script>
+    @push('styles')
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
     @endpush
 
+    @push('scripts')
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="{{ asset('js/main/employees.js') }}" type="module"></script>
+    <script>
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+    </script>
+    @endpush
 </x-app-layout>

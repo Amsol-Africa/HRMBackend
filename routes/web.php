@@ -34,10 +34,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pay-schedule', [DashboardController::class, 'paySchedule'])->name('pay-schedule');
 
         Route::get('/departments', [DashboardController::class, 'departments'])->name('departments.index');
-        Route::get('/employees/register', [DashboardController::class, 'createEmployees'])->name('employees.create');
         Route::get('/employees', [DashboardController::class, 'employees'])->name('employees.index');
-        Route::get('/employees/edit/{employee}', [DashboardController::class, 'editEmployees'])->name('employees.edit');
-        Route::get('/employees/details/{employee}', [DashboardController::class, 'employeeDetails'])->name('employees.details');
         Route::get('/employees/import', [DashboardController::class, 'importEmployees'])->name('employees.import');
         Route::get('/employees/warning', [DashboardController::class, 'warning'])->name('employees.warning');
 

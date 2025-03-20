@@ -92,34 +92,42 @@
                 </li>
 
                 <!-- Employee Management Dropdown -->
-                <li class="slide has-sub {{ request()->routeIs('business.employees.*') ? 'active open' : '' }}">
+                <li
+                    class="slide has-sub {{ request()->routeIs('employees.*') || request()->routeIs('business.*.employees.*') ? 'active open' : '' }}">
                     <a href="javascript:void(0);"
-                        class="sidebar__menu-item {{ request()->routeIs('business.employees.*') ? 'active' : '' }}">
-                        <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                        <div class="side-menu__icon"><i class="fa-solid fa-users"></i></div>
-                        <span class="sidebar__menu-label">Employee Management</span>
+                        class="sidebar__menu-item d-flex align-items-center justify-content-between {{ request()->routeIs('employees.*') || request()->routeIs('business.*.employees.*') ? 'active' : '' }}"
+                        data-bs-toggle="collapse" data-bs-target="#employeeManagementMenu"
+                        aria-expanded="{{ request()->routeIs('employees.*') || request()->routeIs('business.*.employees.*') ? 'true' : 'false' }}"
+                        aria-controls="employeeManagementMenu">
+                        <div class="d-flex align-items-center">
+                            <div class="side-menu__icon me-2"><i class="fa-solid fa-users text-primary"></i></div>
+                            <span class="sidebar__menu-label fw-medium">Employee Management</span>
+                        </div>
+                        <i class="fa-solid fa-angle-down side-menu__angle text-muted"></i>
                     </a>
-                    <ul class="sidebar-menu child1 {{ request()->routeIs('business.employees.*') ? 'active' : '' }}">
-                        <li class="slide {{ request()->routeIs('business.employees.create') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.create') ? 'active' : '' }}"
-                                href="{{ route('business.employees.create', $currentBusiness->slug) }}">
-                                Add Employee
-                            </a>
-                        </li>
+                    <ul id="employeeManagementMenu"
+                        class="sidebar-menu child1 collapse {{ request()->routeIs('employees.*') || request()->routeIs('business.*.employees.*') ? 'show' : '' }}">
                         <li class="slide {{ request()->routeIs('business.employees.index') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.index') ? 'active' : '' }}"
+                            <a class="sidebar__menu-item d-flex align-items-center {{ request()->routeIs('business.employees.index') ? 'active' : '' }}"
                                 href="{{ route('business.employees.index', $currentBusiness->slug) }}">
                                 List Employees
                             </a>
                         </li>
-                        <li class="slide {{ request()->routeIs('business.employees.import') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.import') ? 'active' : '' }}"
+                        <li class="slide">
+                            <a class="sidebar__menu-item d-flex align-items-center" href="#" onclick="createEmployee()"
+                                return false;">
+                                Add Employee
+                            </a>
+                        </li>
+                        <!-- Placeholder for Import Employees (route not defined yet) -->
+                        <li class="slide {{ request()->routeIs('business.*.employees.import') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item d-flex align-items-center {{ request()->routeIs('business.*.employees.import') ? 'active' : '' }}"
                                 href="{{ route('business.employees.import', $currentBusiness->slug) }}">
                                 Import Employees
                             </a>
                         </li>
                         <li class="slide {{ request()->routeIs('business.employees.warning') ? 'active' : '' }}">
-                            <a class="sidebar__menu-item {{ request()->routeIs('business.employees.warning') ? 'active' : '' }}"
+                            <a class="sidebar__menu-item d-flex align-items-center {{ request()->routeIs('business.employees.warning') ? 'active' : '' }}"
                                 href="{{ route('business.employees.warning', $currentBusiness->slug) }}">
                                 Employee Warnings
                             </a>
