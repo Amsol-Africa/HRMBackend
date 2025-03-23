@@ -25,7 +25,7 @@ class DashboardController extends Controller
 {
     function index(Request $request)
     {
-
+        $page = 'HR/Finance Dashboard';
         $business = Business::findBySlug(session('active_business_slug'));
 
         $business_employees = $business->employees->count();
@@ -112,7 +112,7 @@ class DashboardController extends Controller
             ],
         ];
 
-        return view('business.index', compact('cards'));
+        return view('business.index', compact('cards', 'page'));
     }
 
     function clients(Request $request)
@@ -220,13 +220,40 @@ class DashboardController extends Controller
         return view('shifts.index', compact('page', 'description'));
     }
 
-    public function payrolls(Request $request)
+    public function payroll(Request $request)
     {
-        $page = 'Payrolls';
-        $description = '';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $locations = $business->locations;
-        return view('payroll.index', compact('page', 'description', 'locations'));
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollController())->index($request);
+    }
+    public function payrollAll(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollController())->all($request);
+    }
+
+    public function viewPayroll(Request $request, $id)
+    {
+        $businessSlug = $request->route('business');
+        session(['active_business_slug' => $businessSlug]);
+        return (new PayrollController())->viewPayroll($request, $request, $id);
+    }
+
+    public function downloadColumn(Request $request, $id, $column, $format)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollController())->downloadColumn($request, $id, $column, $format);
+    }
+
+    public function downloadPayroll(Request $request, $id, $format)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollController())->downloadPayroll($request, $id, $format);
+    }
+
+    public function printAllPayslips(Request $request, $id)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollController())->printAllPayslips($request, $id);
     }
 
     public function payslips(Request $request, string $business_slug, Payroll $payroll)
@@ -278,6 +305,12 @@ class DashboardController extends Controller
         $payrolls = $business->payrolls()->latest()->get();
         return view('downloads.index', compact('page', 'description', 'payrolls', 'locations'));
     }
+    // new
+    public function payrollFormulas(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new PayrollFormulaController())->index($request);
+    }
 
     public function warning(Request $request)
     {
@@ -290,12 +323,23 @@ class DashboardController extends Controller
         session(['active_business_slug' => $request->route('business')]);
         return (new PayGradesController())->index($request);
     }
-
-    public function relief(Request $request)
+    // new
+    public function deductions(Request $request)
     {
-        $page = 'Reliefs';
-        $description = '';
-        return view('relief.index', compact('page', 'description'));
+        session(['active_business_slug' => $request->route('business')]);
+        return (new DeductionController())->index($request);
+    }
+
+    public function reliefs(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new ReliefsController())->index($request);
+    }
+
+    public function employeeReliefs(Request $request)
+    {
+        session(['active_business_slug' => $request->route('business')]);
+        return (new EmployeeReliefsController())->index($request);
     }
 
     public function createWarning(Request $request)
@@ -303,13 +347,6 @@ class DashboardController extends Controller
         $page = 'Create Warning';
         $description = '';
         return view('employees.warning-create', compact('page', 'description'));
-    }
-
-    public function createRelief(Request $request)
-    {
-        $page = 'Create Relief';
-        $description = '';
-        return view('relief.create', compact('page', 'description'));
     }
 
     public function payrollDeductions(Request $request)
@@ -335,16 +372,8 @@ class DashboardController extends Controller
 
     public function allowances(Request $request)
     {
-        $page = 'Allowances';
-        $description = '';
-        return view('allowances.index', compact('page', 'description'));
-    }
-
-    public function createAllowances(Request $request)
-    {
-        $page = 'Create Allowances';
-        $description = '';
-        return view('allowances.create', compact('page', 'description'));
+        session(['active_business_slug' => $request->route('business')]);
+        return (new AllowanceController())->index($request);
     }
 
     public function advances(Request $request)

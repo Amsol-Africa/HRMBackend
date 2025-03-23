@@ -1,21 +1,3 @@
-$(document).ready(() => {
-    if ($(".summernote").length) {
-        $(".summernote").summernote({
-            height: 200,
-        });
-    }
-    if ($(".tinyMce").length) {
-        tinymce.init({
-            selector: "textarea.tinyMce",
-            plugins:
-                "anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount",
-            toolbar:
-                "undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat",
-        });
-    }
-    initializeDatepicker();
-});
-
 // Initialize Toastr options
 toastr.options = {
     closeButton: true,
@@ -54,7 +36,7 @@ function dataTable(table, options) {
             lengthChange: true,
             autoWidth: true,
             pageLength: 10,
-            columnDefs: [{ searchable: false, targets: 0 }],
+            columnDefs: [{ searchable: true, targets: 0 }],
             dom: '<"d-flex justify-content-between align-items-center"lBf>tip',
             buttons: [
                 {

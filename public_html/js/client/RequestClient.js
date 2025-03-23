@@ -78,7 +78,6 @@ class RequestClient {
             }
 
             if (!isDownload) {
-                // console.log('sammy')
                 return await response.json();
             }
 

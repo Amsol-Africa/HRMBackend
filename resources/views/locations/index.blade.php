@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="{{ $page }}">
 
     @include('locations._access_nav')
 
@@ -37,51 +37,51 @@
         @push('scripts')
         <script src="{{ asset('js/main/locations.js') }}" type="module"></script>
         <script>
-        $(document).ready(() => {
-            getLocations()
-        });
-        document.addEventListener("DOMContentLoaded", function() {
-            $("#startTour").on("click", function() {
-                const intro = introJs();
-                intro.setOptions({
-                    steps: [{
-                            element: "#locationsFormContainer",
-                            title: "Add New Location",
-                            intro: "Use this form to add a new company location."
-                        },
-                        {
-                            element: "#locationsContainer",
-                            title: "Locations Table",
-                            intro: "Here, you can view, edit, and manage all locations."
-                        },
-                        {
-                            element: "#submitButton",
-                            title: "Save Location",
-                            intro: "Click this button to save a new location."
-                        },
-                        {
-                            element: "#helpButton", // Ensure the Help button has this ID
-                            title: "Need Help?",
-                            intro: "Click this button for more details or support on managing locations.",
-                            position: "left"
-                        },
-                        {
-                            title: "Tour Completed 🎉",
-                            intro: "That's it! You're now ready to manage locations efficiently."
-                        }
-                    ],
-                    showProgress: true,
-                    showBullets: false,
-                    exitOnOverlayClick: false,
-                    exitOnEsc: true,
-                    nextLabel: "Next",
-                    prevLabel: "Back",
-                    doneLabel: "Finish"
-                });
-
-                intro.start();
+            $(document).ready(() => {
+                getLocations()
             });
-        });
+            document.addEventListener("DOMContentLoaded", function() {
+                $("#startTour").on("click", function() {
+                    const intro = introJs();
+                    intro.setOptions({
+                        steps: [{
+                                element: "#locationsFormContainer",
+                                title: "Add New Location",
+                                intro: "Use this form to add a new company location."
+                            },
+                            {
+                                element: "#locationsContainer",
+                                title: "Locations Table",
+                                intro: "Here, you can view, edit, and manage all locations."
+                            },
+                            {
+                                element: "#submitButton",
+                                title: "Save Location",
+                                intro: "Click this button to save a new location."
+                            },
+                            {
+                                element: "#helpButton", // Ensure the Help button has this ID
+                                title: "Need Help?",
+                                intro: "Click this button for more details or support on managing locations.",
+                                position: "left"
+                            },
+                            {
+                                title: "Tour Completed 🎉",
+                                intro: "That's it! You're now ready to manage locations efficiently."
+                            }
+                        ],
+                        showProgress: true,
+                        showBullets: false,
+                        exitOnOverlayClick: false,
+                        exitOnEsc: true,
+                        nextLabel: "Next",
+                        prevLabel: "Back",
+                        doneLabel: "Finish"
+                    });
+
+                    intro.start();
+                });
+            });
         </script>
         @endpush
 

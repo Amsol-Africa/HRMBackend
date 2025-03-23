@@ -10,7 +10,7 @@ class EmployeeAllowance extends Model
 {
     use LogsActivity, HasStatuses;
     protected $fillable = [
-        'enmployee_id',
+        'employee_id',
         'allowance_id',
         'amount',
     ];

@@ -14,6 +14,16 @@ class EmployeesService {
         return response;
     }
 
+    async filter(data) {
+        try {
+            const response = await this.requestClient.post('/employees/filter', data);
+            return response.data;
+        } catch (error) {
+            console.log(error)
+            throw error;
+        }
+    }
+
     async update(data) {
         const id = data.get('employee_id');
         const response = await this.requestClient.post(`/employees/${id}/update`, data);

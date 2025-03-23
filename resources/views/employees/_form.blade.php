@@ -138,7 +138,7 @@
                     </div>
                     <div class="col-md-4">
                         <select name="location_id" id="location_id" class="form-select border-primary">
-                            <option value="">Main Business</option>
+                            <option value="">{{ $business->company_name }} (Main Business)</option>
                             @foreach ($locations as $location)
                             <option value="{{ $location->id }}"
                                 {{ isset($employee) && $employee->location_id == $location->id ? 'selected' : '' }}>
@@ -169,12 +169,12 @@
                 <h6 class="text-muted fw-semibold mb-2">Salary</h6>
                 <div class="row g-2">
                     <div class="col-md-8">
-                        <input type="number" name="basic_salary" id="basic_salary" class="form-control border-light"
+                        <input type="number" name="basic_salary" id="basic_salary" class="form-control border-primary"
                             value="{{ isset($employee) ? (optional($employee->paymentDetails)->basic_salary ?? '') : '' }}"
                             placeholder="Basic Salary">
                     </div>
                     <div class="col-md-4">
-                        <select name="currency" id="currency" class="form-select border-light" required>
+                        <select name="currency" id="currency" class="form-select border-primary" required>
                             <option value="">Select Currency</option>
                             <option value="KES"
                                 {{ isset($employee) && optional($employee->paymentDetails)->currency === 'KES' ? 'selected' : '' }}>
@@ -192,22 +192,22 @@
                 <h6 class="text-muted fw-semibold mb-2">Bank Details</h6>
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <input type="text" name="account_name" id="account_name" class="form-control border-light"
+                        <input type="text" name="account_name" id="account_name" class="form-control border-primary"
                             value="{{ isset($employee) ? (optional($employee->paymentDetails)->account_name ?? '') : '' }}"
                             placeholder="Account Name" required>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" name="account_number" id="account_number" class="form-control border-light"
+                        <input type="text" name="account_number" id="account_number" class="form-control border-primary"
                             value="{{ isset($employee) ? (optional($employee->paymentDetails)->account_number ?? '') : '' }}"
                             placeholder="Account Number" required>
                     </div>
                     <div class="col-md-6">
-                        <input type="text" name="bank_name" id="bank_name" class="form-control border-light"
+                        <input type="text" name="bank_name" id="bank_name" class="form-control border-primary"
                             value="{{ isset($employee) ? (optional($employee->paymentDetails)->bank_name ?? '') : '' }}"
                             placeholder="Bank Name" required>
                     </div>
                     <div class="col-md-6">
-                        <select name="payment_mode" id="payment_mode" class="form-select border-light" required>
+                        <select name="payment_mode" id="payment_mode" class="form-select border-primary" required>
                             <option value="">Select Payment Mode</option>
                             <option value="Bank"
                                 {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'Bank' ? 'selected' : '' }}>
@@ -231,54 +231,54 @@
 </form>
 
 <style>
-.form-control,
-.form-select {
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    transition: border-color 0.2s ease;
-}
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.2s ease;
+    }
 
-.form-control:focus,
-.form-select:focus {
-    border-color: #007bff;
-    box-shadow: none;
-}
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: none;
+    }
 
-.nav-pills .nav-link {
-    border-radius: 0;
-    color: #6c757d;
-    font-weight: 500;
-}
+    .nav-pills .nav-link {
+        border-radius: 0;
+        color: #6c757d;
+        font-weight: 500;
+    }
 
-.nav-pills .nav-link.active {
-    background-color: transparent;
-    color: #007bff;
-    border-bottom: 2px solid #007bff;
-}
+    .nav-pills .nav-link.active {
+        background-color: transparent;
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+    }
 
-.btn-modern {
-    border-radius: 20px;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-}
+    .btn-modern {
+        border-radius: 20px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
 
-.btn-modern:hover {
-    background-color: #0056b3;
-}
+    .btn-modern:hover {
+        background-color: #0056b3;
+    }
 
-.bg-light {
-    background-color: #f8f9fa;
-}
+    .bg-light {
+        background-color: #f8f9fa;
+    }
 </style>
 
 <script>
-function previewImage(event) {
-    const reader = new FileReader();
-    reader.onload = function() {
-        const preview = document.getElementById('profile_preview');
-        preview.src = reader.result;
-        preview.style.display = 'block';
-    };
-    reader.readAsDataURL(event.target.files[0]);
-}
+    function previewImage(event) {
+        const reader = new FileReader();
+        reader.onload = function() {
+            const preview = document.getElementById('profile_preview');
+            preview.src = reader.result;
+            preview.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
 </script>

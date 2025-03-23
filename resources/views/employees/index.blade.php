@@ -27,8 +27,18 @@
                             <div class="col-md-3">
                                 <select id="filterLocation" class="form-select">
                                     <option value="">All Locations</option>
+                                    <option value="{{ $business->business_id }}">{{ $business->company_name }} | Main
+                                        business</option>
                                     @foreach ($locations as $location)
                                     <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select id="filterJobCategory" class="form-select">
+                                    <option value="">All Job Categories</option>
+                                    @foreach ($jobCategories as $jobCategory)
+                                    <option value="{{ $jobCategory->id }}">{{ $jobCategory->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -64,10 +74,11 @@
         </div>
     </div>
 
+
     <!-- View Modal -->
     <div class="modal fade" id="viewEmployeeModal" tabindex="-1" aria-labelledby="viewEmployeeModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="viewEmployeeModalLabel">Employee Details</h5>
@@ -89,11 +100,11 @@
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="{{ asset('js/main/employees.js') }}" type="module"></script>
     <script>
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-    });
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
     </script>
     @endpush
 </x-app-layout>

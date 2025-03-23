@@ -1,4 +1,3 @@
-// js/client/PayGrades.js
 class PayGradesService {
     constructor(requestClient) {
         this.requestClient = requestClient;

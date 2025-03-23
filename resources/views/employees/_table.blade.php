@@ -5,6 +5,7 @@
                 <th>Name</th>
                 <th>Code</th>
                 <th>Department</th>
+                <th>Job Category</th>
                 <th>Location</th>
                 <th>Basic Salary</th>
                 <th>Actions</th>
@@ -16,8 +17,11 @@
                 <td>{{ $employee->user->name }}</td>
                 <td>{{ $employee->employee_code }}</td>
                 <td>{{ $employee->department ? $employee->department->name : 'N/A' }}</td>
-                <td>{{ $employee->location ? $employee->location->name : 'Main Business' }}</td>
-                <td>{{ $employee->paymentDetails->basic_salary ?? 'N/A' }}</td>
+                <td>{{ $employee->jobCategory ? $employee->jobCategory->name : 'N/A' }}</td>
+                <td>
+                    {{ $employee->location ? $employee->location->name : $employee->business->company_name }}
+                </td>
+                <td>{{ number_format((float) ($employee->paymentDetails->basic_salary ?? 0), 2) }}</td>
                 <td>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-primary" onclick="viewEmployee({{ $employee->id }})">

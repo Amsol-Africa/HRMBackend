@@ -25,6 +25,7 @@ function initializeDataTable() {
                 d.search = $('#search').val();
                 d.department = $('#filterDepartment').val();
                 d.location = $('#filterLocation').val();
+                d.job_category = $('#filterJobCategory').val();
             },
             error: function (xhr, error, thrown) {
                 console.error('DataTables error:', xhr.responseText);
@@ -35,15 +36,16 @@ function initializeDataTable() {
             { data: 'name' },
             { data: 'employee_code' },
             { data: 'department' },
-            { data: 'location' },
+            { data: 'job_category' },
             { data: 'basic_salary' },
+            { data: 'location' },
             { data: 'actions', orderable: false, searchable: false }
         ]
     });
 }
 
 function setupFilters() {
-    $('#search, #filterDepartment, #filterLocation').on('change keyup', debounce(() => {
+    $('#search, #filterDepartment, #filterLocation, #filterJobCategory').on('change keyup', debounce(() => {
         dataTable.ajax.reload();
     }, 300));
 }
@@ -59,7 +61,6 @@ function debounce(func, wait) {
 window.createEmployee = async function () {
     try {
         const response = await employeesService.edit({});
-        console.log('Create Employee Response:', response);
         if (response) {
             $('#employeeFormContainer').html(response);
             $('#employeeModalLabel').text('Add Employee');
@@ -96,7 +97,6 @@ window.saveEmployee = async function (btn) {
 window.editEmployee = async function (id) {
     try {
         const response = await employeesService.edit({ employee_id: id });
-        console.log('Edit Employee Response:', response);
         if (response) {
             $('#employeeFormContainer').html(response);
             $('#employeeModalLabel').text('Edit Employee');
@@ -133,7 +133,6 @@ window.deleteEmployee = async function (id) {
 window.viewEmployee = async function (id) {
     try {
         const response = await employeesService.view({ employee_id: id });
-        console.log('View Employee Response:', response);
         if (response) {
             $('#viewEmployeeContainer').html(response);
             $('#viewEmployeeModal').modal('show');

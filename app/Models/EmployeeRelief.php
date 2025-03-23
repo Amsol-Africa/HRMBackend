@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use App\Traits\LogsActivity;
@@ -13,6 +14,9 @@ class EmployeeRelief extends Model
         'employee_id',
         'relief_id',
         'amount',
+        'is_active',
+        'start_date',
+        'end_date',
     ];
 
     public function employee()

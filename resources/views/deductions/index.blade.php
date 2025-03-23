@@ -1,31 +1,27 @@
-<x-app-layout>
-    <div class="row g-20">
-
-        <div class="col-md-">
-            <div class="card">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5>{{ $page }}</h5>
-                    <a class="btn btn-primary btn-sm" href="{{ route('business.deductions.create', $currentBusiness->slug) }}"> <i class="bi bi-plus-square-dotted"></i> Add Deductions</a>
-
+<x-app-layout title="{{ $page }}">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-12">
+                <div class="card shadow-sm mb-5 border-0 rounded-3">
+                    <div class="card-body p-4">
+                        <h4 class="fw-semibold text-dark mb-4">Create New Deduction</h4>
+                        <div id="deductionFormContainer">
+                            @include('deductions._form')
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body" id="deductionsContainer">
 
-                    {{ loader() }}
-
+                <div>
+                    <h4 class="fw-semibold text-dark mt-4 mb-4">Current Deductions</h4>
+                    <div id="deductionsContainer">
+                        @include('deductions._table', ['deductions' => $deductions])
+                    </div>
                 </div>
             </div>
         </div>
-
     </div>
 
     @push('scripts')
-        {{-- @include('modals.payroll-formula') --}}
-        <script src="{{ asset('js/main/deductions.js') }}" type="module"></script>
-        <script>
-            $(document).ready(() => {
-                getDeductions()
-            })
-        </script>
+    <script src="{{ asset('js/main/deductions.js') }}" type="module"></script>
     @endpush
-
 </x-app-layout>

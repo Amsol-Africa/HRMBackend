@@ -19,7 +19,16 @@ class Deduction extends Model
         'name',
         'slug',
         'description',
+        'calculation_basis',
+        'type',
+        'amount',
+        'rate',
+        'is_optional',
         'created_by',
+    ];
+
+    protected $casts = [
+        'is_optional' => 'boolean',
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -45,5 +54,12 @@ class Deduction extends Model
     public function employeeDeductions()
     {
         return $this->hasMany(EmployeeDeduction::class);
+    }
+
+    public function employees()
+    {
+        return $this->belongsToMany(Employee::class, 'employee_deductions')
+            ->withPivot('amount', 'is_active')
+            ->withTimestamps();
     }
 }

@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class JobCategory extends Model
 {
-    use HasFactory, HasSlug ,HasStatuses, LogsActivity;
+    use HasFactory, HasSlug, HasStatuses, LogsActivity;
 
     protected $fillable = [
         'business_id',
@@ -27,5 +27,10 @@ class JobCategory extends Model
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()->generateSlugsFrom('name')->saveSlugsTo('slug');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class, 'job_category_id');
     }
 }

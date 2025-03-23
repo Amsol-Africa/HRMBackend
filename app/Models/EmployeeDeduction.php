@@ -15,7 +15,14 @@ class EmployeeDeduction extends Model
         'employee_id',
         'deduction_id',
         'amount',
+        'date',
         'notes',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'date' => 'date',
+        'is_active' => 'boolean',
     ];
 
     public function employee()

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
-class EmployeePayroll extends Model //problem with this model methods
+class EmployeePayroll extends Model
 {
     protected $fillable = [
         'payroll_id',
@@ -50,8 +50,4 @@ class EmployeePayroll extends Model //problem with this model methods
             ->latest('created_at')
             ->first();
     }
-
-
-
 }
-

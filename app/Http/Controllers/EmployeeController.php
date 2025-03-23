@@ -28,17 +28,24 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $employees = Employee::where('business_id', $business->id)->with('user')->get();
+        if (!$business) {
+            return redirect()->back()->with('error', 'Business not found.');
+        }
+
+        $employees = Employee::where('business_id', $business->id)
+            ->with(['user', 'business', 'location', 'department']) // Added 'location' and 'department'
+            ->get();
         $departments = Department::where('business_id', $business->id)->get();
         $locations = Location::where('business_id', $business->id)->get();
+        $jobCategories = JobCategory::where('business_id', $business->id)->get();
 
-        return view('employees.index', compact('employees', 'departments', 'locations'));
+        return view('employees.index', compact('employees', 'departments', 'locations', 'jobCategories', 'business'));
     }
 
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $query = Employee::where('business_id', $business->id)->with('user', 'department', 'location', 'paymentDetails');
+        $query = Employee::where('business_id', $business->id)->with('user', 'department', 'location', 'paymentDetails', 'jobCategory');
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -52,6 +59,9 @@ class EmployeeController extends Controller
         if ($location = $request->input('location')) {
             $query->where('location_id', $location);
         }
+        if ($jobCategory = $request->input('job_category')) {
+            $query->where('id', $jobCategory);
+        }
 
         $employees = $query->paginate(10);
         $data = $employees->map(function ($employee) {
@@ -60,8 +70,9 @@ class EmployeeController extends Controller
                 'name' => $employee->user->name,
                 'employee_code' => $employee->employee_code,
                 'department' => $employee->department ? $employee->department->name : 'N/A',
-                'location' => $employee->location ? $employee->location->name : 'Main Business',
-                'basic_salary' => $employee->paymentDetails->basic_salary ?? 'N/A',
+                'location' => $employee->location ? $employee->location->name : $employee->business->company_name,
+                'job_category' => $employee->jobCategory ? $employee->jobCategory->name : 'N/A',
+                'basic_salary' => number_format((float) ($employee->paymentDetails->basic_salary ?? 0), 2) . ' ' . $employee->paymentDetails->currency  ?? 'N/A',
                 'actions' => '<div class="btn-group">' .
                     '<button class="btn btn-sm btn-outline-primary" onclick="viewEmployee(' . $employee->id . ')"><i class="fa fa-eye"></i> View</button>' .
                     '<button class="btn btn-sm btn-outline-warning" onclick="editEmployee(' . $employee->id . ')"><i class="fa fa-edit"></i> Edit</button>' .
@@ -173,7 +184,7 @@ class EmployeeController extends Controller
             $departments = Department::where('business_id', $business->id)->get();
             $locations = Location::where('business_id', $business->id)->get();
 
-            $form = view('employees._form', compact('employee', 'departments', 'locations'))->render();
+            $form = view('employees._form', compact('employee', 'departments', 'locations', 'business'))->render();
             return response()->json([
                 'message' => 'Form loaded successfully.',
                 'data' => $form
@@ -269,7 +280,6 @@ class EmployeeController extends Controller
         try {
             $employee = Employee::findOrFail($id);
 
-            // Delete related leave_entitlements directly
             DB::table('leave_entitlements')->where('employee_id', $employee->id)->delete();
 
             $employee->clearMediaCollection('avatars');
@@ -287,7 +297,30 @@ class EmployeeController extends Controller
     public function view(Request $request)
     {
         try {
-            $employee = Employee::with('user', 'department', 'location', 'paymentDetails')->findOrFail($request->employee_id);
+            $employee = Employee::with([
+                'user',
+                'business',
+                'department',
+                'location',
+                'paymentDetails',
+                'payrolls.payroll',
+                'employeeAllowances.allowance',
+                'employeeDeductions.deduction',
+                'attendances',
+                'leaveRequests',
+                'loans',
+                'overtimes',
+                'familyMembers',
+                'emergencyContacts',
+                'documents',
+                'advances',
+                'academicDetails',
+                'previousEmployment',
+                'employmentDetails',
+                'jobCategory',
+                'spouse',
+            ])->findOrFail($request->employee_id);
+
             $view = view('employees._view', compact('employee'))->render();
             return response()->json([
                 'message' => 'Employee details loaded successfully.',
@@ -330,8 +363,8 @@ class EmployeeController extends Controller
                     }
                 },
             ],
-            'job_categories' => 'array|nullable',
-            'job_categories.*' => [
+            'jobCategories' => 'array|nullable',
+            'jobCategories.*' => [
                 function ($attribute, $value, $fail) {
                     if ($value !== 'all' && !JobCategory::where('slug', $value)->exists()) {
                         $fail("The selected job category '$value' is invalid.");
@@ -362,8 +395,8 @@ class EmployeeController extends Controller
                 });
             }
 
-            if (!empty($validatedData['job_categories']) && !in_array('all', $validatedData['job_categories'])) {
-                $jobCategoryIds = JobCategory::whereIn('slug', $validatedData['job_categories'])->pluck('id');
+            if (!empty($validatedData['jobCategories']) && !in_array('all', $validatedData['jobCategories'])) {
+                $jobCategoryIds = JobCategory::whereIn('slug', $validatedData['jobCategories'])->pluck('id');
                 $query->whereHas('employmentDetails', function ($q) use ($jobCategoryIds) {
                     $q->whereIn('job_category_id', $jobCategoryIds);
                 });

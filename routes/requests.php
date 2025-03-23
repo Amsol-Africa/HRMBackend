@@ -6,7 +6,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\TrendController;
 use App\Http\Controllers\ClientController;
-use App\Http\Controllers\ReliefController;
+use App\Http\Controllers\ReliefsController;
 use App\Http\Controllers\AdvanceController;
 use App\Http\Controllers\JobPostController;
 use App\Http\Controllers\PayrollController;
@@ -35,6 +35,7 @@ use App\Http\Controllers\EmployeeDeductionController;
 use App\Http\Controllers\KPIsController;
 use App\Http\Controllers\WarningController;
 use App\Http\Controllers\PayGradesController;
+use App\Http\Controllers\EmployeeReliefsController;
 
 Route::middleware(['auth'])->group(function () {
 
@@ -72,22 +73,19 @@ Route::middleware(['auth'])->group(function () {
     });
     //manage payroll formulas
     Route::name('payroll-formulas.')->prefix('payroll-formulas')->group(function () {
-        Route::post('edit', [PayrollFormulaController::class, 'edit'])->name('edit');
-        Route::post('store', [PayrollFormulaController::class, 'store'])->name('store');
-        Route::post('fetch', [PayrollFormulaController::class, 'fetch'])->name('fetch');
-        Route::post('delete', [PayrollFormulaController::class, 'destroy'])->name('delete');
-        Route::post('update', [PayrollFormulaController::class, 'update'])->name('update');
-        Route::post('show', [PayrollFormulaController::class, 'show'])->name('show');
-        Route::post('create', [PayrollFormulaController::class, 'create'])->name('create');
+        Route::post('/store', [PayrollFormulaController::class, 'store'])->name('store');
+        Route::post('/fetch', [PayrollFormulaController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [PayrollFormulaController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [PayrollFormulaController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [PayrollFormulaController::class, 'destroy'])->name('destroy');
     });
-    //manage deductions
+    // Manage deductions
     Route::name('deductions.')->prefix('deductions')->group(function () {
-        Route::post('edit', [DeductionController::class, 'edit'])->name('edit');
-        Route::post('store', [DeductionController::class, 'store'])->name('store');
-        Route::post('fetch', [DeductionController::class, 'fetch'])->name('fetch');
-        Route::post('delete', [DeductionController::class, 'destroy'])->name('delete');
-        Route::post('update', [DeductionController::class, 'update'])->name('update');
-        Route::post('show', [DeductionController::class, 'show'])->name('show');
+        Route::post('/store', [DeductionController::class, 'store'])->name('store');
+        Route::post('/fetch', [DeductionController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [DeductionController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [DeductionController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [DeductionController::class, 'destroy'])->name('destroy');
     });
     //manage empliyee deductions
     Route::name('employee-deductions.')->prefix('employee-deductions')->group(function () {
@@ -146,12 +144,19 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [LeaveEntitlementController::class, 'update'])->name('update');
     });
     Route::name('reliefs.')->prefix('reliefs')->group(function () {
-        Route::post('edit', [ReliefController::class, 'edit'])->name('edit');
-        Route::post('store', [ReliefController::class, 'store'])->name('store');
-        Route::post('fetch', [ReliefController::class, 'fetch'])->name('fetch');
-        Route::post('show', [ReliefController::class, 'show'])->name('show');
-        Route::post('destroy', [ReliefController::class, 'destroy'])->name('destroy');
-        Route::post('update', [ReliefController::class, 'update'])->name('update');
+        Route::post('/store', [ReliefsController::class, 'store'])->name('store');
+        Route::post('/fetch', [ReliefsController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [ReliefsController::class, 'edit'])->name('edit');
+        Route::post('/show', [ReliefsController::class, 'show'])->name('show');
+        Route::post('/{id}/update', [ReliefsController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [ReliefsController::class, 'destroy'])->name('destroy');
+    });
+    Route::name('employee-reliefs.')->prefix('employee-reliefs')->group(function () {
+        Route::post('/store', [EmployeeReliefsController::class, 'store'])->name('store');
+        Route::post('/fetch', [EmployeeReliefsController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [EmployeeReliefsController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [EmployeeReliefsController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [EmployeeReliefsController::class, 'destroy'])->name('destroy');
     });
     Route::name('client-businesses.')->prefix('client-businesses')->group(function () {
         Route::post('request-access', [ClientController::class, 'requestAccess'])->name('request-access');
@@ -169,18 +174,25 @@ Route::middleware(['auth'])->group(function () {
         Route::post('delete', [LocationController::class, 'destroy'])->name('delete');
         Route::post('update', [LocationController::class, 'update'])->name('update');
     });
+
+    // new payroll routes
     Route::name('payroll.')->prefix('payroll')->group(function () {
-        Route::post('edit', [PayrollController::class, 'edit'])->name('edit');
-        Route::post('store', [PayrollController::class, 'store'])->name('store');
-        Route::post('fetch', [PayrollController::class, 'fetch'])->name('fetch');
-        Route::post('slips', [PayrollController::class, 'slips'])->name('slips');
-        Route::post('slips/show', [PayrollController::class, 'showSlip'])->name('slips.show');
-        Route::post('slips/download', [PayrollController::class, 'downloadSlip'])->name('slips.download');
-        Route::post('slips/email', [PayrollController::class, 'emailSlip'])->name('slips.email');
-        Route::post('show', [PayrollController::class, 'show'])->name('show');
-        Route::post('destroy', [PayrollController::class, 'destroy'])->name('destroy');
-        Route::post('update', [PayrollController::class, 'update'])->name('update');
+        Route::post('/fetch', [PayrollController::class, 'fetch'])->name('fetch');
+        Route::post('/filter', [PayrollController::class, 'filter'])->name('filter');
+        Route::post('/add-adjustment', [PayrollController::class, 'addAdjustment'])->name('add-adjustment');
+        Route::post('/preview', [PayrollController::class, 'preview'])->name('preview');
+        Route::post('/store', [PayrollController::class, 'store'])->name('store');
+        Route::post('/send-payslips', [PayrollController::class, 'sendPayslips'])->name('send-payslips');
+        Route::post('/close', [PayrollController::class, 'close'])->name('close');
+
+        Route::post('/{id}/process', [PayrollController::class, 'processPayroll'])->name('process');
+        Route::post('/{id}/email-p9', [PayrollController::class, 'emailP9'])->name('email_p9');
+        Route::post('/{id}/delete', [PayrollController::class, 'deletePayroll'])->name('delete');
+        Route::post('/{id}/publish', [PayrollController::class, 'publishPayroll'])->name('publish');
+        Route::post('/{id}/unpublish', [PayrollController::class, 'unpublishPayroll'])->name('unpublish');
+        Route::post('/{id}/email-payslips', [PayrollController::class, 'emailPayslips'])->name('email_payslips');
     });
+
     Route::name('advances.')->prefix('advances')->group(function () {
         Route::post('edit', [AdvanceController::class, 'edit'])->name('edit');
         Route::post('store', [AdvanceController::class, 'store'])->name('store');
@@ -189,11 +201,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [AdvanceController::class, 'update'])->name('update');
     });
     Route::name('allowances.')->prefix('allowances')->group(function () {
-        Route::post('edit', [AllowanceController::class, 'edit'])->name('edit');
-        Route::post('store', [AllowanceController::class, 'store'])->name('store');
-        Route::post('fetch', [AllowanceController::class, 'fetch'])->name('fetch');
-        Route::post('delete', [AllowanceController::class, 'destroy'])->name('delete');
-        Route::post('update', [AllowanceController::class, 'update'])->name('update');
+        Route::post('/store', [AllowanceController::class, 'store'])->name('store');
+        Route::post('/fetch', [AllowanceController::class, 'fetch'])->name('fetch');
+        Route::post('/edit', [AllowanceController::class, 'edit'])->name('edit');
+        Route::post('/{id}/update', [AllowanceController::class, 'update'])->name('update');
+        Route::post('/{id}/destroy', [AllowanceController::class, 'destroy'])->name('destroy');
     });
     Route::name('loans.')->prefix('loans')->group(function () {
         Route::post('edit', [LoanController::class, 'edit'])->name('edit');
@@ -304,8 +316,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [ActivityLogController::class, 'index'])->name('fetch');
     });
 
-    //print
-    Route::get('/payslip/print/{id}', [PayrollController::class, 'printPayslip'])->name('payslip.print');
 
     // Gen AI
     Route::post('/generate-job-description', [JobPostController::class, 'generateDescription'])->middleware('auth');
@@ -329,7 +339,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{id}/destroy', [WarningController::class, 'destroy'])->name('destroy');
     });
 
-    // requests.php
+    // paygrades
     Route::name('pay-grades.')->prefix('pay-grades')->group(function () {
         Route::post('/store', [PayGradesController::class, 'store'])->name('store');
         Route::post('/fetch', [PayGradesController::class, 'fetch'])->name('fetch');

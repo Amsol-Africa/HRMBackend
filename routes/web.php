@@ -11,6 +11,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\RoleSwitchController;
 use App\Http\Controllers\EmployeeDashboardController;
 use App\Http\Controllers\KPIsController;
+use Illuminate\Http\Request;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetch'])->name('jobs.openings');
 
@@ -45,23 +46,27 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/job-categories', [DashboardController::class, 'jobCategories'])->name('job-categories.index');
         Route::get('/shifts', [DashboardController::class, 'shifts'])->name('shifts.index');
 
-        // Route::get('/tasks', [DashboardController::class, 'tasks'])->name('tasks.index');
-        Route::get('/payroll/formula/create', [DashboardController::class, 'createPayrollFormula'])->name('payroll.formula.create');
-        Route::get('/payroll/formula', [DashboardController::class, 'payrollFormula'])->name('payroll.formula');
-        Route::get('/payroll/import', [DashboardController::class, 'payrollImport'])->name('payroll.import');
-        Route::get('/payroll/deductions', [DashboardController::class, 'payrollDeductions'])->name('payroll.deductions');
-        Route::get('/payroll/pay-grades', [DashboardController::class, 'payrollPayGrades'])->name('payroll.pay-grades');
-        Route::get('/payroll/process', [DashboardController::class, 'processPayrolls'])->name('payroll.process');
-        Route::get('/payrolls', [DashboardController::class, 'payrolls'])->name('payroll.index');
-        Route::get('/payrolls/payslips/{payroll?}', [DashboardController::class, 'payslips'])->name('payroll.payslips');
-        Route::get('/payrolls/deductions/create', [DashboardController::class, 'createDeductions'])->name('deductions.create');
-        Route::get('/payrolls/downloads', [DashboardController::class, 'downloads'])->name('payroll.downloads');
+        Route::get('/payroll-formulas', [DashboardController::class, 'payrollFormulas'])->name('payroll-formulas.index');
+        Route::get('/payroll-formulas/bracket-template', function (Request $request) {
+            $index = $request->input('index', 0);
+            return view('payroll-formulas._bracket', ['index' => $index]);
+        })->name('payroll-formulas.bracket-template');
 
-        Route::get('/relief/create', [DashboardController::class, 'createRelief'])->name('relief.create');
-        Route::get('/relief', [DashboardController::class, 'relief'])->name('relief.index');
+
+        Route::get('/deductions', [DashboardController::class, 'deductions'])->name('deductions');
+
+        Route::get('/payroll', [DashboardController::class, 'payroll'])->name('payroll.index');
+        Route::get('/payroll/all', [DashboardController::class, 'payrollAll'])->name('payroll.all');
+        Route::get('/payroll/{id}', [DashboardController::class, 'viewPayroll'])->name('payroll.view');
+        Route::get('/payroll/{id}/download/{format}', [DashboardController::class, 'downloadPayroll'])->name('payroll.reports');
+        Route::get('/payroll/{id}/download-column/{column}/{format}', [DashboardController::class, 'downloadColumn'])->name('payroll.download_column');
+        Route::get('/payroll/{id}/send-payslips', [DashboardController::class, 'sendPayslips'])->name('payroll.send_payslips');
+        Route::get('/payroll/{id}/print-all-payslips', [DashboardController::class, 'printAllPayslips'])->name('payroll.print_all_payslips');
+
+        Route::get('reliefs', [DashboardController::class, 'reliefs'])->name('reliefs.index');
+        Route::get('employee-reliefs', [DashboardController::class, 'employeeReliefs'])->name('employee-reliefs.index');
 
         Route::get('/allowances', [DashboardController::class, 'allowances'])->name('allowances.index');
-        Route::get('/allowances/create', [DashboardController::class, 'createAllowances'])->name('allowances.create');
 
         Route::get('/advances', [DashboardController::class, 'advances'])->name('advances.index');
         Route::get('/loans', [DashboardController::class, 'loans'])->name('loans.index');
@@ -139,7 +144,6 @@ Route::middleware(['auth'])->group(function () {
 
         // Attendance Reports Route
         Route::get('reports', [DashboardController::class, 'attendanceReport'])->name('reports.index');
-
 
         Route::get('profile', [ProfileController::class, 'edit'])->name('profile.index');
 

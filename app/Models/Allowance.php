@@ -37,9 +37,10 @@ class Allowance extends Model
         return $this->belongsTo(Location::class);
     }
 
-    public function employeeAllowances()
+    public function employees()
     {
-        return $this->hasMany(EmployeeAllowance::class);
+        return $this->belongsToMany(Employee::class, 'employee_allowances')
+            ->withTimestamps();
     }
     public function getSlugOptions(): SlugOptions
     {
