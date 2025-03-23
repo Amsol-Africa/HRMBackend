@@ -121,22 +121,46 @@ const unpublishPayroll = async function (id = null) {
     }
 };
 
-// Email payslips for selected payrolls
+// Send payslips for a single payroll
 const emailPayslips = async function (id = null) {
-    if (!id && selectedPayrolls.length === 0) {
-        Swal.fire('Error!', 'Please select at least one payroll to email payslips.', 'error');
+    if (!id && selectedPayrolls.length !== 1) {
+        Swal.fire('Error!', 'Please select exactly one payroll to send payslips for.', 'error');
         return;
     }
 
-    const payrollIds = id ? [id] : selectedPayrolls;
+    const payrollId = id || selectedPayrolls[0];
+    const payrollRow = document.querySelector(`.payrollCheckbox[value="${payrollId}"]`).closest('tr');
+    const payrollMonth = payrollRow.querySelector('td:nth-child(2)').textContent.trim();
+
+    // Confirmation prompt
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: `You are about to send payslips for ${payrollMonth}. This action cannot be undone.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#068f6d",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, send payslips!",
+    });
+
+    if (!result.isConfirmed) {
+        return;
+    }
+
     try {
-        for (const payrollId of payrollIds) {
-            await requestClient.post(`/payroll/${payrollId}/email-payslips`, {});
+        const response = await requestClient.post('/payroll/send-payslips', { payroll_id: payrollId });
+        console.log('Send Payslips Response:', response);
+        if (response.status === 200 || response.data) {
+            Swal.fire('Success!', `Payslips for ${payrollMonth} have been queued for sending.`, 'success');
+            // Update the "Emailed" column to show ✔
+            const emailedCell = payrollRow.querySelector('td:nth-child(5)');
+            emailedCell.textContent = '✔';
+        } else {
+            Swal.fire('Error!', response.message || 'Failed to send payslips.', 'error');
         }
-        Swal.fire('Success!', 'Payslips emailed successfully.', 'success');
-        filterPayrolls();
     } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to email payslips.', 'error');
+        console.error('Send Payslips Error:', error.response);
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to send payslips.', 'error');
     }
 };
 
@@ -182,7 +206,6 @@ const printAllPayslips = async function (id = null) {
 };
 
 const viewPayroll = function (id) {
-
     const currentPath = window.location.pathname;
     const pathSegments = currentPath.split('/').filter(segment => segment);
     const businessSlug = pathSegments[1]; // Assuming business slug is second segment

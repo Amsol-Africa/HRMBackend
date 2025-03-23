@@ -179,7 +179,8 @@ Route::middleware(['auth'])->group(function () {
     Route::name('payroll.')->prefix('payroll')->group(function () {
         Route::post('/fetch', [PayrollController::class, 'fetch'])->name('fetch');
         Route::post('/filter', [PayrollController::class, 'filter'])->name('filter');
-        Route::post('/add-adjustment', [PayrollController::class, 'addAdjustment'])->name('add-adjustment');
+        Route::post('/adjust', [PayrollController::class, 'addAdjustment'])->name('adjust');
+        Route::post('/employee-adjustments', [PayrollController::class, 'getEmployeeAdjustments'])->name('employee.adjustments');
         Route::post('/preview', [PayrollController::class, 'preview'])->name('preview');
         Route::post('/store', [PayrollController::class, 'store'])->name('store');
         Route::post('/send-payslips', [PayrollController::class, 'sendPayslips'])->name('send-payslips');

@@ -196,7 +196,7 @@ class Employee extends Model implements HasMedia
             ->withTimestamps();
     }
 
-    public function payrollDetails()
+    public function payrollDetail()
     {
         return $this->hasOne(EmployeePayrollDetail::class);
     }

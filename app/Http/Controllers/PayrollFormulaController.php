@@ -28,7 +28,7 @@ class PayrollFormulaController extends Controller
         }
 
         $formulas = PayrollFormula::with('brackets')->where('business_id', $business->id)->get();
-        $employees = Employee::where('business_id', $business->id)->with('payrollDetails')->get();
+        $employees = Employee::where('business_id', $business->id)->with('payrollDetail')->get();
 
         return view('payroll-formulas.index', compact('page', 'description', 'formulas', 'employees'));
     }

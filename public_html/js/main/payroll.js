@@ -4,48 +4,57 @@ const requestClient = new RequestClient();
 
 const fetchEmployees = async function () {
     const formData = new FormData(document.getElementById("payrollForm"));
+    const $tableContainer = $("#payrollTableContainer");
+    const $previewContainer = $("#payrollPreviewContainer");
+    const $tableLoader = $("#tableLoader");
+
+    $tableContainer.empty();
+    $previewContainer.empty();
+    $tableLoader.show();
+
     try {
         const response = await requestClient.post('/payroll/fetch', formData);
-        $("#payrollTableContainer").html(response.data.html);
-        $("#payrollPreviewContainer").empty();
+        $tableContainer.html(response.data.html);
+        $tableLoader.hide();
+        $('#payrollForm').hide();
+        $(".sidebar").toggleClass("minimized");
+
         $('#employeeTable').DataTable({
             responsive: true,
             pageLength: 10,
             searching: true,
             ordering: true,
             paging: true,
-            language: { search: "Filter:" }
+            language: { search: "Filter:" },
+            drawCallback: function () {
+                $('.exempted-row input[type="checkbox"]').prop('checked', true);
+            }
         });
+
         if (response.data.warnings && Object.keys(response.data.warnings).length) {
             Swal.fire('Warnings', 'Some employees have missing data.', 'warning');
         }
     } catch (error) {
+        $tableLoader.hide();
         Swal.fire('Error!', error.response?.data?.message || 'Failed to fetch employees.', 'error');
-    }
-};
-
-const addAdjustment = async function (employeeId, type, scope, scopeId, amount, name) {
-    try {
-        const response = await requestClient.post('/payroll/add-adjustment', {
-            employee_id: employeeId,
-            type,
-            scope,
-            scope_id: scopeId,
-            amount,
-            name
-        });
-        Swal.fire('Success!', response.message, 'success');
-        fetchEmployees();
-    } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to add adjustment.', 'error');
     }
 };
 
 const previewPayroll = async function () {
     const formData = new FormData(document.getElementById("payrollForm"));
+    const $previewContainer = $("#payrollPreviewContainer");
+    const $tableContainer = $("#payrollTableContainer");
+    const $previewLoader = $("#previewLoader");
+
+    $previewContainer.empty();
+    $previewLoader.show();
+
     try {
         const response = await requestClient.post('/payroll/preview', formData);
-        $("#payrollPreviewContainer").html(response.data.html);
+        $previewContainer.html(response.data.html);
+        $previewLoader.hide();
+        $tableContainer.hide();
+
         $('#previewTable').DataTable({
             responsive: true,
             pageLength: 10,
@@ -55,10 +64,9 @@ const previewPayroll = async function () {
             language: { search: "Filter:" }
         });
     } catch (error) {
+        $previewLoader.hide();
+        $tableContainer.show();
         Swal.fire('Error!', error.response?.data?.message || 'Failed to preview payroll.', 'error');
-        if (error.response?.data?.warnings) {
-            $("#payrollTableContainer").html(error.response.data.warningsHtml || 'Resolve warnings first.');
-        }
     }
 };
 
@@ -66,22 +74,42 @@ const submitPayroll = async function () {
     const formData = new FormData(document.getElementById("payrollForm"));
     try {
         const response = await requestClient.post('/payroll/store', formData);
+        Swal.fire('Success!', 'Payroll processed successfully.', 'success');
         window.location.href = response.data.redirect_url;
-
-        $("#payrollTableContainer").empty();
-        $("#payrollPreviewContainer").empty();
-
     } catch (error) {
         Swal.fire('Error!', error.response?.data?.message || 'Failed to process payroll.', 'error');
     }
 };
 
+const addAdjustment = async function (data) {
+    try {
+        const response = await requestClient.post('/payroll/adjust', data);
+
+        if (response.status === 200 || response.data) {
+            Swal.fire('Success!', 'Adjustments saved successfully.', 'success');
+            fetchEmployees();
+            return response.data;
+        } else {
+            Swal.fire('Error!', response.message || 'Failed to add adjustment.', 'error');
+            throw new Error(response.message || 'Adjustment failed');
+        }
+    } catch (error) {
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to add adjustment.', 'error');
+        throw error;
+    }
+};
 
 const sendPayslips = async function (payrollId) {
     try {
-        const response = await requestClient.post('/payroll/send-payslips', { payroll_id: payrollId }); // Updated endpoint
-        Swal.fire('Success!', 'Payslips queued for sending.', 'success');
+        const response = await requestClient.post('/payroll/send-payslips', { payroll_id: payrollId });
+        console.log('Send Payslips Response:', response);
+        if (response.status === 200 || response.data) {
+            Swal.fire('Success!', 'Payslips queued for sending.', 'success');
+        } else {
+            Swal.fire('Error!', response.message || 'Failed to send payslips.', 'error');
+        }
     } catch (error) {
+        console.error('Send Payslips Error:', error.response);
         Swal.fire('Error!', error.response?.data?.message || 'Failed to send payslips.', 'error');
     }
 };

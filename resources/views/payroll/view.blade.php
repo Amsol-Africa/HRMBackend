@@ -122,7 +122,7 @@
                             <td>{{ number_format($deductions['shif'] ?? 0, 2) }}</td>
                             <td>{{ number_format($deductions['nssf'] ?? 0, 2) }}</td>
                             <td>{{ number_format($deductions['paye'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['nhdf'] ?? 0, 2) }}</td>
+                            <td>{{ number_format($deductions['housing_levy'] ?? 0, 2) }}</td>
                             <td>{{ number_format($deductions['helb'] ?? 0, 2) }}</td>
                             <td>{{ number_format($deductions['loan_repayment'] ?? 0, 2) }}</td>
                             <td>{{ number_format($deductions['advance_recovery'] ?? 0, 2) }}</td>
@@ -225,294 +225,308 @@
 
     @push('styles')
     <style>
-        /* Modern, Minimalistic Styling */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f5f7fa;
+    /* Modern, Minimalistic Styling */
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #f5f7fa;
+    }
+
+    .container {
+        max-width: 1400px;
+    }
+
+    /* Header, Body, Footer Styling */
+    .invoice-header,
+    .invoice-body,
+    .invoice-footer {
+        background-color: #fff;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .invoice-header:hover,
+    .invoice-footer:hover,
+    .table-responsive:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .dropdown button {
+        width: 100% !important;
+        height: 40px !important;
+    }
+
+    .text-dark {
+        color: #1a202c !important;
+    }
+
+    .text-muted {
+        color: #6b7280 !important;
+    }
+
+    /* Modern Table Styling */
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .modern-table th,
+    .modern-table td {
+        padding: 12px 16px;
+        text-align: right;
+        border: none;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
+    }
+
+    .modern-table th {
+        background-color: #1a202c;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .modern-table th:first-child,
+    .modern-table td:first-child {
+        text-align: left;
+    }
+
+    .modern-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .modern-table tfoot td {
+        background-color: #f9fafb;
+        font-weight: 600;
+        color: #1a202c;
+    }
+
+    /* Modern Button and Dropdown Styling */
+    .modern-btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .modern-btn i {
+        font-size: 1rem;
+    }
+
+    .btn-primary.modern-btn {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .btn-primary.modern-btn:hover {
+        background-color: #2563eb;
+        border-color: #2563eb;
+    }
+
+    .btn-outline-primary.modern-btn {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .btn-outline-primary.modern-btn:hover {
+        background-color: #3b82f6;
+        color: #fff;
+    }
+
+    .btn-outline-secondary.modern-btn {
+        border-color: #6b7280;
+        color: #6b7280;
+    }
+
+    .btn-outline-secondary.modern-btn:hover {
+        background-color: #6b7280;
+        color: #fff;
+    }
+
+    .btn-success.modern-btn {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+
+    .btn-success.modern-btn:hover {
+        background-color: #059669;
+        border-color: #059669;
+    }
+
+    .btn-outline-info.modern-btn {
+        border-color: #0ea5e9;
+        color: #0ea5e9;
+    }
+
+    .btn-outline-info.modern-btn:hover {
+        background-color: #0ea5e9;
+        color: #fff;
+    }
+
+    .modern-dropdown {
+        border: none;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .modern-dropdown .dropdown-item {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        color: #1a202c;
+        transition: background-color 0.2s ease;
+    }
+
+    .modern-dropdown .dropdown-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    /* Modal Styling */
+    .modal-content {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #e5e7eb;
+    }
+
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .invoice-header .row {
+            flex-direction: column;
+            text-align: center;
         }
 
-        .container {
-            max-width: 1400px;
+        .invoice-header .col-md-6 {
+            margin-bottom: 1rem;
         }
 
-        /* Header, Body, Footer Styling */
-        .invoice-header,
-        .invoice-body,
-        .invoice-footer {
-            background-color: #fff;
-            border-radius: 8px;
-            transition: all 0.3s ease;
+        .invoice-header img,
+        .invoice-header .bg-light {
+            margin: 0 auto;
         }
 
-        .invoice-header:hover,
-        .invoice-footer:hover,
-        .table-responsive:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
         }
 
-        .dropdown button {
-            width: 100% !important;
-            height: 40px !important;
-        }
-
-        .text-dark {
-            color: #1a202c !important;
-        }
-
-        .text-muted {
-            color: #6b7280 !important;
-        }
-
-        /* Modern Table Styling */
-        .table-responsive {
-            overflow-x: auto;
-            border-radius: 8px;
-        }
-
-        .modern-table {
+        .d-flex.align-items-center {
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
+            justify-content: flex-start;
         }
 
-        .modern-table th,
-        .modern-table td {
-            padding: 12px 16px;
-            text-align: right;
-            border: none;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .modern-table th {
-            background-color: #1a202c;
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .modern-table th:first-child,
-        .modern-table td:first-child {
+        .modern-btn {
+            width: 100%;
             text-align: left;
         }
 
-        .modern-table tbody tr:hover {
-            background-color: #f9fafb;
+        .text-md-end {
+            text-align: center !important;
         }
 
-        .modern-table tfoot td {
-            background-color: #f9fafb;
-            font-weight: 600;
-            color: #1a202c;
+        .mt-4.text-center {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
-
-        /* Modern Button and Dropdown Styling */
-        .modern-btn {
-            border-radius: 6px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .modern-btn i {
-            font-size: 1rem;
-        }
-
-        .btn-primary.modern-btn {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-        }
-
-        .btn-primary.modern-btn:hover {
-            background-color: #2563eb;
-            border-color: #2563eb;
-        }
-
-        .btn-outline-primary.modern-btn {
-            border-color: #3b82f6;
-            color: #3b82f6;
-        }
-
-        .btn-outline-primary.modern-btn:hover {
-            background-color: #3b82f6;
-            color: #fff;
-        }
-
-        .btn-outline-secondary.modern-btn {
-            border-color: #6b7280;
-            color: #6b7280;
-        }
-
-        .btn-outline-secondary.modern-btn:hover {
-            background-color: #6b7280;
-            color: #fff;
-        }
-
-        .btn-success.modern-btn {
-            background-color: #10b981;
-            border-color: #10b981;
-        }
-
-        .btn-success.modern-btn:hover {
-            background-color: #059669;
-            border-color: #059669;
-        }
-
-        .btn-outline-info.modern-btn {
-            border-color: #0ea5e9;
-            color: #0ea5e9;
-        }
-
-        .btn-outline-info.modern-btn:hover {
-            background-color: #0ea5e9;
-            color: #fff;
-        }
-
-        .modern-dropdown {
-            border: none;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .modern-dropdown .dropdown-item {
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            color: #1a202c;
-            transition: background-color 0.2s ease;
-        }
-
-        .modern-dropdown .dropdown-item:hover {
-            background-color: #f3f4f6;
-        }
-
-        /* Modal Styling */
-        .modal-content {
-            border-radius: 8px;
-            border: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #e5e7eb;
-        }
-
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .invoice-header .row {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .invoice-header .col-md-6 {
-                margin-bottom: 1rem;
-            }
-
-            .invoice-header img,
-            .invoice-header .bg-light {
-                margin: 0 auto;
-            }
-
-            .d-flex.justify-content-between {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-
-            .d-flex.align-items-center {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .modern-btn {
-                width: 100%;
-                text-align: left;
-            }
-
-            .text-md-end {
-                text-align: center !important;
-            }
-
-            .mt-4.text-center {
-                display: flex;
-                flex-direction: column;
-                gap: 0.5rem;
-            }
-        }
+    }
     </style>
     @endpush
 
     @push('scripts')
     <script>
-        function sendPayslips(payrollId) {
-            fetch('/payroll/send-payslips/' + payrollId, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    }
+    function sendPayslips(payrollId) {
+        fetch('/payroll/send-payslips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    payroll_id: payrollId
                 })
-                .then(response => response.json())
-                .then(data => Swal.fire('Success!', data.message, 'success'))
-                .catch(error => Swal.fire('Error!', 'Failed to send payslips.', 'error'));
-        }
-
-        function printPayroll() {
-            window.print();
-        }
-
-        document.querySelectorAll('.download-column').forEach(item => {
-            item.addEventListener('click', function(e) {
-                e.preventDefault();
-                const column = this.getAttribute('data-column');
-                const format = this.getAttribute('data-format');
-                const entitySlug = '{{ $entity->slug }}';
-                const entityType = '{{ $entity->type }}';
-                const payrollId = '{{ $payroll->id }}';
-                const businessSlug = '{{ $business->slug }}';
-
-                if (entityType === "location") {
-                    const url =
-                        '{{ route("business.payroll.download_column", [ "business" => ":businessSlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
-                        .replace(':entitySlug', entitySlug)
-                        .replace(':payroll_id', payrollId)
-                        .replace(':column', column)
-                        .replace(':format', format);
-
-                    console.log("Generated URL:", url);
-                    window.location.href = url;
-                } else {
-                    const url =
-                        '{{ route("business.payroll.download_column", [ "business" => ":entitySlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
-                        .replace(':entitySlug', entitySlug)
-                        .replace(':payroll_id', payrollId)
-                        .replace(':column', column)
-                        .replace(':format', format);
-
-                    console.log("Generated URL:", url);
-                    window.location.href = url;
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
                 }
-
-
+                return response.json();
+            })
+            .then(data => {
+                Swal.fire('Success!', data.message || 'Payslips queued for sending.', 'success');
+            })
+            .catch(error => {
+                console.error('Error sending payslips:', error);
+                Swal.fire('Error!', 'Failed to send payslips.', 'error');
             });
-        });
+    }
 
-        // Update dropdown button text on selection
-        document.querySelectorAll('.dropdown-item.download-column').forEach(item => {
-            item.addEventListener('click', function(e) {
-                const column = this.getAttribute('data-column');
-                const format = this.getAttribute('data-format');
-                const button = document.getElementById('downloadColumnDropdown');
-                button.innerHTML =
-                    `<i class="bi bi-download me-2"></i> Download ${column} (${format.toUpperCase()})`;
-            });
+    function printPayroll() {
+        window.print();
+    }
+
+    document.querySelectorAll('.download-column').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const column = this.getAttribute('data-column');
+            const format = this.getAttribute('data-format');
+            const entitySlug = '{{ $entity->slug }}';
+            const entityType = '{{ $entity->type }}';
+            const payrollId = '{{ $payroll->id }}';
+            const businessSlug = '{{ $business->slug }}';
+
+            if (entityType === "location") {
+                const url =
+                    '{{ route("business.payroll.download_column", [ "business" => ":businessSlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
+                    .replace(':entitySlug', entitySlug)
+                    .replace(':payroll_id', payrollId)
+                    .replace(':column', column)
+                    .replace(':format', format);
+
+                console.log("Generated URL:", url);
+                window.location.href = url;
+            } else {
+                const url =
+                    '{{ route("business.payroll.download_column", [ "business" => ":entitySlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
+                    .replace(':entitySlug', entitySlug)
+                    .replace(':payroll_id', payrollId)
+                    .replace(':column', column)
+                    .replace(':format', format);
+
+                console.log("Generated URL:", url);
+                window.location.href = url;
+            }
+
+
         });
+    });
+
+    // Update dropdown button text on selection
+    document.querySelectorAll('.dropdown-item.download-column').forEach(item => {
+        item.addEventListener('click', function(e) {
+            const column = this.getAttribute('data-column');
+            const format = this.getAttribute('data-format');
+            const button = document.getElementById('downloadColumnDropdown');
+            button.innerHTML =
+                `<i class="bi bi-download me-2"></i> Download ${column} (${format.toUpperCase()})`;
+        });
+    });
     </script>
     @endpush
 </x-app-layout>

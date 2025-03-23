@@ -2,50 +2,45 @@
 
 namespace App\Mail;
 
-use App\Models\Payroll;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Spatie\LaravelPdf\Facades\Pdf;
-use Illuminate\Mail\Mailables\Content;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Address;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\File;
 
 class PayslipMail extends Mailable
 {
     use Queueable, SerializesModels;
-    public $employee;
-    public $payslipData;
-    public $pdfPath;
 
-    public function __construct($employee, $payslipData, $pdfPath)
+    public $employeePayroll;
+    public $filePath; // Path to the temporary PDF file
+    public $employeeName;
+
+    public function __construct($employeePayroll, $filePath, $employeeName)
     {
-        $this->employee = $employee;
-        $this->payslipData = $payslipData;
-        $this->pdfPath = $pdfPath;
+        $this->employeePayroll = $employeePayroll;
+        $this->filePath = $filePath;
+        $this->employeeName = $employeeName;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Your Payslip',
-        );
-    }
+        $email = $this->subject('Your Payslip for ' . now()->format('F Y'))
+            ->view('emails.payslip')
+            ->with([
+                'employeeName' => $this->employeeName,
+            ])
+            ->attach($this->filePath, [
+                'as' => 'payslip.pdf',
+                'mime' => 'application/pdf',
+            ]);
 
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.payslip-email',
-            with: ['payslipData' => $this->payslipData]
-        );
-    }
+        // Delete the temporary file after attaching
+        $this->afterCommit(function () {
+            if (File::exists($this->filePath)) {
+                File::delete($this->filePath);
+            }
+        });
 
-    public function attachments(): array
-    {
-        return [
-            Attachment::fromPath($this->pdfPath)->as("payslip_{$this->employee->employee_code}.pdf")->withMime('application/pdf'),
-        ];
+        return $email;
     }
 }
