@@ -27,7 +27,14 @@ function initializeDataTable() {
                 d.location = $('#filterLocation').val();
                 d.job_category = $('#filterJobCategory').val();
             },
+            beforeSend: function () {
+                $('#loadingRow').show();
+            },
+            complete: function () {
+                $('#loadingRow').hide();
+            },
             error: function (xhr, error, thrown) {
+                $('#loadingRow').hide();
                 console.error('DataTables error:', xhr.responseText);
                 Swal.fire('Error!', 'Failed to load table data.', 'error');
             }
@@ -37,8 +44,8 @@ function initializeDataTable() {
             { data: 'employee_code' },
             { data: 'department' },
             { data: 'job_category' },
-            { data: 'basic_salary' },
             { data: 'location' },
+            { data: 'basic_salary' },
             { data: 'actions', orderable: false, searchable: false }
         ]
     });
@@ -70,7 +77,7 @@ window.createEmployee = async function () {
         }
     } catch (error) {
         console.error('Create Employee Error:', error.response || error);
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to load create form.', 'error');
+        // Swal.fire('Error!', error.response?.data?.message || 'Failed to load create form.', 'error');
     }
 };
 
@@ -88,7 +95,8 @@ window.saveEmployee = async function (btn) {
         $('#employeeModal').modal('hide');
         dataTable.ajax.reload();
     } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to save employee.', 'error');
+        console.log('Save Employee Error', error.response || error);
+        // Swal.fire('Error!', error.response?.data?.error || 'Failed to save employee.', 'error');
     } finally {
         btn_loader(btn, false);
     }
@@ -96,6 +104,7 @@ window.saveEmployee = async function (btn) {
 
 window.editEmployee = async function (id) {
     try {
+        $('#employeeFormContainer').html('<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
         const response = await employeesService.edit({ employee_id: id });
         if (response) {
             $('#employeeFormContainer').html(response);
@@ -132,14 +141,19 @@ window.deleteEmployee = async function (id) {
 
 window.viewEmployee = async function (id) {
     try {
+        $('#viewLoading').show();
+        $('#employeeTabContent').hide();
         const response = await employeesService.view({ employee_id: id });
         if (response) {
             $('#viewEmployeeContainer').html(response);
+            $('#viewLoading').hide();
+            $('#employeeTabContent').show();
             $('#viewEmployeeModal').modal('show');
         } else {
             throw new Error('No data returned from server');
         }
     } catch (error) {
+        $('#viewLoading').hide();
         console.error('View Employee Error:', error.response || error);
         Swal.fire('Error!', error.response?.data?.message || 'Failed to load employee details.', 'error');
     }

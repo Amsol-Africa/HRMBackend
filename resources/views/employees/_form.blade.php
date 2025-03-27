@@ -81,7 +81,7 @@
                     </div>
                     <div class="col-md-6">
                         <input type="text" name="phone" id="phone" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->phone : '' }}" placeholder="Phone" required>
+                            value="{{ isset($employee) ? $employee->user->phone : '' }}" placeholder="Phone" required>
                     </div>
                     <div class="col-12">
                         <input type="text" name="permanent_address" id="permanent_address"
@@ -147,6 +147,37 @@
                             @endforeach
                         </select>
                     </div>
+                    <div class="col-md-4">
+                        <select name="job_category_id" id="job_category_id" class="form-select border-primary">
+                            <option value="">Select Job Category</option>
+                            @foreach ($jobCategories as $jobCategory)
+                            <option value="{{ $jobCategory->id }}"
+                                {{ isset($employee) && optional($employee->employmentDetails)->job_category_id == $jobCategory->id ? 'selected' : '' }}>
+                                {{ $jobCategory->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select name="employment_term" id="employment_term" class="form-select border-primary" required>
+                            <option value="">Select Contract Type</option>
+                            <option value="permanent"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'permanent' ? 'selected' : '' }}>
+                                Permanent</option>
+                            <option value="contract"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'contract' ? 'selected' : '' }}>
+                                Contract</option>
+                            <option value="fulltime"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'fulltime' ? 'selected' : '' }}>
+                                Fulltime</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" name="employment_date" id="employment_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && optional($employee->employmentDetails)->employment_date ? \Carbon\Carbon::parse($employee->employmentDetails->employment_date)->format('Y-m-d') : '' }}"
+                            required>
+                    </div>
                 </div>
             </div>
 
@@ -209,12 +240,18 @@
                     <div class="col-md-6">
                         <select name="payment_mode" id="payment_mode" class="form-select border-primary" required>
                             <option value="">Select Payment Mode</option>
-                            <option value="Bank"
-                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'Bank' ? 'selected' : '' }}>
+                            <option value="bank"
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'bank' ? 'selected' : '' }}>
                                 Bank</option>
-                            <option value="M-Pesa"
-                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'M-Pesa' ? 'selected' : '' }}>
+                            <option value="mpesa"
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'mpesa' ? 'selected' : '' }}>
                                 M-Pesa</option>
+                            <option value="cash"
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'cash' ? 'selected' : '' }}>
+                                Cash</option>
+                            <option value="cheque"
+                                {{ isset($employee) && optional($employee->paymentDetails)->payment_mode === 'cheque' ? 'selected' : '' }}>
+                                Cheque</option>
                         </select>
                     </div>
                 </div>
@@ -231,54 +268,78 @@
 </form>
 
 <style>
-    .form-control,
-    .form-select {
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        transition: border-color 0.2s ease;
-    }
+.form-control,
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    transition: border-color 0.2s ease;
+}
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #007bff;
-        box-shadow: none;
-    }
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff;
+    box-shadow: none;
+}
 
-    .nav-pills .nav-link {
-        border-radius: 0;
-        color: #6c757d;
-        font-weight: 500;
-    }
+.nav-pills .nav-link {
+    border-radius: 0;
+    color: #6c757d;
+    font-weight: 500;
+}
 
-    .nav-pills .nav-link.active {
-        background-color: transparent;
-        color: #007bff;
-        border-bottom: 2px solid #007bff;
-    }
+.nav-pills .nav-link.active {
+    background-color: transparent;
+    color: #007bff;
+    border-bottom: 2px solid #007bff;
+}
 
-    .btn-modern {
-        border-radius: 20px;
-        font-weight: 500;
-        transition: background-color 0.2s ease;
-    }
+.btn-modern {
+    border-radius: 20px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
 
-    .btn-modern:hover {
-        background-color: #0056b3;
-    }
+.btn-modern:hover {
+    background-color: #0056b3;
+}
 
-    .bg-light {
-        background-color: #f8f9fa;
-    }
+.bg-light {
+    background-color: #f8f9fa;
+}
 </style>
 
 <script>
-    function previewImage(event) {
-        const reader = new FileReader();
-        reader.onload = function() {
-            const preview = document.getElementById('profile_preview');
-            preview.src = reader.result;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(event.target.files[0]);
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById("employeeForm");
+    const submitButton = document.querySelector("#submitButton"); // Ensure your submit button has this ID
+
+    function validateForm() {
+        let isValid = true;
+        const requiredFields = form.querySelectorAll("[required]");
+
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add("is-invalid"); // Bootstrap class for invalid input
+                isValid = false;
+            } else {
+                field.classList.remove("is-invalid");
+                field.classList.add("is-valid");
+            }
+        });
+
+        submitButton.disabled = !isValid; // Disable button if form is invalid
     }
+
+    // Validate on input change
+    form.addEventListener("input", validateForm);
+
+    // Prevent form submission if invalid
+    form.addEventListener("submit", function(event) {
+        validateForm();
+        if (submitButton.disabled) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    });
+});
 </script>

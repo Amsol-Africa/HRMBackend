@@ -10,43 +10,85 @@ class EmployeePayroll extends Model
     protected $fillable = [
         'payroll_id',
         'employee_id',
+        'employee_payment_detail_id',
         'basic_salary',
         'housing_allowance',
         'gross_pay',
-        'overtime',
-        'nhif',
-        'nssf',
         'paye',
+        'paye_before_reliefs',
+        'shif',
+        'nssf',
+        'pension',
         'housing_levy',
+        'helb',
         'taxable_income',
         'personal_relief',
+        'insurance_relief',
         'pay_after_tax',
         'loan_repayment',
         'advance_recovery',
         'deductions_after_tax',
         'net_pay',
-        'deductions'
+        'deductions',
+        'overtime',
+        'allowances',
+        'bank_name',
+        'account_number',
+        'attendance_present',
+        'attendance_absent',
+        'days_in_month',
+    ];
+
+    protected $casts = [
+        'allowances' => 'json',
+        'deductions' => 'json',
+        'overtime' => 'json',
+        'basic_salary' => 'float',
+        'housing_allowance' => 'float',
+        'gross_pay' => 'float',
+        'paye' => 'float',
+        'paye_before_reliefs' => 'float',
+        'shif' => 'float',
+        'nssf' => 'float',
+        'pension' => 'float',
+        'housing_levy' => 'float',
+        'helb' => 'float',
+        'taxable_income' => 'float',
+        'personal_relief' => 'float',
+        'insurance_relief' => 'float',
+        'pay_after_tax' => 'float',
+        'loan_repayment' => 'float',
+        'advance_recovery' => 'float',
+        'deductions_after_tax' => 'float',
+        'net_pay' => 'float',
     ];
 
     public function payroll()
     {
         return $this->belongsTo(Payroll::class);
     }
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
     }
+
+    public function paymentDetail()
+    {
+        return $this->belongsTo(EmployeePaymentDetail::class, 'employee_payment_detail_id');
+    }
+
     public static function getEmployeePayrollByMonthYear($employeeId, $year = null, $month = null)
     {
-        Log::debug($year);
-        Log::debug($month);
-        if ($year && $month) {
-            return self::whereHas('payroll', function ($query) use ($year, $month) {
-                $query->where('payrun_year', $year)->where('payrun_month', $month);
-            })->where('employee_id', $employeeId)->first();
-        }
+        Log::debug('Year: ' . $year);
+        Log::debug('Month: ' . $month);
 
         return self::where('employee_id', $employeeId)
+            ->when($year && $month, function ($query) use ($year, $month) {
+                $query->whereHas('payroll', function ($subQuery) use ($year, $month) {
+                    $subQuery->where('payrun_year', $year)->where('payrun_month', $month);
+                });
+            })
             ->latest('created_at')
             ->first();
     }

@@ -1,6 +1,12 @@
 <div class="container mt-5">
     <div class="card shadow-sm rounded-3 border-0">
         <div class="card-body p-4">
+            <!-- Loading Spinner -->
+            <div id="viewLoading" style="display: none;" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
             <!-- Tabs Navigation -->
             <ul class="nav nav-tabs mb-4" id="employeeTabs" role="tablist">
                 <li class="nav-item">
@@ -28,9 +34,9 @@
             </ul>
 
             <!-- Tab Content -->
-            <div class="tab-content">
+            <div class="tab-content" id="employeeTabContent">
                 <!-- Personal Details Tab -->
-                <div class="tab-pane fade show active" id="personal" role="tabpanel">
+                <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
                     <div class="row align-items-center mb-4">
                         <div class="col-auto">
                             <img src="{{ $employee->getFirstMediaUrl('avatars') ?: 'https://via.placeholder.com/80' }}"
@@ -41,7 +47,7 @@
                             <h5 class="fw-semibold mb-1">{{ $employee->user->name }}</h5>
                             <p class="text-muted mb-0">{{ $employee->user->email ?? 'No Email' }}</p>
                             <span class="badge bg-success-subtle text-success fw-normal mt-1">
-                                {{ $employee->jobCategory?->name ?? 'Not Assigned' }}
+                                {{ optional($employee->employmentDetails)->jobCategory?->name ?? 'Not Assigned' }}
                             </span>
                         </div>
                     </div>
@@ -116,7 +122,7 @@
                 </div>
 
                 <!-- Payment Details Tab -->
-                <div class="tab-pane fade" id="payment" role="tabpanel">
+                <div class="tab-pane fade" id="payment" role="tabpanel" aria-labelledby="payment-tab">
                     <div class="row g-4">
                         <!-- Salary Details -->
                         <div class="col-md-6">
@@ -206,9 +212,8 @@
                 </div>
 
                 <!-- Employment Details Tab -->
-                <div class="tab-pane fade" id="employment" role="tabpanel">
+                <div class="tab-pane fade" id="employment" role="tabpanel" aria-labelledby="employment-tab">
                     <div class="row g-4">
-                        <!-- Employment Info -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Employment Information</h6>
                             <dl class="row mb-0">
@@ -218,6 +223,14 @@
                                 </dd>
                                 <dt class="col-5 fw-medium text-muted">Department</dt>
                                 <dd class="col-7">{{ $employee->department?->name ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Job Category</dt>
+                                <dd class="col-7">
+                                    {{ optional($employee->employmentDetails)->jobCategory?->name ?? 'N/A' }}
+                                </dd>
+                                <dt class="col-5 fw-medium text-muted">Contract Type</dt>
+                                <dd class="col-7">
+                                    {{ ucfirst(optional($employee->employmentDetails)->employment_term ?? 'N/A') }}
+                                </dd>
                                 <dt class="col-5 fw-medium text-muted">Business</dt>
                                 <dd class="col-7">{{ $employee->business?->company_name ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Location</dt>
@@ -296,7 +309,7 @@
                 </div>
 
                 <!-- Additional Details Tab -->
-                <div class="tab-pane fade" id="additional" role="tabpanel">
+                <div class="tab-pane fade" id="additional" role="tabpanel" aria-labelledby="additional-tab">
                     <div class="row g-4">
                         <!-- Academic Qualifications -->
                         <div class="col-md-6">
@@ -406,7 +419,7 @@
                 </div>
 
                 <!-- Documents Tab -->
-                <div class="tab-pane fade" id="documents" role="tabpanel">
+                <div class="tab-pane fade" id="documents" role="tabpanel" aria-labelledby="documents-tab">
                     <div class="row g-4">
                         <div class="col-md-12">
                             <h6 class="fw-semibold text-muted mb-3">Documents</h6>
@@ -450,7 +463,7 @@
                 </div>
 
                 <!-- Actions Tab -->
-                <div class="tab-pane fade" id="actions" role="tabpanel">
+                <div class="tab-pane fade" id="actions" role="tabpanel" aria-labelledby="actions-tab">
                     <div class="d-flex flex-wrap gap-2">
                         <button class="btn btn-warning btn-sm flex-grow-1 flex-md-grow-0">Warn Employee</button>
                         <button class="btn btn-primary btn-sm flex-grow-1 flex-md-grow-0">Send Welcome Email</button>
@@ -466,65 +479,65 @@
 </div>
 
 <style>
-    .card {
-        transition: all 0.3s ease;
-        border-radius: 12px;
-    }
+.card {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+}
 
-    .nav-tabs {
-        border-bottom: 2px solid #e9ecef;
-    }
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef;
+}
 
+.nav-tabs .nav-link {
+    color: #495057;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    background-color: #fff;
+    border-color: #e9ecef #e9ecef #fff;
+    font-weight: 600;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #0d6efd;
+}
+
+.btn-sm {
+    min-width: 130px;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.tab-pane {
+    padding: 1rem;
+}
+
+h6.text-muted {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+}
+
+dl dt {
+    font-size: 0.9rem;
+}
+
+dl dd {
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 767.98px) {
     .nav-tabs .nav-link {
-        color: #495057;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px 8px 0 0;
-        transition: all 0.2s ease;
-    }
-
-    .nav-tabs .nav-link.active {
-        color: #0d6efd;
-        background-color: #fff;
-        border-color: #e9ecef #e9ecef #fff;
-        font-weight: 600;
-    }
-
-    .nav-tabs .nav-link:hover {
-        color: #0d6efd;
+        padding: 0.5rem 1rem;
     }
 
     .btn-sm {
-        min-width: 130px;
-        padding: 0.5rem 1rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
+        width: 100%;
     }
-
-    .tab-pane {
-        padding: 1rem;
-    }
-
-    h6.text-muted {
-        border-bottom: 1px solid #e9ecef;
-        padding-bottom: 0.5rem;
-    }
-
-    dl dt {
-        font-size: 0.9rem;
-    }
-
-    dl dd {
-        font-size: 0.95rem;
-        margin-bottom: 0.75rem;
-    }
-
-    @media (max-width: 767.98px) {
-        .nav-tabs .nav-link {
-            padding: 0.5rem 1rem;
-        }
-
-        .btn-sm {
-            width: 100%;
-        }
-    }
+}
 </style>

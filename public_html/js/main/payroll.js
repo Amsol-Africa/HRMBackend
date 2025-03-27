@@ -40,6 +40,80 @@ const fetchEmployees = async function () {
     }
 };
 
+function savePayrollSettings() {
+    const year = $('#year').val();
+    const month = $('#month').val();
+    const employees = [];
+
+    // Collect settings from the form (example)
+    $('.employee-setting').each(function () {
+        const employeeId = $(this).data('employee-id');
+        const allowances = {};
+        const deductions = {};
+        const reliefs = {};
+        const advanceRecovery = $(this).find('.advance-recovery').val() || 0;
+        const loanRepayment = $(this).find('.loan-repayment').val() || 0;
+        const overtime = {};
+
+        $(this).find('.allowance-input').each(function () {
+            const allowanceId = $(this).data('allowance-id');
+            const amount = $(this).val() || 0;
+            allowances[allowanceId] = amount;
+        });
+
+        $(this).find('.deduction-input').each(function () {
+            const deductionId = $(this).data('deduction-id');
+            const amount = $(this).val() || 0;
+            deductions[deductionId] = amount;
+        });
+
+        $(this).find('.relief-input').each(function () {
+            const reliefId = $(this).data('relief-id');
+            const amount = $(this).val() || 0;
+            reliefs[reliefId] = amount;
+        });
+
+        $(this).find('.overtime-input').each(function () {
+            const overtimeId = $(this).data('overtime-id');
+            const hours = $(this).val() || 0;
+            overtime[overtimeId] = hours;
+        });
+
+        employees.push({
+            employee_id: employeeId,
+            allowances,
+            deductions,
+            reliefs,
+            advance_recovery: advanceRecovery,
+            loan_repayment: loanRepayment,
+            overtime,
+        });
+    });
+
+    $.ajax({
+        url: '/payroll/save-settings',
+        method: 'POST',
+        data: {
+            year: year,
+            month: month,
+            employees: employees,
+            _token: $('meta[name="csrf-token"]').attr('content'),
+        },
+        success: function (response) {
+            if (response.status === 'success') {
+                alert('Settings saved successfully.');
+                // Proceed to fetch employees
+                fetchEmployees();
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function (xhr) {
+            alert('Error saving settings: ' + xhr.responseJSON.message);
+        },
+    });
+}
+
 const previewPayroll = async function () {
     const formData = new FormData(document.getElementById("payrollForm"));
     const $previewContainer = $("#payrollPreviewContainer");

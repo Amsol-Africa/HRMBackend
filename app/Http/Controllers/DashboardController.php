@@ -219,6 +219,12 @@ class DashboardController extends Controller
         $description = '';
         return view('shifts.index', compact('page', 'description'));
     }
+    public function viewPayslip(Request $request, $id)
+    {
+        $businessSlug = $request->route('business');
+        session(['active_business_slug' => $businessSlug]);
+        return (new PayrollController())->viewPayslip($request, $id);
+    }
 
     public function payroll(Request $request)
     {

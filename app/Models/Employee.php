@@ -114,7 +114,8 @@ class Employee extends Model implements HasMedia
     public function deductions()
     {
         return $this->belongsToMany(Deduction::class, 'employee_deductions')
-            ->withPivot('amount', 'is_active');
+            ->withPivot('amount', 'rate', 'is_active')
+            ->withTimestamps();
     }
 
     public function employeeDeductions()
@@ -199,5 +200,9 @@ class Employee extends Model implements HasMedia
     public function payrollDetail()
     {
         return $this->hasOne(EmployeePayrollDetail::class);
+    }
+    public function payrollSettings()
+    {
+        return $this->hasOne(PayrollSettings::class);
     }
 }

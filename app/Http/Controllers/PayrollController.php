@@ -41,6 +41,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Response;
 use App\Models\PayrollFormulaBracket;
 use App\Models\EmployeePayrollDetail;
+use App\Models\PayrollSettings;
+use App\Models\EmployeePaymentDetail;
+use Illuminate\Support\Facades\Http;
+
+use function Illuminate\Log\log;
 
 class PayrollController extends Controller
 {
@@ -53,20 +58,27 @@ class PayrollController extends Controller
 
         $locations = $business->locations->prepend((object) [
             'id' => 'business_' . $business->id,
-            'name' => $business->name . ' (All Locations)',
+            'name' => $business->company_name,
         ]);
+
+        $years = range(date('Y') + 5, date('Y'));
+
+        $employees = Employee::where('business_id', $business->id)
+            ->with(['user', 'location'])
+            ->get(['id', 'user_id', 'location_id', 'employee_code']);
 
         return view('payroll.index', [
             'page' => 'Process Payroll',
-            'years' => range(date('Y'), date('Y') + 5),
+            'years' => $years,
             'months' => range(1, 12),
             'locations' => $locations,
             'departments' => $business->departments,
             'jobCategories' => $business->job_categories,
-            'employees' => Employee::where('business_id', $business->id)->with('user')->get(['id', 'user_id']),
+            'employees' => $employees,
             'allowances' => $business->allowances,
             'deductions' => $business->deductions,
             'reliefs' => $business->reliefs,
+            'business' => $business,
         ]);
     }
 
@@ -87,106 +99,504 @@ class PayrollController extends Controller
         $employees = $this->getFilteredEmployees($request, $business);
         $warnings = $this->checkMissingData($employees);
         $options = $this->parseOptions($request);
-
-        // Ensure exempted_employees is an array before filtering
-        $exemptedEmployees = $options['exempted_employees'] ?? [];
-        $nonExemptedEmployees = $employees->filter(fn($e) => !array_key_exists($e->id, $exemptedEmployees));
+        $nonExemptedEmployees = $employees->filter(fn($e) => !array_key_exists($e->id, $options['exempted_employees']));
         $daysInMonth = Carbon::create($request->year, $request->month)->daysInMonth;
 
-        return RequestResponse::ok('Employees fetched successfully.', [
+        $years = range(date('Y') + 5, date('Y'));
+
+        return RequestResponse::ok('success', [
             'html' => view('payroll._table', [
-                'employees' => $nonExemptedEmployees,
+                'employees' => $employees,
                 'warnings' => $warnings,
                 'options' => $options,
                 'allowances' => $business->allowances,
                 'deductions' => $business->deductions,
                 'reliefs' => $business->reliefs,
                 'daysInMonth' => $daysInMonth,
+                'years' => $years,
+                'business' => $business,
             ])->render(),
             'count' => $nonExemptedEmployees->count(),
             'warnings' => $warnings,
             'options' => $options,
+            'years' => $years,
+            'employees' => $employees->map(function ($employee) use ($business) {
+                return [
+                    'id' => $employee->id,
+                    'user_id' => $employee->user_id,
+                    'name' => $employee->user?->name ?? 'N/A',
+                    'location' => $employee->location?->name ?? $business->name,
+                    'location_id' => $employee->location_id ?? 'business_' . $business->id,
+                    'employee_code' => $employee->employee_code ?? 'N/A',
+                    'department' => $employee->employmentDetails?->department?->name ?? 'N/A',
+                    'job_category' => $employee->employmentDetails?->jobCategory?->name ?? 'N/A',
+                ];
+            })->values()->toArray(),
         ]);
     }
 
-    public function preview(Request $request)
+    public function availableItems(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $employees = $this->getFilteredEmployees($request, $business);
-        $warnings = $this->checkMissingData($employees);
-        $options = $this->parseOptions($request);
+        if (!$business) return RequestResponse::badRequest('Business not found.');
 
-        if (!empty($warnings)) {
-            return RequestResponse::badRequest('Resolve warnings before previewing.', ['warnings' => $warnings]);
+        $employeeIds = Employee::where('business_id', $business->id)->pluck('id')->toArray();
+
+        $allowances = Allowance::where('business_id', $business->id)
+            ->get(['id', 'name', 'amount', 'rate', 'type', 'calculation_basis'])
+            ->map(function ($allowance) {
+                return [
+                    'id' => $allowance->id,
+                    'name' => $allowance->name,
+                    'amount' => $allowance->amount ?? 0,
+                    'rate' => $allowance->rate ?? 0,
+                    'type' => $allowance->type ?? 'fixed',
+                    'calculation_basis' => $allowance->calculation_basis ?? null,
+                ];
+            })->toArray();
+
+        $deductions = Deduction::where('business_id', $business->id)
+            ->get(['id', 'name', 'amount', 'rate', 'type', 'calculation_basis'])
+            ->map(function ($deduction) {
+                return [
+                    'id' => $deduction->id,
+                    'name' => $deduction->name,
+                    'amount' => $deduction->amount ?? 0,
+                    'rate' => $deduction->rate ?? 0,
+                    'type' => $deduction->type ?? 'fixed',
+                    'calculation_basis' => $deduction->calculation_basis ?? null,
+                ];
+            })->toArray();
+
+        $reliefs = Relief::where('business_id', $business->id)
+            ->get(['id', 'name', 'amount'])
+            ->map(function ($relief) {
+                return [
+                    'id' => $relief->id,
+                    'name' => $relief->name,
+                    'amount' => $relief->amount ?? 0,
+                ];
+            })->toArray();
+
+        $loans = Loan::whereIn('employee_id', $employeeIds)
+            ->with('repayments')
+            ->get(['id', 'employee_id', 'start_date', 'amount'])
+            ->map(function ($loan) {
+                $totalRepayments = $loan->repayments->sum('amount') ?? 0;
+                $remaining = $loan->amount - $totalRepayments;
+                return [
+                    'id' => $loan->id,
+                    'employee_id' => $loan->employee_id,
+                    'start_date' => $loan->start_date?->format('Y-m-d'),
+                    'amount' => $loan->amount ?? 0,
+                    'remaining' => $remaining > 0 ? $remaining : 0,
+                ];
+            })
+            ->filter(fn($loan) => $loan['remaining'] > 0)
+            ->values()
+            ->toArray();
+
+        $advances = Advance::whereIn('employee_id', $employeeIds)
+            ->get(['id', 'employee_id', 'date', 'amount'])
+            ->map(function ($advance) {
+                return [
+                    'id' => $advance->id,
+                    'employee_id' => $advance->employee_id,
+                    'date' => $advance->date?->format('Y-m-d'),
+                    'amount' => $advance->amount ?? 0,
+                    'is_active' => false,
+                ];
+            })->toArray();
+
+        // \Log::info($deductions);
+        // \Log::info($reliefs);
+        // \Log::info($loans);
+        // \Log::info($advances);
+
+        return RequestResponse::ok('success', [
+            'allowances' => $allowances,
+            'deductions' => $deductions,
+            'reliefs' => $reliefs,
+            'loans' => $loans,
+            'advances' => $advances,
+        ]);
+    }
+
+    public function defaultAmount(Request $request, $type, $itemId)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) return RequestResponse::badRequest('Business not found.');
+
+        $modelMap = [
+            'allowances' => Allowance::class,
+            'deductions' => Deduction::class,
+            'reliefs' => Relief::class,
+            'loans' => Loan::class,
+            'advances' => Advance::class,
+        ];
+
+        if (!isset($modelMap[$type])) return RequestResponse::badRequest('Invalid item type.');
+
+        $model = $modelMap[$type];
+        $item = $model::find($itemId);
+        if (!$item) return RequestResponse::badRequest('Item not found.');
+
+        $amount = $type === 'loans' ? ($item->amount - ($item->repayments->sum('amount') ?? 0)) : ($item->amount ?? 0);
+        $rate = $item->rate ?? 0;
+
+        return RequestResponse::ok('success', ['amount' => $amount, 'rate' => $rate]);
+    }
+
+    public function fetchEmployeesForSettings(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) return RequestResponse::badRequest('Business not found.');
+
+        $year = $request->year;
+        $month = $request->month;
+
+        $employees = $this->getFilteredEmployees($request, $business);
+        $employees->load([
+            'user',
+            'employeeAllowances.allowance',
+            'employeeDeductions.deduction',
+            'reliefs' => fn($q) => $q->whereNotNull('relief_id'),
+            'overtimes' => fn($q) => $q->whereYear('date', $year)->whereMonth('date', $month),
+            'loans.repayments',
+            'advances',
+        ]);
+
+        $payrollSettings = PayrollSettings::where('year', $year)
+            ->where('month', $month)
+            ->whereIn('employee_id', $employees->pluck('id'))
+            ->get()
+            ->keyBy('employee_id');
+
+        $formattedEmployees = $employees->map(function ($employee) use ($payrollSettings, $year, $month) {
+            $settings = $payrollSettings->get($employee->id);
+            $hasSettings = !is_null($settings);
+
+            $mapItems = function ($type, $settingsData, $employeeData, $modelClass, $key) use ($employee, $hasSettings) {
+                $sourceData = $employeeData->mapWithKeys(function ($item) use ($modelClass, $employee, $key, $type) {
+                    if ($type === 'reliefs') {
+                        $itemId = $item->id;
+                        $pivotAmount = $item->pivot->amount ?? null;
+                        $pivotRate = $item->pivot->rate ?? null;
+                        $pivotIsActive = $item->pivot->is_active ?? true;
+                    } else {
+                        $itemId = $item->$key;
+                        $pivotAmount = $item->amount ?? null;
+                        $pivotRate = $item->rate ?? null;
+                        $pivotIsActive = $item->is_active ?? true;
+                    }
+
+                    $defaultItem = $modelClass::find($itemId);
+                    $itemName = $defaultItem ? $defaultItem->name : "Unknown " . ucfirst(substr($type, 0, -1)) . " (ID: {$itemId})";
+
+                    return [$itemId => [
+                        'user_id' => $employee->user_id,
+                        'employee_code' => $employee->employee_code,
+                        'name' => $employee->user?->name ?? 'N/A',
+                        'item_name' => $itemName,
+                        'item_id' => $itemId,
+                        'amount' => floatval($pivotAmount ?? $defaultItem?->amount ?? 0),
+                        'rate' => floatval($pivotRate ?? $defaultItem?->rate ?? 0),
+                        'is_active' => $pivotIsActive,
+                    ]];
+                })->all();
+
+                return $hasSettings && $settingsData ? array_merge($sourceData, array_map(function ($item) {
+                    return array_merge($item, [
+                        'amount' => floatval($item['amount'] ?? 0),
+                        'rate' => floatval($item['rate'] ?? 0),
+                    ]);
+                }, $settingsData)) : $sourceData;
+            };
+
+            $mapOvertime = function ($settingsData, $employeeOvertimes) use ($employee, $hasSettings) {
+                $sourceData = $employeeOvertimes->mapWithKeys(function ($overtime) use ($employee) {
+                    return [$overtime->id => [
+                        'user_id' => $employee->user_id,
+                        'employee_code' => $employee->employee_code,
+                        'name' => $employee->user?->name ?? 'N/A',
+                        'item_name' => "Overtime on {$overtime->date?->format('Y-m-d')}",
+                        'item_id' => $overtime->id,
+                        'amount' => floatval($overtime->overtime_hours ?? 0),
+                        'is_active' => $overtime->to_be_paid ?? false,
+                    ]];
+                })->all();
+
+                return $hasSettings && $settingsData ? array_merge($sourceData, array_map(function ($item) {
+                    return array_merge($item, ['amount' => floatval($item['amount'] ?? 0)]);
+                }, $settingsData)) : $sourceData;
+            };
+
+            $mapLoansAdvances = function ($settingsData, $employeeData, $type) use ($employee, $hasSettings) {
+                $sourceData = $employeeData->mapWithKeys(function ($item) use ($employee, $type) {
+                    $remaining = $type === 'loans' ? floatval($item->amount - ($item->repayments->sum('amount') ?? 0)) : floatval($item->amount);
+                    return [$item->id => [
+                        'user_id' => $employee->user_id,
+                        'employee_code' => $employee->employee_code,
+                        'name' => $employee->user?->name ?? 'N/A',
+                        'item_name' => $type === 'loans' ? "Loan started {$item->start_date?->format('Y-m-d')}" : "Advance on {$item->date?->format('Y-m-d')}",
+                        'item_id' => $item->id,
+                        'amount' => $remaining > 0 ? $remaining : 0,
+                        'is_active' => $item->is_active ?? ($remaining > 0),
+                    ]];
+                })->all();
+
+                return $hasSettings && $settingsData ? array_merge($sourceData, array_map(function ($item) {
+                    return array_merge($item, ['amount' => floatval($item['amount'] ?? 0)]);
+                }, $settingsData)) : $sourceData;
+            };
+
+            $formattedEmployee = [
+                'id' => $employee->id,
+                'name' => $employee->user?->name ?? 'N/A',
+                'employee_code' => $employee->employee_code,
+                'allowances' => $mapItems('allowances', $settings?->allowances, $employee->employeeAllowances, Allowance::class, 'allowance_id'),
+                'deductions' => $mapItems('deductions', $settings?->deductions, $employee->employeeDeductions, Deduction::class, 'deduction_id'),
+                'reliefs' => $mapItems('reliefs', $settings?->reliefs, $employee->reliefs, Relief::class, 'relief_id'),
+                'overtimes' => $mapOvertime($settings?->overtime, $employee->overtimes),
+                'loans' => $mapLoansAdvances($settings?->loans, $employee->loans, 'loans'),
+                'advances' => $mapLoansAdvances($settings?->advances, $employee->advances, 'advances'),
+                'absenteeism_charge' => [
+                    'user_id' => $employee->user_id,
+                    'employee_code' => $employee->employee_code,
+                    'name' => $employee->user?->name ?? 'N/A',
+                    'item_name' => 'Absenteeism Charge',
+                    'item_id' => null,
+                    'amount' => floatval($hasSettings && !is_null($settings->absenteeism_charge) ? $settings->absenteeism_charge : 0),
+                ],
+            ];
+
+            Log::info("Formatted employee data for ID {$employee->id}", $formattedEmployee);
+
+            return $formattedEmployee;
+        })->values()->toArray();
+
+        return RequestResponse::ok('success', ['employees' => $formattedEmployees]);
+    }
+
+    public function saveSettings(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) return RequestResponse::badRequest('Business not found.');
+
+        $year = $request->year;
+        $month = $request->month;
+        $employees = $request->employees;
+
+        Log::info('Incoming payroll settings data:', [
+            'year' => $year,
+            'month' => $month,
+            'employees' => $employees,
+        ]);
+
+        if (!is_numeric($year) || !is_numeric($month) || !is_array($employees) || empty($employees)) {
+            return RequestResponse::badRequest('Missing or invalid required fields: year, month, or employees.');
         }
 
-        $nonExemptedEmployees = $employees->filter(fn($e) => !array_key_exists($e->id, $options['exempted_employees']));
-        $payrollData = $this->calculatePayroll($nonExemptedEmployees, $request->year, $request->month, $options);
+        try {
+            DB::beginTransaction();
+            foreach ($employees as $employeeData) {
+                if (!isset($employeeData['id']) || !is_numeric($employeeData['id'])) {
+                    throw new \Exception("Invalid or missing employee_id in data: " . json_encode($employeeData));
+                }
 
-        return RequestResponse::ok('Payroll preview generated.', [
-            'html' => view('payroll._preview', compact('payrollData', 'options'))->render(),
-            'options' => $options,
-        ]);
+                $employeeId = $employeeData['id'];
+                $employee = Employee::with('user')->findOrFail($employeeId);
+                $existingSettings = PayrollSettings::where('employee_id', $employeeId)
+                    ->where('year', $year)
+                    ->where('month', $month)
+                    ->first();
+
+                $mergedData = [
+                    'allowances' => $this->formatSettingsData($employeeData['allowances'] ?? [], $existingSettings?->allowances ?? [], $employee, Allowance::class),
+                    'deductions' => $this->formatSettingsData($employeeData['deductions'] ?? [], $existingSettings?->deductions ?? [], $employee, Deduction::class),
+                    'reliefs' => $this->formatSettingsData($employeeData['reliefs'] ?? [], $existingSettings?->reliefs ?? [], $employee, Relief::class),
+                    'overtime' => $this->formatSettingsData($employeeData['overtime'] ?? [], $existingSettings?->overtime ?? [], $employee, Overtime::class),
+                    'loans' => $this->formatSettingsData($employeeData['loans'] ?? [], $existingSettings?->loans ?? [], $employee, Loan::class),
+                    'advances' => $this->formatSettingsData($employeeData['advances'] ?? [], $existingSettings?->advances ?? [], $employee, Advance::class),
+                    'absenteeism_charge' => floatval($employeeData['absenteeism_charge']['amount'] ?? ($existingSettings?->absenteeism_charge ?? 0)),
+                ];
+
+                Log::info("Saving payroll settings for employee ID {$employeeId}", $mergedData);
+
+                PayrollSettings::updateOrCreate(
+                    [
+                        'employee_id' => $employeeId,
+                        'year' => $year,
+                        'month' => $month,
+                    ],
+                    $mergedData
+                );
+            }
+            DB::commit();
+            return RequestResponse::ok('success', 'Payroll settings saved successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to save payroll settings: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to save payroll settings: ' . $e->getMessage());
+        }
+    }
+
+    private function formatSettingsData($newData, $existingData, $employee, $modelClass)
+    {
+        $formatted = [];
+
+        $existingData = is_array($existingData) ? $existingData : [];
+        $existingById = array_map(function ($item) {
+            return [
+                'amount' => floatval($item['amount'] ?? 0),
+                'rate' => floatval($item['rate'] ?? 0),
+                'is_active' => filter_var($item['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'item_name' => $item['item_name'] ?? null,
+                'user_id' => $item['user_id'] ?? null,
+                'employee_code' => $item['employee_code'] ?? null,
+                'name' => $item['name'] ?? null,
+                'item_id' => $item['item_id'] ?? null,
+            ];
+        }, array_column($existingData, null, 'item_id'));
+
+        // Process all new data (active and inactive items)
+        foreach ($newData as $id => $item) {
+            $defaultItem = $modelClass::find($id);
+            $itemName = $defaultItem ? $defaultItem->name : ($item['item_name'] ?? "Unknown Item (ID: {$id})");
+
+            if ($modelClass === Overtime::class) {
+                $itemName = $defaultItem ? "Overtime on {$defaultItem->date?->format('Y-m-d')}" : $itemName;
+            } elseif ($modelClass === Loan::class) {
+                $itemName = $defaultItem ? "Loan started {$defaultItem->start_date?->format('Y-m-d')}" : $itemName;
+            } elseif ($modelClass === Advance::class) {
+                $itemName = $defaultItem ? "Advance on {$defaultItem->date?->format('Y-m-d')}" : $itemName;
+            }
+
+            $newItem = [
+                'user_id' => $employee->user_id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->user?->name ?? 'N/A',
+                'item_name' => $itemName,
+                'item_id' => $id,
+                'amount' => floatval($item['amount'] ?? 0),
+                'rate' => floatval($item['rate'] ?? 0),
+                'is_active' => filter_var($item['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            ];
+
+            $formatted[$id] = $newItem;
+        }
+
+        foreach ($existingById as $id => $existingItem) {
+            if (!isset($newData[$id])) {
+                $formatted[$id] = array_merge($existingItem, [
+                    'is_active' => false,
+                    'amount' => floatval($existingItem['amount'] ?? 0),
+                    'rate' => floatval($existingItem['rate'] ?? 0),
+                ]);
+            }
+        }
+
+        return $formatted;
     }
 
     public function store(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $employees = $this->getFilteredEmployees($request, $business);
-        $options = $this->parseOptions($request);
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
 
-        return $this->handleTransaction(function () use ($request, $business, $employees, $options) {
-            $nonExemptedEmployees = $employees->filter(fn($e) => !array_key_exists($e->id, $options['exempted_employees']));
+        // Retrieve previewed data from session
+        $previewData = session('payroll_preview_data');
+        if (!$previewData) {
+            return RequestResponse::badRequest('No preview data found. Please generate a preview first.');
+        }
+
+        $payrollData = $previewData['payroll_data'];
+        $year = $previewData['year'];
+        $month = $previewData['month'];
+        $businessId = $previewData['business_id'];
+        $locationId = $previewData['location_id'];
+        $options = $previewData['options'];
+        $nonExemptedEmployeeIds = $previewData['non_exempted_employee_ids'];
+
+        Log::info('Store method started', [
+            'business_id' => $businessId,
+            'year' => $year,
+            'month' => $month,
+            'employee_count' => count($nonExemptedEmployeeIds),
+            'request_data' => $request->all(),
+        ]);
+
+        if (empty($payrollData)) {
+            Log::warning('No payroll data in session');
+            return RequestResponse::badRequest('No payroll data available to store.');
+        }
+
+        return $this->handleTransaction(function () use ($business, $payrollData, $year, $month, $businessId, $locationId, $options) {
             $payroll = Payroll::create([
-                'payrun_year' => $request->year,
-                'payrun_month' => $request->month,
-                'business_id' => $business->id,
-                'location_id' => str_starts_with($request->location_id, 'business_') ? null : $request->location_id,
+                'payrun_year' => $year,
+                'payrun_month' => $month,
+                'business_id' => $businessId,
+                'location_id' => $locationId,
                 'payroll_type' => 'monthly',
                 'status' => 'open',
-                'staff' => $nonExemptedEmployees->count(),
+                'staff' => count($payrollData),
                 'currency' => $business->currency ?? 'KES',
             ]);
 
-            $payrollData = $this->calculatePayroll($nonExemptedEmployees, $request->year, $request->month, $options);
+            Log::info('Payroll created', ['payroll_id' => $payroll->id]);
 
             foreach ($payrollData as $data) {
+                $paymentDetail = EmployeePaymentDetail::where('employee_id', $data['employee_id'])->first();
                 EmployeePayroll::create([
                     'payroll_id' => $payroll->id,
                     'employee_id' => $data['employee_id'],
+                    'employee_payment_detail_id' => $paymentDetail ? $paymentDetail->id : null,
                     'basic_salary' => $data['basic_salary'],
                     'gross_pay' => $data['gross_pay'],
-                    'overtime' => $data['overtime'],
+                    'overtime' => json_encode(['amount' => $data['overtime']]),
+                    'allowances' => json_encode($data['allowances']),
                     'shif' => $data['shif'],
                     'nssf' => $data['nssf'],
                     'paye' => $data['paye'],
+                    'paye_before_reliefs' => $data['paye_before_reliefs'],
                     'housing_levy' => $data['housing_levy'],
+                    'helb' => $data['helb'],
                     'taxable_income' => $data['taxable_income'],
                     'personal_relief' => $data['personal_relief'],
+                    'insurance_relief' => $data['insurance_relief'],
+                    'pay_after_tax' => $data['gross_pay'] - $data['paye'],
                     'loan_repayment' => $data['loan_repayment'],
                     'advance_recovery' => $data['advance_recovery'],
-                    'deductions_after_tax' => $data['deductions_after_tax'],
+                    'deductions_after_tax' => $data['gross_pay'] - $data['paye'] - $data['net_pay'],
                     'net_pay' => $data['net_pay'],
-                    'deductions' => json_encode(array_merge($data['deductions'], [
-                        'shif' => $data['shif'],
-                        'nssf' => $data['nssf'],
-                        'paye' => $data['paye'],
-                        'housing_levy' => $data['housing_levy'],
-                        'helb' => $data['helb'],
-                    ])),
-                    'allowances' => json_encode($data['allowances']),
-                    'reliefs' => json_encode($data['reliefs']),
-                    'employee_payroll_detail_id' => $data['employee']->payrollDetail->id ?? null,
+                    'deductions' => json_encode($data['deductions']),
+                    'bank_name' => $data['bank_name'],
+                    'account_number' => $data['account_number'],
+                    'attendance_present' => $data['attendance_present'],
+                    'attendance_absent' => $data['attendance_absent'],
+                    'days_in_month' => $data['days_in_month'],
                 ]);
 
-                $this->updateLoanAndAdvance($data, $request->year, $request->month, $options);
+                $this->updateLoanAndAdvance($data, $year, $month, $options);
+
+                Log::info('Employee payroll stored', ['employee_id' => $data['employee_id']]);
             }
 
-            return RequestResponse::ok('Payroll processed successfully.', [
-                'redirect_url' => route('business.payroll.view', ['business' => $business->slug, 'id' => $payroll->id])
+            // Clear session data after successful storage
+            session()->forget('payroll_preview_data');
+
+            return RequestResponse::ok('success', [
+                'redirect_url' => route('business.payroll.view', ['business' => $business->slug, 'id' => $payroll->id]),
             ]);
-        }, function ($e) {
-            Log::error('Payroll store failed: ' . $e->getMessage());
+        }, function ($e) use ($year, $month) {
+            Log::error('Payroll store failed', [
+                'year' => $year,
+                'month' => $month,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return RequestResponse::badRequest('Failed to process payroll: ' . $e->getMessage());
         });
     }
@@ -202,9 +612,10 @@ class PayrollController extends Controller
             foreach ($request->allowances as $allowanceId) {
                 $allowance = Allowance::find($allowanceId);
                 if ($allowance) {
+                    $amount = $allowance->amount;
                     EmployeeAllowance::updateOrCreate(
                         ['employee_id' => $employee->id, 'allowance_id' => $allowanceId],
-                        ['is_active' => true]
+                        ['amount' => $amount, 'is_active' => true]
                     );
                 }
             }
@@ -214,9 +625,10 @@ class PayrollController extends Controller
             foreach ($request->deductions as $deductionId) {
                 $deduction = Deduction::find($deductionId);
                 if ($deduction) {
+                    $amount = $deduction->amount;
                     EmployeeDeduction::updateOrCreate(
                         ['employee_id' => $employee->id, 'deduction_id' => $deductionId],
-                        ['is_active' => true]
+                        ['amount' => $amount, 'is_active' => true]
                     );
                 }
             }
@@ -226,15 +638,15 @@ class PayrollController extends Controller
             foreach ($request->reliefs as $reliefId) {
                 $relief = Relief::find($reliefId);
                 if ($relief) {
+                    $amount = $relief->amount;
                     EmployeeRelief::updateOrCreate(
                         ['employee_id' => $employee->id, 'relief_id' => $reliefId],
-                        ['is_active' => true]
+                        ['amount' => $amount, 'is_active' => true]
                     );
                 }
             }
         }
 
-        // Handle loan and advance recovery adjustments
         if ($request->loans) {
             foreach ($request->loans as $loanId => $amount) {
                 $loan = Loan::find($loanId);
@@ -278,8 +690,9 @@ class PayrollController extends Controller
         $query = Employee::where('business_id', $business->id)
             ->with([
                 'user',
-                'paymentDetails',
-                'employmentDetails', // Ensure this is loaded
+                'location',
+                'employmentDetails.department',
+                'employmentDetails.jobCategory',
                 'employeeAllowances.allowance',
                 'employeeDeductions.deduction',
                 'reliefs' => fn($q) => $q->withPivot('amount', 'is_active', 'start_date', 'end_date'),
@@ -290,11 +703,17 @@ class PayrollController extends Controller
                 'attendances' => fn($q) => $q->whereYear('date', $request->year)->whereMonth('date', $request->month),
             ]);
 
-        if ($request->location_id && !str_starts_with($request->location_id, 'business_')) {
-            $query->where('location_id', $request->location_id);
+        if ($request->location_id) {
+            if (str_starts_with($request->location_id, 'business_')) {
+                $query->whereNull('location_id');
+            } else {
+                $query->where('location_id', $request->location_id);
+            }
         }
         if ($request->department_id) {
-            $query->where('department_id', $request->department_id);
+            $query->whereHas('employmentDetails', function ($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
         }
         if ($request->job_category_id) {
             $query->whereHas('employmentDetails', function ($q) use ($request) {
@@ -346,9 +765,31 @@ class PayrollController extends Controller
     {
         $warnings = [];
         foreach ($employees as $employee) {
-            if (!$employee->paymentDetails) $warnings[$employee->id][] = 'Missing payment details';
-            if (!$employee->tax_no) $warnings[$employee->id][] = 'Missing KRA PIN';
-            if (!$employee->user || !$employee->user->email) $warnings[$employee->id][] = 'Missing email';
+            $employeeWarnings = [];
+
+            if (!$employee->paymentDetails) {
+                $employeeWarnings[] = 'Missing payment details';
+            }
+
+            if ($employee->paymentDetails && floatval($employee->paymentDetails->basic_salary) == 0) {
+                $employeeWarnings[] = 'Basic salary is 0';
+            }
+
+            if (!$employee->tax_no) {
+                $employeeWarnings[] = 'Missing KRA PIN';
+            }
+
+            if (!$employee->user || !$employee->user->email) {
+                $employeeWarnings[] = 'Missing email';
+            }
+
+            if (!empty($employeeWarnings)) {
+                $warnings[$employee->id] = [
+                    'name' => $employee->user?->name ?? 'Unknown',
+                    'employee_code' => $employee->employee_code ?? 'N/A',
+                    'messages' => $employeeWarnings,
+                ];
+            }
         }
         return $warnings;
     }
@@ -360,7 +801,11 @@ class PayrollController extends Controller
             $exempted = json_decode($exempted, true) ?? [];
         }
 
-        return [
+        if (!is_array($exempted)) {
+            $exempted = [];
+        }
+
+        $options = [
             'exempted_employees' => $exempted,
             'recover_advances' => [
                 'apply' => $request->input('recover_advances', 'none'),
@@ -375,6 +820,94 @@ class PayrollController extends Controller
                 'specific' => $request->input('pay_overtime_specific', [])
             ],
         ];
+
+        foreach (['recover_advances', 'recover_loans', 'pay_overtime'] as $key) {
+            if (!isset($options[$key]['apply']) || !is_string($options[$key]['apply'])) {
+                $options[$key]['apply'] = 'none';
+            }
+            if (!isset($options[$key]['specific']) || !is_array($options[$key]['specific'])) {
+                $options[$key]['specific'] = [];
+            }
+        }
+
+        return $options;
+    }
+
+    public function preview(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
+
+        $year = $request->year;
+        $month = $request->month;
+
+        $employees = $this->getFilteredEmployees($request, $business);
+        $options = $this->parseOptions($request);
+
+        $nonExemptedEmployees = $employees->filter(function ($e) use ($options) {
+            return !isset($options['exempted_employees'][$e->id]) || $options['exempted_employees'][$e->id] != 1;
+        });
+
+        $warnings = $this->checkMissingData($nonExemptedEmployees);
+
+        Log::info('Preview request data', [
+            'request' => $request->all(),
+            'options' => $options,
+            'non_exempted_employee_ids' => $nonExemptedEmployees->pluck('id')->toArray(),
+        ]);
+
+        if (!empty($warnings)) {
+            return response()->json([
+                'message' => 'Resolve warnings before previewing.',
+                'type' => 'warnings',
+                'warnings' => $warnings
+            ], 400);
+        }
+
+        // Load payroll settings for non-exempted employees
+        $payrollSettings = PayrollSettings::where('year', $year)
+            ->where('month', $month)
+            ->whereIn('employee_id', $nonExemptedEmployees->pluck('id'))
+            ->get()
+            ->keyBy('employee_id');
+
+        $options['payroll_settings'] = $payrollSettings->mapWithKeys(function ($setting) {
+            return [
+                $setting->employee_id => [
+                    'allowances' => $setting->allowances ?? [],
+                    'deductions' => $setting->deductions ?? [],
+                    'reliefs' => $setting->reliefs ?? [],
+                    'overtime' => $setting->overtime ?? [],
+                    'loans' => $setting->loans ?? [],
+                    'advances' => $setting->advances ?? [],
+                    'absenteeism_charge' => $setting->absenteeism_charge ?? 0,
+                ],
+            ];
+        })->toArray();
+
+        $payrollData = $this->calculatePayroll($nonExemptedEmployees, $year, $month, $options);
+
+        Log::debug('Payroll data calculated', ['payroll_data' => $payrollData]);
+
+        // Store payroll data and metadata in session
+        session([
+            'payroll_preview_data' => [
+                'payroll_data' => $payrollData,
+                'year' => $year,
+                'month' => $month,
+                'business_id' => $business->id,
+                'location_id' => str_starts_with($request->location_id, 'business_') ? null : $request->location_id,
+                'options' => $options,
+                'non_exempted_employee_ids' => $nonExemptedEmployees->pluck('id')->toArray(),
+            ]
+        ]);
+
+        return RequestResponse::ok('success', [
+            'html' => view('payroll._preview', ['payrollData' => array_values($payrollData), 'options' => $options])->render(),
+            'options' => $options,
+        ]);
     }
 
     protected function calculatePayroll($employees, $year, $month, $options)
@@ -384,92 +917,117 @@ class PayrollController extends Controller
         $period = Carbon::create($year, $month);
         $daysInMonth = $period->daysInMonth;
 
+        Log::info('Starting payroll calculation', [
+            'year' => $year,
+            'month' => $month,
+            'employee_count' => $employees->count(),
+        ]);
+
         foreach ($employees as $employee) {
             $employeeId = $employee->id;
-            $payrollDetail = EmployeePayrollDetail::where('employee_id', $employeeId)->first();
-            $basicSalary = $employee->paymentDetails->basic_salary ?? 0;
+            $settings = $options['payroll_settings'][$employeeId] ?? null;
 
-            $allowances = $employee->employeeAllowances->mapWithKeys(fn($ea) => [
-                $ea->allowance->id => [
-                    'name' => $ea->allowance->name,
-                    'amount' => $ea->amount ?? 0,
-                    'is_taxable' => $ea->allowance->is_taxable ?? true,
-                ]
-            ])->toArray();
+            Log::debug('Processing employee', ['employee_id' => $employeeId]);
+
+            // Fetch base salary and bank details from employee_payment_details
+            $paymentDetail = EmployeePaymentDetail::where('employee_id', $employeeId)->first();
+            $basicSalary = floatval($paymentDetail->basic_salary ?? 0);
+            $bankName = $paymentDetail->bank_name ?? 'N/A';
+            $accountNumber = $paymentDetail->account_number ?? 'N/A';
+
+            // Prorate basic salary based on attendance
+            // $presentDays = $employee->attendances->where('is_absent', false)->count();
+            $presentDays = 31;
+            $absentDays = $daysInMonth - $presentDays;
+            $proratedBasicSalary = $basicSalary * ($presentDays / $daysInMonth);
+
+            // Get payroll items
+            $allowances = $this->getEmployeeItems($employee, 'allowances', $settings, Allowance::class, EmployeeAllowance::class, $proratedBasicSalary);
             $totalTaxableAllowances = array_sum(array_map(fn($a) => $a['is_taxable'] ? $a['amount'] : 0, $allowances));
             $totalNonTaxableAllowances = array_sum(array_map(fn($a) => !$a['is_taxable'] ? $a['amount'] : 0, $allowances));
 
-            $overtime = $this->calculateOvertime($employeeId, $year, $month, $options);
-            $grossPay = $basicSalary + $totalTaxableAllowances + $totalNonTaxableAllowances + $overtime;
+            $overtimePay = $this->calculateOvertime($employeeId, $year, $month, $settings, $options, $proratedBasicSalary);
 
+            // Gross pay
+            $grossPay = $proratedBasicSalary + $totalTaxableAllowances + $totalNonTaxableAllowances + $overtimePay;
+
+            // Statutory Deductions
+            $nssf = $this->calculateNSSF($grossPay);
             $shif = $this->calculateStatutoryDeduction($business->id, 'SHIF', $grossPay);
-            $nssf = $this->calculateStatutoryDeduction($business->id, 'NSSF', $grossPay);
-            $nhdf = $this->calculateStatutoryDeduction($business->id, 'NHDF', $grossPay);
+            $housingLevy = $grossPay * 0.015;
             $helb = $this->calculateHelb($employeeId, $grossPay, $business->id);
 
-            $deductions = $employee->employeeDeductions->mapWithKeys(fn($ed) => [
-                $ed->deduction->id => [
-                    'name' => $ed->deduction->name,
-                    'amount' => $ed->amount ?? 0,
-                ]
-            ])->toArray();
+            // Reliefs (insurance-related fields not in employee_payment_details, default to 0 unless elsewhere)
+            $reliefs = $this->getEmployeeItems($employee, 'reliefs', $settings, Relief::class, EmployeeRelief::class, $grossPay);
+            $personalRelief = min(2400, array_key_exists('Personal Relief', $reliefs) ? $reliefs['Personal Relief']['amount'] : 0);
+            $insuranceRelief = 0; // No insurance fields in employee_payment_details; adjust if elsewhere
+            $totalReliefs = $personalRelief + $insuranceRelief;
+
+            // Taxable Income and PAYE
+            $taxableIncome = max(0, $grossPay - $nssf);
+            $payeBeforeReliefs = $this->calculatePAYE($taxableIncome);
+            $paye = max(0, $payeBeforeReliefs - $totalReliefs);
+
+            // Custom Deductions
+            $deductions = $this->getEmployeeItems($employee, 'deductions', $settings, Deduction::class, EmployeeDeduction::class, $grossPay);
             $totalCustomDeductions = array_sum(array_map(fn($d) => $d['amount'], $deductions));
 
-            $reliefs = $this->calculateReliefs($employee, $period);
-            $personalRelief = min(2400, $reliefs['personal-relief']['amount'] ?? $this->calculateStatutoryDeduction($business->id, 'Personal Relief', $grossPay, true));
-            $insuranceRelief = $payrollDetail && $payrollDetail->has_insurance ? min(15000, $payrollDetail->insurance_premium * 0.15) : 0;
-            $mortgageRelief = $payrollDetail && $payrollDetail->has_mortgage ? min(25000, $payrollDetail->mortgage_interest) : 0;
-            $hospRelief = $payrollDetail && $payrollDetail->has_hosp ? min(3600, $payrollDetail->hosp_deposit) : 0;
+            // Loans and Advances
+            $loanRepayment = $this->calculateLoanRepayment($employeeId, $year, $month, $settings, $options);
+            $advanceRecovery = $this->calculateAdvanceRecovery($employeeId, $year, $month, $settings, $options);
 
-            $taxableIncome = max(0, $grossPay - $nssf);
-            $paye = $this->calculatePAYE($business->id, $taxableIncome) - ($personalRelief + $insuranceRelief + $mortgageRelief + $hospRelief);
-            $paye = max(0, $paye);
+            // Absenteeism Charge
+            $absenteeismCharge = floatval($settings['absenteeism_charge'] ?? 0);
 
-            $presentDays = $employee->attendances->where('is_absent', false)->count();
-            $absentDays = $daysInMonth - $presentDays;
+            // Total Deductions
+            $totalDeductions = $paye + $nssf + $shif + $housingLevy + $helb + $totalCustomDeductions + $loanRepayment + $advanceRecovery + $absenteeismCharge;
 
-            $loanRepayment = $this->calculateLoanRepayment($employeeId, $year, $month, $options);
-            $advanceRecovery = $this->calculateAdvanceRecovery($employeeId, $year, $month, $options);
-
-            $deductionsAfterTax = $shif + $nssf + $nhdf + $helb + $paye + $totalCustomDeductions + $loanRepayment + $advanceRecovery;
-            $netPay = $grossPay - $deductionsAfterTax;
+            // Net Pay
+            $netPay = $grossPay - $totalDeductions;
 
             $payrollData[$employeeId] = [
                 'employee_id' => $employeeId,
                 'employee' => $employee,
-                'basic_salary' => $basicSalary,
+                'basic_salary' => $proratedBasicSalary,
                 'gross_pay' => $grossPay,
-                'overtime' => $overtime,
+                'overtime' => $overtimePay,
+                'allowances' => $allowances,
                 'shif' => $shif,
                 'nssf' => $nssf,
                 'paye' => $paye,
-                'housing_levy' => $nhdf,
+                'paye_before_reliefs' => $payeBeforeReliefs,
+                'housing_levy' => $housingLevy,
                 'helb' => $helb,
-                'taxable_income' => $taxableIncome,
-                'personal_relief' => $personalRelief,
-                'insurance_relief' => $insuranceRelief,
-                'mortgage_relief' => $mortgageRelief,
-                'hosp_relief' => $hospRelief,
                 'loan_repayment' => $loanRepayment,
                 'advance_recovery' => $advanceRecovery,
-                'deductions_after_tax' => $deductionsAfterTax,
+                'deductions' => array_merge($deductions, [['name' => 'Absenteeism Charge', 'amount' => $absenteeismCharge]]),
                 'net_pay' => $netPay,
-                'deductions' => $deductions,
-                'allowances' => $allowances,
+                'taxable_income' => $taxableIncome,
                 'reliefs' => array_merge($reliefs, [
-                    'insurance-relief' => ['name' => 'Insurance Relief', 'amount' => $insuranceRelief, 'tax_application' => 'after_tax'],
-                    'mortgage-relief' => ['name' => 'Mortgage Relief', 'amount' => $mortgageRelief, 'tax_application' => 'after_tax'],
-                    'hosp-relief' => ['name' => 'HOSP Relief', 'amount' => $hospRelief, 'tax_application' => 'after_tax'],
+                    'Personal Relief' => ['name' => 'Personal Relief', 'amount' => $personalRelief, 'tax_application' => 'before_tax'],
+                    'Insurance Relief' => ['name' => 'Insurance Relief', 'amount' => $insuranceRelief, 'tax_application' => 'before_tax'],
                 ]),
-                'bank_name' => $employee->paymentDetails->bank_name ?? 'N/A',
-                'account_number' => $employee->paymentDetails->account_number ?? 'N/A',
-                'currency' => $employee->paymentDetails->currency ?? 'KES',
-                'payment_mode' => $employee->paymentDetails->payment_mode ?? 'N/A',
+                'personal_relief' => $personalRelief,
+                'insurance_relief' => $insuranceRelief,
+                'bank_name' => $bankName,
+                'account_number' => $accountNumber,
+                'currency' => $paymentDetail->currency ?? 'KES',
+                'payment_mode' => $paymentDetail->payment_mode ?? 'N/A',
                 'attendance_present' => $presentDays,
                 'attendance_absent' => $absentDays,
+                'days_in_month' => $daysInMonth,
             ];
+
+            Log::debug('Employee payroll data', [
+                'employee_id' => $employeeId,
+                'data' => $payrollData[$employeeId],
+                'basic_salary' => $proratedBasicSalary,
+                'bank_name' => $bankName,
+                'account_number' => $accountNumber,
+            ]);
         }
 
+        Log::info('Payroll calculation completed', ['payroll_data_count' => count($payrollData)]);
         return $payrollData;
     }
 
@@ -477,7 +1035,17 @@ class PayrollController extends Controller
     {
         $formula = PayrollFormula::where('business_id', $businessId)->where('name', $name)->first();
         if (!$formula) {
-            return $isRelief ? 2400 : 0;
+            if ($isRelief) return 2400; // Default personal relief
+            switch ($name) {
+                case 'SHIF':
+                    return $amount * 0.0275; // 2.75%
+                case 'NHDF':
+                    return $amount * 0.015; // 1.5%
+                case 'NSSF':
+                    return min(1080, $amount >= 18000 ? 1080 : 200); // Simplified tier
+                default:
+                    return 0;
+            }
         }
 
         if ($formula->formula_type === 'fixed') {
@@ -501,90 +1069,136 @@ class PayrollController extends Controller
         return $amount * (($formula->minimum_amount ?? 0) / 100);
     }
 
-    protected function calculateOvertime($employeeId, $year, $month, $options)
+    protected function calculateOvertime($employeeId, $year, $month, $settings, $options, $basicSalary)
     {
-        if ($options['pay_overtime']['apply'] === 'none') return 0;
-
-        $employee = Employee::with('paymentDetails')->find($employeeId);
-        if (!$employee || !$employee->paymentDetails) return 0;
-
-        $basicSalary = $employee->paymentDetails->basic_salary ?? 0;
-        $hourlyRate = $basicSalary / 160; // Standard 160 hours per month
-
-        $overtimes = Overtime::where('employee_id', $employeeId)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->get();
-
+        $hourlyRate = $basicSalary / 173; // Standard 173 hours/month
         $totalOvertimePay = 0;
 
-        foreach ($overtimes as $overtime) {
-            if (isset($options['pay_overtime']['specific'][$overtime->id])) {
-                // Calculate total_pay using rate from database
-                $computedTotalPay = $overtime->overtime_hours * $hourlyRate * $overtime->rate;
-                $overtime->update(['total_pay' => $computedTotalPay]);
-                $totalOvertimePay += $computedTotalPay;
+        if (!is_null($settings) && !empty($settings['overtime'])) {
+            foreach ($settings['overtime'] as $item) {
+                if ($item['is_active']) {
+                    $overtime = Overtime::find($item['item_id']);
+                    if ($overtime) {
+                        $hours = floatval($item['amount']);
+                        $rate = $overtime->rate ?? 1.5; // Default 1.5x rate
+                        $totalOvertimePay += $hours * $hourlyRate * $rate;
+                    }
+                }
+            }
+        } elseif ($options['pay_overtime']['apply'] !== 'none') {
+            $overtimes = Overtime::where('employee_id', $employeeId)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->get();
+            foreach ($overtimes as $overtime) {
+                if ($overtime->to_be_paid || isset($options['pay_overtime']['specific'][$overtime->id])) {
+                    $hours = $overtime->overtime_hours;
+                    $rate = $overtime->rate ?? 1.5;
+                    $totalOvertimePay += $hours * $hourlyRate * $rate;
+                }
             }
         }
 
         return $totalOvertimePay;
     }
 
-    protected function calculateAdvanceRecovery($employeeId, $year, $month, $options)
+    protected function calculateAdvanceRecovery($employeeId, $year, $month, $settings, $options)
     {
-        if ($options['recover_advances']['apply'] === 'none') return 0;
+        $totalRecovery = 0;
 
-        return Advance::where('employee_id', $employeeId)
-            ->whereYear('date', $year)
-            ->whereMonth('date', $month)
-            ->sum('amount') ?? 0;
+        if (!is_null($settings) && !empty($settings['advances'])) {
+            foreach ($settings['advances'] as $item) {
+                if ($item['is_active']) {
+                    $advance = Advance::find($item['item_id']);
+                    if ($advance) {
+                        $totalRecovery += min(floatval($item['amount']), floatval($advance->amount));
+                    }
+                }
+            }
+        } elseif ($options['recover_advances']['apply'] !== 'none') {
+            $advances = Advance::where('employee_id', $employeeId)
+                ->whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->get();
+            foreach ($advances as $advance) {
+                if (isset($options['recover_advances']['specific'][$advance->id])) {
+                    $totalRecovery += min($options['recover_advances']['specific'][$advance->id], floatval($advance->amount));
+                }
+            }
+        }
+
+        return $totalRecovery;
     }
 
-    protected function calculateLoanRepayment($employeeId, $year, $month, $options)
+    protected function calculateLoanRepayment($employeeId, $year, $month, $settings, $options)
     {
-        if ($options['recover_loans']['apply'] === 'none') return 0;
-
-        $period = Carbon::create($year, $month);
-        $loans = Loan::where('employee_id', $employeeId)
-            ->where('start_date', '<=', $period->endOfMonth())
-            ->where('end_date', '>=', $period->startOfMonth())
-            ->get();
-
         $totalRepayment = 0;
-        foreach ($loans as $loan) {
-            $monthly = $loan->amount / $loan->term_months;
-            $repaid = $loan->repayments->sum('amount');
-            $remaining = max(0, $loan->amount - $repaid);
-            if ($remaining > 0) $totalRepayment += min($monthly, $remaining);
+
+        if (!is_null($settings) && !empty($settings['loans'])) {
+            foreach ($settings['loans'] as $item) {
+                if ($item['is_active']) {
+                    $loan = Loan::find($item['item_id']);
+                    if ($loan) {
+                        $repaid = $loan->repayments->sum('amount');
+                        $remaining = max(0, $loan->amount - $repaid);
+                        $totalRepayment += min(floatval($item['amount']), $remaining);
+                    }
+                }
+            }
+        } elseif ($options['recover_loans']['apply'] !== 'none') {
+            $loans = Loan::where('employee_id', $employeeId)
+                ->where('start_date', '<=', Carbon::create($year, $month)->endOfMonth())
+                ->get();
+            foreach ($loans as $loan) {
+                $repaid = $loan->repayments->sum('amount');
+                $remaining = max(0, $loan->amount - $repaid);
+                if ($remaining > 0 && isset($options['recover_loans']['specific'][$loan->id])) {
+                    $totalRepayment += min($options['recover_loans']['specific'][$loan->id], $remaining);
+                }
+            }
         }
 
         return $totalRepayment;
     }
 
-    protected function calculatePAYE($businessId, $taxableIncome)
+    protected function calculateNSSF($grossPay)
     {
-        $formula = PayrollFormula::where('business_id', $businessId)->where('name', 'PAYE')->first();
-        if (!$formula || !$formula->is_progressive) return 0;
+        return min($grossPay * 0.06, 1080); // 6% capped at 1,080 KES (2025 standard)
+    }
 
-        $brackets = PayrollFormulaBracket::where('payroll_formula_id', $formula->id)
-            ->orderBy('min')
-            ->get();
+    protected function calculateNHIF($grossPay)
+    {
+        // Kenyan NHIF bands as of 2025 (example rates)
+        if ($grossPay <= 5999) return 150;
+        if ($grossPay <= 7999) return 300;
+        if ($grossPay <= 11999) return 400;
+        if ($grossPay <= 14999) return 500;
+        if ($grossPay <= 19999) return 600;
+        if ($grossPay <= 24999) return 750;
+        if ($grossPay <= 29999) return 850;
+        if ($grossPay <= 34999) return 900;
+        if ($grossPay <= 39999) return 950;
+        if ($grossPay <= 44999) return 1000;
+        if ($grossPay <= 49999) return 1100;
+        if ($grossPay <= 59999) return 1200;
+        if ($grossPay <= 69999) return 1300;
+        if ($grossPay <= 79999) return 1400;
+        if ($grossPay <= 89999) return 1500;
+        if ($grossPay <= 99999) return 1600;
+        return 1700; // Above 100,000
+    }
 
+    protected function calculatePAYE($taxableIncome)
+    {
+        // Kenyan PAYE rates as of 2025 (simplified)
         $tax = 0;
-        $remainingIncome = $taxableIncome;
-
-        foreach ($brackets as $bracket) {
-            $min = $bracket->min;
-            $max = $bracket->max ?? PHP_INT_MAX;
-            $rate = $bracket->rate / 100;
-
-            if ($remainingIncome <= 0) break;
-
-            $taxableInBracket = min($remainingIncome, $max - $min + 1);
-            $tax += $taxableInBracket * $rate;
-            $remainingIncome -= $taxableInBracket;
+        if ($taxableIncome <= 24000) {
+            $tax = $taxableIncome * 0.10;
+        } elseif ($taxableIncome <= 32333) {
+            $tax = 2400 + ($taxableIncome - 24000) * 0.25;
+        } else {
+            $tax = 4483.25 + ($taxableIncome - 32333) * 0.30;
         }
-
         return $tax;
     }
 
@@ -609,6 +1223,53 @@ class PayrollController extends Controller
             }
             return [];
         })->filter()->toArray();
+    }
+
+    protected function getEmployeeItems($employee, $type, $settings, $modelClass, $pivotClass, $baseAmount)
+    {
+        $items = [];
+        $hasSettings = !is_null($settings);
+
+        if ($hasSettings && !empty($settings[$type])) {
+            foreach ($settings[$type] as $item) {
+                if ($item['is_active']) {
+                    $modelItem = $modelClass::find($item['item_id']);
+                    $isTaxable = $modelItem ? ($modelItem->type !== 'non_taxable') : true;
+                    $amount = floatval($item['amount']);
+                    if ($modelItem && $modelItem->calculation_basis === 'percentage') {
+                        $amount = $baseAmount * ($item['rate'] / 100);
+                    }
+                    $items[$item['item_name']] = [
+                        'name' => $item['item_name'],
+                        'amount' => $amount,
+                        'is_taxable' => $isTaxable,
+                        'tax_application' => $modelItem->tax_application ?? 'before_tax',
+                    ];
+                }
+            }
+        } else {
+            $relation = ($type === 'allowances') ? 'employeeAllowances' : (($type === 'deductions') ? 'employeeDeductions' : 'reliefs');
+            $pivotItems = $employee->$relation;
+            foreach ($pivotItems as $pivotItem) {
+                $itemId = $pivotItem->{"{$type}_id"} ?? $pivotItem->id;
+                $modelItem = $modelClass::find($itemId);
+                if ($modelItem && $pivotItem->is_active) {
+                    $amount = floatval($pivotItem->amount ?? $modelItem->amount ?? 0);
+                    if ($modelItem->calculation_basis === 'percentage') {
+                        $amount = $baseAmount * ($pivotItem->rate ?? $modelItem->rate ?? 0) / 100;
+                    }
+                    $isTaxable = $modelItem->type !== 'non_taxable';
+                    $items[$modelItem->name] = [
+                        'name' => $modelItem->name,
+                        'amount' => $amount,
+                        'is_taxable' => $isTaxable,
+                        'tax_application' => $modelItem->tax_application ?? 'before_tax',
+                    ];
+                }
+            }
+        }
+
+        return $items;
     }
 
     protected function updateLoanAndAdvance($payrollData, $year, $month, $options)
@@ -698,11 +1359,21 @@ class PayrollController extends Controller
             $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
             $payroll->delete();
 
-            return RequestResponse::ok('Payroll deleted successfully.');
+            // Calculate updated totals after deletion
+            $payrolls = Payroll::where('business_id', $business->id)
+                ->with('employeePayrolls')
+                ->get();
+            $totalPayroll = $payrolls->sum(fn($p) => $p->employeePayrolls->sum('net_pay'));
+
+            return RequestResponse::ok('Payroll deleted successfully.', [
+                'payroll_count' => $payrolls->count(),
+                'total_payroll' => number_format($totalPayroll, 2),
+                'total_net_pay' => number_format($totalPayroll, 2),
+            ]);
         });
     }
 
-    public function publishPayroll(Request $request, $id)
+    public function closeMonth(Request $request, $id)
     {
         return $this->handleTransaction(function () use ($id) {
             $business = Business::findBySlug(session('active_business_slug'));
@@ -711,56 +1382,12 @@ class PayrollController extends Controller
             }
 
             $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
-            $payroll->update(['status' => "published"]);
+            $newStatus = $payroll->status === 'closed' ? 'open' : 'closed';
+            $payroll->update(['status' => $newStatus]);
 
-            return RequestResponse::ok('Payroll published successfully.');
-        });
-    }
-
-    public function unpublishPayroll(Request $request, $id)
-    {
-        return $this->handleTransaction(function () use ($id) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
-            }
-
-            $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
-            $payroll->update(['status' => "unpublished"]);
-
-            return RequestResponse::ok('Payroll unpublished successfully.');
-        });
-    }
-
-    public function emailPayslips(Request $request, $id)
-    {
-        return $this->handleTransaction(function () use ($id) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
-            }
-
-            $payroll = Payroll::where('business_id', $business->id)
-                ->where('id', $id)
-                ->with(['employeePayrolls.employee.user'])
-                ->firstOrFail();
-
-            foreach ($payroll->employeePayrolls as $employeePayroll) {
-                $employee = $employeePayroll->employee;
-                $user = $employee->user;
-
-                if ($user && $user->email) {
-                    $pdf = Pdf::loadView('payroll.payslip', compact('employeePayroll', 'employee', 'user'));
-                    $pdfPath = storage_path('app/public/payslips/' . $employeePayroll->id . '.pdf');
-                    $pdf->save($pdfPath);
-
-                    Mail::to($user->email)->send(new PayslipMail($employeePayroll, $pdfPath, $user->name));
-                }
-            }
-
-            $payroll->update(['emailed' => true]);
-
-            return RequestResponse::ok('Payslips emailed successfully.');
+            return RequestResponse::ok("Payroll month " . ($newStatus === 'closed' ? 'closed' : 'opened') . " successfully.", [
+                'status' => $newStatus,
+            ]);
         });
     }
 
@@ -796,9 +1423,11 @@ class PayrollController extends Controller
 
     public function downloadPayroll(Request $request, $id, $format = 'pdf')
     {
-        $business = Business::findBySlug(session('active_business_slug'));
+        $businessSlug = $request->route('business') ?? session('active_business_slug');
+        $business = Business::findBySlug($businessSlug);
         if (!$business) {
-            return RequestResponse::badRequest('Business not found.');
+            Log::error("Business not found for slug: " . ($businessSlug ?? 'Not set'));
+            return response()->json(['error' => 'Business not found.'], 400);
         }
 
         $id = $request->id;
@@ -822,59 +1451,109 @@ class PayrollController extends Controller
             }
         }
 
-        // Prepare payroll data
+        // Prepare comprehensive payroll data
         $data = $payroll->employeePayrolls->map(function ($ep) {
             $deductions = json_decode($ep->deductions, true) ?? [];
+            $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0];
+            $allowances = json_decode($ep->allowances, true) ?? [];
+            $customDeductions = array_filter($deductions, fn($d) => !in_array($d['name'] ?? '', [
+                'SHIF',
+                'NSSF',
+                'PAYE',
+                'Housing Levy',
+                'HELB',
+                'Loan Repayment',
+                'Advance Recovery',
+                'Absenteeism Charge'
+            ]));
+            $totalCustomDeductions = array_sum(array_map(fn($d) => $d['amount'] ?? 0, $customDeductions));
+
             return [
                 'employee_name' => $ep->employee->user->name ?? 'N/A',
                 'employee_code' => $ep->employee->employee_code ?? 'N/A',
-                'basic_salary' => (float) $ep->basic_salary,
-                'gross_pay' => (float) $ep->gross_pay,
-                'overtime' => (float) $ep->overtime,
-                'shif' => (float) ($deductions['shif'] ?? 0),
-                'nssf' => (float) ($deductions['nssf'] ?? 0),
-                'paye' => (float) ($deductions['paye'] ?? 0),
-                'housing_levy' => (float) ($deductions['nhdf'] ?? 0),
-                'helb' => (float) ($deductions['helb'] ?? 0),
-                'loans' => (float) ($deductions['loan_repayment'] ?? 0),
-                'advances' => (float) ($deductions['advance_recovery'] ?? 0),
-                'net_pay' => (float) $ep->net_pay,
+                'tax_no' => $ep->employee->tax_no ?? 'N/A',
+                'basic_salary' => (float) ($ep->basic_salary ?? 0),
+                'gross_pay' => (float) ($ep->gross_pay ?? 0),
+                'overtime' => (float) ($overtime['amount'] ?? 0),
+                'shif' => (float) ($ep->shif ?? ($deductions['shif'] ?? 0)),
+                'nssf' => (float) ($ep->nssf ?? ($deductions['nssf'] ?? 0)),
+                'paye' => (float) ($ep->paye ?? ($deductions['paye'] ?? 0)),
+                'paye_before_reliefs' => (float) ($ep->paye_before_reliefs ?? 0),
+                'housing_levy' => (float) ($ep->housing_levy ?? ($deductions['housing_levy'] ?? 0)),
+                'helb' => (float) ($ep->helb ?? ($deductions['helb'] ?? 0)),
+                'taxable_income' => (float) ($ep->taxable_income ?? 0),
+                'personal_relief' => (float) ($ep->personal_relief ?? 0),
+                'insurance_relief' => (float) ($ep->insurance_relief ?? 0),
+                'pay_after_tax' => (float) ($ep->pay_after_tax ?? 0),
+                'loan_repayment' => (float) ($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0)),
+                'advance_recovery' => (float) ($ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0)),
+                'custom_deductions' => (float) $totalCustomDeductions,
+                'deductions_after_tax' => (float) ($ep->deductions_after_tax ?? 0),
+                'net_pay' => (float) ($ep->net_pay ?? 0),
+                'attendance_present' => (int) ($ep->attendance_present ?? 0),
+                'attendance_absent' => (int) ($ep->attendance_absent ?? 0),
+                'days_in_month' => (int) ($ep->days_in_month ?? 0),
+                'bank_name' => $ep->bank_name ?? 'N/A',
+                'account_number' => $ep->account_number ?? 'N/A',
             ];
         })->toArray();
 
-        // Calculate totals correctly
-        $totals = array_map('floatval', [
+        // Calculate totals
+        $totals = [
             'totalBasicSalary' => array_sum(array_column($data, 'basic_salary')),
             'totalGrossPay' => array_sum(array_column($data, 'gross_pay')),
             'totalOvertime' => array_sum(array_column($data, 'overtime')),
             'totalShif' => array_sum(array_column($data, 'shif')),
             'totalNssf' => array_sum(array_column($data, 'nssf')),
             'totalPaye' => array_sum(array_column($data, 'paye')),
+            'totalPayeBeforeReliefs' => array_sum(array_column($data, 'paye_before_reliefs')),
             'totalHousingLevy' => array_sum(array_column($data, 'housing_levy')),
             'totalHelb' => array_sum(array_column($data, 'helb')),
-            'totalLoans' => array_sum(array_column($data, 'loans')),
-            'totalAdvances' => array_sum(array_column($data, 'advances')),
+            'totalTaxableIncome' => array_sum(array_column($data, 'taxable_income')),
+            'totalPersonalRelief' => array_sum(array_column($data, 'personal_relief')),
+            'totalInsuranceRelief' => array_sum(array_column($data, 'insurance_relief')),
+            'totalPayAfterTax' => array_sum(array_column($data, 'pay_after_tax')),
+            'totalLoans' => array_sum(array_column($data, 'loan_repayment')),
+            'totalAdvances' => array_sum(array_column($data, 'advance_recovery')),
+            'totalCustomDeductions' => array_sum(array_column($data, 'custom_deductions')),
+            'totalDeductionsAfterTax' => array_sum(array_column($data, 'deductions_after_tax')),
             'totalNetPay' => array_sum(array_column($data, 'net_pay')),
-        ]);
+            'totalAttendancePresent' => array_sum(array_column($data, 'attendance_present')),
+            'totalAttendanceAbsent' => array_sum(array_column($data, 'attendance_absent')),
+            'totalDaysInMonth' => array_sum(array_column($data, 'days_in_month')),
+        ];
+        $totals = array_map('floatval', $totals);
 
         $fileName = "payroll-{$id}.{$format}";
+        $currency = $payroll->currency ?? 'KES';
 
         switch ($format) {
             case 'pdf':
-                $pdf = Pdf::loadView('payroll.reports.company_payslip', [
-                    'business' => $business,
-                    'payroll' => $payroll,
-                    'entity' => $entity,
-                    'entityType' => $entityType,
-                    'data' => $data,
-                    'totals' => $totals,
-                ])->setPaper('a4', 'landscape');
-                return $pdf->download($fileName);
+                try {
+                    $pdf = Pdf::loadView('payroll.reports.company_payslip', [
+                        'business' => $business,
+                        'payroll' => $payroll,
+                        'entity' => $entity,
+                        'entityType' => $entityType,
+                        'data' => $data,
+                        'totals' => $totals,
+                        'currency' => $currency,
+                    ])->setPaper('a4', 'landscape');
+                    return $pdf->download($fileName);
+                } catch (\Exception $e) {
+                    Log::error("PDF generation failed for payroll {$id}: " . $e->getMessage() . "\nStack trace: " . $e->getTraceAsString());
+                    return response()->json(['error' => 'Failed to generate PDF: ' . $e->getMessage()], 500);
+                }
 
             case 'csv':
-                $csvData = implode(',', array_keys($data[0] ?? [])) . "\n";
+                $headers = array_keys($data[0] ?? []);
+                $csvData = implode(',', array_map(fn($key) => ucwords(str_replace('_', ' ', $key)) . ($key === 'bank_name' || $key === 'account_number' || $key === 'employee_name' || $key === 'employee_code' || $key === 'tax_no' ? '' : " ({$currency})"), $headers)) . "\n";
                 foreach ($data as $row) {
-                    $csvData .= implode(',', array_map('strval', $row)) . "\n";
+                    $csvData .= implode(',', array_map(function ($value, $key) {
+                        return ($key !== 'bank_name' && $key !== 'account_number' && $key !== 'employee_name' && $key !== 'employee_code' && $key !== 'tax_no' && is_numeric($value))
+                            ? number_format($value, 2)
+                            : "\"" . str_replace('"', '""', $value) . "\"";
+                    }, $row, array_keys($row))) . "\n";
                 }
                 return Response::make($csvData, 200, [
                     'Content-Type' => 'text/csv',
@@ -882,47 +1561,113 @@ class PayrollController extends Controller
                 ]);
 
             case 'xlsx':
-                return Excel::download(new class($data) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                    private $data;
+                try {
+                    return Excel::download(new class($data, $currency) implements
+                        \Maatwebsite\Excel\Concerns\FromArray,
+                        \Maatwebsite\Excel\Concerns\WithHeadings {
+                        private $data;
+                        private $currency;
 
-                    public function __construct(array $data)
-                    {
-                        $this->data = $data;
-                    }
+                        public function __construct(array $data, string $currency)
+                        {
+                            $this->data = $data;
+                            $this->currency = $currency;
+                        }
 
-                    public function array(): array
-                    {
-                        return $this->data;
-                    }
+                        public function array(): array
+                        {
+                            return $this->data;
+                        }
 
-                    public function headings(): array
-                    {
-                        return array_keys($this->data[0] ?? []);
-                    }
-                }, $fileName);
+                        public function headings(): array
+                        {
+                            return array_map(fn($key) => ucwords(str_replace('_', ' ', $key)) . ($key === 'bank_name' || $key === 'account_number' || $key === 'employee_name' || $key === 'employee_code' || $key === 'tax_no' ? '' : " ({$this->currency})"), array_keys($this->data[0] ?? []));
+                        }
+                    }, $fileName);
+                } catch (\Maatwebsite\Excel\Exceptions\LaravelExcelException $e) {
+                    Log::error("Excel generation failed for payroll {$id}: " . $e->getMessage());
+                    return response()->json(['error' => 'Failed to generate Excel file.'], 500);
+                }
 
             default:
-                return RequestResponse::badRequest('Invalid format requested.');
+                Log::warning("Invalid format requested for payroll {$id}: {$format}");
+                return response()->json(['error' => 'Invalid format requested.'], 400);
         }
     }
 
-    public function printAllPayslips(Request $request, $id)
+    public function viewPayslip(Request $request, $employeeId)
     {
         $business = Business::findBySlug(session('active_business_slug'));
         if (!$business) {
             return RequestResponse::badRequest('Business not found.');
         }
+        $id = $request->employee_id;
 
-        $payroll = Payroll::where('business_id', $business->id)
-            ->where('id', $id)
-            ->with(['employeePayrolls.employee.user'])
+        $payrollId = $request->query('payroll_id');
+        if (!$payrollId) {
+            return RequestResponse::badRequest('Payroll ID is required to view the payslip.');
+        }
+
+        $employeePayroll = EmployeePayroll::with([
+            'employee.user',
+            'payroll.business',
+            'payroll.location'
+        ])
+            ->where('employee_id', $id)
+            ->where('payroll_id', $payrollId)
             ->firstOrFail();
 
-        $pdf = Pdf::loadView('payroll.all_payslips', compact('payroll'));
-        $pdfPath = storage_path('app/public/payslips/all_' . $payroll->id . '.pdf');
-        $pdf->save($pdfPath);
+        $entity = $business;
+        $entityType = 'business';
+        if ($employeePayroll->payroll->location_id) {
+            $location = Location::where('id', $employeePayroll->payroll->location_id)
+                ->where('business_id', $business->id)
+                ->first();
+            if ($location) {
+                $entity = $location;
+                $entityType = 'location';
+            }
+        }
 
-        return response()->download($pdfPath, 'all_payslips_' . $payroll->id . '.pdf');
+        Log::info($employeePayroll);
+
+        // Currency Conversion Logic
+        // $targetCurrency = strtoupper($employeePayroll->employee->user->country ?? 'USD');
+        $targetCurrency = 'USD';
+        $baseCurrency = $employeePayroll->payroll->currency;
+
+        $exchangeRates = $this->getExchangeRates($baseCurrency, $targetCurrency);
+
+        return view('payroll.reports.payslip', compact('employeePayroll', 'business', 'entity', 'entityType', 'exchangeRates', 'targetCurrency'));
+    }
+
+    private function getExchangeRates($baseCurrency, $targetCurrency)
+    {
+        try {
+            // Fetch latest exchange rates
+            $response = Http::get("https://api.frankfurter.dev/v1/latest", [
+                'base' => $baseCurrency,
+                'symbols' => $targetCurrency
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $date = $data['date'] ?? now()->toDateString();
+                $exchangeRate = $data['rates'][$targetCurrency] ?? null;
+
+                return [
+                    'base' => $baseCurrency,
+                    'date' => $date,
+                    'rate' => $exchangeRate
+                ];
+            } else {
+                Log::error('Frankfurter API Error: ' . $response->body());
+                return null;
+            }
+        } catch (\Exception $e) {
+            Log::error('Frankfurter API Exception: ' . $e->getMessage());
+            return null;
+        }
     }
 
     public function viewPayroll(Request $request, $payroll_id)
@@ -936,13 +1681,12 @@ class PayrollController extends Controller
         $businessSlug = $request->route('business');
         $payroll_id = $request->id;
 
-        // Get payroll ID from route parameter (assuming it's passed correctly)
         $payroll = Payroll::where('business_id', $business->id)
             ->where('id', $payroll_id)
             ->with([
                 'employeePayrolls.employee.user',
                 'employeePayrolls.employee.paymentDetails',
-                'employeePayrolls.employee.payrollDetail' // Include payroll details for reliefs
+                'employeePayrolls.employee.payrollDetail'
             ])
             ->firstOrFail();
 
@@ -965,61 +1709,84 @@ class PayrollController extends Controller
 
         // Calculate totals for each column
         $totals = [
-            'totalBasicSalary' => 0,
-            'totalGrossPay' => 0,
-            'totalOvertime' => 0,
-            'totalShif' => 0,
-            'totalNssf' => 0,
-            'totalPaye' => 0,
-            'totalHousingLevy' => 0,
-            'totalHelb' => 0,
-            'totalLoans' => 0,
-            'totalAdvances' => 0,
-            'totalAbsenteeismCharge' => 0,
-            'totalCustomDeductions' => 0,
-            'totalPersonalRelief' => 0,
-            'totalInsuranceRelief' => 0,
-            'totalMortgageRelief' => 0,
-            'totalHospRelief' => 0,
-            'totalNetPay' => 0,
+            'totalBasicSalary' => 0.00,
+            'totalGrossPay' => 0.00,
+            'totalOvertime' => 0.00,
+            'totalShif' => 0.00,
+            'totalNssf' => 0.00,
+            'totalPaye' => 0.00,
+            'totalHousingLevy' => 0.00,
+            'totalHelb' => 0.00,
+            'totalLoans' => 0.00,
+            'totalAdvances' => 0.00,
+            'totalCustomDeductions' => 0.00,
+            'totalTaxableIncome' => 0.00,
+            'totalPersonalRelief' => 0.00,
+            'totalInsuranceRelief' => 0.00,
+            'totalPayAfterTax' => 0.00,
+            'totalDeductionsAfterTax' => 0.00,
+            'totalNetPay' => 0.00,
+            // Optional fields not currently used in view but kept for consistency
+            'totalAbsenteeismCharge' => 0.00,
+            'totalMortgageRelief' => 0.00,
+            'totalHospRelief' => 0.00,
         ];
 
         foreach ($payroll->employeePayrolls as $ep) {
+            $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0.00];
             $deductions = json_decode($ep->deductions, true) ?? [];
-            $allowances = json_decode($ep->allowances, true) ?? [];
-            $reliefs = json_decode($ep->reliefs, true) ?? [];
 
-            // Direct fields from employee_payrolls
-            $totals['totalBasicSalary'] += $ep->basic_salary ?? 0;
-            $totals['totalGrossPay'] += $ep->gross_pay ?? 0;
-            $totals['totalOvertime'] += $ep->overtime ?? 0;
-            $totals['totalShif'] += $ep->shif ?? ($deductions['shif'] ?? 0);
-            $totals['totalNssf'] += $ep->nssf ?? ($deductions['nssf'] ?? 0);
-            $totals['totalPaye'] += $ep->paye ?? ($deductions['paye'] ?? 0);
-            $totals['totalHousingLevy'] += $ep->housing_levy ?? ($deductions['housing_levy'] ?? 0); // Use housing_levy
-            $totals['totalHelb'] += $deductions['helb'] ?? 0;
-            $totals['totalLoans'] += $ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0);
-            $totals['totalAdvances'] += $ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0);
-            $totals['totalAbsenteeismCharge'] += $deductions['absenteeism_charge'] ?? 0;
-            $totals['totalNetPay'] += $ep->net_pay ?? 0;
-            $totals['totalPersonalRelief'] += $ep->personal_relief ?? ($reliefs['personal-relief']['amount'] ?? 0);
+            // Fetch reliefs from payrollDetail if available
+            $reliefs = $ep->employee->payrollDetail ? json_decode($ep->employee->payrollDetail->reliefs, true) ?? [] : [];
+
+            $totals['totalBasicSalary'] += (float) ($ep->basic_salary ?? 0);
+            $totals['totalGrossPay'] += (float) ($ep->gross_pay ?? 0);
+            $totals['totalOvertime'] += (float) ($overtime['amount'] ?? 0);
+            $totals['totalShif'] += (float) ($ep->shif ?? ($deductions['shif'] ?? 0));
+            $totals['totalNssf'] += (float) ($ep->nssf ?? ($deductions['nssf'] ?? 0));
+            $totals['totalPaye'] += (float) ($ep->paye ?? ($deductions['paye'] ?? 0));
+            $totals['totalHousingLevy'] += (float) ($ep->housing_levy ?? ($deductions['housing_levy'] ?? 0));
+            $totals['totalHelb'] += (float) ($ep->helb ?? ($deductions['helb'] ?? 0));
+            $totals['totalLoans'] += (float) ($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0));
+            $totals['totalAdvances'] += (float) ($ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0));
+            $totals['totalTaxableIncome'] += (float) ($ep->taxable_income ?? 0);
+            $totals['totalPersonalRelief'] += (float) ($ep->personal_relief ?? ($reliefs['personal-relief']['amount'] ?? 0));
+            $totals['totalInsuranceRelief'] += (float) ($ep->insurance_relief ?? ($reliefs['insurance-relief']['amount'] ?? 0));
+            $totals['totalPayAfterTax'] += (float) ($ep->pay_after_tax ?? 0);
+            $totals['totalDeductionsAfterTax'] += (float) ($ep->deductions_after_tax ?? 0);
+            $totals['totalNetPay'] += (float) ($ep->net_pay ?? 0);
+
+            // Absenteeism Charge
+            $absenteeism = array_filter($deductions, fn($d) => is_array($d) && stripos($d['name'] ?? '', 'Absenteeism Charge') !== false);
+            $totals['totalAbsenteeismCharge'] += (float) array_sum(array_map(fn($d) => $d['amount'] ?? 0.0, $absenteeism));
 
             // Custom deductions (excluding statutory ones already counted)
-            $customDeductions = array_filter($deductions, fn($key) => !in_array($key, ['shif', 'nssf', 'paye', 'housing_levy', 'helb', 'loan_repayment', 'advance_recovery', 'absenteeism_charge']), ARRAY_FILTER_USE_KEY);
-            $totals['totalCustomDeductions'] += array_sum(array_column($customDeductions, 'amount'));
-
-            // Additional reliefs
-            $totals['totalInsuranceRelief'] += $reliefs['insurance-relief']['amount'] ?? 0;
-            $totals['totalMortgageRelief'] += $reliefs['mortgage-relief']['amount'] ?? 0;
-            $totals['totalHospRelief'] += $reliefs['hosp-relief']['amount'] ?? 0;
+            $customDeductions = array_filter($deductions, function ($deduction) {
+                if (!is_array($deduction) || !isset($deduction['name'])) {
+                    return false;
+                }
+                $name = strtolower($deduction['name']);
+                return !in_array($name, [
+                    'shif',
+                    'nssf',
+                    'paye',
+                    'housing levy',
+                    'helb',
+                    'loan repayment',
+                    'advance recovery',
+                    'absenteeism charge'
+                ]);
+            });
+            $totals['totalCustomDeductions'] += (float) array_sum(array_map(fn($d) => $d['amount'] ?? 0.0, $customDeductions));
         }
 
-        return view('payroll.view', compact('payroll', 'business', 'entity', 'entityType', 'totals', 'page'));
+        return view('payroll.view', compact('business', 'payroll', 'entity', 'entityType', 'page', 'totals'));
     }
 
     public function downloadColumn(Request $request, $payroll_id, $column, $format)
     {
-        $businessSlug = $request->route('business');
+        // Fetch business slug with fallback to session
+        $businessSlug = $request->route('business') ?? session('active_business_slug');
         $business = Business::findBySlug($businessSlug);
 
         $payroll_id = $request->id;
@@ -1027,75 +1794,125 @@ class PayrollController extends Controller
         $format = $request->format;
 
         if (!$business) {
+            Log::error("Business not found for slug: " . ($businessSlug ?? 'Not set'));
             abort(404, 'Business not found.');
         }
 
+        // Fetch payroll with validation
         $payroll = Payroll::where('business_id', $business->id)
             ->where('id', $payroll_id)
             ->with(['employeePayrolls.employee.user'])
             ->firstOrFail();
 
-        // Define valid columns
+        // Define valid columns (consistent with view.blade.php)
         $validColumns = [
             'basic_salary',
             'gross_pay',
+            'net_pay',
+            'tax_no',
             'overtime',
             'shif',
             'nssf',
             'paye',
+            'paye_before_reliefs',
             'housing_levy',
             'helb',
-            'loans',
-            'advances',
-            'net_pay',
+            'taxable_income',
+            'personal_relief',
+            'insurance_relief',
+            'pay_after_tax',
+            'loan_repayment',
+            'advance_recovery',
+            'deductions_after_tax',
+            'attendance_present',
+            'attendance_absent',
+            'days_in_month',
+            'bank_name',
+            'account_number'
         ];
 
+        $column = strtolower(trim($column));
+        $format = strtolower(trim($format));
         if (!in_array($column, $validColumns)) {
+            Log::warning("Invalid column name requested: {$column}");
             abort(400, 'Invalid column name.');
         }
 
         // Prepare data for download
         $data = $payroll->employeePayrolls->map(function ($ep) use ($column) {
             $deductions = json_decode($ep->deductions, true) ?? [];
+            $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0];
+            $allowances = json_decode($ep->allowances, true) ?? [];
+
             $value = match ($column) {
-                'basic_salary' => $ep->basic_salary,
-                'gross_pay' => $ep->gross_pay,
-                'overtime' => $ep->overtime,
-                'shif' => $deductions['shif'] ?? 0,
-                'nssf' => $deductions['nssf'] ?? 0,
-                'paye' => $deductions['paye'] ?? 0,
-                'housing_levy' => $deductions['nhdf'] ?? 0,
-                'helb' => $deductions['helb'] ?? 0,
-                'loans' => $deductions['loan_repayment'] ?? 0,
-                'advances' => $deductions['advance_recovery'] ?? 0,
-                'net_pay' => $ep->net_pay,
+                'basic_salary' => $ep->basic_salary ?? 0,
+                'gross_pay' => $ep->gross_pay ?? 0,
+                'net_pay' => $ep->net_pay ?? 0,
+                'tax_no' => $ep->employee->tax_no ?? 'N/A',
+                'overtime' => $overtime['amount'] ?? 0,
+                'shif' => $ep->shif ?? ($deductions['shif'] ?? 0),
+                'nssf' => $ep->nssf ?? ($deductions['nssf'] ?? 0),
+                'paye' => $ep->paye ?? ($deductions['paye'] ?? 0),
+                'paye_before_reliefs' => $ep->paye_before_reliefs ?? 0,
+                'housing_levy' => $ep->housing_levy ?? ($deductions['housing_levy'] ?? 0),
+                'helb' => $ep->helb ?? ($deductions['helb'] ?? 0),
+                'taxable_income' => $ep->taxable_income ?? 0,
+                'personal_relief' => $ep->personal_relief ?? 0,
+                'insurance_relief' => $ep->insurance_relief ?? 0,
+                'pay_after_tax' => $ep->pay_after_tax ?? 0,
+                'loan_repayment' => $ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0),
+                'advance_recovery' => $ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0),
+                'deductions_after_tax' => $ep->deductions_after_tax ?? 0,
+                'attendance_present' => $ep->attendance_present ?? 0,
+                'attendance_absent' => $ep->attendance_absent ?? 0,
+                'days_in_month' => $ep->days_in_month ?? 0,
+                'bank_name' => $ep->bank_name ?? 'N/A',
+                'account_number' => $ep->account_number ?? 'N/A',
                 default => 0,
             };
 
             return [
                 'employee_name' => $ep->employee->user->name ?? 'N/A',
                 'employee_code' => $ep->employee->employee_code ?? 'N/A',
-                $column => number_format($value, 2),
+                'tax_no' => $ep->employee->tax_no ?? 'N/A',
+                'basic_salary' => number_format($ep->basic_salary ?? 0, 2),
+                'gross_pay' => number_format($ep->gross_pay ?? 0, 2),
+                'net_pay' => number_format($ep->net_pay ?? 0, 2),
+                $column => is_numeric($value) ? number_format($value, 2) : $value,
             ];
         })->toArray();
 
         // Generate file based on format
-        $fileName = "payroll-{$payroll_id}-{$column}." . $format;
+        $fileName = "payroll-{$payroll_id}-{$column}.{$format}";
+        $currency = $payroll->currency ?? 'KES';
 
         switch ($format) {
             case 'pdf':
-                $pdf = Pdf::loadView('payroll.download_column', [
-                    'business' => $business,
-                    'payroll' => $payroll,
-                    'column' => $column,
-                    'data' => $data,
-                ]);
-                return $pdf->download($fileName);
+                try {
+                    $pdf = Pdf::loadView('payroll.download_column', [
+                        'business' => $business,
+                        'payroll' => $payroll,
+                        'column' => $column,
+                        'data' => $data,
+                        'currency' => $currency,
+                    ]);
+                    return $pdf->download($fileName);
+                } catch (\Exception $e) {
+                    Log::error("PDF generation failed for payroll {$payroll_id}, column {$column}: " . $e->getMessage());
+                    abort(500, 'Failed to generate PDF.');
+                }
 
             case 'csv':
-                $csvData = "Employee Name,Employee Code," . ucwords(str_replace('_', ' ', $column)) . " (" . ($payroll->currency ?? 'KES') . ")\n";
+                $csvData = "Employee Name,Employee Code,Tax Number,Basic Salary,Gross Pay,Net Pay,"
+                    . ucwords(str_replace('_', ' ', $column)) . " ({$currency})\n";
                 foreach ($data as $row) {
-                    $csvData .= "\"{$row['employee_name']}\",\"{$row['employee_code']}\",{$row[$column]}\n";
+                    $csvData .= "\"" . str_replace('"', '""', $row['employee_name']) . "\","
+                        . "\"" . str_replace('"', '""', $row['employee_code']) . "\","
+                        . "\"" . str_replace('"', '""', $row['tax_no']) . "\","
+                        . "\"" . $row['basic_salary'] . "\","
+                        . "\"" . $row['gross_pay'] . "\","
+                        . "\"" . $row['net_pay'] . "\","
+                        . (is_numeric($row[$column]) ? $row[$column] : "\"" . str_replace('"', '""', $row[$column]) . "\"") . "\n";
                 }
                 return Response::make($csvData, 200, [
                     'Content-Type' => 'text/csv',
@@ -1103,82 +1920,227 @@ class PayrollController extends Controller
                 ]);
 
             case 'xlsx':
-                return Excel::download(new class($data, $column, $payroll) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings {
-                    private $data;
-                    private $column;
-                    private $payroll;
+                try {
+                    return Excel::download(new class($data, $column, $payroll) implements
+                        \Maatwebsite\Excel\Concerns\FromArray,
+                        \Maatwebsite\Excel\Concerns\WithHeadings {
+                        private $data;
+                        private $column;
+                        private $payroll;
 
-                    public function __construct(array $data, string $column, $payroll)
-                    {
-                        $this->data = $data;
-                        $this->column = $column;
-                        $this->payroll = $payroll;
-                    }
+                        public function __construct(array $data, string $column, $payroll)
+                        {
+                            $this->data = $data;
+                            $this->column = $column;
+                            $this->payroll = $payroll;
+                        }
 
-                    public function array(): array
-                    {
-                        return $this->data;
-                    }
+                        public function array(): array
+                        {
+                            return $this->data;
+                        }
 
-                    public function headings(): array
-                    {
-                        return [
-                            'Employee Name',
-                            'Employee Code',
-                            ucwords(str_replace('_', ' ', $this->column)) . ' (' . ($this->payroll->currency ?? 'KES') . ')',
-                        ];
-                    }
-                }, $fileName);
+                        public function headings(): array
+                        {
+                            return [
+                                'Employee Name',
+                                'Employee Code',
+                                'Tax Number',
+                                'Basic Salary',
+                                'Gross Pay',
+                                'Net Pay',
+                                ucwords(str_replace('_', ' ', $this->column)) . " (" . ($this->payroll->currency ?? 'KES') . ")",
+                            ];
+                        }
+                    }, $fileName);
+                } catch (\Maatwebsite\Excel\Exceptions\LaravelExcelException $e) {
+                    Log::error("Excel generation failed for payroll {$payroll_id}, column {$column}: " . $e->getMessage());
+                    abort(500, 'Failed to generate Excel file.');
+                }
 
             default:
+                Log::warning("Invalid format requested: {$format}");
                 abort(400, 'Invalid format.');
+        }
+    }
+
+    public function downloadReport(Request $request)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            abort(404, 'Business not found.');
+        }
+
+        $payroll = Payroll::where('business_id', $business->id)
+            ->where('id', $request->payroll_id)
+            ->with(['employeePayrolls.employee.user'])
+            ->firstOrFail();
+
+        $type = strtolower($request->type);
+        $validTypes = ['shif', 'nssf', 'paye', 'nhdf', 'tax_filing', 'bank_advice', 'company_payslip'];
+
+        if (!in_array($type, $validTypes)) {
+            abort(404, "Invalid report type: {$type}");
+        }
+
+        // Prepare comprehensive payroll data
+        $data = $payroll->employeePayrolls->map(function ($ep) {
+            $deductions = json_decode($ep->deductions, true) ?? [];
+            $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0];
+            $allowances = json_decode($ep->allowances, true) ?? [];
+
+            return [
+                'employee_name' => $ep->employee->user->name ?? 'N/A',
+                'employee_code' => $ep->employee->employee_code ?? 'N/A',
+                'tax_no' => $ep->employee->tax_no ?? 'N/A',
+                'basic_salary' => (float) ($ep->basic_salary ?? 0),
+                'gross_pay' => (float) ($ep->gross_pay ?? 0),
+                'overtime' => (float) ($overtime['amount'] ?? 0),
+                'shif' => (float) ($ep->shif ?? ($deductions['shif'] ?? 0)),
+                'nssf' => (float) ($ep->nssf ?? ($deductions['nssf'] ?? 0)),
+                'paye' => (float) ($ep->paye ?? ($deductions['paye'] ?? 0)),
+                'paye_before_reliefs' => (float) ($ep->paye_before_reliefs ?? 0),
+                'housing_levy' => (float) ($ep->housing_levy ?? ($deductions['housing_levy'] ?? 0)),
+                'helb' => (float) ($ep->helb ?? ($deductions['helb'] ?? 0)),
+                'taxable_income' => (float) ($ep->taxable_income ?? 0),
+                'personal_relief' => (float) ($ep->personal_relief ?? 0),
+                'insurance_relief' => (float) ($ep->insurance_relief ?? 0),
+                'pay_after_tax' => (float) ($ep->pay_after_tax ?? 0),
+                'loan_repayment' => (float) ($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0)),
+                'advance_recovery' => (float) ($ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0)),
+                'deductions_after_tax' => (float) ($ep->deductions_after_tax ?? 0),
+                'net_pay' => (float) ($ep->net_pay ?? 0),
+                'attendance_present' => (int) ($ep->attendance_present ?? 0),
+                'attendance_absent' => (int) ($ep->attendance_absent ?? 0),
+                'days_in_month' => (int) ($ep->days_in_month ?? 0),
+                'bank_name' => $ep->bank_name ?? 'N/A',
+                'account_number' => $ep->account_number ?? 'N/A',
+                'allowances' => $allowances,
+                'deductions' => $deductions,
+            ];
+        })->toArray();
+
+        $totals = [
+            'totalBasicSalary' => array_sum(array_column($data, 'basic_salary')),
+            'totalGrossPay' => array_sum(array_column($data, 'gross_pay')),
+            'totalOvertime' => array_sum(array_column($data, 'overtime')),
+            'totalShif' => array_sum(array_column($data, 'shif')),
+            'totalNssf' => array_sum(array_column($data, 'nssf')),
+            'totalPaye' => array_sum(array_column($data, 'paye')),
+            'totalHousingLevy' => array_sum(array_column($data, 'housing_levy')),
+            'totalHelb' => array_sum(array_column($data, 'helb')),
+            'totalLoans' => array_sum(array_column($data, 'loan_repayment')),
+            'totalAdvances' => array_sum(array_column($data, 'advance_recovery')),
+            'totalNetPay' => array_sum(array_column($data, 'net_pay')),
+            'totalTaxableIncome' => array_sum(array_column($data, 'taxable_income')),
+            'totalPersonalRelief' => array_sum(array_column($data, 'personal_relief')),
+            'totalInsuranceRelief' => array_sum(array_column($data, 'insurance_relief')),
+            'totalPayAfterTax' => array_sum(array_column($data, 'pay_after_tax')),
+            'totalDeductionsAfterTax' => array_sum(array_column($data, 'deductions_after_tax')),
+        ];
+
+        $entity = $payroll->location_id ? ($payroll->location ?? $business) : $business;
+        $entityType = $payroll->location_id ? 'location' : 'business';
+
+        if (!view()->exists("payroll.reports.{$type}")) {
+            abort(404, "Report view for {$type} not found");
+        }
+
+        try {
+            $pdf = Pdf::loadView("payroll.reports.{$type}", [
+                'business' => $business,
+                'payroll' => $payroll,
+                'entity' => $entity,
+                'entityType' => $entityType,
+                'data' => $data,
+                'totals' => $totals,
+            ])->setPaper('a4', 'landscape');
+            return $pdf->download("{$type}_report_{$payroll->payrun_year}_{$payroll->payrun_month}.pdf");
+        } catch (\Exception $e) {
+            \Log::error("Report generation failed for type {$type}: " . $e->getMessage());
+            abort(500, 'Failed to generate report.');
         }
     }
 
     public function sendPayslips(Request $request)
     {
         $payrollId = $request->input('payroll_id');
-        if (!$payrollId) {
-            return RequestResponse::badRequest('Payroll ID is required.');
+        $employeePayrollId = $request->input('employee_payroll_id');
+
+        if (!$payrollId && !$employeePayrollId) {
+            return RequestResponse::badRequest('Either payroll_id or employee_payroll_id is required.');
         }
 
-        return $this->handleTransaction(function () use ($payrollId) {
+        return $this->handleTransaction(function () use ($request, $payrollId, $employeePayrollId) {
             $business = Business::findBySlug(session('active_business_slug'));
             if (!$business) {
                 return RequestResponse::badRequest('Business not found.');
             }
 
-            $payroll = Payroll::where('business_id', $business->id)
-                ->where('id', $payrollId)
-                ->with(['employeePayrolls.employee.user'])
-                ->firstOrFail();
+            // Determine the scope: single payslip or all for a payroll
+            if ($employeePayrollId) {
+                $employeePayroll = EmployeePayroll::with(['employee.user', 'payroll.business', 'payroll.location'])
+                    ->where('id', $employeePayrollId)
+                    ->whereHas('payroll', fn($q) => $q->where('business_id', $business->id))
+                    ->firstOrFail();
 
-            foreach ($payroll->employeePayrolls as $employeePayroll) {
-                if ($employeePayroll->employee->user?->email) {
-                    // Generate the PDF and save it temporarily
-                    $pdf = Pdf::loadView('payroll.reports.payslip', compact('employeePayroll'));
-                    $fileName = 'payslip_' . $employeePayroll->id . '_' . time() . '.pdf';
-                    $filePath = storage_path('app/public/payslips/' . $fileName);
+                $employeePayrolls = collect([$employeePayroll]); // Single item collection
+                $payroll = $employeePayroll->payroll;
+            } else {
+                $payroll = Payroll::where('business_id', $business->id)
+                    ->where('id', $payrollId)
+                    ->with(['employeePayrolls.employee.user'])
+                    ->firstOrFail();
 
-                    // Ensure the directory exists
-                    if (!file_exists(storage_path('app/public/payslips'))) {
-                        mkdir(storage_path('app/public/payslips'), 0755, true);
-                    }
-
-                    // Save the PDF to disk
-                    $pdf->save($filePath);
-
-                    // Queue the mail with the file path
-                    Mail::to($employeePayroll->employee->user->email)
-                        ->queue(new PayslipMail($employeePayroll, $filePath, $employeePayroll->employee->user->name));
-                }
+                $employeePayrolls = $payroll->employeePayrolls;
             }
 
-            // Update the emailed status
-            $payroll->emailed = true;
-            $payroll->save();
+            // Process each payslip
+            $sentCount = 0;
+            foreach ($employeePayrolls as $employeePayroll) {
+                $user = $employeePayroll->employee->user;
+                if (!$user || !$user->email) {
+                    Log::warning("No email found for employee ID: {$employeePayroll->employee_id}, skipping payslip.");
+                    continue;
+                }
 
-            return RequestResponse::ok('Payslips queued for sending.');
+                // Determine entity for the payslip view
+                $entity = $business;
+                $entityType = 'business';
+                if ($employeePayroll->payroll->location_id) {
+                    $location = Location::where('id', $employeePayroll->payroll->location_id)
+                        ->where('business_id', $business->id)
+                        ->first();
+                    if ($location) {
+                        $entity = $location;
+                        $entityType = 'location';
+                    }
+                }
+
+                // Generate PDF
+                $pdf = Pdf::loadView('payroll.reports.payslip', compact('employeePayroll', 'business', 'entity', 'entityType'));
+                $fileName = 'payslip_' . $employeePayroll->id . '_' . time() . '.pdf';
+                $filePath = storage_path('app/public/payslips/' . $fileName);
+
+                if (!file_exists(storage_path('app/public/payslips'))) {
+                    mkdir(storage_path('app/public/payslips'), 0755, true);
+                }
+                $pdf->save($filePath);
+
+                // Send email
+                Mail::to($user->email)->send(new PayslipMail($employeePayroll, $filePath, $user->name));
+                $sentCount++;
+            }
+
+            // Update payroll status if sending all payslips
+            if ($payrollId && !$employeePayrollId) {
+                $payroll->update(['emailed' => true]);
+            }
+
+            $message = $employeePayrollId
+                ? 'Payslip queued for sending.'
+                : "Payslips queued for sending ($sentCount sent).";
+            return RequestResponse::ok($message, ['sent_count' => $sentCount]);
         }, function ($e) {
             Log::error('Failed to send payslips: ' . $e->getMessage());
             return RequestResponse::badRequest('Failed to send payslips: ' . $e->getMessage());
@@ -1193,25 +2155,6 @@ class PayrollController extends Controller
             $this->carryForward($payroll);
         }
         return RequestResponse::ok('Payroll closed successfully.');
-    }
-
-    public function downloadReport(Request $request)
-    {
-        $validTypes = ['shif', 'nssf', 'paye', 'nhdf', 'tax_filing', 'bank_advice', 'company_payslip'];
-
-        $payroll = Payroll::findOrFail($request->payroll_id);
-        $type = $request->type;
-
-        if (!in_array($type, $validTypes)) {
-            abort(404, "Invalid report type: {$type}");
-        }
-
-        if (!view()->exists("payroll.reports.{$type}")) {
-            abort(404, "Report view for {$type} not found");
-        }
-
-        $pdf = Pdf::loadView("payroll.reports.{$type}", ['payroll' => $payroll]);
-        return $pdf->download("{$type}_report_{$payroll->payrun_year}_{$payroll->payrun_month}.pdf");
     }
 
     private function carryForward(Payroll $payroll)
@@ -1250,7 +2193,8 @@ class PayrollController extends Controller
             ->withCount(['employeePayrolls as no_of_payslips'])
             ->with(['employeePayrolls' => function ($query) {
                 $query->select('payroll_id', 'net_pay');
-            }]);
+            }])
+            ->latest('updated_at');
 
         if ($request->filled('month')) {
             $query->where('payrun_month', $request->input('month'));

@@ -114,8 +114,8 @@
                             </a>
                         </li>
                         <li class="slide">
-                            <a class="sidebar__menu-item d-flex align-items-center" href="#" onclick="createEmployee()"
-                                return false;">
+                            <a class="sidebar__menu-item d-flex align-items-center" href="#"
+                                onclick="createEmployee(); return false;">
                                 Add Employee
                             </a>
                         </li>

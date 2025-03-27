@@ -13,7 +13,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center me-3">
                     <img src="{{ $currentBusiness->getImageUrl() }}" style="height: 20px" alt="">
-                    <h2 class="header__title ms-1">{{ $currentBusiness->company_name }}. <span> </h2>
+                    <h2 class="header__title ms-1">{{ $currentBusiness->company_name }}. </h2>
                 </div>
 
                 @if (auth()->user()->hasRole('business-admin'))
@@ -53,31 +53,7 @@
             <div class="app__header-action">
                 <ul>
                     <li>
-                        <a href="#!" onclick="javascript:toggleFullScreen()">
-                            <div class="nav-item">
-                                <div class="notification__icon">
-                                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M7.47106 21.549C7.09156 21.549 6.78356 21.2417 6.78356 20.8615V14.7984H0.6875C0.308 14.7984 0 14.4911 0 14.1109C0 13.7308 0.308 13.4234 0.6875 13.4234H7.47106C7.85056 13.4234 8.15856 13.7308 8.15856 14.1109V20.8615C8.15856 21.2417 7.85056 21.549 7.47106 21.549V21.549ZM14.5289 21.5318C14.1494 21.5318 13.8414 21.2245 13.8414 20.8443V14.0601C13.8414 13.6799 14.1494 13.3726 14.5289 13.3726H21.2795C21.659 13.3726 21.967 13.6799 21.967 14.0601C21.967 14.4403 21.659 14.7476 21.2795 14.7476H15.2164V20.8443C15.2164 21.2245 14.9084 21.5318 14.5289 21.5318V21.5318ZM7.47106 8.17644H0.7205C0.341 8.17644 0.033 7.86912 0.033 7.48894C0.033 7.10875 0.341 6.80144 0.7205 6.80144H6.78356V0.704688C6.78356 0.3245 7.09156 0.0171875 7.47106 0.0171875C7.85056 0.0171875 8.15856 0.3245 8.15856 0.704688V7.48894C8.15856 7.86844 7.85056 8.17644 7.47106 8.17644ZM21.3125 8.12556H14.5289C14.1494 8.12556 13.8414 7.81825 13.8414 7.43806V0.6875C13.8414 0.307312 14.1494 0 14.5289 0C14.9084 0 15.2164 0.307312 15.2164 0.6875V6.75056H21.3125C21.692 6.75056 22 7.05788 22 7.43806C22 7.81825 21.692 8.12556 21.3125 8.12556Z"
-                                            fill="#7A7A7A" />
-                                    </svg>
-                                </div>
-                            </div>
-                        </a>
-                    </li>
-                    <li>
                         <div class="nav-item p-relative">
-                            <a id="emaildropdown" href="#">
-                                <div class="notification__icon">
-                                    <svg width="22" height="16" viewBox="0 0 22 16" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M20.0001 0H1.99998C0.895427 0 0 0.895428 0 2.00003V14.0001C0 15.1046 0.895427 16 1.99998 16H20C21.1046 16 22 15.1046 22 14.0001V2.00003C22 0.895428 21.1046 0 20.0001 0ZM1.99998 1.00001H20C20.1143 1.00074 20.2276 1.02103 20.335 1.06L11.68 9.71504C11.3083 10.0892 10.7036 10.0912 10.3295 9.71946C10.328 9.718 10.3265 9.7165 10.325 9.71504L1.665 1.06C1.77242 1.02103 1.88573 1.0007 1.99998 1.00001ZM1.00001 14V2.00003C0.9949 1.9418 0.9949 1.88324 1.00001 1.82502L7.19002 8.00002L1.00001 14.175C0.9949 14.1168 0.9949 14.0582 1.00001 14ZM20.0001 15H1.99998C1.88573 14.9993 1.77242 14.979 1.665 14.94L7.89999 8.70506L9.61501 10.4201C10.3771 11.185 11.6149 11.1873 12.3798 10.4253C12.3816 10.4236 12.3833 10.4218 12.385 10.4201L14.1 8.70506L20.335 14.94C20.2276 14.979 20.1143 14.9993 20.0001 15ZM21 14.175L14.81 8.00002L21 1.82502C21.0051 1.88324 21.0051 1.9418 21 2.00003V14.0001C21.0051 14.0582 21.0051 14.1168 21 14.175Z"
-                                            fill="#7A7A7A" />
-                                    </svg>
-                                </div>
-                            </a>
                             <div class="email__dropdown">
                                 <div class="notification__card card__scroll">
                                     <div class="notification__header">
@@ -217,11 +193,19 @@
                 <a id="userportfolio" href="#">
                     <div class="user__portfolio">
                         <div class="user__portfolio-thumb">
+                            @if (auth()->user()->getImageUrl() && auth()->user()->getImageUrl() !==
+                            'images/default.png')
+                            <!-- Adjust default path -->
                             <img src="{{ auth()->user()->getImageUrl() }}" alt="User {{ auth()->user()->name }}">
+                            @else
+                            <div class="user__initials">
+                                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                            </div>
+                            @endif
                         </div>
                         <div class="user__content">
                             <h5>{{ auth()->user()->name }}</h5>
-                            <span>online</span>
+                            <span class="status-dot online">online</span>
                         </div>
                     </div>
                 </a>

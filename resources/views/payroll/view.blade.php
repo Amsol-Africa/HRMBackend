@@ -1,6 +1,6 @@
 <x-app-layout title="{{ $page }}">
-    <div class=" container py-5" id="payroll-document">
-        <!-- Header Section -->
+    <div class="container py-5" id="payroll-document">
+        <!-- Header (unchanged) -->
         <div class="invoice-header mb-4 p-4 bg-white shadow-sm rounded">
             <div class="row align-items-center">
                 <div class="col-md-6 d-flex align-items-center">
@@ -46,7 +46,6 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="h5 fw-bold mb-0 text-dark">Payroll Details</h4>
                 <div class="d-flex">
-                    <!-- Download Column Dropdown -->
                     <div class="ml-5 mx-3">
                         <button class="btn btn-primary dropdown-toggle d-flex align-items-center" type="button"
                             id="downloadColumnDropdown" data-bs-toggle="dropdown" aria-expanded="false"
@@ -56,17 +55,16 @@
                         <div class="dropdown-menu modern-dropdown shadow-sm" aria-labelledby="downloadColumnDropdown"
                             style="min-width: 12rem;">
                             @foreach([
-                            'basic_salary' => 'Basic Salary',
-                            'gross_pay' => 'Gross Pay',
-                            'overtime' => 'Overtime',
-                            'shif' => 'SHIF',
-                            'nssf' => 'NSSF',
-                            'paye' => 'PAYE',
-                            'housing_levy' => 'Housing Levy',
-                            'helb' => 'HELB',
-                            'loans' => 'Loans',
-                            'advances' => 'Advances',
-                            'net_pay' => 'Net Pay'
+                            'basic_salary' => 'Basic Salary', 'gross_pay' => 'Gross Pay', 'net_pay' => 'Net Pay',
+                            'overtime' => 'Overtime', 'shif' => 'SHIF', 'nssf' => 'NSSF', 'paye' => 'PAYE',
+                            'paye_before_reliefs' => 'PAYE Before Reliefs', 'housing_levy' => 'Housing Levy',
+                            'helb' => 'HELB', 'taxable_income' => 'Taxable Income', 'personal_relief' => 'Personal
+                            Relief',
+                            'insurance_relief' => 'Insurance Relief', 'pay_after_tax' => 'Pay After Tax',
+                            'loan_repayment' => 'Loans', 'advance_recovery' => 'Advances',
+                            'deductions_after_tax' => 'Deductions After Tax', 'attendance_present' => 'Days Present',
+                            'attendance_absent' => 'Days Absent', 'days_in_month' => 'Days in Month',
+                            'bank_name' => 'Bank Name', 'account_number' => 'Account Number'
                             ] as $columnKey => $columnName)
                             <div class="dropend">
                                 <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown"
@@ -83,8 +81,6 @@
                             @endforeach
                         </div>
                     </div>
-
-                    <!-- AI Insights Button -->
                     <button class="btn btn-outline-info modern-btn" data-bs-toggle="modal"
                         data-bs-target="#aiInsightsModal">
                         <i class="bi bi-lightbulb me-1"></i> AI Insights
@@ -107,26 +103,66 @@
                             <th>HELB</th>
                             <th>Loans</th>
                             <th>Advances</th>
+                            <th>Custom Deductions</th>
+                            <th>Taxable Income</th>
+                            <th>Personal Relief</th>
+                            <th>Insurance Relief</th>
+                            <th>Pay After Tax</th>
+                            <th>Deductions After Tax</th>
                             <th>Net Pay</th>
+                            <th>Days Present</th>
+                            <th>Days Absent</th>
+                            <th>Bank Name</th>
+                            <th>Account Number</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($payroll->employeePayrolls as $index => $ep)
-                        <?php $deductions = json_decode($ep->deductions, true) ?? []; ?>
-                        <tr>
+                        <?php
+                        $deductions = json_decode($ep->deductions, true) ?? [];
+                        $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0];
+                        $allowances = json_decode($ep->allowances, true) ?? [];
+                        $customDeductions = array_filter($deductions, fn($d) => !in_array($d['name'] ?? '', ['SHIF', 'NSSF', 'PAYE', 'Housing Levy', 'HELB', 'Loan Repayment', 'Advance Recovery', 'Absenteeism Charge']));
+                        $totalCustomDeductions = array_sum(array_map(fn($d) => $d['amount'] ?? 0, $customDeductions));
+                        ?>
+                        <tr data-employee-payroll-id="{{ $ep->id }}">
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $ep->employee->user->name ?? 'N/A' }}</td>
-                            <td>{{ number_format($ep->basic_salary, 2) }}</td>
-                            <td>{{ number_format($ep->gross_pay, 2) }}</td>
-                            <td>{{ number_format($ep->overtime, 2) }}</td>
-                            <td>{{ number_format($deductions['shif'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['nssf'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['paye'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['housing_levy'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['helb'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['loan_repayment'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($deductions['advance_recovery'] ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->net_pay, 2) }}</td>
+                            <td>{{ number_format($ep->basic_salary ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->gross_pay ?? 0, 2) }}</td>
+                            <td>{{ number_format($overtime['amount'] ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->shif ?? ($deductions['shif'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->nssf ?? ($deductions['nssf'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->paye ?? ($deductions['paye'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->housing_levy ?? ($deductions['housing_levy'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->helb ?? ($deductions['helb'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0), 2) }}
+                            </td>
+                            <td>{{ number_format($totalCustomDeductions, 2) }}</td>
+                            <td>{{ number_format($ep->taxable_income ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->personal_relief ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->insurance_relief ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->pay_after_tax ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->deductions_after_tax ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->net_pay ?? 0, 2) }}</td>
+                            <td>{{ $ep->attendance_present ?? 0 }}</td>
+                            <td>{{ $ep->attendance_absent ?? 0 }}</td>
+                            <td>{{ $ep->bank_name ?? 'N/A' }}</td>
+                            <td>{{ $ep->account_number ?? 'N/A' }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-dark view-payslip"
+                                    data-employee-id="{{ $ep->employee_id }}" data-payroll-id="{{ $payroll->id }}"
+                                    data-employee-payroll-id="{{ $ep->id }}" title="View Payslip" data-bs-toggle="modal"
+                                    data-bs-target="#payslipModal">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary email-payslip me-1"
+                                    data-employee-payroll-id="{{ $ep->id }}" title="Email Payslip">
+                                    <i class="fa fa-envelope"></i>
+                                </button>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -143,14 +179,25 @@
                             <td class="fw-bold">{{ number_format($totals['totalHelb'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalLoans'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalAdvances'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalCustomDeductions'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalTaxableIncome'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalPersonalRelief'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalInsuranceRelief'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalPayAfterTax'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalDeductionsAfterTax'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalNetPay'], 2) }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
         </div>
 
-        <!-- Footer Section -->
+        <!-- Footer and Action Buttons -->
         <div class="invoice-footer mt-5 p-4 bg-white shadow-sm rounded">
             <div class="row">
                 <div class="col-md-6">
@@ -164,7 +211,6 @@
             </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="mt-4">
             <button class="btn btn-primary modern-btn me-2" onclick="sendPayslips({{ $payroll->id }})">
                 <i class="bi bi-envelope me-1"></i> Send Payslips
@@ -194,25 +240,46 @@
                     </div>
                     <div class="modal-body">
                         <h6 class="fw-bold">Payroll Analysis</h6>
-                        <p class="text-muted">Here are some insights based on the current payroll data:</p>
+                        <p class="text-muted">Insights based on current payroll data:</p>
                         <ul>
                             <li>Total Net Pay: {{ number_format($totals['totalNetPay'], 2) }}
                                 {{ $payroll->currency ?? 'KES' }}
                             </li>
-                            <li>Average Net Pay per Employee:
+                            <li>Average Net Pay:
                                 {{ number_format($totals['totalNetPay'] / ($payroll->employeePayrolls->count() ?: 1), 2) }}
                                 {{ $payroll->currency ?? 'KES' }}
                             </li>
-                            <li>Highest Deduction: PAYE ({{ number_format($totals['totalPaye'], 2) }})</li>
+                            <li>Total Taxable Income: {{ number_format($totals['totalTaxableIncome'], 2) }}</li>
+                            <li>Total Statutory Deductions:
+                                {{ number_format($totals['totalShif'] + $totals['totalNssf'] + $totals['totalPaye'] + $totals['totalHousingLevy'] + $totals['totalHelb'], 2) }}
+                            </li>
                         </ul>
                         <h6 class="fw-bold mt-4">Recommendations</h6>
-                        <p class="text-muted">Consider the following actions to optimize payroll:</p>
+                        <p class="text-muted">Suggestions to optimize payroll:</p>
                         <ul>
-                            <li>Review overtime costs, which are currently
-                                {{ number_format($totals['totalOvertime'], 2) }}.
-                            </li>
-                            <li>Assess loan and advance policies to reduce financial strain on employees.</li>
+                            <li>Overtime costs ({{ number_format($totals['totalOvertime'], 2) }}) could be reviewed for
+                                efficiency.</li>
+                            <li>High loan repayments ({{ number_format($totals['totalLoans'], 2) }}) suggest assessing
+                                employee financial support policies.</li>
                         </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary modern-btn"
+                            data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payslip Modal -->
+        <div class="modal fade" id="payslipModal" tabindex="-1" aria-labelledby="payslipModalLabel" aria-hidden="true">
+            <div class="modal-dialog" style="max-width: 550px;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="payslipModalBody">
+                        <p>Loading payslip...</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary modern-btn"
@@ -225,226 +292,24 @@
 
     @push('styles')
     <style>
-    /* Modern, Minimalistic Styling */
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background-color: #f5f7fa;
+    .email-payslip,
+    .view-payslip {
+        padding: 4px 8px;
+        font-size: 0.85rem;
     }
 
-    .container {
-        max-width: 1400px;
+    .email-payslip i,
+    .view-payslip i {
+        font-size: 1rem;
     }
 
-    /* Header, Body, Footer Styling */
-    .invoice-header,
-    .invoice-body,
-    .invoice-footer {
-        background-color: #fff;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .invoice-header:hover,
-    .invoice-footer:hover,
-    .table-responsive:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    .dropdown button {
-        width: 100% !important;
-        height: 40px !important;
-    }
-
-    .text-dark {
-        color: #1a202c !important;
-    }
-
-    .text-muted {
-        color: #6b7280 !important;
-    }
-
-    /* Modern Table Styling */
     .table-responsive {
         overflow-x: auto;
-        border-radius: 8px;
-    }
-
-    .modern-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
     }
 
     .modern-table th,
     .modern-table td {
-        padding: 12px 16px;
-        text-align: right;
-        border: none;
-        border-bottom: 1px solid #e5e7eb;
         white-space: nowrap;
-    }
-
-    .modern-table th {
-        background-color: #1a202c;
-        color: #fff;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .modern-table th:first-child,
-    .modern-table td:first-child {
-        text-align: left;
-    }
-
-    .modern-table tbody tr:hover {
-        background-color: #f9fafb;
-    }
-
-    .modern-table tfoot td {
-        background-color: #f9fafb;
-        font-weight: 600;
-        color: #1a202c;
-    }
-
-    /* Modern Button and Dropdown Styling */
-    .modern-btn {
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .modern-btn i {
-        font-size: 1rem;
-    }
-
-    .btn-primary.modern-btn {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-    }
-
-    .btn-primary.modern-btn:hover {
-        background-color: #2563eb;
-        border-color: #2563eb;
-    }
-
-    .btn-outline-primary.modern-btn {
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
-
-    .btn-outline-primary.modern-btn:hover {
-        background-color: #3b82f6;
-        color: #fff;
-    }
-
-    .btn-outline-secondary.modern-btn {
-        border-color: #6b7280;
-        color: #6b7280;
-    }
-
-    .btn-outline-secondary.modern-btn:hover {
-        background-color: #6b7280;
-        color: #fff;
-    }
-
-    .btn-success.modern-btn {
-        background-color: #10b981;
-        border-color: #10b981;
-    }
-
-    .btn-success.modern-btn:hover {
-        background-color: #059669;
-        border-color: #059669;
-    }
-
-    .btn-outline-info.modern-btn {
-        border-color: #0ea5e9;
-        color: #0ea5e9;
-    }
-
-    .btn-outline-info.modern-btn:hover {
-        background-color: #0ea5e9;
-        color: #fff;
-    }
-
-    .modern-dropdown {
-        border: none;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .modern-dropdown .dropdown-item {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-        color: #1a202c;
-        transition: background-color 0.2s ease;
-    }
-
-    .modern-dropdown .dropdown-item:hover {
-        background-color: #f3f4f6;
-    }
-
-    /* Modal Styling */
-    .modal-content {
-        border-radius: 8px;
-        border: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .modal-header {
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    .modal-footer {
-        border-top: 1px solid #e5e7eb;
-    }
-
-
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-        .invoice-header .row {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .invoice-header .col-md-6 {
-            margin-bottom: 1rem;
-        }
-
-        .invoice-header img,
-        .invoice-header .bg-light {
-            margin: 0 auto;
-        }
-
-        .d-flex.justify-content-between {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .d-flex.align-items-center {
-            width: 100%;
-            justify-content: flex-start;
-        }
-
-        .modern-btn {
-            width: 100%;
-            text-align: left;
-        }
-
-        .text-md-end {
-            text-align: center !important;
-        }
-
-        .mt-4.text-center {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
     }
     </style>
     @endpush
@@ -452,7 +317,8 @@
     @push('scripts')
     <script>
     function sendPayslips(payrollId) {
-        fetch('/payroll/send-payslips', {
+        const businessSlug = '{{ $business->slug }}';
+        fetch(`/business/${businessSlug}/payroll/send-payslips`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -462,69 +328,75 @@
                     payroll_id: payrollId
                 })
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                Swal.fire('Success!', data.message || 'Payslips queued for sending.', 'success');
-            })
-            .catch(error => {
-                console.error('Error sending payslips:', error);
-                Swal.fire('Error!', 'Failed to send payslips.', 'error');
-            });
+            .then(response => response.ok ? response.json() : response.text().then(text => {
+                throw new Error(text);
+            }))
+            .then(data => Swal.fire('Success!', data.message || 'Payslips queued for sending.', 'success'))
+            .catch(error => Swal.fire('Error!', error.message || 'Failed to send payslips.', 'error'));
     }
 
-    function printPayroll() {
-        window.print();
-    }
-
-    document.querySelectorAll('.download-column').forEach(item => {
-        item.addEventListener('click', function(e) {
-            e.preventDefault();
-            const column = this.getAttribute('data-column');
-            const format = this.getAttribute('data-format');
-            const entitySlug = '{{ $entity->slug }}';
-            const entityType = '{{ $entity->type }}';
-            const payrollId = '{{ $payroll->id }}';
+    document.querySelectorAll('.email-payslip').forEach(button => {
+        button.addEventListener('click', function() {
+            const employeePayrollId = this.getAttribute('data-employee-payroll-id');
             const businessSlug = '{{ $business->slug }}';
-
-            if (entityType === "location") {
-                const url =
-                    '{{ route("business.payroll.download_column", [ "business" => ":businessSlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
-                    .replace(':entitySlug', entitySlug)
-                    .replace(':payroll_id', payrollId)
-                    .replace(':column', column)
-                    .replace(':format', format);
-
-                console.log("Generated URL:", url);
-                window.location.href = url;
-            } else {
-                const url =
-                    '{{ route("business.payroll.download_column", [ "business" => ":entitySlug", "id" => ":payroll_id", "column" => ":column", "format" => ":format"]) }}'
-                    .replace(':entitySlug', entitySlug)
-                    .replace(':payroll_id', payrollId)
-                    .replace(':column', column)
-                    .replace(':format', format);
-
-                console.log("Generated URL:", url);
-                window.location.href = url;
-            }
-
-
+            fetch(`/business/${businessSlug}/payroll/send-payslips`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        employee_payroll_id: employeePayrollId
+                    })
+                })
+                .then(response => response.ok ? response.json() : response.text().then(text => {
+                    throw new Error(text);
+                }))
+                .then(data => Swal.fire('Success!', data.message || 'Payslip queued for sending.',
+                    'success'))
+                .catch(error => Swal.fire('Error!', error.message || 'Failed to send payslip.',
+                    'error'));
         });
     });
 
-    // Update dropdown button text on selection
-    document.querySelectorAll('.dropdown-item.download-column').forEach(item => {
-        item.addEventListener('click', function(e) {
-            const column = this.getAttribute('data-column');
-            const format = this.getAttribute('data-format');
-            const button = document.getElementById('downloadColumnDropdown');
-            button.innerHTML =
-                `<i class="bi bi-download me-2"></i> Download ${column} (${format.toUpperCase()})`;
+    document.querySelectorAll('.view-payslip').forEach(button => {
+        button.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-employee-id');
+            const payrollId = this.getAttribute('data-payroll-id');
+            const modalBody = document.getElementById('payslipModalBody');
+            const businessSlug = '{{ $business->slug }}';
+            modalBody.innerHTML = '<p>Loading payslip...</p>';
+            fetch(`/business/${businessSlug}/payroll/payslip/${employeeId}?payroll_id=${payrollId}`)
+                .then(response => response.ok ? response.text() : Promise.reject(
+                    'Failed to load payslip'))
+                .then(html => modalBody.innerHTML = html)
+                .catch(error => modalBody.innerHTML =
+                    '<p>Error loading payslip. Please try again.</p>');
+        });
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".download-column").forEach(item => {
+            item.addEventListener("click", function(e) {
+                e.preventDefault();
+                const column = this.getAttribute("data-column");
+                const format = this.getAttribute("data-format");
+                const button = document.getElementById("downloadColumnDropdown");
+                const businessSlug = '{{ $business->slug }}';
+                const payrollId = '{{ $payroll->id }}';
+                button.innerHTML =
+                    `<i class="bi bi-download me-2"></i> Downloading ${column} (${format.toUpperCase()})`;
+                const url =
+                    `{{ route('business.payroll.download_column', ['business' => $business->slug, 'id' => $payroll->id, 'column' => ':column', 'format' => ':format']) }}`
+                    .replace(':column', column)
+                    .replace(':format', format);
+                console.log("Generated URL:", url);
+                window.location.href = url;
+                setTimeout(() => {
+                    button.innerHTML =
+                        `<i class="bi bi-download me-2"></i> Download Column`;
+                }, 2000);
+            });
         });
     });
     </script>

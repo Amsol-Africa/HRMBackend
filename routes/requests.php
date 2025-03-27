@@ -175,7 +175,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [LocationController::class, 'update'])->name('update');
     });
 
-    // new payroll routes
+    // routes/web.php
     Route::name('payroll.')->prefix('payroll')->group(function () {
         Route::post('/fetch', [PayrollController::class, 'fetch'])->name('fetch');
         Route::post('/filter', [PayrollController::class, 'filter'])->name('filter');
@@ -183,15 +183,18 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/employee-adjustments', [PayrollController::class, 'getEmployeeAdjustments'])->name('employee.adjustments');
         Route::post('/preview', [PayrollController::class, 'preview'])->name('preview');
         Route::post('/store', [PayrollController::class, 'store'])->name('store');
-        Route::post('/send-payslips', [PayrollController::class, 'sendPayslips'])->name('send-payslips');
         Route::post('/close', [PayrollController::class, 'close'])->name('close');
+
+        // Routes for payroll settings
+        Route::post('/fetch-employees-for-settings', [PayrollController::class, 'fetchEmployeesForSettings'])->name('fetch-employees-for-settings');
+        Route::post('/save-settings', [PayrollController::class, 'saveSettings'])->name('save-settings');
+        Route::get('/available-items', [PayrollController::class, 'availableItems'])->name('available-items');
+        Route::get('/default-amount/{type}/{itemId}', [PayrollController::class, 'defaultAmount'])->name('default-amount');
 
         Route::post('/{id}/process', [PayrollController::class, 'processPayroll'])->name('process');
         Route::post('/{id}/email-p9', [PayrollController::class, 'emailP9'])->name('email_p9');
+        Route::post('/{id}/close', [PayrollController::class, 'closeMonth'])->name('close');
         Route::post('/{id}/delete', [PayrollController::class, 'deletePayroll'])->name('delete');
-        Route::post('/{id}/publish', [PayrollController::class, 'publishPayroll'])->name('publish');
-        Route::post('/{id}/unpublish', [PayrollController::class, 'unpublishPayroll'])->name('unpublish');
-        Route::post('/{id}/email-payslips', [PayrollController::class, 'emailPayslips'])->name('email_payslips');
     });
 
     Route::name('advances.')->prefix('advances')->group(function () {

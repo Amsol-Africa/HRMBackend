@@ -3,22 +3,17 @@ import RequestClient from "/js/client/RequestClient.js";
 const requestClient = new RequestClient();
 let selectedPayrolls = [];
 
-// Toggle select all checkboxes
 const toggleSelectAll = function () {
     const selectAll = document.getElementById('selectAllPayrolls');
     const checkboxes = document.querySelectorAll('.payrollCheckbox');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectAll.checked;
-    });
+    checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
     updateSelectedPayrolls();
 };
 
-// Update the list of selected payrolls
 const updateSelectedPayrolls = function () {
     selectedPayrolls = Array.from(document.querySelectorAll('.payrollCheckbox:checked')).map(checkbox => checkbox.value);
 };
 
-// Filter payrolls based on form inputs
 const filterPayrolls = async function () {
     const formData = new FormData(document.getElementById("payrollFilterForm"));
     try {
@@ -29,19 +24,16 @@ const filterPayrolls = async function () {
     }
 };
 
-// Clear filter form and refresh payrolls
 const clearFilters = function () {
     document.getElementById("payrollFilterForm").reset();
     filterPayrolls();
 };
 
-// Process a payroll
 const processPayroll = async function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {
         Swal.fire('Error!', 'Please select exactly one payroll to process.', 'error');
         return;
     }
-
     const payrollId = id || selectedPayrolls[0];
     try {
         const response = await requestClient.post(`/payroll/${payrollId}/process`, {});
@@ -52,7 +44,6 @@ const processPayroll = async function (id = null) {
     }
 };
 
-// Delete selected payrolls
 const deletePayroll = async function (id = null) {
     if (!id && selectedPayrolls.length === 0) {
         Swal.fire('Error!', 'Please select at least one payroll to delete.', 'error');
@@ -72,7 +63,16 @@ const deletePayroll = async function (id = null) {
         if (result.isConfirmed) {
             try {
                 for (const payrollId of payrollIds) {
-                    await requestClient.post(`/payroll/${payrollId}/delete`, {});
+                    const response = await requestClient.post(`/payroll/${payrollId}/delete`, {});
+                    if (response.data) {
+                        // Update summary
+                        document.querySelector('.text-danger').textContent = `${response.data.payroll_count} payroll(s) found`;
+                        document.querySelector('h5.text-muted').innerHTML = `
+                            <span class="text-danger">${response.data.payroll_count} payroll(s) found</span> | 
+                            Total Payroll: ${response.data.total_payroll} | 
+                            Total Net Pay: ${response.data.total_net_pay}
+                        `;
+                    }
                 }
                 Swal.fire('Deleted!', 'Payroll(s) deleted successfully.', 'success');
                 filterPayrolls();
@@ -83,45 +83,27 @@ const deletePayroll = async function (id = null) {
     });
 };
 
-// Publish selected payrolls
-const publishPayroll = async function (id = null) {
+const closeMonth = async function (id = null) {
     if (!id && selectedPayrolls.length === 0) {
-        Swal.fire('Error!', 'Please select at least one payroll to publish.', 'error');
+        Swal.fire('Error!', 'Please select at least one payroll to close/open.', 'error');
         return;
     }
 
     const payrollIds = id ? [id] : selectedPayrolls;
     try {
         for (const payrollId of payrollIds) {
-            await requestClient.post(`/payroll/${payrollId}/publish`, {});
+            const response = await requestClient.post(`/payroll/${payrollId}/close`, {});
+            const row = document.querySelector(`.payrollCheckbox[value="${payrollId}"]`).closest('tr');
+            const statusCell = row.querySelector('td:nth-child(4)');
+            statusCell.textContent = response.data.status === 'closed' ? 'closed' : 'open';
         }
-        Swal.fire('Success!', 'Payroll(s) published successfully.', 'success');
+        Swal.fire('Success!', payrollIds.length > 1 ? 'Payroll months updated successfully.' : 'Payroll month updated successfully.', 'success');
         filterPayrolls();
     } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to publish payroll.', 'error');
+        Swal.fire('Error!', error.response?.data?.message || 'Failed to update payroll status.', 'error');
     }
 };
 
-// Unpublish selected payrolls
-const unpublishPayroll = async function (id = null) {
-    if (!id && selectedPayrolls.length === 0) {
-        Swal.fire('Error!', 'Please select at least one payroll to unpublish.', 'error');
-        return;
-    }
-
-    const payrollIds = id ? [id] : selectedPayrolls;
-    try {
-        for (const payrollId of payrollIds) {
-            await requestClient.post(`/payroll/${payrollId}/unpublish`, {});
-        }
-        Swal.fire('Success!', 'Payroll(s) unpublished successfully.', 'success');
-        filterPayrolls();
-    } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to unpublish payroll.', 'error');
-    }
-};
-
-// Send payslips for a single payroll
 const emailPayslips = async function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {
         Swal.fire('Error!', 'Please select exactly one payroll to send payslips for.', 'error');
@@ -131,8 +113,8 @@ const emailPayslips = async function (id = null) {
     const payrollId = id || selectedPayrolls[0];
     const payrollRow = document.querySelector(`.payrollCheckbox[value="${payrollId}"]`).closest('tr');
     const payrollMonth = payrollRow.querySelector('td:nth-child(2)').textContent.trim();
+    const businessSlug = '{{ $business->slug }}'; // Ensure this is available in the Blade view
 
-    // Confirmation prompt
     const result = await Swal.fire({
         title: "Are you sure?",
         text: `You are about to send payslips for ${payrollMonth}. This action cannot be undone.`,
@@ -143,28 +125,34 @@ const emailPayslips = async function (id = null) {
         confirmButtonText: "Yes, send payslips!",
     });
 
-    if (!result.isConfirmed) {
-        return;
-    }
+    if (!result.isConfirmed) return;
 
     try {
-        const response = await requestClient.post('/payroll/send-payslips', { payroll_id: payrollId });
-        console.log('Send Payslips Response:', response);
-        if (response.status === 200 || response.data) {
-            Swal.fire('Success!', `Payslips for ${payrollMonth} have been queued for sending.`, 'success');
-            // Update the "Emailed" column to show ✔
-            const emailedCell = payrollRow.querySelector('td:nth-child(5)');
-            emailedCell.textContent = '✔';
-        } else {
-            Swal.fire('Error!', response.message || 'Failed to send payslips.', 'error');
+        const response = await fetch(`/business/${businessSlug}/payroll/send-payslips`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                payroll_id: payrollId
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server Error (${response.status}): ${errorText}`);
         }
+
+        const data = await response.json();
+        Swal.fire('Success!', data.message || `Payslips for ${payrollMonth} have been queued for sending.`, 'success');
+        payrollRow.querySelector('td:nth-child(5)').textContent = '✔';
     } catch (error) {
-        console.error('Send Payslips Error:', error.response);
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to send payslips.', 'error');
+        console.error('Error sending payslips:', error);
+        Swal.fire('Error!', error.message || 'Failed to send payslips.', 'error');
     }
 };
 
-// Email P9 forms for selected payrolls
 const emailP9 = async function (id = null) {
     if (!id && selectedPayrolls.length === 0) {
         Swal.fire('Error!', 'Please select at least one payroll to email P9 forms.', 'error');
@@ -183,58 +171,48 @@ const emailP9 = async function (id = null) {
     }
 };
 
-// Download a payroll report
-const downloadPayroll = async function (id = null) {
+const downloadPayroll = function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {
         Swal.fire('Error!', 'Please select exactly one payroll to download.', 'error');
         return;
     }
-    const businessSlug = '{{ $business->slug }}';
-    const payrollId = id || selectedPayrolls[0];
-    window.location.href = `business/${businessSlug}/payroll/${payrollId}/download`;
-};
 
-// Print all payslips for a payroll
-const printAllPayslips = async function (id = null) {
-    if (!id && selectedPayrolls.length !== 1) {
-        Swal.fire('Error!', 'Please select exactly one payroll to print payslips.', 'error');
+    const businessSlug = window.businessSlug || '{{ $business->slug }}';
+    const payrollId = id || selectedPayrolls[0];
+
+    if (!businessSlug) {
+        Swal.fire('Error!', 'Business slug not found. Please reload the page.', 'error');
+        console.error('Business slug is undefined');
         return;
     }
 
-    const payrollId = id || selectedPayrolls[0];
-    window.location.href = `/payroll/${payrollId}/print-all-payslips`;
+    const format = 'xlsx';
+    window.location.href = `/business/${businessSlug}/payroll/${payrollId}/download/${format}`;
 };
 
 const viewPayroll = function (id) {
     const currentPath = window.location.pathname;
     const pathSegments = currentPath.split('/').filter(segment => segment);
-    const businessSlug = pathSegments[1]; // Assuming business slug is second segment
-
+    const businessSlug = pathSegments[1];
     if (!businessSlug) {
         console.error('Could not determine business slug from URL');
         return;
     }
-
-    const url = `/business/${businessSlug}/payroll/${id}`;
-    window.location.href = url;
+    window.location.href = `/business/${businessSlug}/payroll/${id}`;
 };
 
-// Expose functions to the global scope
 window.toggleSelectAll = toggleSelectAll;
 window.updateSelectedPayrolls = updateSelectedPayrolls;
 window.filterPayrolls = filterPayrolls;
 window.clearFilters = clearFilters;
 window.processPayroll = processPayroll;
 window.deletePayroll = deletePayroll;
-window.publishPayroll = publishPayroll;
-window.unpublishPayroll = unpublishPayroll;
+window.closeMonth = closeMonth;
 window.emailPayslips = emailPayslips;
 window.emailP9 = emailP9;
 window.downloadPayroll = downloadPayroll;
-window.printAllPayslips = printAllPayslips;
 window.viewPayroll = viewPayroll;
 
-// Initialize the page
 document.addEventListener('DOMContentLoaded', () => {
     filterPayrolls();
 });

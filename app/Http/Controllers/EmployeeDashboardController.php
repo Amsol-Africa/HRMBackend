@@ -12,6 +12,9 @@ use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Models\EmployeePayroll;
+use App\Models\Location;
+use App\Http\Responses\RequestResponse;
 
 class EmployeeDashboardController extends Controller
 {
@@ -101,12 +104,51 @@ class EmployeeDashboardController extends Controller
         return response()->download($p9Path);
     }
 
-    // View Payment Slips
-    public function viewPayslips()
+    public function viewPayslips(Request $request, $business)
     {
-        $page = "Payslips";
-        $payslips = Payslip::where('employee_id', Auth::id())->latest()->get();
-        return view('employee.payslips', compact('page', 'payslips'));
+        $business = Business::findBySlug($business);
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
+
+        if (session('active_business_slug') !== $business->slug) {
+            return RequestResponse::badRequest('Business mismatch.');
+        }
+
+        $user = Auth::user();
+        if (!$user) {
+            return RequestResponse::badRequest('User not authenticated.');
+        }
+
+        // dd($user);
+
+        $employee = Employee::where('business_id', $business->id)
+            ->where('user_id', $user->id)
+            ->with('user')
+            ->first();
+        if (!$employee) {
+            return RequestResponse::badRequest('Employee record not found for this user.');
+        }
+
+        $payslips = EmployeePayroll::where('employee_id', $employee->id)
+            ->with(['payroll'])
+            ->get()
+            ->map(function ($employeePayroll) {
+                return [
+                    'payroll_id' => $employeePayroll->payroll_id,
+                    'year' => $employeePayroll->payroll->payrun_year,
+                    'month' => $employeePayroll->payroll->payrun_month,
+                    'month_name' => Carbon::create($employeePayroll->payroll->payrun_year, $employeePayroll->payroll->payrun_month, 1)->monthName,
+                    'status' => $employeePayroll->payroll->status,
+                ];
+            })
+            ->sortByDesc('year')
+            ->sortByDesc('month')
+            ->values();
+
+        $page = "My Payslips";
+
+        return view('employee.payslips', compact('page', 'payslips', 'employee', 'business'));
     }
 
     public function downloadPayslip($id)

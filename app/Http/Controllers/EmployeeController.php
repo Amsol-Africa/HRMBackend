@@ -33,8 +33,16 @@ class EmployeeController extends Controller
         }
 
         $employees = Employee::where('business_id', $business->id)
-            ->with(['user', 'business', 'location', 'department']) // Added 'location' and 'department'
+            ->with([
+                'user',
+                'business',
+                'location',
+                'department',
+                'employmentDetails.jobCategory',
+                'paymentDetails'
+            ])
             ->get();
+
         $departments = Department::where('business_id', $business->id)->get();
         $locations = Location::where('business_id', $business->id)->get();
         $jobCategories = JobCategory::where('business_id', $business->id)->get();
@@ -45,7 +53,8 @@ class EmployeeController extends Controller
     public function fetch(Request $request)
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $query = Employee::where('business_id', $business->id)->with('user', 'department', 'location', 'paymentDetails', 'jobCategory');
+        $query = Employee::where('business_id', $business->id)
+            ->with(['user', 'department', 'location', 'paymentDetails', 'employmentDetails.jobCategory']);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -60,7 +69,9 @@ class EmployeeController extends Controller
             $query->where('location_id', $location);
         }
         if ($jobCategory = $request->input('job_category')) {
-            $query->where('id', $jobCategory);
+            $query->whereHas('employmentDetails', function ($q) use ($jobCategory) {
+                $q->where('job_category_id', $jobCategory);
+            });
         }
 
         $employees = $query->paginate(10);
@@ -70,9 +81,9 @@ class EmployeeController extends Controller
                 'name' => $employee->user->name,
                 'employee_code' => $employee->employee_code,
                 'department' => $employee->department ? $employee->department->name : 'N/A',
+                'job_category' => optional($employee->employmentDetails)->jobCategory ? $employee->employmentDetails->jobCategory->name : 'N/A',
                 'location' => $employee->location ? $employee->location->name : $employee->business->company_name,
-                'job_category' => $employee->jobCategory ? $employee->jobCategory->name : 'N/A',
-                'basic_salary' => number_format((float) ($employee->paymentDetails->basic_salary ?? 0), 2) . ' ' . $employee->paymentDetails->currency  ?? 'N/A',
+                'basic_salary' => number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2) . ' ' . (optional($employee->paymentDetails)->currency ?? 'N/A'),
                 'actions' => '<div class="btn-group">' .
                     '<button class="btn btn-sm btn-outline-primary" onclick="viewEmployee(' . $employee->id . ')"><i class="fa fa-eye"></i> View</button>' .
                     '<button class="btn btn-sm btn-outline-warning" onclick="editEmployee(' . $employee->id . ')"><i class="fa fa-edit"></i> Edit</button>' .
@@ -100,6 +111,7 @@ class EmployeeController extends Controller
             'gender' => 'required|string|max:20',
             'employee_code' => 'required|string|unique:employees,employee_code|max:50',
             'department_id' => 'nullable|exists:departments,id',
+            'job_category_id' => 'nullable|exists:job_categories,id',
             'location_id' => 'nullable|exists:locations,id',
             'basic_salary' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
@@ -116,26 +128,29 @@ class EmployeeController extends Controller
             'permanent_address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'profile_picture' => 'nullable|file|image|max:2048',
+            'employment_term' => 'required|in:permanent,contract,temporary,internship',
         ]);
+
+        Log::debug('Creating Employee - Validated Data:', $validated);
 
         $business = Business::findBySlug(session('active_business_slug'));
 
         try {
             DB::beginTransaction();
 
-            // Create user
             $user = User::create([
                 'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
                 'email' => $validated['email'],
-                'password' => Hash::make(Str::random(16)),
+                'phone' => $validated['phone'],
+                'password' => "amsol_employee",
             ]);
 
-            // Create employee
             $employee = Employee::create([
                 'user_id' => $user->id,
                 'business_id' => $business->id,
                 'employee_code' => $validated['employee_code'],
                 'department_id' => $validated['department_id'] ?? null,
+                'job_category_id' => $validated['job_category_id'] ?? null,
                 'location_id' => $validated['location_id'] ?? null,
                 'national_id' => $validated['national_id'] ?? null,
                 'marital_status' => $validated['marital_status'] ?? null,
@@ -147,7 +162,13 @@ class EmployeeController extends Controller
                 'phone' => $validated['phone'] ?? null,
             ]);
 
-            // Create payment details
+            $employee->employmentDetails()->create([
+                'job_category_id' => $validated['job_category_id'] ?? null,
+                'department_id' => $validated['department_id'] ?? null,
+                'employment_date' => $validated['employment_date'] ?? now(),
+                'employment_term' => $validated['employment_term'],
+            ]);
+
             $employee->paymentDetails()->create([
                 'basic_salary' => $validated['basic_salary'],
                 'currency' => $validated['currency'],
@@ -157,21 +178,13 @@ class EmployeeController extends Controller
                 'bank_name' => $validated['bank_name'],
             ]);
 
-            // Handle profile picture upload
-            if ($request->hasFile('profile_picture')) {
-                $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
-            }
-
             DB::commit();
+            Log::debug('Employee created successfully.', ['employee_id' => $employee->id]);
 
             return RequestResponse::created('Employee created successfully.', $employee->id);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            if (isset($user)) {
-                $user->delete();
-            }
-
+            Log::error('Failed to create employee.', ['error' => $e->getMessage()]);
             return RequestResponse::badRequest('Failed to create employee. ' . $e->getMessage());
         }
     }
@@ -180,11 +193,12 @@ class EmployeeController extends Controller
     {
         try {
             $business = Business::findBySlug(session('active_business_slug'));
-            $employee = $request->employee_id ? Employee::with('user', 'paymentDetails')->findOrFail($request->employee_id) : null;
+            $employee = $request->employee_id ? Employee::with('user', 'paymentDetails', 'employmentDetails')->findOrFail($request->employee_id) : null;
             $departments = Department::where('business_id', $business->id)->get();
             $locations = Location::where('business_id', $business->id)->get();
+            $jobCategories = JobCategory::where('business_id', $business->id)->get();
 
-            $form = view('employees._form', compact('employee', 'departments', 'locations', 'business'))->render();
+            $form = view('employees._form', compact('employee', 'departments', 'locations', 'jobCategories', 'business'))->render();
             return response()->json([
                 'message' => 'Form loaded successfully.',
                 'data' => $form
@@ -208,6 +222,7 @@ class EmployeeController extends Controller
             'gender' => 'required|string|max:20',
             'employee_code' => 'required|string|unique:employees,employee_code,' . $id . ',id',
             'department_id' => 'nullable|exists:departments,id',
+            'job_category_id' => 'nullable|exists:job_categories,id',
             'location_id' => 'nullable|exists:locations,id',
             'basic_salary' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
@@ -224,15 +239,21 @@ class EmployeeController extends Controller
             'permanent_address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'profile_picture' => 'nullable|file|image|max:2048',
+            'employment_term' => 'required|in:permanent,contract,temporary,internship',
         ]);
+
+        Log::info('Updating employee ID: ' . $id, ['validated_data' => $validated]);
 
         DB::beginTransaction();
         try {
             $employee = Employee::findOrFail($id);
 
+            Log::info('Before Update - Employee Data', ['employee' => $employee->toArray()]);
+
             $employee->update([
                 'employee_code' => $validated['employee_code'],
                 'department_id' => $validated['department_id'] ?? null,
+                'job_category_id' => $validated['job_category_id'] ?? null,
                 'location_id' => $validated['location_id'] ?? null,
                 'national_id' => $validated['national_id'] ?? null,
                 'tax_no' => $validated['tax_no'] ?? null,
@@ -244,12 +265,27 @@ class EmployeeController extends Controller
                 'phone' => $validated['phone'] ?? null,
             ]);
 
+            Log::info('After Update - Employee Data', ['employee' => $employee->toArray()]);
+
             $employee->user->update([
                 'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
                 'email' => $validated['email'],
+                'phone' => $validated['phone'],
             ]);
 
-            $employee->paymentDetails()->updateOrCreate(
+            $employmentDetails = $employee->employmentDetails()->updateOrCreate(
+                ['employee_id' => $employee->id],
+                [
+                    'job_category_id' => $validated['job_category_id'] ?? null,
+                    'department_id' => $validated['department_id'] ?? null,
+                    'employment_term' => $validated['employment_term'],
+                    'employment_date' => $validated['employment_date'] ?? now(),
+                ]
+            );
+
+            Log::info('Employment Details Updated', ['employment_details' => $employmentDetails->toArray()]);
+
+            $paymentDetails = $employee->paymentDetails()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
                     'basic_salary' => $validated['basic_salary'],
@@ -261,19 +297,28 @@ class EmployeeController extends Controller
                 ]
             );
 
+            Log::info('Payment Details Updated', ['payment_details' => $paymentDetails->toArray()]);
+
             if ($request->hasFile('profile_picture')) {
                 $employee->clearMediaCollection('avatars');
                 $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
+                Log::info('Profile picture updated for employee ID: ' . $id);
             }
 
             DB::commit();
+            Log::info('Employee update transaction committed.', ['employee_id' => $id]);
+
             return RequestResponse::ok('Employee updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Failed to update employee: ' . $e->getMessage(), [
+                'employee_id' => $id,
+                'request_data' => $request->all()
+            ]);
+
             return RequestResponse::badRequest('Failed to update employee: ' . $e->getMessage());
         }
     }
-
 
     public function destroy(Request $request, $id)
     {
@@ -462,12 +507,17 @@ class EmployeeController extends Controller
 
         $file = $request->file('file');
         $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
+
         $errors = [];
         $successful = 0;
 
-        // Pre-fetch departments and locations for faster lookups
         $departments = $business->departments()->pluck('id', 'name')->toArray();
         $locations = $business->locations()->pluck('id', 'name')->toArray();
+        $locations[$business->name] = null; // Add business name as a valid location (no ID needed if not in DB)
+        $jobCategories = $business->job_categories()->pluck('id', 'name')->toArray();
 
         try {
             DB::beginTransaction();
@@ -478,41 +528,35 @@ class EmployeeController extends Controller
             }
             $headers = array_shift($records);
             $records = array_map(function ($row) use ($headers) {
-                return array_combine($headers, $row);
+                return array_combine($headers, array_map('trim', $row));
             }, $records);
-
-            Log::debug('Import records:', $records);
-
-            if (empty($records)) {
-                return RequestResponse::badRequest('No data found in the uploaded file.', ['errors' => ['The file contains no records to import.']]);
-            }
 
             foreach ($records as $index => $row) {
                 try {
-                    $name = trim("{$row['first_name']} " . ($row['middle_name'] ?? '') . " {$row['last_name']}");
-                    $phone = "+{$row['phone_code']}{$row['phone']}";
-
-                    // Validate required fields
                     $validator = Validator::make($row, [
                         'first_name' => 'required|string|max:255',
                         'last_name' => 'required|string|max:255',
-                        'email' => [
-                            'required',
-                            'email:rfc,dns',
-                            'unique:users,email',
-                            'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/'
-                        ],
-                        'phone' => 'required|numeric|digits_between:9,12',
-                        'phone_code' => 'nullable|numeric|digits_between:1,3',
-                        'phone_country' => 'nullable|string',
-                        'password' => 'nullable|string|min:8',
+                        'email' => 'required|email|unique:users,email',
+                        'gender' => 'required|string|max:20',
                         'employee_code' => 'required|string|unique:employees,employee_code|max:50',
-                        'gender' => 'required|in:male,female',
+                        'department' => 'nullable|string|exists:departments,name',
+                        'job_category' => 'nullable|string|exists:job_categories,name',
+                        'location' => 'nullable|string|in:' . implode(',', array_keys($locations)), // Updated to include business name
+                        'basic_salary' => 'required|numeric|min:0',
+                        'currency' => 'required|string|size:3',
+                        'payment_mode' => 'required|in:bank,cash,cheque,mpesa', // Updated to match enum
+                        'account_name' => 'required|string|max:255',
+                        'account_number' => 'required|string|unique:employee_payment_details,account_number|max:50',
+                        'bank_name' => 'required|string|max:255',
+                        'national_id' => 'nullable|string|unique:employees,national_id',
+                        'tax_no' => 'nullable|string|max:20',
                         'date_of_birth' => 'required|date|before:today',
-                        'marital_status' => 'nullable|in:single,married,divorced,widowed',
-                        'national_id' => 'required|numeric|digits_between:5,10|unique:employees,national_id',
-                        'department' => 'required|string',
-                        'location' => 'nullable|string',
+                        'marital_status' => 'required|string|max:20',
+                        'nhif_no' => 'required|string|max:20',
+                        'nssf_no' => 'required|string|max:20',
+                        'permanent_address' => 'required|string|max:255',
+                        'phone' => 'required|string|max:20',
+                        'employment_term' => 'required|in:permanent,contract,temporary,internship',
                     ]);
 
                     if ($validator->fails()) {
@@ -520,51 +564,61 @@ class EmployeeController extends Controller
                         continue;
                     }
 
-                    // Validate department exists
-                    if (!isset($departments[$row['department']])) {
+                    $departmentId = !empty($row['department']) ? ($departments[$row['department']] ?? null) : null;
+                    $jobCategoryId = !empty($row['job_category']) ? ($jobCategories[$row['job_category']] ?? null) : null;
+                    $locationId = !empty($row['location']) && isset($locations[$row['location']]) ? $locations[$row['location']] : null;
+
+                    if (!empty($row['department']) && !$departmentId) {
                         $errors[] = "Row " . ($index + 2) . ": Department '{$row['department']}' not found.";
                         continue;
                     }
-
-                    // Validate location exists if provided
-                    if (!empty($row['location']) && !isset($locations[$row['location']])) {
+                    if (!empty($row['job_category']) && !$jobCategoryId) {
+                        $errors[] = "Row " . ($index + 2) . ": Job Category '{$row['job_category']}' not found.";
+                        continue;
+                    }
+                    if (!empty($row['location']) && !array_key_exists($row['location'], $locations)) {
                         $errors[] = "Row " . ($index + 2) . ": Location '{$row['location']}' not found.";
                         continue;
                     }
 
-                    // Create user
                     $user = User::create([
-                        'name' => $name,
+                        'name' => trim("{$row['first_name']} {$row['last_name']}"),
                         'email' => $row['email'],
-                        'phone' => $phone,
-                        'code' => $row['phone_code'],
-                        'country' => $row['phone_country'],
-                        'password' => Hash::make($row['password']),
+                        'phone' => $row['phone'],
+                        'password' => Hash::make("amsol_employee"),
                     ]);
-                    $user->setStatus('active');
-                    $user->assignRole('employee');
 
-                    // Create employee with department and location IDs
                     $employee = $business->employees()->create([
                         'user_id' => $user->id,
                         'employee_code' => $row['employee_code'],
-                        'department_id' => $departments[$row['department']],
-                        'location_id' => !empty($row['location']) ? $locations[$row['location']] : null,
-                        'gender' => $row['gender'],
-                        'alternate_phone' => $row['alternate_phone'] ?? null,
-                        'date_of_birth' => $row['date_of_birth'],
+                        'department_id' => $departmentId,
+                        'job_category_id' => $jobCategoryId,
+                        'location_id' => $locationId,
+                        'national_id' => $row['national_id'] ?? null,
                         'marital_status' => $row['marital_status'],
-                        'national_id' => $row['national_id'],
-                        'place_of_issue' => $row['place_of_issue'] ?? null,
+                        'nhif_no' => $row['nhif_no'],
+                        'nssf_no' => $row['nssf_no'],
                         'tax_no' => $row['tax_no'] ?? null,
-                        'nhif_no' => $row['nhif_no'] ?? null,
-                        'nssf_no' => $row['nssf_no'] ?? null,
-                        'passport_no' => $row['passport_no'] ?? null,
-                        'passport_issue_date' => $row['passport_issue_date'] ?? null,
-                        'passport_expiry_date' => $row['passport_expiry_date'] ?? null,
-                        'address' => $row['address'] ?? null,
-                        'permanent_address' => $row['permanent_address'] ?? null,
-                        'blood_group' => $row['blood_group'] ?? null,
+                        'date_of_birth' => $row['date_of_birth'],
+                        'gender' => $row['gender'],
+                        'phone' => $row['phone'],
+                        'permanent_address' => $row['permanent_address'],
+                    ]);
+
+                    $employee->employmentDetails()->create([
+                        'job_category_id' => $jobCategoryId,
+                        'department_id' => $departmentId,
+                        'employment_date' => now(),
+                        'employment_term' => $row['employment_term'],
+                    ]);
+
+                    $employee->paymentDetails()->create([
+                        'basic_salary' => $row['basic_salary'],
+                        'currency' => $row['currency'],
+                        'payment_mode' => $row['payment_mode'], // Now matches enum
+                        'account_name' => $row['account_name'],
+                        'account_number' => $row['account_number'],
+                        'bank_name' => $row['bank_name'],
                     ]);
 
                     $successful++;
@@ -595,71 +649,72 @@ class EmployeeController extends Controller
     public function downloadXlsxTemplate()
     {
         $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
 
         $departments = $business->departments()->pluck('name')->toArray();
         $locations = $business->locations()->pluck('name')->toArray();
+        $jobCategories = $business->job_categories()->pluck('name')->toArray();
+
+        // Add the main business name to locations
+        $locations[] = $business->name;
 
         $headers = [
             'first_name',
-            'middle_name',
             'last_name',
             'email',
             'phone',
-            'phone_code',
-            'phone_country',
-            'password',
-            'employee_code',
             'gender',
-            'alternate_phone',
+            'employee_code',
+            'department',
+            'job_category',
+            'location',
+            'basic_salary',
+            'currency',
+            'payment_mode',
+            'account_name',
+            'account_number',
+            'bank_name',
+            'national_id',
+            'tax_no',
             'date_of_birth',
             'marital_status',
-            'national_id',
-            'place_of_issue',
-            'tax_no',
             'nhif_no',
             'nssf_no',
-            'passport_no',
-            'passport_issue_date',
-            'passport_expiry_date',
-            'address',
             'permanent_address',
-            'blood_group',
-            'department',
-            'location'
+            'employment_term',
         ];
 
         $sampleData = [
             [
                 'John',
-                'Doe',
                 'Smith',
                 'john.smith@example.com',
-                '712345678',
-                '254',
-                'Kenya',
-                'password123',
-                'EMP001',
+                '+254712345678',
                 'male',
-                '0712345679',
+                'EMP001',
+                $departments[0] ?? 'HR',
+                $jobCategories[0] ?? 'Manager',
+                $locations[0] ?? 'Nairobi',
+                '50000.00',
+                'KES',
+                'bank', // Updated from 'bank_transfer' to match enum
+                'John Smith',
+                '1234567890',
+                'Equity Bank',
+                '12345678',
+                'KRA12345',
                 '1990-05-15',
                 'single',
-                '12345678',
-                'Nairobi',
-                'KRA12345',
                 'NHIF56789',
                 'NSSF98765',
-                'A1234567',
-                '2015-06-20',
-                '2025-06-20',
-                'Olelengpu, Nairobi',
-                '456 Avenue, Mombasa',
-                'O+',
-                $departments[0] ?? '',
-                $locations[0] ?? ''
+                'P.O. Box 456, Nairobi',
+                'permanent',
             ]
         ];
 
-        return Excel::download(new class($headers, $sampleData, $departments, $locations) implements
+        return Excel::download(new class($headers, $sampleData, $departments, $locations, $jobCategories) implements
             \Maatwebsite\Excel\Concerns\FromArray,
             \Maatwebsite\Excel\Concerns\WithValidation,
             \Maatwebsite\Excel\Concerns\WithEvents
@@ -668,13 +723,15 @@ class EmployeeController extends Controller
             private $sampleData;
             private $departments;
             private $locations;
+            private $jobCategories;
 
-            public function __construct(array $headers, array $sampleData, array $departments, array $locations)
+            public function __construct(array $headers, array $sampleData, array $departments, array $locations, array $jobCategories)
             {
                 $this->headers = $headers;
                 $this->sampleData = $sampleData;
                 $this->departments = $departments;
                 $this->locations = $locations;
+                $this->jobCategories = $jobCategories;
             }
 
             public function array(): array
@@ -688,35 +745,119 @@ class EmployeeController extends Controller
                     AfterSheet::class => function (AfterSheet $event) {
                         $sheet = $event->sheet->getDelegate();
 
-                        // Gender dropdown
-                        $validation = $sheet->getCell('J2')->getDataValidation();
-                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
-                        $validation->setAllowBlank(false);
-                        $validation->setShowInputMessage(true);
-                        $validation->setShowErrorMessage(true);
-                        $validation->setShowDropDown(true);
-                        $validation->setFormula1('"male,female"');
+                        // Style headers: bold and background color
+                        $sheet->getStyle('A1:W1')->applyFromArray([
+                            'font' => ['bold' => true],
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => ['argb' => 'FFCCCCCC'],
+                            ],
+                        ]);
 
-                        // Department dropdown
-                        $validation = $sheet->getCell('Y2')->getDataValidation();
-                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
-                        $validation->setAllowBlank(false);
-                        $validation->setShowInputMessage(true);
-                        $validation->setShowErrorMessage(true);
-                        $validation->setShowDropDown(true);
-                        $validation->setFormula1('"' . implode(',', $this->departments) . '"');
+                        // Set column widths for readability
+                        $sheet->getColumnDimension('A')->setWidth(15);
+                        $sheet->getColumnDimension('B')->setWidth(15);
+                        $sheet->getColumnDimension('C')->setWidth(25);
+                        $sheet->getColumnDimension('D')->setWidth(15);
+                        $sheet->getColumnDimension('E')->setWidth(10);
+                        $sheet->getColumnDimension('F')->setWidth(12);
+                        $sheet->getColumnDimension('G')->setWidth(15);
+                        $sheet->getColumnDimension('H')->setWidth(15);
+                        $sheet->getColumnDimension('I')->setWidth(15);
+                        $sheet->getColumnDimension('J')->setWidth(12);
+                        $sheet->getColumnDimension('K')->setWidth(10);
+                        $sheet->getColumnDimension('L')->setWidth(15);
+                        $sheet->getColumnDimension('M')->setWidth(20);
+                        $sheet->getColumnDimension('N')->setWidth(15);
+                        $sheet->getColumnDimension('O')->setWidth(15);
+                        $sheet->getColumnDimension('P')->setWidth(12);
+                        $sheet->getColumnDimension('Q')->setWidth(12);
+                        $sheet->getColumnDimension('R')->setWidth(12);
+                        $sheet->getColumnDimension('S')->setWidth(12);
+                        $sheet->getColumnDimension('T')->setWidth(12);
+                        $sheet->getColumnDimension('U')->setWidth(12);
+                        $sheet->getColumnDimension('V')->setWidth(25);
+                        $sheet->getColumnDimension('W')->setWidth(15);
 
-                        // Location dropdown
-                        $validation = $sheet->getCell('Z2')->getDataValidation();
-                        $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
-                        $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_INFORMATION);
-                        $validation->setAllowBlank(false);
-                        $validation->setShowInputMessage(true);
-                        $validation->setShowErrorMessage(true);
-                        $validation->setShowDropDown(true);
-                        $validation->setFormula1('"' . implode(',', $this->locations) . '"');
+                        // Define helper function to apply validation to a range
+                        $applyValidation = function ($range, $options) use ($sheet) {
+                            $validation = $sheet->getDataValidation($range);
+                            $validation->setType(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::TYPE_LIST);
+                            $validation->setErrorStyle(\PhpOffice\PhpSpreadsheet\Cell\DataValidation::STYLE_STOP);
+                            $validation->setAllowBlank($options['allowBlank'] ?? false);
+                            $validation->setShowInputMessage(true);
+                            $validation->setShowErrorMessage(true);
+                            $validation->setShowDropDown(true);
+                            $validation->setPromptTitle($options['promptTitle']);
+                            $validation->setPrompt($options['prompt']);
+                            $validation->setErrorTitle($options['errorTitle']);
+                            $validation->setError($options['error']);
+                            $validation->setFormula1($options['formula']);
+                        };
+
+                        // Apply validations to ranges (rows 2 to 1000)
+                        $applyValidation('E2:E1000', [
+                            'promptTitle' => 'Gender',
+                            'prompt' => 'Select gender',
+                            'errorTitle' => 'Invalid Gender',
+                            'error' => 'Please select a valid gender from the list.',
+                            'formula' => '"male,female"',
+                            'allowBlank' => false,
+                        ]);
+
+                        $applyValidation('G2:G1000', [
+                            'promptTitle' => 'Department',
+                            'prompt' => 'Select a department (optional)',
+                            'errorTitle' => 'Invalid Department',
+                            'error' => 'Please select a valid department from the list.',
+                            'formula' => '"' . implode(',', $this->departments) . '"',
+                            'allowBlank' => true,
+                        ]);
+
+                        $applyValidation('H2:H1000', [
+                            'promptTitle' => 'Job Category',
+                            'prompt' => 'Select a job category (optional)',
+                            'errorTitle' => 'Invalid Job Category',
+                            'error' => 'Please select a valid job category from the list.',
+                            'formula' => '"' . implode(',', $this->jobCategories) . '"',
+                            'allowBlank' => true,
+                        ]);
+
+                        $applyValidation('I2:I1000', [
+                            'promptTitle' => 'Location',
+                            'prompt' => 'Select a location (optional)',
+                            'errorTitle' => 'Invalid Location',
+                            'error' => 'Please select a valid location from the list.',
+                            'formula' => '"' . implode(',', $this->locations) . '"',
+                            'allowBlank' => true,
+                        ]);
+
+                        $applyValidation('L2:L1000', [
+                            'promptTitle' => 'Payment Mode',
+                            'prompt' => 'Select a payment mode',
+                            'errorTitle' => 'Invalid Payment Mode',
+                            'error' => 'Please select a valid payment mode from the list.',
+                            'formula' => '"bank,cash,cheque,mpesa"', // Updated to match enum
+                            'allowBlank' => false,
+                        ]);
+
+                        $applyValidation('S2:S1000', [
+                            'promptTitle' => 'Marital Status',
+                            'prompt' => 'Select marital status',
+                            'errorTitle' => 'Invalid Marital Status',
+                            'error' => 'Please select a valid marital status from the list.',
+                            'formula' => '"single,married,divorced,widowed"',
+                            'allowBlank' => false,
+                        ]);
+
+                        $applyValidation('W2:W1000', [
+                            'promptTitle' => 'Employment Term',
+                            'prompt' => 'Select employment term',
+                            'errorTitle' => 'Invalid Employment Term',
+                            'error' => 'Please select a valid employment term from the list.',
+                            'formula' => '"permanent,contract,temporary,internship"',
+                            'allowBlank' => false,
+                        ]);
                     }
                 ];
             }
@@ -724,9 +865,13 @@ class EmployeeController extends Controller
             public function rules(): array
             {
                 return [
-                    'J' => 'in:male,female',
-                    'Y' => 'in:' . implode(',', $this->departments),
-                    'Z' => 'in:' . implode(',', $this->locations),
+                    'E' => 'in:male,female',
+                    'G' => 'nullable|in:' . implode(',', $this->departments),
+                    'H' => 'nullable|in:' . implode(',', $this->jobCategories),
+                    'I' => 'nullable|in:' . implode(',', $this->locations),
+                    'L' => 'in:bank,cash,cheque,mpesa', // Updated to match enum
+                    'S' => 'in:single,married,divorced,widowed',
+                    'W' => 'in:permanent,contract,temporary,internship',
                 ];
             }
         }, 'employees_template.xlsx');

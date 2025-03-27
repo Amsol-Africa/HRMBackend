@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="Import Employees">
     <div class="row mb-4">
         <div class="col-md-8 mx-auto">
             <div class="card">

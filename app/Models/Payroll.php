@@ -18,6 +18,7 @@ class Payroll extends Model
         'staff',
         'payrun_year',
         'payrun_month',
+        'status',
     ];
 
     public function business()
@@ -49,5 +50,4 @@ class Payroll extends Model
         $monthName = date('M', mktime(0, 0, 0, $this->payrun_month, 1));
         return "Payroll - {$monthName} / {$this->payrun_year}";
     }
-
 }

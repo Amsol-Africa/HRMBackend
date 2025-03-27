@@ -5,93 +5,93 @@
     <meta charset="UTF-8">
     <title>{{ ucwords(str_replace('_', ' ', $column)) }} Report - Payroll {{ $payroll->id }}</title>
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 5mm;
-            font-size: 12pt;
-            color: #1a202c;
-        }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 5mm;
+        font-size: 12pt;
+        color: #1a202c;
+    }
 
-        .header,
-        .footer {
-            width: 100%;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #1a202c;
-        }
+    .header,
+    .footer {
+        width: 100%;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #1a202c;
+    }
 
-        .header .left,
-        .header .right {
-            width: 48%;
-            display: inline-block;
-            vertical-align: top;
-        }
+    .header .left,
+    .header .right {
+        width: 48%;
+        display: inline-block;
+        vertical-align: top;
+    }
 
-        .header .left {
-            margin-right: 3%;
-        }
+    .header .left {
+        margin-right: 3%;
+    }
 
-        .header .right {
-            text-align: right;
-        }
+    .header .right {
+        text-align: right;
+    }
 
-        .header h1 {
-            font-size: 20pt;
-            margin: 0;
-            font-weight: 700;
-        }
+    .header h1 {
+        font-size: 20pt;
+        margin: 0;
+        font-weight: 700;
+    }
 
-        .header h2 {
-            font-size: 16pt;
-            margin: 0;
-            font-weight: 600;
-        }
+    .header h2 {
+        font-size: 16pt;
+        margin: 0;
+        font-weight: 600;
+    }
 
-        .text-muted {
-            color: #6b7280;
-        }
+    .text-muted {
+        color: #6b7280;
+    }
 
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
 
-        .table th,
-        .table td {
-            border: 1px solid #1a202c;
-            padding: 10px;
-            text-align: left;
-        }
+    .table th,
+    .table td {
+        border: 1px solid #1a202c;
+        padding: 10px;
+        text-align: left;
+    }
 
-        .table th {
-            background-color: #1a202c;
-            color: #fff;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+    .table th {
+        background-color: #1a202c;
+        color: #fff;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
 
-        .table td {
-            font-size: 11pt;
-        }
+    .table td {
+        font-size: 11pt;
+    }
 
-        .footer {
-            margin-top: 20px;
-            border-top: 2px solid #1a202c;
-            padding-top: 10px;
-            text-align: left;
-        }
+    .footer {
+        margin-top: 20px;
+        border-top: 2px solid #1a202c;
+        padding-top: 10px;
+        text-align: left;
+    }
 
-        .logo {
-            max-height: 60px;
-            max-width: 150px;
-            object-fit: contain;
-            margin-bottom: 10px;
-        }
+    .logo {
+        max-height: 60px;
+        max-width: 150px;
+        object-fit: contain;
+        margin-bottom: 10px;
+    }
 
-        @page {
-            margin: 10mm;
-        }
+    @page {
+        margin: 10mm;
+    }
     </style>
 </head>
 
@@ -125,8 +125,12 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Employee Name</th>
-                <th>Employee Code</th>
+                <th>Name</th>
+                <th>Code</th>
+                <th>KRA Pin</th>
+                <th>Basic Salary</th>
+                <th>Gross Pay</th>
+                <th>Net Pay</th>
                 <th>{{ ucwords(str_replace('_', ' ', $column)) }} ({{ $payroll->currency ?? 'KES' }})</th>
             </tr>
         </thead>
@@ -135,6 +139,10 @@
             <tr>
                 <td>{{ $row['employee_name'] }}</td>
                 <td>{{ $row['employee_code'] }}</td>
+                <td>{{ $row['tax_no'] }}</td>
+                <td>{{ $row['basic_salary'] }}</td>
+                <td>{{ $row['gross_pay'] }}</td>
+                <td>{{ $row['net_pay'] }}</td>
                 <td>{{ $row[$column] }}</td>
             </tr>
             @endforeach

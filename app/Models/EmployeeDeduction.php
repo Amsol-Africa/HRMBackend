@@ -11,19 +11,9 @@ class EmployeeDeduction extends Model
 {
     use HasFactory, HasStatuses, LogsActivity;
 
-    protected $fillable = [
-        'employee_id',
-        'deduction_id',
-        'amount',
-        'date',
-        'notes',
-        'is_active',
-    ];
+    protected $table = 'employee_deductions';
 
-    protected $casts = [
-        'date' => 'date',
-        'is_active' => 'boolean',
-    ];
+    protected $fillable = ['employee_id', 'deduction_id', 'amount', 'rate', 'is_active'];
 
     public function employee()
     {

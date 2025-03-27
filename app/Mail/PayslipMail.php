@@ -5,42 +5,39 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\File;
+use App\Models\EmployeePayroll;
 
 class PayslipMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $employeePayroll;
-    public $filePath; // Path to the temporary PDF file
-    public $employeeName;
+    public $pdfPath;
+    public $recipientName;
 
-    public function __construct($employeePayroll, $filePath, $employeeName)
+    public function __construct(EmployeePayroll $employeePayroll, string $pdfPath, string $recipientName)
     {
         $this->employeePayroll = $employeePayroll;
-        $this->filePath = $filePath;
-        $this->employeeName = $employeeName;
+        $this->pdfPath = $pdfPath;
+        $this->recipientName = $recipientName;
     }
 
     public function build()
     {
-        $email = $this->subject('Your Payslip for ' . now()->format('F Y'))
+        $payrollPeriod = \Carbon\Carbon::create(
+            $this->employeePayroll->payroll->payrun_year,
+            $this->employeePayroll->payroll->payrun_month
+        )->format('F Y');
+
+        return $this->subject('Your Payslip for ' . $payrollPeriod)
             ->view('emails.payslip')
             ->with([
-                'employeeName' => $this->employeeName,
+                'employeeName' => $this->recipientName,
+                'payrollPeriod' => $payrollPeriod,
             ])
-            ->attach($this->filePath, [
+            ->attach($this->pdfPath, [
                 'as' => 'payslip.pdf',
                 'mime' => 'application/pdf',
             ]);
-
-        // Delete the temporary file after attaching
-        $this->afterCommit(function () {
-            if (File::exists($this->filePath)) {
-                File::delete($this->filePath);
-            }
-        });
-
-        return $email;
     }
 }

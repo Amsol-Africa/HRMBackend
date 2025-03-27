@@ -25,6 +25,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('modules', [ModuleController::class, 'create'])->name('modules');
     });
 
+    Route::middleware(['ensure_role', 'role:business-admin'])->name('location.')->prefix('location/{location:slug}')->group(function () {
+        Route::get('/payroll/{id}/download-column/{column}/{format}', [PayrollController::class, 'downloadColumn'])->name('payroll.download_column');
+    });
+
     Route::middleware(['ensure_role', 'role:business-admin'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [DashboardController::class, 'clients'])->name('clients.index');
@@ -60,8 +64,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/payroll/{id}', [DashboardController::class, 'viewPayroll'])->name('payroll.view');
         Route::get('/payroll/{id}/download/{format}', [DashboardController::class, 'downloadPayroll'])->name('payroll.reports');
         Route::get('/payroll/{id}/download-column/{column}/{format}', [DashboardController::class, 'downloadColumn'])->name('payroll.download_column');
-        Route::get('/payroll/{id}/send-payslips', [DashboardController::class, 'sendPayslips'])->name('payroll.send_payslips');
         Route::get('/payroll/{id}/print-all-payslips', [DashboardController::class, 'printAllPayslips'])->name('payroll.print_all_payslips');
+
+        // New route for viewing all payslips for an employee
+        Route::get('/payslips', [PayrollController::class, 'viewPayslips'])->name('payslips');
+        Route::get('/payroll/payslip/{employee_id}', [PayrollController::class, 'viewPayslip'])->name('payroll.payslip');
+
+        Route::post('/payroll/send-payslips', [PayrollController::class, 'sendPayslips'])->name('payroll.send_payslips');
 
         Route::get('reliefs', [DashboardController::class, 'reliefs'])->name('reliefs.index');
         Route::get('employee-reliefs', [DashboardController::class, 'employeeReliefs'])->name('employee-reliefs.index');

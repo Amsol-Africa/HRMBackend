@@ -1,9 +1,8 @@
 <x-app-layout title="{{ $page }}">
-    <div class=" container py-5">
+    <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-12">
                 <h5 class="fw-bold text-dark mb-4">Filter Payrolls</h5>
-                <!-- Filters Section -->
                 <div class="card border-0 rounded-3 p-4 mb-4">
                     <form id="payrollFilterForm" class="row g-3 align-items-end">
                         <div class="col-md-2">
@@ -64,27 +63,22 @@
                     </form>
                 </div>
 
-                <!-- Summary -->
                 <div class="mb-4">
                     <h4 class="fw-semibold text-dark mb-3">Summary Payroll List</h4>
                     <div class="d-flex flex-wrap gap-2 mb-3">
-                        <button class="btn btn-primary btn-sm" onclick="processPayroll()">Process Payroll</button>
                         <button class="btn btn-outline-dark btn-sm" onclick="deletePayroll()">Delete</button>
-                        <button class="btn btn-outline-dark btn-sm" onclick="publishPayroll()">Publish</button>
-                        <button class="btn btn-outline-dark btn-sm" onclick="unpublishPayroll()">Unpublish</button>
+                        <button class="btn btn-outline-dark btn-sm" onclick="closeMonth()">Close Month</button>
                         <button class="btn btn-outline-primary btn-sm" onclick="emailPayslips()">Email Payslip</button>
                         <button class="btn btn-outline-dark btn-sm" onclick="emailP9()">Email P9</button>
                         <button class="btn btn-outline-dark btn-sm" onclick="downloadPayroll()">Download</button>
-                        <button class="btn btn-outline-dark btn-sm" onclick="printAllPayslips()">Print All</button>
                     </div>
                     <h5 class="text-muted">
-                        <span class="text-danger">{{ $payrolls->count() }} payroll(s) found</span> | Total Payroll:
-                        {{ number_format($totalPayroll, 2) }} | Total
-                        Net Pay: {{ number_format($totalNetPay, 2) }}
+                        <span class="text-danger">{{ $payrolls->count() }} payroll(s) found</span> |
+                        Total Payroll: {{ number_format($totalPayroll, 2) }} |
+                        Total Net Pay: {{ number_format($totalNetPay, 2) }}
                     </h5>
                 </div>
 
-                <!-- Past Payrolls Table -->
                 <div class="card border-0 p-3">
                     <div id="pastPayrollsContainer">
                         @include('payroll._past')
@@ -95,6 +89,9 @@
     </div>
 
     @push('scripts')
+    <script>
+    window.businessSlug = '{{ $business->slug }}';
+    </script>
     <script src="{{ asset('js/main/allpayrolls.js') }}" type="module"></script>
     @endpush
 </x-app-layout>

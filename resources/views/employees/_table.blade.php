@@ -12,16 +12,23 @@
             </tr>
         </thead>
         <tbody>
+            <tr id="loadingRow" style="display: none;">
+                <td colspan="7" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </td>
+            </tr>
             @forelse ($employees as $employee)
             <tr data-employee-id="{{ $employee->id }}">
                 <td>{{ $employee->user->name }}</td>
                 <td>{{ $employee->employee_code }}</td>
                 <td>{{ $employee->department ? $employee->department->name : 'N/A' }}</td>
-                <td>{{ $employee->jobCategory ? $employee->jobCategory->name : 'N/A' }}</td>
-                <td>
-                    {{ $employee->location ? $employee->location->name : $employee->business->company_name }}
+                <td>{{ optional($employee->employmentDetails)->jobCategory ? $employee->employmentDetails->jobCategory->name : 'N/A' }}
                 </td>
-                <td>{{ number_format((float) ($employee->paymentDetails->basic_salary ?? 0), 2) }}</td>
+                <td>{{ $employee->location ? $employee->location->name : $employee->business->company_name }}</td>
+                <td>{{ number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2) . ' ' . (optional($employee->paymentDetails)->currency ?? '') }}
+                </td>
                 <td>
                     <div class="btn-group">
                         <button class="btn btn-sm btn-outline-primary" onclick="viewEmployee({{ $employee->id }})">
@@ -38,7 +45,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="7" class="text-center text-muted py-4">
                     <i class="fa fa-info-circle me-2"></i> No employees found.
                 </td>
             </tr>

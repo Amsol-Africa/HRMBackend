@@ -6,303 +6,234 @@
     <title>Payslip - {{ $employeePayroll->employee->user->name ?? 'Employee' }}</title>
     <style>
     body {
-        font-family: Arial, sans-serif;
-        font-size: 12px;
-        margin: 20px;
+        /* font-family: Arial, sans-serif; */
+        margin: 0;
+        padding: 20px;
+        background-color: #f4f4f4;
+    }
+
+    .payslip {
+        width: 500px;
+        /* Narrow width like traditional payslips */
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 15px;
+        border: 1px solid #ccc;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .header {
         text-align: center;
-        margin-bottom: 20px;
-    }
-
-    .header img {
-        width: 100px;
-        height: auto;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
     }
 
     .header h1 {
-        font-size: 16px;
-        margin: 5px 0;
-        text-transform: uppercase;
+        font-size: 18px;
+        margin: 0;
     }
 
     .header h2 {
         font-size: 14px;
-        margin: 5px 0;
+        margin: 5px 0 0;
+        color: #555;
     }
 
-    .business-details {
-        text-align: center;
-        font-size: 11px;
-        margin-bottom: 10px;
+    .section {
+        margin-bottom: 15px;
     }
 
-    .employee-details {
-        margin-bottom: 20px;
-        overflow: hidden;
+    .section h3 {
+        font-size: 14px;
+        font-weight: bold;
+        margin: 0 0 5px 0;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 2px;
     }
 
-    .employee-details img {
-        width: 80px;
-        height: 80px;
-        float: left;
-        margin-right: 20px;
-        border: 1px solid #ccc;
-    }
-
-    .employee-details p {
-        margin: 5px 0;
+    .details p,
+    .summary p {
+        font-size: 12px;
+        margin: 3px 0;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 20px;
+        font-size: 12px;
     }
 
     th,
     td {
-        border: 1px solid #000;
         padding: 5px;
+        border: 1px solid #ddd;
         text-align: left;
     }
 
     th {
-        background-color: #f0f0f0;
+        background-color: #f5f5f5;
         font-weight: bold;
     }
 
-    .signature {
-        margin-top: 30px;
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .signature p {
-        margin: 5px 0;
+    .total {
+        font-weight: bold;
+        background-color: #f9f9f9;
     }
 
     .footer {
         text-align: center;
-        font-style: italic;
-        margin-top: 20px;
-        font-size: 11px;
+        font-size: 10px;
+        color: #777;
+        margin-top: 15px;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
     }
     </style>
 </head>
 
 <body>
-    <div class="header">
-        <img src="{{ public_path('images/kvb-logo.png') }}"
-            alt="{{ $employeePayroll->payroll->business->name ?? 'Business' }} Logo">
-        <h1>{{ $employeePayroll->payroll->business->name ?? 'KENYA VETERINARY BOARD' }}</h1>
-        <div class="business-details">
-            <p>{{ $employeePayroll->payroll->business->address ?? 'P.O. Box 12345, Nairobi, Kenya' }}</p>
-            <p>Email: {{ $employeePayroll->payroll->business->email ?? 'info@kvb.co.ke' }} | Phone:
-                {{ $employeePayroll->payroll->business->phone ?? '+254 20 1234567' }}</p>
+    <div class="payslip">
+        <!-- Header: Business/Location Details -->
+        <div class="header">
+            @if($entityType === 'business' && $entity->logo)
+            <img src="{{ asset('storage/' . $entity->logo) }}" alt="{{ $entity->name }} Logo"
+                style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
+            @elseif($entityType === 'location' && $business->logo)
+            <img src="{{ asset('storage/' . $business->logo) }}" alt="{{ $business->name }} Logo"
+                style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
+            @endif
+            <h1>{{ $entity->company_name ?? $entity->name ?? 'Business Name' }}</h1>
+            <p>{{ $entity->physical_address ?? 'N/A' }}</p>
+            <p>Email:
+                {{ ($entityType === 'business' && $entity->user) ? $entity->user->email : ($business->user->email ?? 'N/A') }}
+            </p>
+            <h2>Payslip for
+                {{ \Carbon\Carbon::create($employeePayroll->payroll->payrun_year, $employeePayroll->payroll->payrun_month)->format('F Y') }}
+            </h2>
         </div>
-        <h2>Payslip for the month of
-            {{ Carbon\Carbon::create($employeePayroll->payroll->payrun_year, $employeePayroll->payroll->payrun_month)->format('F (m), Y') }}
-        </h2>
-    </div>
 
-    <div class="employee-details">
-        @if($employeePayroll->employee->user->profile_photo_path)
-        <img src="{{ public_path('storage/' . $employeePayroll->employee->user->profile_photo_path) }}"
-            alt="Employee Photo">
-        @endif
-        <p><strong>Name:</strong> {{ $employeePayroll->employee->user->name ?? 'N/A' }}</p>
-        <p><strong>Employee No:</strong> {{ $employeePayroll->employee->employee_code ?? 'N/A' }}</p>
-        <p><strong>Department:</strong> {{ $employeePayroll->employee->employmentDetails->department->name ?? 'N/A' }}
-        </p>
-        <p><strong>Location:</strong>
-            {{ $employeePayroll->payroll->location ? $employeePayroll->payroll->location->name : $employeePayroll->payroll->business->name . ' (All Locations)' }}
-        </p>
-    </div>
+        <!-- Employee Details -->
+        <div class="section details">
+            <h3>Employee Details</h3>
+            <p><strong>Name:</strong> {{ $employeePayroll->employee->user->name ?? 'N/A' }}</p>
+            <p><strong>Employee Code:</strong> {{ $employeePayroll->employee->employee_code ?? 'N/A' }}</p>
+            <p><strong>Tax No:</strong> {{ $employeePayroll->employee->tax_no ?? 'N/A' }}</p>
+            @if($entityType === 'location')
+            <p><strong>Location:</strong> {{ $entity->name ?? 'N/A' }}</p>
+            @endif
+        </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Description</th>
-                <th>Taxation</th>
-                <th>Pay ({{ $employeePayroll->payroll->currency ?? 'KES' }})</th>
-                <th>EUR (R: 140)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>Basic Salary</td>
-                <td>{{ number_format($employeePayroll->basic_salary, 2) }}</td>
-                <td>{{ number_format($employeePayroll->basic_salary, 2) }}</td>
-                <td>{{ number_format($employeePayroll->basic_salary / 140, 2) }}</td>
-            </tr>
-            @if($employeePayroll->allowances)
-            @php
-            $allowances = json_decode($employeePayroll->allowances, true);
-            $allowances = is_array($allowances) ? $allowances : [];
-            @endphp
-            @foreach($allowances as $allowance)
-            @if(is_array($allowance))
-            <tr>
-                <td>{{ $allowance['name'] ?? 'Unknown Allowance' }}
-                    {{ $allowance['is_taxable'] ? '' : '(non taxable)' }}</td>
-                <td>{{ $allowance['is_taxable'] ? number_format($allowance['amount'], 2) : '-' }}</td>
-                <td>{{ number_format($allowance['amount'], 2) }}</td>
-                <td>{{ number_format($allowance['amount'] / 140, 2) }}</td>
-            </tr>
-            @endif
-            @endforeach
-            @endif
-            @if($employeePayroll->overtime > 0)
-            <tr>
-                <td>Overtime</td>
-                <td>{{ number_format($employeePayroll->overtime, 2) }}</td>
-                <td>{{ number_format($employeePayroll->overtime, 2) }}</td>
-                <td>{{ number_format($employeePayroll->overtime / 140, 2) }}</td>
-            </tr>
-            @endif
-            <tr>
-                <td><strong>Gross Pay</strong></td>
-                <td><strong>{{ number_format($employeePayroll->gross_pay, 2) }}</strong></td>
-                <td><strong>{{ number_format($employeePayroll->gross_pay, 2) }}</strong></td>
-                <td><strong>{{ number_format($employeePayroll->gross_pay / 140, 2) }}</strong></td>
-            </tr>
-            <tr>
-                <td>SHIF</td>
-                <td>{{ number_format($employeePayroll->shif, 2) }}</td>
-                <td>{{ number_format($employeePayroll->shif, 2) }}</td>
-                <td>{{ number_format($employeePayroll->shif / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td>NSSF</td>
-                <td>{{ number_format($employeePayroll->nssf, 2) }}</td>
-                <td>{{ number_format($employeePayroll->nssf, 2) }}</td>
-                <td>{{ number_format($employeePayroll->nssf / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td>Housing Levy</td>
-                <td>{{ number_format($employeePayroll->housing_levy, 2) }}</td>
-                <td>{{ number_format($employeePayroll->housing_levy, 2) }}</td>
-                <td>{{ number_format($employeePayroll->housing_levy / 140, 2) }}</td>
-            </tr>
-            @if($employeePayroll->deductions)
-            @php
-            $deductions = json_decode($employeePayroll->deductions, true);
-            $deductions = is_array($deductions) ? $deductions : [];
-            @endphp
-            @foreach($deductions as $key => $deduction)
-            @if(!in_array($key, ['shif', 'nssf', 'paye', 'housing_levy', 'helb']))
-            @if(is_array($deduction))
-            <tr>
-                <td>{{ $deduction['name'] ?? $key }}</td>
-                <td>{{ number_format($deduction['amount'], 2) }}</td>
-                <td>{{ number_format($deduction['amount'], 2) }}</td>
-                <td>{{ number_format($deduction['amount'] / 140, 2) }}</td>
-            </tr>
-            @endif
-            @endif
-            @endforeach
-            @endif
-            <tr>
-                <td><strong>Deductions Before Tax</strong></td>
-                <td><strong>{{ number_format($employeePayroll->shif + $employeePayroll->nssf + $employeePayroll->housing_levy, 2) }}</strong>
-                </td>
-                <td><strong>{{ number_format($employeePayroll->shif + $employeePayroll->nssf + $employeePayroll->housing_levy, 2) }}</strong>
-                </td>
-                <td><strong>{{ number_format(($employeePayroll->shif + $employeePayroll->nssf + $employeePayroll->housing_levy) / 140, 2) }}</strong>
-                </td>
-            </tr>
-            <tr>
-                <td>Taxable Income</td>
-                <td>{{ number_format($employeePayroll->taxable_income, 2) }}</td>
-                <td>-</td>
-                <td>-</td>
-            </tr>
-            <tr>
-                <td>Personal Relief</td>
-                <td>{{ number_format($employeePayroll->personal_relief, 2) }}</td>
-                <td>{{ number_format($employeePayroll->personal_relief, 2) }}</td>
-                <td>{{ number_format($employeePayroll->personal_relief / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td>Tax Relief</td>
-                <td>{{ number_format($employeePayroll->insurance_relief + $employeePayroll->mortgage_relief + $employeePayroll->hosp_relief, 2) }}
-                </td>
-                <td>{{ number_format($employeePayroll->insurance_relief + $employeePayroll->mortgage_relief + $employeePayroll->hosp_relief, 2) }}
-                </td>
-                <td>{{ number_format(($employeePayroll->insurance_relief + $employeePayroll->mortgage_relief + $employeePayroll->hosp_relief) / 140, 2) }}
-                </td>
-            </tr>
-            <tr>
-                <td>PAYE Tax</td>
-                <td>{{ number_format($employeePayroll->paye, 2) }}</td>
-                <td>{{ number_format($employeePayroll->paye, 2) }}</td>
-                <td>{{ number_format($employeePayroll->paye / 140, 2) }}</td>
-            </tr>
-            @if($employeePayroll->reliefs)
-            @php
-            $reliefs = json_decode($employeePayroll->reliefs, true);
-            $reliefs = is_array($reliefs) ? $reliefs : [];
-            @endphp
-            @foreach($reliefs as $relief)
-            @if(is_array($relief) && !in_array($relief['name'], ['Personal Relief', 'Insurance Relief', 'Mortgage
-            Relief', 'HOSP Relief']))
-            <tr>
-                <td>{{ $relief['name'] }}</td>
-                <td>{{ number_format($relief['amount'], 2) }}</td>
-                <td>{{ number_format($relief['amount'], 2) }}</td>
-                <td>{{ number_format($relief['amount'] / 140, 2) }}</td>
-            </tr>
-            @endif
-            @endforeach
-            @endif
-            @if($employeePayroll->deductions)
-            @foreach($deductions as $key => $deduction)
-            @if($key === 'helb')
-            <tr>
-                <td>HELB</td>
-                <td>{{ number_format(is_array($deduction) ? $deduction['amount'] : $deduction, 2) }}</td>
-                <td>{{ number_format(is_array($deduction) ? $deduction['amount'] : $deduction, 2) }}</td>
-                <td>{{ number_format((is_array($deduction) ? $deduction['amount'] : $deduction) / 140, 2) }}</td>
-            </tr>
-            @endif
-            @endforeach
-            @endif
-            <tr>
-                <td>Deductions After Tax</td>
-                <td>{{ number_format($employeePayroll->deductions_after_tax, 2) }}</td>
-                <td>{{ number_format($employeePayroll->deductions_after_tax, 2) }}</td>
-                <td>{{ number_format($employeePayroll->deductions_after_tax / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td>Loan Repayment</td>
-                <td>{{ number_format($employeePayroll->loan_repayment, 2) }}</td>
-                <td>{{ number_format($employeePayroll->loan_repayment, 2) }}</td>
-                <td>{{ number_format($employeePayroll->loan_repayment / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td>Advance Recovery</td>
-                <td>{{ number_format($employeePayroll->advance_recovery, 2) }}</td>
-                <td>{{ number_format($employeePayroll->advance_recovery, 2) }}</td>
-                <td>{{ number_format($employeePayroll->advance_recovery / 140, 2) }}</td>
-            </tr>
-            <tr>
-                <td><strong>Net Pay</strong></td>
-                <td><strong>{{ number_format($employeePayroll->net_pay, 2) }}</strong></td>
-                <td><strong>{{ number_format($employeePayroll->net_pay, 2) }}</strong></td>
-                <td><strong>{{ number_format($employeePayroll->net_pay / 140, 2) }}</strong></td>
-            </tr>
-        </tbody>
-    </table>
+        <!-- Earnings -->
+        <div class="section">
+            <h3>Earnings</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount ({{ $employeePayroll->payroll->currency ?? 'KES' }})</th>
+                        <th>Amount ({{ $targetCurrency ?? 'USD' }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Basic Salary</td>
+                        <td>{{ number_format($employeePayroll->basic_salary ?? 0, 2) }}</td>
+                        <td>{{ number_format(($employeePayroll->basic_salary ?? 0) * ($exchangeRates ?? 1), 2) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Overtime</td>
+                        <td>
+                            <?php
+                            $overtimeData = json_decode($employeePayroll->overtime, true);
+                            $overtimeAmount = is_array($overtimeData) && isset($overtimeData['amount']) ? $overtimeData['amount'] : ($employeePayroll->overtime ?? 0);
+                            ?>
+                            {{ number_format($overtimeAmount, 2) }}
+                        </td>
+                        <td>{{ number_format($overtimeAmount  * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                    <?php $allowances = json_decode($employeePayroll->allowances, true) ?? []; ?>
+                    @foreach($allowances as $key => $value)
+                    <tr>
+                        <td>{{ ucfirst(str_replace('_', ' ', $key)) }}</td>
+                        <td>
+                            <?php
+                            $allowanceAmount = is_numeric($value) ? $value : (is_array($value) && isset($value['amount']) ? $value['amount'] : 0);
+                            ?>
+                            {{ number_format($allowanceAmount, 2) }}
+                        </td>
+                        <td>{{ number_format($allowanceAmount  * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                    @endforeach
+                    <tr class="total">
+                        <td>Gross Pay</td>
+                        <td>{{ number_format($employeePayroll->gross_pay ?? 0, 2) }}</td>
+                        <td>{{ number_format(($employeePayroll->gross_pay ?? 0) * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
-    <div class="signature">
-        <p>Employer's Signature: ___________________________</p>
-        <p>Employee's Signature: ___________________________</p>
-    </div>
+        <!-- Deductions -->
+        <div class="section">
+            <h3>Deductions</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount ({{ $employeePayroll->payroll->currency ?? 'KES' }})</th>
+                        <th>Amount ({{ $targetCurrency ?? 'USD' }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php $deductions = json_decode($employeePayroll->deductions, true) ?? []; ?>
+                    @foreach([
+                    'shif' => 'SHIF',
+                    'nssf' => 'NSSF',
+                    'paye' => 'PAYE',
+                    'housing_levy' => 'Housing Levy',
+                    'helb' => 'HELB',
+                    'loan_repayment' => 'Loans',
+                    'advance_recovery' => 'Advances'
+                    ] as $key => $label)
+                    @if(isset($employeePayroll->$key) && $employeePayroll->$key > 0)
+                    <tr>
+                        <td>{{ $label }}</td>
+                        <td>{{ number_format($employeePayroll->$key, 2) }}</td>
+                        <td>{{ number_format($employeePayroll->$key * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                    @endif
+                    @endforeach
+                    @foreach($deductions as $key => $deduction)
+                    @if(is_array($deduction) && isset($deduction['amount']))
+                    <tr>
+                        <td>{{ $deduction['name'] }}</td>
+                        <td>{{ number_format($deduction['amount'], 2) }}</td>
+                        <td>{{ number_format($deduction['amount'] * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                    @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-    <div class="footer">
-        <p>Thank you for your service</p>
+        <!-- Net Pay -->
+        <div class="section summary">
+            <h3>Net Pay</h3>
+            <p><strong>Net Pay ({{ $employeePayroll->payroll->currency ?? 'KES' }}):</strong>
+                {{ number_format($employeePayroll->net_pay ?? 0, 2) }}
+            </p>
+            <p><strong>Net Pay ({{ $targetCurrency ?? 'USD' }}):</strong>
+                {{ number_format(($employeePayroll->net_pay ?? 0) * ($exchangeRates ?? 1), 2) }}
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated on: {{ now()->format('F d, Y') }}</p>
+            <p>For official use only</p>
+        </div>
     </div>
 </body>
 
