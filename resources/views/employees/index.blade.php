@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout title="{{ $page }}">
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-12">
@@ -45,6 +45,11 @@
                             <div class="col-md-3">
                                 <button class="btn btn-primary w-100" onclick="createEmployee()">Add Employee</button>
                             </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100" onclick="exportEmployees()">
+                                    <i class="fa fa-download me-1"></i> Export to Excel
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -74,7 +79,6 @@
         </div>
     </div>
 
-
     <!-- View Modal -->
     <div class="modal fade" id="viewEmployeeModal" tabindex="-1" aria-labelledby="viewEmployeeModalLabel"
         aria-hidden="true">
@@ -91,7 +95,6 @@
 
     @push('styles')
     <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-
     @endpush
 
     @push('scripts')

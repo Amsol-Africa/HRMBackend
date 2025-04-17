@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Location;
 use App\Models\EmployeePaymentDetail;
 use App\Models\JobCategory;
+use App\Models\EmployeeDocument;
 use App\Imports\EmployeesImport;
 use App\Enums\Status;
 use App\Services\NotificationService;
@@ -22,11 +23,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Events\AfterSheet;
+use App\Models\EmployeeContractAction;
+use App\Notifications\ContractReminderNotification;
+use App\Notifications\TerminationNotification;
+use Illuminate\Support\Facades\Notification;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\HandleTransactions;
+
+use function Laravel\Prompts\error;
 
 class EmployeeController extends Controller
 {
+    use HandleTransactions;
+
     public function index(Request $request)
     {
+        $page = 'Employees';
         $business = Business::findBySlug(session('active_business_slug'));
         if (!$business) {
             return redirect()->back()->with('error', 'Business not found.');
@@ -47,7 +59,7 @@ class EmployeeController extends Controller
         $locations = Location::where('business_id', $business->id)->get();
         $jobCategories = JobCategory::where('business_id', $business->id)->get();
 
-        return view('employees.index', compact('employees', 'departments', 'locations', 'jobCategories', 'business'));
+        return view('employees.index', compact('employees', 'departments', 'locations', 'jobCategories', 'business', 'page'));
     }
 
     public function fetch(Request $request)
@@ -115,20 +127,41 @@ class EmployeeController extends Controller
             'location_id' => 'nullable|exists:locations,id',
             'basic_salary' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
-            'payment_mode' => 'required|string|max:50',
+            'payment_mode' => 'required|string|in:bank,cash,cheque,mpesa',
             'account_name' => 'required|string|max:255',
             'account_number' => 'required|string|unique:employee_payment_details,account_number|max:50',
             'bank_name' => 'required|string|max:255',
-            'national_id' => 'nullable|string|unique:employees,national_id',
+            'bank_code' => 'nullable|string|max:50',
+            'bank_branch' => 'nullable|string|max:255',
+            'bank_branch_code' => 'nullable|string|max:50',
+            'national_id' => 'nullable|string|unique:employees,national_id|max:255',
             'tax_no' => 'nullable|string|max:20',
             'date_of_birth' => 'required|date|before:today',
-            'marital_status' => 'required|string|max:20',
-            'nhif_no' => 'required|string|max:20',
-            'nssf_no' => 'required|string|max:20',
+            'marital_status' => 'required|in:single,married,divorced,widowed',
+            'nhif_no' => 'nullable|string|max:20',
+            'nssf_no' => 'nullable|string|max:20',
+            'passport_no' => 'nullable|string|max:255',
+            'passport_issue_date' => 'nullable|date|before:today',
+            'passport_expiry_date' => 'nullable|date|after:passport_issue_date',
+            'place_of_birth' => 'nullable|string|max:255',
+            'place_of_issue' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
             'permanent_address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'alternate_phone' => 'nullable|string|max:20',
+            'blood_group' => 'nullable|string|max:255',
+            'is_exempt_from_payroll' => 'nullable|boolean',
+            'resident_status' => 'nullable|string|max:255',
+            'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
             'profile_picture' => 'nullable|file|image|max:2048',
+            'employment_date' => 'nullable|date|before_or_equal:today',
             'employment_term' => 'required|in:permanent,contract,temporary,internship',
+            'probation_end_date' => 'nullable|date|after:employment_date',
+            'contract_end_date' => 'nullable|date|after:employment_date',
+            'retirement_date' => 'nullable|date|after:employment_date',
+            'job_description' => 'nullable|string|max:1000',
+            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
+            'document_types.*' => 'nullable|string|max:255',
         ]);
 
         Log::debug('Creating Employee - Validated Data:', $validated);
@@ -160,6 +193,18 @@ class EmployeeController extends Controller
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'gender' => $validated['gender'] ?? null,
                 'phone' => $validated['phone'] ?? null,
+                'alternate_phone' => $validated['alternate_phone'] ?? null,
+                'passport_no' => $validated['passport_no'] ?? null,
+                'passport_issue_date' => $validated['passport_issue_date'] ?? null,
+                'passport_expiry_date' => $validated['passport_expiry_date'] ?? null,
+                'place_of_birth' => $validated['place_of_birth'] ?? null,
+                'place_of_issue' => $validated['place_of_issue'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'permanent_address' => $validated['permanent_address'] ?? null,
+                'blood_group' => $validated['blood_group'] ?? null,
+                'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
+                'resident_status' => $validated['resident_status'] ?? null,
+                'kra_employee_status' => $validated['kra_employee_status'] ?? null,
             ]);
 
             $employee->employmentDetails()->create([
@@ -167,6 +212,10 @@ class EmployeeController extends Controller
                 'department_id' => $validated['department_id'] ?? null,
                 'employment_date' => $validated['employment_date'] ?? now(),
                 'employment_term' => $validated['employment_term'],
+                'probation_end_date' => $validated['probation_end_date'] ?? null,
+                'contract_end_date' => $validated['contract_end_date'] ?? null,
+                'retirement_date' => $validated['retirement_date'] ?? null,
+                'job_description' => $validated['job_description'] ?? null,
             ]);
 
             $employee->paymentDetails()->create([
@@ -176,7 +225,41 @@ class EmployeeController extends Controller
                 'account_name' => $validated['account_name'],
                 'account_number' => $validated['account_number'],
                 'bank_name' => $validated['bank_name'],
+                'bank_code' => $validated['bank_code'] ?? null,
+                'bank_branch' => $validated['bank_branch'] ?? null,
+                'bank_branch_code' => $validated['bank_branch_code'] ?? null,
             ]);
+
+            if ($request->hasFile('profile_picture')) {
+                $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
+                Log::info('Profile picture uploaded for new employee ID: ' . $employee->id);
+            }
+
+            // Handle document upload (optional)
+            $documents = $request->file('documents');
+            if ($documents && is_array($documents)) {
+                $documentTypes = $request->input('document_types', []);
+
+                try {
+                    foreach ($documents as $index => $file) {
+                        if ($file && $file->isValid()) {
+                            $documentType = $documentTypes[$index] ?? 'Unknown';
+                            $document = EmployeeDocument::create([
+                                'employee_id' => $employee->id,
+                                'document_type' => $documentType,
+                            ]);
+
+                            $document->addMedia($file)->toMediaCollection('employeeDocuments');
+                        }
+                    }
+                    Log::info('Documents uploaded successfully for employee ID: ' . $employee->id);
+                } catch (\Exception $e) {
+                    Log::error('Failed to upload documents: ' . $e->getMessage());
+                    // Notify via toastr but continue with employee creation
+                    return RequestResponse::created('Employee created successfully, but some documents failed to upload.', $employee->id)
+                        ->withHeaders(['X-Toastr-Message' => 'Some documents failed to upload. Please try again.']);
+                }
+            }
 
             DB::commit();
             Log::debug('Employee created successfully.', ['employee_id' => $employee->id]);
@@ -185,7 +268,7 @@ class EmployeeController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create employee.', ['error' => $e->getMessage()]);
-            return RequestResponse::badRequest('Failed to create employee. ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to create employee: ' . $e->getMessage());
         }
     }
 
@@ -218,28 +301,49 @@ class EmployeeController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|email',
+            'email' => 'required|email|unique:users,email,' . ($request->employee_id ? Employee::find($request->employee_id)->user_id : null),
             'gender' => 'required|string|max:20',
-            'employee_code' => 'required|string|unique:employees,employee_code,' . $id . ',id',
+            'employee_code' => 'required|string|unique:employees,employee_code,' . $id . ',id|max:50',
             'department_id' => 'nullable|exists:departments,id',
             'job_category_id' => 'nullable|exists:job_categories,id',
             'location_id' => 'nullable|exists:locations,id',
             'basic_salary' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
-            'payment_mode' => 'required|string|max:50',
+            'payment_mode' => 'required|string|in:bank,cash,cheque,mpesa',
             'account_name' => 'required|string|max:255',
-            'account_number' => 'required|string|unique:employee_payment_details,account_number,' . $id . ',employee_id',
+            'account_number' => 'required|string|unique:employee_payment_details,account_number,' . $id . ',employee_id|max:50',
             'bank_name' => 'required|string|max:255',
-            'national_id' => 'required|string|unique:employees,national_id,' . $id . ',id',
-            'tax_no' => 'required|string|max:20',
+            'bank_code' => 'nullable|string|max:50',
+            'bank_branch' => 'nullable|string|max:255',
+            'bank_branch_code' => 'nullable|string|max:50',
+            'national_id' => 'nullable|string|unique:employees,national_id,' . $id . ',id|max:255',
+            'tax_no' => 'nullable|string|max:20',
             'date_of_birth' => 'required|date|before:today',
-            'marital_status' => 'required|string|max:20',
-            'nhif_no' => 'required|string|max:20',
-            'nssf_no' => 'required|string|max:20',
+            'marital_status' => 'required|in:single,married,divorced,widowed',
+            'nhif_no' => 'nullable|string|max:20',
+            'nssf_no' => 'nullable|string|max:20',
+            'passport_no' => 'nullable|string|max:255',
+            'passport_issue_date' => 'nullable|date|before:today',
+            'passport_expiry_date' => 'nullable|date|after:passport_issue_date',
+            'place_of_birth' => 'nullable|string|max:255',
+            'place_of_issue' => 'nullable|string|max:255',
+            'address' => 'nullable|string|max:255',
             'permanent_address' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
+            'alternate_phone' => 'nullable|string|max:20',
+            'blood_group' => 'nullable|string|max:255',
+            'is_exempt_from_payroll' => 'nullable|boolean',
+            'resident_status' => 'nullable|string|max:255',
+            'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
             'profile_picture' => 'nullable|file|image|max:2048',
+            'employment_date' => 'nullable|date|before_or_equal:today',
             'employment_term' => 'required|in:permanent,contract,temporary,internship',
+            'probation_end_date' => 'nullable|date|after:employment_date',
+            'contract_end_date' => 'nullable|date|after:employment_date',
+            'retirement_date' => 'nullable|date|after:employment_date',
+            'job_description' => 'nullable|string|max:1000',
+            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
+            'document_types.*' => 'nullable|string|max:255',
         ]);
 
         Log::info('Updating employee ID: ' . $id, ['validated_data' => $validated]);
@@ -263,9 +367,19 @@ class EmployeeController extends Controller
                 'nssf_no' => $validated['nssf_no'] ?? null,
                 'gender' => $validated['gender'] ?? null,
                 'phone' => $validated['phone'] ?? null,
+                'alternate_phone' => $validated['alternate_phone'] ?? null,
+                'passport_no' => $validated['passport_no'] ?? null,
+                'passport_issue_date' => $validated['passport_issue_date'] ?? null,
+                'passport_expiry_date' => $validated['passport_expiry_date'] ?? null,
+                'place_of_birth' => $validated['place_of_birth'] ?? null,
+                'place_of_issue' => $validated['place_of_issue'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'permanent_address' => $validated['permanent_address'] ?? null,
+                'blood_group' => $validated['blood_group'] ?? null,
+                'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
+                'resident_status' => $validated['resident_status'] ?? null,
+                'kra_employee_status' => $validated['kra_employee_status'] ?? null,
             ]);
-
-            Log::info('After Update - Employee Data', ['employee' => $employee->toArray()]);
 
             $employee->user->update([
                 'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
@@ -280,10 +394,12 @@ class EmployeeController extends Controller
                     'department_id' => $validated['department_id'] ?? null,
                     'employment_term' => $validated['employment_term'],
                     'employment_date' => $validated['employment_date'] ?? now(),
+                    'probation_end_date' => $validated['probation_end_date'] ?? null,
+                    'contract_end_date' => $validated['contract_end_date'] ?? null,
+                    'retirement_date' => $validated['retirement_date'] ?? null,
+                    'job_description' => $validated['job_description'] ?? null,
                 ]
             );
-
-            Log::info('Employment Details Updated', ['employment_details' => $employmentDetails->toArray()]);
 
             $paymentDetails = $employee->paymentDetails()->updateOrCreate(
                 ['employee_id' => $employee->id],
@@ -294,15 +410,42 @@ class EmployeeController extends Controller
                     'account_name' => $validated['account_name'],
                     'account_number' => $validated['account_number'],
                     'bank_name' => $validated['bank_name'],
+                    'bank_code' => $validated['bank_code'] ?? null,
+                    'bank_branch' => $validated['bank_branch'] ?? null,
+                    'bank_branch_code' => $validated['bank_branch_code'] ?? null,
                 ]
             );
-
-            Log::info('Payment Details Updated', ['payment_details' => $paymentDetails->toArray()]);
 
             if ($request->hasFile('profile_picture')) {
                 $employee->clearMediaCollection('avatars');
                 $employee->addMedia($request->file('profile_picture'))->toMediaCollection('avatars');
                 Log::info('Profile picture updated for employee ID: ' . $id);
+            }
+
+            // Handle document upload (optional)
+            $documents = $request->file('documents');
+            if ($documents && is_array($documents)) {
+                $documentTypes = $request->input('document_types', []);
+
+                try {
+                    foreach ($documents as $index => $file) {
+                        if ($file && $file->isValid()) {
+                            $documentType = $documentTypes[$index] ?? 'Unknown';
+                            $document = EmployeeDocument::create([
+                                'employee_id' => $employee->id,
+                                'document_type' => $documentType,
+                            ]);
+
+                            $document->addMedia($file)->toMediaCollection('employeeDocuments');
+                        }
+                    }
+                    Log::info('Documents uploaded successfully for employee ID: ' . $id);
+                } catch (\Exception $e) {
+                    Log::error('Failed to upload documents: ' . $e->getMessage());
+                    // Notify via toastr but continue with update
+                    return RequestResponse::ok('Employee updated successfully, but some documents failed to upload.')
+                        ->withHeaders(['X-Toastr-Message' => 'Some documents failed to upload. Please try again.']);
+                }
             }
 
             DB::commit();
@@ -492,6 +635,76 @@ class EmployeeController extends Controller
         return response()->json(['message' => 'Notification sent.']);
     }
 
+    public function uploadDocument(Request $request, $employeeId)
+    {
+        $request->validate([
+            'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
+            'document_types.*' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $employee = Employee::findOrFail($employeeId);
+            $documents = $request->file('documents');
+            $documentTypes = $request->input('document_types');
+
+            DB::beginTransaction();
+
+            foreach ($documents as $index => $file) {
+                $document = EmployeeDocument::create([
+                    'employee_id' => $employee->id,
+                    'document_type' => $documentTypes[$index],
+                ]);
+
+                // Store the file using Spatie Media Library
+                $document->addMedia($file)->toMediaCollection('employeeDocuments');
+            }
+
+            DB::commit();
+
+            return RequestResponse::ok('Documents uploaded successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to upload documents: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to upload documents: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteDocument(Request $request, $employeeId, $documentId)
+    {
+        try {
+            $document = EmployeeDocument::where('employee_id', $employeeId)->findOrFail($documentId);
+
+            // Delete associated media
+            $document->clearMediaCollection('employeeDocuments');
+            $document->delete();
+
+            return RequestResponse::ok('Document deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to delete document: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to delete document: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadDocument(Request $request, $employeeId, $documentId)
+    {
+        try {
+            $document = EmployeeDocument::where('employee_id', $employeeId)->findOrFail($documentId);
+            $media = $document->getFirstMedia('employeeDocuments');
+
+            if (!$media) {
+                return RequestResponse::badRequest('Document file not found.');
+            }
+
+            return response()->file($media->getPath(), [
+                'Content-Type' => $media->mime_type,
+                'Content-Disposition' => 'inline; filename="' . $media->file_name . '"',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to retrieve document: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to retrieve document: ' . $e->getMessage());
+        }
+    }
+
     public function setUserPreferences(NotificationService $notificationService)
     {
         $user = auth()->user();
@@ -516,7 +729,7 @@ class EmployeeController extends Controller
 
         $departments = $business->departments()->pluck('id', 'name')->toArray();
         $locations = $business->locations()->pluck('id', 'name')->toArray();
-        $locations[$business->name] = null; // Add business name as a valid location (no ID needed if not in DB)
+        $locations[$business->company_name] = null; // Add main business as a location (nullable ID)
         $jobCategories = $business->job_categories()->pluck('id', 'name')->toArray();
 
         try {
@@ -536,27 +749,46 @@ class EmployeeController extends Controller
                     $validator = Validator::make($row, [
                         'first_name' => 'required|string|max:255',
                         'last_name' => 'required|string|max:255',
-                        'email' => 'required|email|unique:users,email',
+                        'email' => 'required|email|unique:users,email|max:255',
+                        'phone' => 'required|string|max:20',
                         'gender' => 'required|string|max:20',
                         'employee_code' => 'required|string|unique:employees,employee_code|max:50',
                         'department' => 'nullable|string|exists:departments,name',
                         'job_category' => 'nullable|string|exists:job_categories,name',
-                        'location' => 'nullable|string|in:' . implode(',', array_keys($locations)), // Updated to include business name
+                        'location' => 'nullable|string|in:' . implode(',', array_keys($locations)),
                         'basic_salary' => 'required|numeric|min:0',
                         'currency' => 'required|string|size:3',
-                        'payment_mode' => 'required|in:bank,cash,cheque,mpesa', // Updated to match enum
+                        'payment_mode' => 'required|string|in:bank,cash,cheque,mpesa',
                         'account_name' => 'required|string|max:255',
                         'account_number' => 'required|string|unique:employee_payment_details,account_number|max:50',
                         'bank_name' => 'required|string|max:255',
-                        'national_id' => 'nullable|string|unique:employees,national_id',
+                        'bank_code' => 'nullable|string|max:50',
+                        'bank_branch' => 'nullable|string|max:255',
+                        'bank_branch_code' => 'nullable|string|max:50',
+                        'national_id' => 'nullable|string|unique:employees,national_id|max:255',
                         'tax_no' => 'nullable|string|max:20',
                         'date_of_birth' => 'required|date|before:today',
-                        'marital_status' => 'required|string|max:20',
-                        'nhif_no' => 'required|string|max:20',
-                        'nssf_no' => 'required|string|max:20',
+                        'marital_status' => 'required|string|in:single,married,divorced,widowed',
+                        'nhif_no' => 'nullable|string|max:20',
+                        'nssf_no' => 'nullable|string|max:20',
+                        'passport_no' => 'nullable|string|max:255',
+                        'passport_issue_date' => 'nullable|date|before:today',
+                        'passport_expiry_date' => 'nullable|date|after:passport_issue_date',
+                        'place_of_birth' => 'nullable|string|max:255',
+                        'place_of_issue' => 'nullable|string|max:255',
+                        'address' => 'nullable|string|max:255',
                         'permanent_address' => 'required|string|max:255',
-                        'phone' => 'required|string|max:20',
+                        'alternate_phone' => 'nullable|string|max:20',
+                        'blood_group' => 'nullable|string|max:255',
+                        'is_exempt_from_payroll' => 'nullable|boolean',
+                        'resident_status' => 'nullable|string|max:255',
+                        'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
+                        'employment_date' => 'nullable|date|before_or_equal:today',
                         'employment_term' => 'required|in:permanent,contract,temporary,internship',
+                        'probation_end_date' => 'nullable|date|after:employment_date',
+                        'contract_end_date' => 'nullable|date|after:employment_date',
+                        'retirement_date' => 'nullable|date|after:employment_date',
+                        'job_description' => 'nullable|string|max:1000',
                     ]);
 
                     if ($validator->fails()) {
@@ -596,29 +828,47 @@ class EmployeeController extends Controller
                         'location_id' => $locationId,
                         'national_id' => $row['national_id'] ?? null,
                         'marital_status' => $row['marital_status'],
-                        'nhif_no' => $row['nhif_no'],
-                        'nssf_no' => $row['nssf_no'],
+                        'nhif_no' => $row['nhif_no'] ?? null,
+                        'nssf_no' => $row['nssf_no'] ?? null,
                         'tax_no' => $row['tax_no'] ?? null,
                         'date_of_birth' => $row['date_of_birth'],
                         'gender' => $row['gender'],
                         'phone' => $row['phone'],
+                        'alternate_phone' => $row['alternate_phone'] ?? null,
+                        'passport_no' => $row['passport_no'] ?? null,
+                        'passport_issue_date' => $row['passport_issue_date'] ?? null,
+                        'passport_expiry_date' => $row['passport_expiry_date'] ?? null,
+                        'place_of_birth' => $row['place_of_birth'] ?? null,
+                        'place_of_issue' => $row['place_of_issue'] ?? null,
+                        'address' => $row['address'] ?? null,
                         'permanent_address' => $row['permanent_address'],
+                        'blood_group' => $row['blood_group'] ?? null,
+                        'is_exempt_from_payroll' => $row['is_exempt_from_payroll'] ?? false,
+                        'resident_status' => $row['resident_status'] ?? null,
+                        'kra_employee_status' => $row['kra_employee_status'] ?? null,
                     ]);
 
                     $employee->employmentDetails()->create([
                         'job_category_id' => $jobCategoryId,
                         'department_id' => $departmentId,
-                        'employment_date' => now(),
+                        'employment_date' => $row['employment_date'] ?? now(),
                         'employment_term' => $row['employment_term'],
+                        'probation_end_date' => $row['probation_end_date'] ?? null,
+                        'contract_end_date' => $row['contract_end_date'] ?? null,
+                        'retirement_date' => $row['retirement_date'] ?? null,
+                        'job_description' => $row['job_description'] ?? null,
                     ]);
 
                     $employee->paymentDetails()->create([
                         'basic_salary' => $row['basic_salary'],
                         'currency' => $row['currency'],
-                        'payment_mode' => $row['payment_mode'], // Now matches enum
+                        'payment_mode' => $row['payment_mode'],
                         'account_name' => $row['account_name'],
                         'account_number' => $row['account_number'],
                         'bank_name' => $row['bank_name'],
+                        'bank_code' => $row['bank_code'] ?? null,
+                        'bank_branch' => $row['bank_branch'] ?? null,
+                        'bank_branch_code' => $row['bank_branch_code'] ?? null,
                     ]);
 
                     $successful++;
@@ -655,10 +905,8 @@ class EmployeeController extends Controller
 
         $departments = $business->departments()->pluck('name')->toArray();
         $locations = $business->locations()->pluck('name')->toArray();
+        $locations[] = $business->company_name; // Add main business as a location
         $jobCategories = $business->job_categories()->pluck('name')->toArray();
-
-        // Add the main business name to locations
-        $locations[] = $business->name;
 
         $headers = [
             'first_name',
@@ -676,14 +924,33 @@ class EmployeeController extends Controller
             'account_name',
             'account_number',
             'bank_name',
+            'bank_code',
+            'bank_branch',
+            'bank_branch_code',
             'national_id',
             'tax_no',
             'date_of_birth',
             'marital_status',
             'nhif_no',
             'nssf_no',
+            'passport_no',
+            'passport_issue_date',
+            'passport_expiry_date',
+            'place_of_birth',
+            'place_of_issue',
+            'address',
             'permanent_address',
+            'alternate_phone',
+            'blood_group',
+            'is_exempt_from_payroll',
+            'resident_status',
+            'kra_employee_status',
+            'employment_date',
             'employment_term',
+            'probation_end_date',
+            'contract_end_date',
+            'retirement_date',
+            'job_description',
         ];
 
         $sampleData = [
@@ -699,18 +966,37 @@ class EmployeeController extends Controller
                 $locations[0] ?? 'Nairobi',
                 '50000.00',
                 'KES',
-                'bank', // Updated from 'bank_transfer' to match enum
+                'bank',
                 'John Smith',
                 '1234567890',
                 'Equity Bank',
+                'EQ123',
+                'Nairobi Main',
+                '001',
                 '12345678',
                 'KRA12345',
                 '1990-05-15',
                 'single',
                 'NHIF56789',
                 'NSSF98765',
+                'PP123456',
+                '2020-01-01',
+                '2030-01-01',
+                'Nairobi',
+                'Nairobi Passport Office',
+                'P.O. Box 123, Nairobi',
                 'P.O. Box 456, Nairobi',
+                '+254723456789',
+                'A+',
+                '0', // False
+                'Resident',
+                'Primary Employee',
+                '2023-01-01',
                 'permanent',
+                '', // Nullable
+                '', // Nullable
+                '', // Nullable
+                'Manage HR operations',
             ]
         ];
 
@@ -746,7 +1032,7 @@ class EmployeeController extends Controller
                         $sheet = $event->sheet->getDelegate();
 
                         // Style headers: bold and background color
-                        $sheet->getStyle('A1:W1')->applyFromArray([
+                        $sheet->getStyle('A1:AR1')->applyFromArray([
                             'font' => ['bold' => true],
                             'fill' => [
                                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -755,29 +1041,13 @@ class EmployeeController extends Controller
                         ]);
 
                         // Set column widths for readability
-                        $sheet->getColumnDimension('A')->setWidth(15);
-                        $sheet->getColumnDimension('B')->setWidth(15);
-                        $sheet->getColumnDimension('C')->setWidth(25);
-                        $sheet->getColumnDimension('D')->setWidth(15);
-                        $sheet->getColumnDimension('E')->setWidth(10);
-                        $sheet->getColumnDimension('F')->setWidth(12);
-                        $sheet->getColumnDimension('G')->setWidth(15);
-                        $sheet->getColumnDimension('H')->setWidth(15);
-                        $sheet->getColumnDimension('I')->setWidth(15);
-                        $sheet->getColumnDimension('J')->setWidth(12);
-                        $sheet->getColumnDimension('K')->setWidth(10);
-                        $sheet->getColumnDimension('L')->setWidth(15);
-                        $sheet->getColumnDimension('M')->setWidth(20);
-                        $sheet->getColumnDimension('N')->setWidth(15);
-                        $sheet->getColumnDimension('O')->setWidth(15);
-                        $sheet->getColumnDimension('P')->setWidth(12);
-                        $sheet->getColumnDimension('Q')->setWidth(12);
-                        $sheet->getColumnDimension('R')->setWidth(12);
-                        $sheet->getColumnDimension('S')->setWidth(12);
-                        $sheet->getColumnDimension('T')->setWidth(12);
-                        $sheet->getColumnDimension('U')->setWidth(12);
-                        $sheet->getColumnDimension('V')->setWidth(25);
-                        $sheet->getColumnDimension('W')->setWidth(15);
+                        foreach (range('A', 'AR') as $col) {
+                            $sheet->getColumnDimension($col)->setWidth(15);
+                        }
+                        $sheet->getColumnDimension('C')->setWidth(25); // Email
+                        $sheet->getColumnDimension('M')->setWidth(20); // Account Name
+                        $sheet->getColumnDimension('V')->setWidth(25); // Permanent Address
+                        $sheet->getColumnDimension('AR')->setWidth(25); // Job Description
 
                         // Define helper function to apply validation to a range
                         $applyValidation = function ($range, $options) use ($sheet) {
@@ -837,11 +1107,11 @@ class EmployeeController extends Controller
                             'prompt' => 'Select a payment mode',
                             'errorTitle' => 'Invalid Payment Mode',
                             'error' => 'Please select a valid payment mode from the list.',
-                            'formula' => '"bank,cash,cheque,mpesa"', // Updated to match enum
+                            'formula' => '"bank,cash,cheque,mpesa"',
                             'allowBlank' => false,
                         ]);
 
-                        $applyValidation('S2:S1000', [
+                        $applyValidation('V2:V1000', [
                             'promptTitle' => 'Marital Status',
                             'prompt' => 'Select marital status',
                             'errorTitle' => 'Invalid Marital Status',
@@ -850,7 +1120,25 @@ class EmployeeController extends Controller
                             'allowBlank' => false,
                         ]);
 
-                        $applyValidation('W2:W1000', [
+                        $applyValidation('AE2:AE1000', [
+                            'promptTitle' => 'Is Exempt From Payroll',
+                            'prompt' => 'Select 1 for yes, 0 for no (optional)',
+                            'errorTitle' => 'Invalid Value',
+                            'error' => 'Please select 0 or 1.',
+                            'formula' => '"0,1"',
+                            'allowBlank' => true,
+                        ]);
+
+                        $applyValidation('AG2:AG1000', [
+                            'promptTitle' => 'KRA Employee Status',
+                            'prompt' => 'Select KRA employee status (optional)',
+                            'errorTitle' => 'Invalid KRA Status',
+                            'error' => 'Please select a valid KRA employee status from the list.',
+                            'formula' => '"Primary Employee,Secondary Employee"',
+                            'allowBlank' => true,
+                        ]);
+
+                        $applyValidation('AI2:AI1000', [
                             'promptTitle' => 'Employment Term',
                             'prompt' => 'Select employment term',
                             'errorTitle' => 'Invalid Employment Term',
@@ -865,15 +1153,477 @@ class EmployeeController extends Controller
             public function rules(): array
             {
                 return [
-                    'E' => 'in:male,female',
-                    'G' => 'nullable|in:' . implode(',', $this->departments),
-                    'H' => 'nullable|in:' . implode(',', $this->jobCategories),
-                    'I' => 'nullable|in:' . implode(',', $this->locations),
-                    'L' => 'in:bank,cash,cheque,mpesa', // Updated to match enum
-                    'S' => 'in:single,married,divorced,widowed',
-                    'W' => 'in:permanent,contract,temporary,internship',
+                    'E' => 'required|in:male,female', // Column E (gender)
+                    'G' => 'nullable|in:' . implode(',', $this->departments), // Column G (department)
+                    'H' => 'nullable|in:' . implode(',', $this->jobCategories), // Column H (job_category)
+                    'I' => 'nullable|in:' . implode(',', $this->locations), // Column I (location)
+                    'L' => 'required|in:bank,cash,cheque,mpesa', // Column L (payment_mode)
+                    'V' => 'required|in:single,married,divorced,widowed', // Column V (marital_status)
+                    'AE' => 'nullable|in:0,1', // Column AE (is_exempt_from_payroll)
+                    'AG' => 'nullable|in:Primary Employee,Secondary Employee', // Column AG (kra_employee_status)
+                    'AI' => 'required|in:permanent,contract,temporary,internship', // Column AI (employment_term)
                 ];
             }
         }, 'employees_template.xlsx');
+    }
+
+    public function export(Request $request)
+    {
+        try {
+            $business = Business::findBySlug(session('active_business_slug'));
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.');
+            }
+
+            $query = Employee::where('business_id', $business->id)
+                ->with(['user', 'department', 'location', 'paymentDetails', 'employmentDetails.jobCategory']);
+
+            if ($search = $request->input('search')) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                        ->orWhere('employee_code', 'like', "%{$search}%");
+                });
+            }
+            if ($department = $request->input('department')) {
+                $query->where('department_id', $department);
+            }
+            if ($location = $request->input('location')) {
+                $query->where('location_id', $location);
+            }
+            if ($jobCategory = $request->input('job_category')) {
+                $query->whereHas('employmentDetails', function ($q) use ($jobCategory) {
+                    $q->where('job_category_id', $jobCategory);
+                });
+            }
+
+            $employees = $query->get();
+
+            if ($employees->isEmpty()) {
+                return RequestResponse::badRequest('No employees found with the applied filters.');
+            }
+
+            $headers = [
+                'Name',
+                'Employee Code',
+                'Email',
+                'Phone',
+                'Gender',
+                'National ID',
+                'Date of Birth',
+                'Marital Status',
+                'Department',
+                'Job Category',
+                'Location',
+                'Basic Salary',
+                'Currency',
+                'Payment Mode',
+            ];
+
+            $data = $employees->map(function ($employee) {
+                return [
+                    $employee->user->name ?? 'N/A',
+                    $employee->employee_code ?? 'N/A',
+                    $employee->user->email ?? 'N/A',
+                    $employee->user->phone ?? 'N/A',
+                    $employee->gender ?? 'N/A',
+                    $employee->national_id ?? 'N/A',
+                    $employee->date_of_birth ?? 'N/A',
+                    $employee->marital_status ?? 'N/A',
+                    $employee->department->name ?? 'N/A',
+                    optional($employee->employmentDetails)->jobCategory->name ?? 'N/A',
+                    $employee->location ? $employee->location->name : $employee->business->company_name,
+                    number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2),
+                    optional($employee->paymentDetails)->currency ?? 'N/A',
+                    optional($employee->paymentDetails)->payment_mode ?? 'N/A',
+                ];
+            })->toArray();
+
+            return Excel::download(new class($headers, $data) implements
+                \Maatwebsite\Excel\Concerns\FromArray,
+                \Maatwebsite\Excel\Concerns\WithHeadings,
+                \Maatwebsite\Excel\Concerns\WithEvents
+            {
+                private $headers;
+                private $data;
+
+                public function __construct(array $headers, array $data)
+                {
+                    $this->headers = $headers;
+                    $this->data = $data;
+                }
+
+                public function array(): array
+                {
+                    return $this->data; // Only return data, not headers
+                }
+
+                public function headings(): array
+                {
+                    return $this->headers;
+                }
+
+                public function registerEvents(): array
+                {
+                    return [
+                        AfterSheet::class => function (AfterSheet $event) {
+                            $sheet = $event->sheet->getDelegate();
+                            $sheet->getStyle('A1:N1')->applyFromArray([
+                                'font' => ['bold' => true],
+                                'fill' => [
+                                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                    'startColor' => ['argb' => 'FFCCCCCC'],
+                                ],
+                            ]);
+
+                            foreach (range('A', 'N') as $col) {
+                                $sheet->getColumnDimension($col)->setAutoSize(true);
+                            }
+                        }
+                    ];
+                }
+            }, 'employees_export_' . now()->format('Ymd_His') . '.xlsx');
+        } catch (\Exception $e) {
+            Log::error('Failed to export employees: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to export employees: ' . $e->getMessage());
+        }
+    }
+
+    public function contracts(Request $request)
+    {
+        $page = 'Contract Management';
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return redirect()->back()->with('error', 'Business not found.');
+        }
+
+        // Employees nearing contract expiry (unchanged)
+        $employees = Employee::where('business_id', $business->id)
+            ->whereHas('employmentDetails', function ($query) {
+                $query->where('employment_term', 'contract')
+                    ->whereNotNull('contract_end_date')
+                    ->where('contract_end_date', '<=', now()->addDays(30))
+                    ->where('contract_end_date', '>=', now())
+                    ->where('status', '!=', 'terminated');
+            })
+            ->with(['user:id,name', 'employmentDetails:employee_id,contract_end_date'])
+            ->get();
+
+        // Paginated employees for termination section
+        $terminationEmployees = Employee::where('business_id', $business->id)
+            ->whereHas('employmentDetails', function ($query) {
+                $query->where('status', '!=', 'terminated'); // Exclude already terminated
+            })
+            ->with([
+                'user:id,name',
+                'employmentDetails:employee_id,status,employment_term'
+            ])
+            ->select('id', 'user_id')
+            ->paginate(25);
+
+        $contractActions = EmployeeContractAction::where('business_id', $business->id)
+            ->with(['employee.user', 'issuedBy'])
+            ->get();
+
+        return view('employees.contracts.index', compact('employees', 'terminationEmployees', 'contractActions', 'business', 'page'));
+    }
+
+    public function fetchContracts(Request $request)
+    {
+        try {
+            $business = Business::findBySlug(session('active_business_slug'));
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.');
+            }
+
+            $query = EmployeeContractAction::where('business_id', $business->id)
+                ->with(['employee.user', 'issuedBy']);
+
+            $contractActions = $query->paginate(10);
+
+            $data = $contractActions->map(function ($action) {
+                try {
+                    return [
+                        'id' => $action->id,
+                        'employee' => optional($action->employee)->user->name ?? 'N/A',
+                        'action_type' => ucfirst($action->action_type),
+                        'reason' => $action->reason,
+                        'action_date' => $action->action_date->format('M d, Y'),
+                        'status' => ucfirst($action->status),
+                        'issued_by' => optional($action->issuedBy)->name ?? 'N/A',
+                        'actions' => '<div class="btn-group">' .
+                            ($action->action_type === 'termination' ?
+                                '<button class="btn btn-sm btn-outline-warning" onclick="editContractAction(' . $action->id . ')"><i class="fa fa-edit"></i> Edit</button>' .
+                                '<button class="btn btn-sm btn-outline-danger" onclick="deleteContractAction(' . $action->id . ')"><i class="fa fa-trash"></i> Delete</button>'
+                                : '') .
+                            '</div>'
+                    ];
+                } catch (\Exception $e) {
+                    \Log::error('Error mapping contract action: ' . $e->getMessage(), [
+                        'action_id' => $action->id,
+                        'employee_id' => $action->employee_id,
+                        'issued_by_id' => $action->issued_by_id,
+                    ]);
+                    return null; // Skip problematic records
+                }
+            })->filter(); // Remove null entries
+
+            $html = view('employees.contracts._cards', ['contractActions' => $contractActions->items()])->render();
+
+            return response()->json([
+                'draw' => $request->input('draw'),
+                'recordsTotal' => EmployeeContractAction::where('business_id', $business->id)->count(),
+                'recordsFiltered' => $contractActions->total(),
+                'data' => $data->toArray(),
+                'html' => $html,
+                'count' => $contractActions->total(),
+                'message' => 'Contract actions fetched successfully.',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to fetch contract actions: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
+    public function storeContractAction(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_ids' => 'required_without:employee_id|array',
+            'employee_ids.*' => 'exists:employees,id',
+            'employee_id' => 'required_without:employee_ids|exists:employees,id',
+            'action_type' => 'required|in:termination,reminder',
+            'reason' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'action_date' => 'required|date',
+        ]);
+
+        return $this->handleTransaction(function () use ($validated) {
+            $business = Business::findBySlug(session('active_business_slug'));
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.');
+            }
+
+            $employeeIds = $validated['employee_ids'] ?? [$validated['employee_id']];
+            $processedCount = 0;
+
+            foreach ($employeeIds as $employeeId) {
+                $employee = Employee::with('user', 'employmentDetails')->find($employeeId);
+                if (!$employee || !$employee->user) {
+                    \Log::warning('Employee or user not found for termination.', ['employee_id' => $employeeId]);
+                    continue;
+                }
+
+                if (
+                    $validated['action_type'] === 'termination' &&
+                    $employee->employmentDetails &&
+                    $employee->employmentDetails->status === 'terminated'
+                ) {
+                    \Log::warning('Attempted to terminate already terminated employee.', ['employee_id' => $employeeId]);
+                    continue;
+                }
+
+                $contractAction = EmployeeContractAction::create([
+                    'business_id' => $business->id,
+                    'employee_id' => $employeeId,
+                    'action_type' => $validated['action_type'],
+                    'reason' => $validated['reason'],
+                    'description' => $validated['description'],
+                    'action_date' => $validated['action_date'],
+                    'status' => $validated['action_type'] === 'termination' ? 'active' : 'sent',
+                    'issued_by_id' => auth()->id(),
+                ]);
+
+                if ($validated['action_type'] === 'termination') {
+                    $employee->employmentDetails()->update(['status' => 'terminated']);
+                    $employee->update(['is_exempt_from_payroll' => true]);
+
+                    try {
+                        $pdfContent = \Pdf::loadView('employees.termination_letter', [
+                            'employee' => $employee,
+                            'business' => $business,
+                            'reason' => $validated['reason'],
+                            'description' => $validated['description'],
+                            'action_date' => \Carbon\Carbon::parse($validated['action_date']),
+                        ])->output();
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to generate termination letter PDF: ' . $e->getMessage(), [
+                            'employee_id' => $employeeId,
+                        ]);
+                        continue;
+                    }
+
+                    $document = EmployeeDocument::create([
+                        'employee_id' => $employeeId,
+                        'document_type' => 'Termination Letter',
+                    ]);
+
+                    try {
+                        $document
+                            ->addMediaFromString($pdfContent)
+                            ->usingFileName("termination_letter_{$employeeId}_" . time() . ".pdf")
+                            ->usingName("Termination Letter")
+                            ->toMediaCollection('employeeDocuments');
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to store termination letter in media library: ' . $e->getMessage(), [
+                            'employee_id' => $employeeId,
+                        ]);
+                    }
+
+                    try {
+                        Notification::send($employee->user, new TerminationNotification($contractAction, $pdfContent));
+                        \Log::info('Termination action completed.', ['employee_id' => $employeeId]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send termination notification: ' . $e->getMessage(), [
+                            'employee_id' => $employeeId,
+                        ]);
+                        continue;
+                    }
+                } else {
+                    try {
+                        Notification::send($employee->user, new ContractReminderNotification($contractAction));
+                        \Log::info('Reminder action completed.', ['employee_id' => $employeeId]);
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to send reminder notification: ' . $e->getMessage(), [
+                            'employee_id' => $employeeId,
+                        ]);
+                        continue;
+                    }
+                }
+
+                $processedCount++;
+            }
+
+            if ($processedCount === 0) {
+                return RequestResponse::badRequest('No valid employees processed.');
+            }
+
+            return RequestResponse::created("Contract action(s) recorded successfully.", ['processed' => $processedCount]);
+        }, function ($e) {
+            \Log::error('Failed to process contract action: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to store contract action: ' . $e->getMessage());
+        });
+    }
+
+    public function editContractAction(Request $request)
+    {
+        try {
+            $business = Business::findBySlug(session('active_business_slug'));
+            $contractAction = $request->contract_action_id ? EmployeeContractAction::findOrFail($request->contract_action_id) : null;
+            $employees = Employee::where('business_id', $business->id)->with('user')->get();
+
+            $form = view('employees.contracts._form', compact('contractAction', 'employees', 'business'))->render();
+            return response()->json([
+                'message' => 'Form loaded successfully.',
+                'data' => $form
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error loading contract action edit form: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to load form: ' . $e->getMessage(),
+                'data' => null
+            ], 500);
+        }
+    }
+
+    public function updateContractAction(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'reason' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'action_date' => 'required|date',
+            'status' => 'required|in:active,reversed',
+        ]);
+
+        try {
+            $contractAction = EmployeeContractAction::findOrFail($id);
+            if ($contractAction->action_type !== 'termination') {
+                return RequestResponse::badRequest('Only termination actions can be updated.');
+            }
+
+            DB::beginTransaction();
+
+            $contractAction->update([
+                'employee_id' => $validated['employee_id'],
+                'reason' => $validated['reason'],
+                'description' => $validated['description'],
+                'action_date' => $validated['action_date'],
+                'status' => $validated['status'],
+            ]);
+
+            $employee = Employee::findOrFail($validated['employee_id']);
+            $newStatus = $validated['status'] === 'active' ? 'terminated' : 'active';
+            $isExempt = $validated['status'] === 'active' ? true : false;
+            $employee->employmentDetails()->update(['status' => $newStatus]);
+            $employee->update(['is_exempt_from_payroll' => $isExempt]);
+
+            if ($validated['status'] === 'active') {
+                Notification::send($employee->user, new TerminationNotification($contractAction));
+            }
+
+            DB::commit();
+            Log::info('Contract action updated.', ['action_id' => $id, 'employee_id' => $employee->id]);
+            return RequestResponse::ok('Contract action updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update contract action: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to update contract action: ' . $e->getMessage());
+        }
+    }
+
+    public function destroyContractAction(Request $request, $id)
+    {
+        try {
+            $contractAction = EmployeeContractAction::findOrFail($id);
+            if ($contractAction->action_type !== 'termination') {
+                return RequestResponse::badRequest('Only termination actions can be deleted.');
+            }
+
+            DB::beginTransaction();
+
+            $employee = Employee::findOrFail($contractAction->employee_id);
+            $employee->employmentDetails()->update(['status' => 'active']);
+            $employee->update(['is_exempt_from_payroll' => false]);
+
+            $contractAction->delete();
+
+            DB::commit();
+            Log::info('Contract action deleted.', ['action_id' => $id, 'employee_id' => $employee->id]);
+            return RequestResponse::ok('Contract action deleted successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to delete contract action: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to delete contract action: ' . $e->getMessage());
+        }
+    }
+
+    public function sendContractReminder(Request $request)
+    {
+        $validated = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+        ]);
+
+        try {
+            $business = Business::findBySlug(session('active_business_slug'));
+            $employee = Employee::findOrFail($validated['employee_id']);
+
+            $contractAction = EmployeeContractAction::create([
+                'business_id' => $business->id,
+                'employee_id' => $employee->id,
+                'action_type' => 'reminder',
+                'reason' => 'Contract expiry reminder',
+                'description' => 'Your contract is nearing its end date.',
+                'action_date' => now(),
+                'status' => 'sent',
+                'issued_by_id' => auth()->id(),
+            ]);
+
+            Notification::send($employee->user, new ContractReminderNotification($contractAction));
+
+            return RequestResponse::ok('Reminder sent successfully.');
+        } catch (\Exception $e) {
+            Log::error('Failed to send contract reminder: ' . $e->getMessage());
+            return RequestResponse::badRequest('Failed to send contract reminder: ' . $e->getMessage());
+        }
     }
 }

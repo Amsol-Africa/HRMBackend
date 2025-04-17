@@ -6,7 +6,8 @@ enum Status
 {
     const ACTIVE = 'active';
     const PENDING = 'pending';
-    const COMPLETED = 'completed'; //inteview
+    const COMPLETED = 'completed';
+    const IN_PROGRESS = 'in_progress';
     const CANCELLED = 'cancelled';
     const APPROVED = 'approved';
     const DECLINED = 'declined';
@@ -23,5 +24,6 @@ enum Status
     const REJECTED = "rejected";
     const SCHEDULED = "scheduled";
     const CANCELED = "canceled";
-
+    const VERIFIED = "verified";
+    const DEACTIVATED = 'deactivated';
 }

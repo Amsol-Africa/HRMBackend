@@ -115,21 +115,6 @@ class DashboardController extends Controller
         return view('business.index', compact('cards', 'page'));
     }
 
-    function clients(Request $request)
-    {
-        $page = 'Clients';
-        $description = '';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $clientBusinesses = $business->managedBusinesses;
-        return view('clients.index', compact('page', 'description', 'clientBusinesses'));
-    }
-    function locations(Request $request)
-    {
-        $page = 'Locations';
-        $description = '';
-        $business = Business::findBySlug(session('active_business_slug'));
-        return view('locations.index', compact('page', 'description'));
-    }
     function requestAccess(Request $request)
     {
         $page = 'Request Access';
@@ -143,13 +128,15 @@ class DashboardController extends Controller
         $modules = Module::all();
         return view('clients.access', compact('page', 'description', 'modules'));
     }
-    function organizationSetup(Request $request)
+
+    function locations(Request $request)
     {
-        $page = 'Organization Setup';
+        $page = 'Locations';
         $description = '';
-        $industries = Industry::all();
-        return view('business.setup', compact('page', 'description', 'industries'));
+        $business = Business::findBySlug(session('active_business_slug'));
+        return view('locations.index', compact('page', 'description'));
     }
+
     function departments(Request $request)
     {
         $page = 'Departments';
@@ -268,12 +255,14 @@ class DashboardController extends Controller
         $description = '';
         return view('payroll.slips', compact('page', 'description', 'payroll'));
     }
+
     public function payrollImport(Request $request)
     {
         $page = 'Import Payrolls';
         $description = '';
         return view('payroll.import', compact('page', 'description'));
     }
+
     public function processPayrolls(Request $request)
     {
         $page = 'Process Payroll';
@@ -285,6 +274,7 @@ class DashboardController extends Controller
         $locations = $business->locations;
         return view('payroll.process', compact('page', 'description', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
     }
+
     public function payrollFormula(Request $request)
     {
         $page = 'Payroll Formula';
@@ -295,6 +285,7 @@ class DashboardController extends Controller
 
         return view('payroll.formula', compact('page', 'description', 'deductions'));
     }
+
     public function createPayrollFormula(Request $request)
     {
         $page = 'Create Payroll Formula';
@@ -311,7 +302,7 @@ class DashboardController extends Controller
         $payrolls = $business->payrolls()->latest()->get();
         return view('downloads.index', compact('page', 'description', 'payrolls', 'locations'));
     }
-    // new
+
     public function payrollFormulas(Request $request)
     {
         session(['active_business_slug' => $request->route('business')]);
@@ -329,7 +320,7 @@ class DashboardController extends Controller
         session(['active_business_slug' => $request->route('business')]);
         return (new PayGradesController())->index($request);
     }
-    // new
+
     public function deductions(Request $request)
     {
         session(['active_business_slug' => $request->route('business')]);
@@ -402,7 +393,6 @@ class DashboardController extends Controller
         return view('loans.index', compact('page', 'description', 'employees'));
     }
 
-    //Leave management
     public function requestLeave(Request $request)
     {
         $page = 'Leave Applications';
@@ -413,6 +403,7 @@ class DashboardController extends Controller
         $employees = $business->employees;
         return view('leave.create', compact('page', 'description', 'leaveTypes', 'employees', 'locations'));
     }
+
     public function leaveApplication(Request $request, String $business_slug, String $reference_number)
     {
         $business = Business::findBySlug($business_slug);
@@ -446,12 +437,14 @@ class DashboardController extends Controller
 
         return view('leave.show', compact('page', 'description', 'timelineData'));
     }
+
     public function leaveApplications(Request $request)
     {
         $page = 'Leave Applications';
         $description = '';
         return view('leave.index', compact('page', 'description'));
     }
+
     public function leaveTypes(Request $request)
     {
         $page = 'Leave Types';
@@ -460,12 +453,14 @@ class DashboardController extends Controller
         $job_categories = JobCategory::all();
         return view('leave.types', compact('page', 'description', 'departments', 'job_categories'));
     }
+
     public function leavePeriods(Request $request)
     {
         $page = 'Leave Periods';
         $description = '';
         return view('leave.periods', compact('page', 'description'));
     }
+
     public function leaveEntitlements(Request $request)
     {
         $page = 'Leave Entitlements';
@@ -474,6 +469,7 @@ class DashboardController extends Controller
         $leave_periods = $business->leavePeriods;
         return view('leave.entitlements', compact('page', 'description', 'leave_periods'));
     }
+
     public function setLeaveEntitlements(Request $request)
     {
         $page = 'Set Leave Entitlements';
@@ -487,20 +483,14 @@ class DashboardController extends Controller
         $locations = $business->locations;
         return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
     }
+
     public function leaveSettings(Request $request)
     {
         $page = 'Leave Settings';
         $description = '';
         return view('leave.settings', compact('page', 'description'));
     }
-    public function leaveReports(Request $request)
-    {
-        $page = 'Leave Reports';
-        $description = '';
-        return view('leave.reports', compact('page', 'description'));
-    }
 
-    // Recruitment Module
     public function applicants(Request $request)
     {
         $page = 'Applicants';
@@ -521,20 +511,32 @@ class DashboardController extends Controller
         $description = 'Create and assign tasks to employees';
         $business = Business::findBySlug(session('active_business_slug'));
         $employees = $business->employees;
-        return view('tasks.index', compact('page', 'description', 'employees'));
+        return view('tasks.index', compact('page', 'description', 'employees', 'business'));
     }
-    public function progress(Request $request, string $business_slug, String $task_slug)
+
+    public function createTask(Request $request)
     {
-        $page = 'Tasks';
-        $description = 'Create and assign tasks to employees';
         $business = Business::findBySlug(session('active_business_slug'));
         $employees = $business->employees;
+        return view('tasks.create', compact('employees'));
+    }
 
-        $task = Task::findBySlug($task_slug);
+    public function showTask(Request $request, Task $task)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if ($task->business_id !== $business->id) {
+            abort(403, 'Unauthorized');
+        }
+        return view('tasks.show', compact('task'));
+    }
 
-        Log::debug($task_slug);
-
-        return view('tasks.progress', compact('page', 'description', 'employees', 'task'));
+    public function progress(Request $request, Task $task)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if ($task->business_id !== $business->id) {
+            abort(403, 'Unauthorized');
+        }
+        return view('tasks.progress', compact('task'));
     }
 
     public function createJobPosts(Request $request)
@@ -587,7 +589,7 @@ class DashboardController extends Controller
     {
         $page = 'Interview Scheduling';
         $description = 'Schedule and manage job interviews.';
-        return view('job-applications.interviews', compact('page', 'description'));
+        return view('interviews.index', compact('page', 'description'));
     }
 
     public function recruitmentReports(Request $request)
@@ -619,6 +621,7 @@ class DashboardController extends Controller
         $employees = $business->employees;
         return view('attendances.clockin', compact('page', 'description', 'employees'));
     }
+
     public function clockOut(Request $request)
     {
         $page = 'Clock Out';
@@ -627,6 +630,7 @@ class DashboardController extends Controller
         $employees = $business->employees;
         return view('attendances.clockout', compact('page', 'description', 'employees'));
     }
+
     public function overtime(Request $request)
     {
         $page = 'Overtime';
@@ -635,16 +639,23 @@ class DashboardController extends Controller
         $employees = $business->employees;
         return view('attendances.overtime', compact('page', 'description', 'employees'));
     }
+
     public function kpis(Request $request)
     {
         $page = 'KPIs';
         $description = '';
         return view('kpis.index', compact('page', 'description'));
     }
+
     public function createKpis(Request $request)
     {
         $page = 'Create KPIs';
         $description = '';
         return view('kpis.create', compact('page', 'description'));
+    }
+
+    public function contracts()
+    {
+        return app(EmployeeController::class)->contracts(request());
     }
 }

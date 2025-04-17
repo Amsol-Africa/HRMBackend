@@ -1,58 +1,53 @@
-<div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="scheduleInterviewModal" tabindex="-1" aria-labelledby="scheduleInterviewModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview for <span id="applicant_name"></span> </h5>
+                <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview for <span
+                        id="applicant_name"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="interviewsForm">
-                @csrf
-
-                <input type="text" name="application_id" hidden id="application_id_input" class="form-control" required>
-
-                <div class="modal-body">
+            <div class="modal-body">
+                <form id="scheduleInterviewForm">
+                    @csrf
+                    <input type="hidden" name="application_id" id="application_id_input">
                     <div class="mb-3">
-                        <label class="form-label">Interview Type</label>
-                        <select name="type" class="form-select">
-                            <option value="in-person">In-Person</option>
-                            <option value="video">Video</option>
-                            <option value="phone">Phone</option>
+                        <label for="interview_date" class="form-label">Interview Date</label>
+                        <input type="date" class="form-control" name="interview_date" id="interview_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interview_time" class="form-label">Interview Time</label>
+                        <input type="time" class="form-control" name="interview_time" id="interview_time" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" name="location" id="location" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interviewer_id" class="form-label">Interviewer</label>
+                        <select name="interviewer_id" id="interviewer_id" class="form-control" required>
+                            <option value="">-- Select Interviewer --</option>
+                            @foreach(\App\Models\User::whereHas('roles', function($q) { $q->where('name',
+                            'business-admin'); })->get() as $user)
+                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
                         </select>
                     </div>
-
                     <div class="mb-3">
-                        <label class="form-label">Scheduled Date & Time</label>
-                        <input type="datetime-local" name="scheduled_at" class="form-control datepicker" required>
+                        <label for="type" class="form-label">Interview Type</label>
+                        <select name="type" id="type" class="form-control" required>
+                            <option value="phone">Phone</option>
+                            <option value="video">Video</option>
+                            <option value="in-person">In-Person</option>
+                        </select>
                     </div>
-
-                    <div class="mb-3 place-field d-none">
-                        <label class="form-label">Location</label>
-                        <input type="text" name="place" class="form-control">
-                    </div>
-
-                    <div class="mb-3 meeting-link-field d-none">
-                        <label class="form-label">Meeting Link</label>
-                        <input type="url" name="meeting_link" class="form-control">
-                    </div>
-
                     <div class="mb-3">
-                        <label class="form-label">Notes</label>
-                        <textarea name="notes" class="form-control"></textarea>
+                        <label for="meeting_link" class="form-label">Meeting Link (if applicable)</label>
+                        <input type="url" class="form-control" name="meeting_link" id="meeting_link">
                     </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" onclick="scheduleInterview(this)" class="btn btn-primary"> <i class="bi bi-check-circle me-2"></i> Save Interview</button>
-                </div>
-            </form>
+                    <button type="button" class="btn btn-primary" onclick="scheduleInterview(this)">Schedule</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-
-<script>
-    document.querySelector('select[name="type"]').addEventListener('change', function() {
-        document.querySelector('.place-field').classList.toggle('d-none', this.value !== 'in-person');
-        document.querySelector('.meeting-link-field').classList.toggle('d-none', this.value !== 'video');
-    });
-</script>

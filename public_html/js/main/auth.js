@@ -18,10 +18,12 @@ window.login = async function (btn) {
     try {
         await authService.login(loginData);
         $('#email, #password').val('');
+    } catch (error) {
     } finally {
         btn_loader(btn, false);
     }
 };
+
 window.register = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -30,15 +32,15 @@ window.register = async function (btn) {
 
     try {
         await authService.register(formData);
+    } catch (error) {
     } finally {
         btn_loader(btn, false);
     }
 };
-window.logout = async function(btn) {
-    const data = { };
-    try {
-        await authService.logout(data);
-    } finally {
 
+window.logout = async function (btn) {
+    try {
+        await authService.logout({});
+    } catch (error) {
     }
-}
+};

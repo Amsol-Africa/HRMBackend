@@ -1,4 +1,4 @@
- class TasksService {
+class TasksService {
     constructor(requestClient) {
         this.requestClient = requestClient;
     }

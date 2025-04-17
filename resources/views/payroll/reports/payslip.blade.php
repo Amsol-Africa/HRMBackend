@@ -6,7 +6,6 @@
     <title>Payslip - {{ $employeePayroll->employee->user->name ?? 'Employee' }}</title>
     <style>
     body {
-        /* font-family: Arial, sans-serif; */
         margin: 0;
         padding: 20px;
         background-color: #f4f4f4;
@@ -14,7 +13,6 @@
 
     .payslip {
         width: 500px;
-        /* Narrow width like traditional payslips */
         margin: 0 auto;
         background-color: #fff;
         padding: 15px;
@@ -94,13 +92,12 @@
 
 <body>
     <div class="payslip">
-        <!-- Header: Business/Location Details -->
         <div class="header">
             @if($entityType === 'business' && $entity->logo)
-            <img src="{{ asset('storage/' . $entity->logo) }}" alt="{{ $entity->name }} Logo"
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo"
                 style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
             @elseif($entityType === 'location' && $business->logo)
-            <img src="{{ asset('storage/' . $business->logo) }}" alt="{{ $business->name }} Logo"
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo"
                 style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
             @endif
             <h1>{{ $entity->company_name ?? $entity->name ?? 'Business Name' }}</h1>
@@ -139,31 +136,25 @@
                     <tr>
                         <td>Basic Salary</td>
                         <td>{{ number_format($employeePayroll->basic_salary ?? 0, 2) }}</td>
-                        <td>{{ number_format(($employeePayroll->basic_salary ?? 0) * ($exchangeRates ?? 1), 2) }}
-                        </td>
+                        <td>{{ number_format(($employeePayroll->basic_salary ?? 0) * ($exchangeRates ?? 1), 2) }}</td>
                     </tr>
                     <tr>
                         <td>Overtime</td>
                         <td>
                             <?php
                             $overtimeData = json_decode($employeePayroll->overtime, true);
-                            $overtimeAmount = is_array($overtimeData) && isset($overtimeData['amount']) ? $overtimeData['amount'] : ($employeePayroll->overtime ?? 0);
+                            $overtimeAmount = is_array($overtimeData) && isset($overtimeData['amount']) ? $overtimeData['amount'] : 0;
                             ?>
                             {{ number_format($overtimeAmount, 2) }}
                         </td>
-                        <td>{{ number_format($overtimeAmount  * ($exchangeRates ?? 1), 2) }}</td>
+                        <td>{{ number_format($overtimeAmount * ($exchangeRates ?? 1), 2) }}</td>
                     </tr>
                     <?php $allowances = json_decode($employeePayroll->allowances, true) ?? []; ?>
-                    @foreach($allowances as $key => $value)
+                    @foreach($allowances as $allowance)
                     <tr>
-                        <td>{{ ucfirst(str_replace('_', ' ', $key)) }}</td>
-                        <td>
-                            <?php
-                            $allowanceAmount = is_numeric($value) ? $value : (is_array($value) && isset($value['amount']) ? $value['amount'] : 0);
-                            ?>
-                            {{ number_format($allowanceAmount, 2) }}
-                        </td>
-                        <td>{{ number_format($allowanceAmount  * ($exchangeRates ?? 1), 2) }}</td>
+                        <td>{{ $allowance['name'] ?? 'Allowance' }}</td>
+                        <td>{{ number_format($allowance['amount'] ?? 0, 2) }}</td>
+                        <td>{{ number_format(($allowance['amount'] ?? 0) * ($exchangeRates ?? 1), 2) }}</td>
                     </tr>
                     @endforeach
                     <tr class="total">
@@ -171,6 +162,37 @@
                         <td>{{ number_format($employeePayroll->gross_pay ?? 0, 2) }}</td>
                         <td>{{ number_format(($employeePayroll->gross_pay ?? 0) * ($exchangeRates ?? 1), 2) }}</td>
                     </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Reliefs -->
+        <div class="section">
+            <h3>Reliefs</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount ({{ $employeePayroll->payroll->currency ?? 'KES' }})</th>
+                        <th>Amount ({{ $targetCurrency ?? 'USD' }})</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php $reliefs = json_decode($employeePayroll->reliefs, true) ?? []; ?>
+                    @foreach($reliefs as $reliefKey => $reliefData)
+                    @if(is_array($reliefData) && isset($reliefData['amount']))
+                    <tr>
+                        <td>{{ $reliefData['name'] ?? ucwords(str_replace('-', ' ', $reliefKey)) }}</td>
+                        <td>{{ number_format($reliefData['amount'], 2) }}</td>
+                        <td>{{ number_format($reliefData['amount'] * ($exchangeRates ?? 1), 2) }}</td>
+                    </tr>
+                    @endif
+                    @endforeach
+                    @if(empty($reliefs))
+                    <tr>
+                        <td colspan="3">No reliefs applied</td>
+                    </tr>
+                    @endif
                 </tbody>
             </table>
         </div>
@@ -187,7 +209,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php $deductions = json_decode($employeePayroll->deductions, true) ?? []; ?>
                     @foreach([
                     'shif' => 'SHIF',
                     'nssf' => 'NSSF',
@@ -205,7 +226,8 @@
                     </tr>
                     @endif
                     @endforeach
-                    @foreach($deductions as $key => $deduction)
+                    <?php $deductions = json_decode($employeePayroll->deductions, true) ?? []; ?>
+                    @foreach($deductions as $deduction)
                     @if(is_array($deduction) && isset($deduction['amount']))
                     <tr>
                         <td>{{ $deduction['name'] }}</td>
@@ -227,6 +249,13 @@
             <p><strong>Net Pay ({{ $targetCurrency ?? 'USD' }}):</strong>
                 {{ number_format(($employeePayroll->net_pay ?? 0) * ($exchangeRates ?? 1), 2) }}
             </p>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="section">
+            <h3>Bank Details</h3>
+            <p><strong>Bank Name:</strong> {{ $employeePayroll->bank_name ?? 'N/A' }}</p>
+            <p><strong>Account Number:</strong> {{ $employeePayroll->account_number ?? 'N/A' }}</p>
         </div>
 
         <!-- Footer -->

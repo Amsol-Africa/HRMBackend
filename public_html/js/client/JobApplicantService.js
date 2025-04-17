@@ -8,7 +8,28 @@ class JobApplicantService {
             const response = await this.requestClient.post('/applicants/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Fetch error:', error);
+            throw error;
+        }
+    }
+
+    async filter(data) {
+        try {
+            const response = await this.requestClient.post('/applicants/filter', data);
+            return response.data;
+        } catch (error) {
+            console.error('Filter error:', error);
+            throw error;
+        }
+    }
+
+    async save(data) {
+        try {
+            const response = await this.requestClient.post('/applicants/store', data);
+            toastr.success(response.message, "Success");
+            return response.data;
+        } catch (error) {
+            console.error('Save error:', error);
             throw error;
         }
     }
@@ -17,9 +38,9 @@ class JobApplicantService {
         try {
             const response = await this.requestClient.post('/applicants/update', data);
             toastr.info(response.message, "Success");
-            this.handleRedirect(response.data.redirect_url);
+            return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Update error:', error);
             throw error;
         }
     }
@@ -29,36 +50,43 @@ class JobApplicantService {
             const response = await this.requestClient.post('/applicants/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
-    async save(data) {
-        try {
-            const response = await this.requestClient.post('/applicants/store', data);
-            toastr.success(response.message, "Success");
-        } catch (error) {
-            console.log(error)
+            console.error('Edit error:', error);
             throw error;
         }
     }
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/applicants/delete', data);
+            const response = await this.requestClient.post('/applicants/destroy', data);
             toastr.info(response.message, "Success");
+            return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Delete error:', error);
             throw error;
         }
     }
 
-    handleRedirect(route) {
-        if (route) {
-            setTimeout(() => {
-                window.location.href = route;
-            }, 1500);
+    async downloadDocument(data) {
+        try {
+            const response = await this.requestClient.post(
+                '/applicants/download-document',
+                data,
+                { responseType: 'blob' }
+            );
+            return response;
+        } catch (error) {
+            console.error('Download error:', error);
+            throw error;
+        }
+    }
+
+    async export(data) {
+        try {
+            const response = await this.requestClient.post('/applicants/export', data, true);
+            return response;
+        } catch (error) {
+            console.error('Export error:', error);
+            throw error;
         }
     }
 }

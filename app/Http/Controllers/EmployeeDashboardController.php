@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\EmployeePayroll;
 use App\Models\Location;
 use App\Http\Responses\RequestResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class EmployeeDashboardController extends Controller
 {
@@ -92,80 +93,175 @@ class EmployeeDashboardController extends Controller
     }
 
     // Download P9 Form
-    public function downloadP9()
+    public function downloadP9(Request $request)
     {
-        $employee = Auth::user();
-        $p9Path = storage_path("app/p9_forms/{$employee->id}_p9.pdf");
-
-        if (!file_exists($p9Path)) {
-            return back()->with('error', 'P9 form not found!');
+        $employee = Auth::user()->employee;
+        if (!$employee) {
+            return back()->with('error', 'Employee record not found.');
         }
 
-        return response()->download($p9Path);
+        $year = $request->query('year', now()->year); // Default to current year
+
+        $payrolls = EmployeePayroll::where('employee_id', $employee->id)
+            ->whereHas('payroll', fn($q) => $q->where('payrun_year', $year))
+            ->with('payroll')
+            ->get();
+
+        if ($payrolls->isEmpty()) {
+            return back()->with('error', "No payroll data available for $year.");
+        }
+
+        $data = $this->prepareP9Data($employee, $payrolls, $year);
+        $pdf = Pdf::loadView('payroll.reports.p9_employee', [
+            'employee' => $employee,
+            'year' => $year,
+            'data' => $data,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download("P9_{$year}_{$employee->employee_code}.pdf");
     }
 
     public function viewPayslips(Request $request, $business)
     {
         $business = Business::findBySlug($business);
-        if (!$business) {
-            return RequestResponse::badRequest('Business not found.');
+        if (!$business || session('active_business_slug') !== $business->slug) {
+            return redirect()->back()->with('error', 'Business not found or mismatched.');
         }
-
-        if (session('active_business_slug') !== $business->slug) {
-            return RequestResponse::badRequest('Business mismatch.');
-        }
-
-        $user = Auth::user();
-        if (!$user) {
-            return RequestResponse::badRequest('User not authenticated.');
-        }
-
-        // dd($user);
 
         $employee = Employee::where('business_id', $business->id)
-            ->where('user_id', $user->id)
-            ->with('user')
+            ->where('user_id', Auth::id())
             ->first();
         if (!$employee) {
-            return RequestResponse::badRequest('Employee record not found for this user.');
+            return redirect()->back()->with('error', 'Employee record not found.');
         }
 
         $payslips = EmployeePayroll::where('employee_id', $employee->id)
             ->with(['payroll'])
             ->get()
-            ->map(function ($employeePayroll) {
+            ->map(function ($ep) {
                 return [
-                    'payroll_id' => $employeePayroll->payroll_id,
-                    'year' => $employeePayroll->payroll->payrun_year,
-                    'month' => $employeePayroll->payroll->payrun_month,
-                    'month_name' => Carbon::create($employeePayroll->payroll->payrun_year, $employeePayroll->payroll->payrun_month, 1)->monthName,
-                    'status' => $employeePayroll->payroll->status,
+                    'payroll_id' => $ep->payroll_id,
+                    'year' => $ep->payroll->payrun_year,
+                    'month' => $ep->payroll->payrun_month,
+                    'month_name' => Carbon::create($ep->payroll->payrun_year, $ep->payroll->payrun_month, 1)->monthName,
+                    'status' => $ep->payroll->status,
                 ];
             })
             ->sortByDesc('year')
             ->sortByDesc('month')
             ->values();
 
-        $page = "My Payslips";
+        log::info($payslips);
 
+        $page = "My Payslips";
         return view('employee.payslips', compact('page', 'payslips', 'employee', 'business'));
     }
 
-    public function downloadPayslip($id)
+    public function downloadPayslip($payrollId)
     {
-        $payslip = Payslip::where('id', $id)->where('employee_id', Auth::id())->first();
+        $employee = Auth::user()->employee;
+        if (!$employee) {
+            return back()->with('error', 'Employee record not found.');
+        }
 
-        if (!$payslip) {
+        $employeePayroll = EmployeePayroll::where('employee_id', $employee->id)
+            ->where('payroll_id', $payrollId)
+            ->with(['payroll.business', 'employee.user'])
+            ->first();
+
+        if (!$employeePayroll) {
             return back()->with('error', 'Payslip not found!');
         }
 
-        $filePath = storage_path("app/payslips/{$payslip->file}");
-
-        if (!file_exists($filePath)) {
-            return back()->with('error', 'Payslip file not found!');
+        if ($employeePayroll->payroll->status !== 'closed') {
+            return back()->with('error', 'Payslip is not available until payroll is closed.');
         }
 
-        return response()->download($filePath);
+        $pdf = Pdf::loadView('payroll.reports.payslip', [
+            'employeePayroll' => $employeePayroll,
+            'business' => $employeePayroll->payroll->business,
+            'entity' => $employeePayroll->payroll->business,
+            'entityType' => 'business',
+            'exchangeRates' => ['rate' => 1],
+            'targetCurrency' => $employeePayroll->payroll->currency ?? 'KES',
+        ]);
+
+        $monthName = Carbon::create($employeePayroll->payroll->payrun_year, $employeePayroll->payroll->payrun_month, 1)->monthName;
+        return $pdf->download("Payslip_{$employeePayroll->payroll->payrun_year}_{$monthName}_{$employee->employee_code}.pdf");
+    }
+
+    private function prepareP9Data($employee, $payrolls, $year)
+    {
+        $monthlyData = array_fill(1, 12, [
+            'basic_salary' => 0,              // A
+            'benefits_non_cash' => 0,         // B
+            'value_of_quarters' => 0,         // C
+            'total_gross_pay' => 0,           // D
+            'retirement_e1' => 0,             // E1 (30% of A)
+            'retirement_e2' => 0,             // E2 (Actual)
+            'retirement_e3' => 20000,         // E3 (Fixed KRA limit)
+            'owner_occupied_interest' => 0,   // F
+            'retirement_contribution' => 0,   // G (Lowest of E + F)
+            'chargeable_pay' => 0,            // H
+            'tax_charged' => 0,               // J
+            'personal_relief' => 2400,        // K (KRA standard monthly max)
+            'insurance_relief' => 0,          // K
+            'paye' => 0,                      // J-K
+        ]);
+
+        foreach ($payrolls as $ep) {
+            $month = (int)$ep->payroll->payrun_month;
+            $deductions = json_decode($ep->deductions, true) ?? [];
+            $basicSalary = (float)$ep->basic_salary;
+            $grossPay = (float)$ep->gross_pay;
+            $taxableIncome = (float)$ep->taxable_income;
+            $paye = (float)$ep->paye;
+            $personalRelief = (float)$ep->personal_relief ?? 2400;
+            $insuranceRelief = (float)$ep->insurance_relief ?? 0;
+            $retirementE1 = $basicSalary * 0.3; // 30% of basic salary
+            $retirementE2 = (float)($ep->pension ?? ($deductions['pension'] ?? 0)); // Actual contribution
+
+            $monthlyData[$month] = [
+                'basic_salary' => $basicSalary,
+                'benefits_non_cash' => 0, // Add logic if tracked
+                'value_of_quarters' => 0, // Add logic if tracked
+                'total_gross_pay' => $grossPay,
+                'retirement_e1' => $retirementE1,
+                'retirement_e2' => $retirementE2,
+                'retirement_e3' => 20000,
+                'owner_occupied_interest' => 0, // Add if applicable
+                'retirement_contribution' => min($retirementE1, $retirementE2, 20000),
+                'chargeable_pay' => $taxableIncome,
+                'tax_charged' => $paye + $personalRelief + $insuranceRelief, // Reverse calculate J
+                'personal_relief' => $personalRelief,
+                'insurance_relief' => $insuranceRelief,
+                'paye' => $paye,
+            ];
+        }
+
+        $totals = [
+            'basic_salary' => array_sum(array_column($monthlyData, 'basic_salary')),
+            'benefits_non_cash' => array_sum(array_column($monthlyData, 'benefits_non_cash')),
+            'value_of_quarters' => array_sum(array_column($monthlyData, 'value_of_quarters')),
+            'total_gross_pay' => array_sum(array_column($monthlyData, 'total_gross_pay')),
+            'retirement_e1' => array_sum(array_column($monthlyData, 'retirement_e1')),
+            'retirement_e2' => array_sum(array_column($monthlyData, 'retirement_e2')),
+            'retirement_e3' => array_sum(array_column($monthlyData, 'retirement_e3')),
+            'owner_occupied_interest' => array_sum(array_column($monthlyData, 'owner_occupied_interest')),
+            'retirement_contribution' => array_sum(array_column($monthlyData, 'retirement_contribution')),
+            'chargeable_pay' => array_sum(array_column($monthlyData, 'chargeable_pay')),
+            'tax_charged' => array_sum(array_column($monthlyData, 'tax_charged')),
+            'personal_relief' => array_sum(array_column($monthlyData, 'personal_relief')),
+            'insurance_relief' => array_sum(array_column($monthlyData, 'insurance_relief')),
+            'paye' => array_sum(array_column($monthlyData, 'paye')),
+        ];
+
+        return [
+            'employee_name' => $employee->full_name,
+            'tax_no' => $employee->tax_no ?? 'N/A',
+            'monthly_data' => $monthlyData,
+            'totals' => $totals,
+        ];
     }
 
     public function accountSettings()

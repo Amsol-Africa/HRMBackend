@@ -8,20 +8,12 @@
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Type:</label>
-                        <p>{{ str_replace('_', ' ', ucwords($relief->type)) }}</p>
+                        <label class="fw-medium text-dark">Computation Method:</label>
+                        <p>{{ ucfirst($relief->computation_method) }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Greatest or Least Of:</label>
-                        <p>{{ ucfirst($relief->greatest_or_least_of) }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Fixed Amount:</label>
+                        <label class="fw-medium text-dark">Amount:</label>
                         <p>{{ $relief->amount ? number_format($relief->amount, 2) : 'N/A' }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Actual Amount:</label>
-                        <p>{{ $relief->actual_amount ? 'Yes' : 'No' }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="fw-medium text-dark">Percentage Of:</label>
@@ -29,20 +21,12 @@
                         </p>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Fraction to Consider:</label>
-                        <p>{{ str_replace('_', ' ', ucwords($relief->fraction_to_consider)) }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
                         <label class="fw-medium text-dark">Limit:</label>
                         <p>{{ $relief->limit ? number_format($relief->limit, 2) : 'N/A' }}</p>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Round Off:</label>
-                        <p>{{ str_replace('_', ' ', ucwords($relief->round_off)) }}</p>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="fw-medium text-dark">Decimal Places:</label>
-                        <p>{{ $relief->decimal_places }}</p>
+                    <div class="col-md-12 mb-3">
+                        <label class="fw-medium text-dark">Description:</label>
+                        <p>{{ $relief->description ?? 'N/A' }}</p>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="fw-medium text-dark">Status:</label>
@@ -52,7 +36,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-modern" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-warning btn-modern" data-relief="{{ $relief->id }}"
+                <button type="button" class="btn btn-warning btn-modern" data-slug="{{ $relief->slug }}"
                     onclick="editRelief(this)">Edit</button>
             </div>
         </div>

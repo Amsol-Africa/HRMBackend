@@ -88,42 +88,42 @@
 
 @push('scripts')
 <script>
-    (function() {
-        'use strict';
-        var forms = document.querySelectorAll('.needs-validation');
-        Array.prototype.slice.call(forms).forEach(function(form) {
-            form.addEventListener('submit', function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-                if (form.checkValidity()) {
-                    saveAllowance(form.querySelector('button[type="button"]'));
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-
-        // Dynamically toggle amount and rate fields based on type
-        $('#type').on('change', function() {
-            const type = $(this).val();
-            const $amountField = $('#amount_field');
-            const $rateField = $('#rate_field');
-            const $amountInput = $('#amount');
-            const $rateInput = $('#rate');
-
-            $amountField.toggle(type === 'fixed');
-            $rateField.toggle(type === 'rate');
-
-            // Toggle required attribute based on type
-            $amountInput.prop('required', type === 'fixed');
-            $rateInput.prop('required', type === 'rate');
-
-            // Clear the non-active field to avoid validation confusion
-            if (type === 'fixed') {
-                $rateInput.val('');
-            } else if (type === 'rate') {
-                $amountInput.val('');
+(function() {
+    'use strict';
+    var forms = document.querySelectorAll('.needs-validation');
+    Array.prototype.slice.call(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (form.checkValidity()) {
+                saveAllowance(form.querySelector('button[type="button"]'));
             }
-        });
-    })();
+            form.classList.add('was-validated');
+        }, false);
+    });
+
+    // Dynamically toggle amount and rate fields based on type
+    $('#type').on('change', function() {
+        const type = $(this).val();
+        const $amountField = $('#amount_field');
+        const $rateField = $('#rate_field');
+        const $amountInput = $('#amount');
+        const $rateInput = $('#rate');
+
+        $amountField.toggle(type === 'fixed');
+        $rateField.toggle(type === 'rate');
+
+        // Toggle required attribute based on type
+        $amountInput.prop('required', type === 'fixed');
+        $rateInput.prop('required', type === 'rate');
+
+        // Clear the non-active field to avoid validation confusion
+        if (type === 'fixed') {
+            $rateInput.val('');
+        } else if (type === 'rate') {
+            $amountInput.val('');
+        }
+    });
+})();
 </script>
 @endpush

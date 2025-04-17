@@ -15,6 +15,9 @@ class Allowance extends Model
     protected $fillable = [
         'business_id',
         'location_id',
+        'calculation_basis',
+        'applies_to',
+        'type',
         'name',
         'slug',
         'is_taxable',

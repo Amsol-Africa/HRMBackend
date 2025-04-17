@@ -13,6 +13,7 @@ class KpiResult extends Model
         'result_value',
         'meets_target',
         'measured_at',
+        'comment',
     ];
 
     public function kpi()

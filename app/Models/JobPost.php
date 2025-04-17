@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class JobPost extends Model
 {
     use HasFactory, HasStatuses, HasSlug, LogsActivity;
+
     protected $fillable = [
         'business_id',
         'location_id',
@@ -19,11 +20,16 @@ class JobPost extends Model
         'title',
         'slug',
         'description',
+        'requirements', // Added
         'salary_range',
+        'number_of_positions', // Added
         'employment_type',
         'place',
         'created_by',
         'closed_at',
+        'status', // Added
+        'closing_date', // Added
+        'is_public', // Added
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -33,6 +39,9 @@ class JobPost extends Model
 
     protected $casts = [
         'closed_at' => 'datetime',
+        'closing_date' => 'date', // Added
+        'is_public' => 'boolean', // Added
+        'number_of_positions' => 'integer', // Added (optional, for type consistency)
     ];
 
     // Relationship with Business
@@ -40,6 +49,8 @@ class JobPost extends Model
     {
         return $this->belongsTo(Business::class);
     }
+
+    // Relationship with Location
     public function location()
     {
         return $this->belongsTo(Location::class);
@@ -56,5 +67,4 @@ class JobPost extends Model
     {
         return $this->hasMany(Application::class);
     }
-
 }

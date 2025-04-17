@@ -5,10 +5,7 @@ namespace App\Mail;
 use App\Models\AccessRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class InviteUserMail extends Mailable
 {
@@ -21,24 +18,13 @@ class InviteUserMail extends Mailable
         $this->accessRequest = $accessRequest;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Invite User Mail',
-        );
-    }
-
-    public function content(): Content
-    {
-        $url = route('register.token', ['token' => $this->accessRequest->registration_token]);
-        return new Content(
-            view: 'emails.invite-user',
-            with: ['url' => $url]
-        );
-    }
-
-    public function attachments(): array
-    {
-        return [];
+        return $this->subject('Invitation to Join Business')
+            ->view('emails.invite_user')
+            ->with([
+                'business' => $this->accessRequest->business,
+                'registerUrl' => route('register', ['token' => $this->accessRequest->registration_token]),
+            ]);
     }
 }

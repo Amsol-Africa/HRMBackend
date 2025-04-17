@@ -125,18 +125,79 @@
     <table class="table">
         <thead>
             <tr>
+                @if($column === 'paye')
+                <th>PIN of Employee</th>
+                <th>Name of Employee</th>
+                <th>Basic Salary ({{ $currency }})</th>
+                <th>Gross Pay ({{ $currency }})</th>
+                <th>PAYE Tax ({{ $currency }})</th>
+                @elseif($column === 'shif')
+                <th>PAYROLL NUMBER</th>
+                <th>FIRSTNAME</th>
+                <th>LASTNAME</th>
+                <th>ID NO</th>
+                <th>KRA PIN</th>
+                <th>SHIF NO</th>
+                <th>CONTRIBUTION AMOUNT ({{ $currency }})</th>
+                <th>PHONE</th>
+                @elseif($column === 'nssf')
+                <th>PAYROLL NUMBER</th>
+                <th>SURNAME</th>
+                <th>OTHER NAMES</th>
+                <th>ID NO</th>
+                <th>KRA PIN</th>
+                <th>NSSF NO</th>
+                <th>GROSS PAY ({{ $currency }})</th>
+                <th>VOLUNTARY</th>
+                @elseif($column === 'housing_levy')
+                <th>EMP NO</th>
+                <th>FULL NAME</th>
+                <th>TAX_NO</th>
+                <th>HOUSE_LEVY AMOUNT ({{ $currency }})</th>
+                @else
                 <th>Name</th>
                 <th>Code</th>
-                <th>KRA Pin</th>
-                <th>Basic Salary</th>
-                <th>Gross Pay</th>
-                <th>Net Pay</th>
-                <th>{{ ucwords(str_replace('_', ' ', $column)) }} ({{ $payroll->currency ?? 'KES' }})</th>
+                <th>KRA PIN</th>
+                <th>Basic Salary ({{ $currency }})</th>
+                <th>Gross Pay ({{ $currency }})</th>
+                <th>Net Pay ({{ $currency }})</th>
+                <th>{{ ucwords(str_replace('_', ' ', $column)) }} ({{ $currency }})</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             @foreach($data as $row)
             <tr>
+                @if($column === 'paye')
+                <td>{{ $row['PIN of Employee'] }}</td>
+                <td>{{ $row['Name of Employee'] }}</td>
+                <td>{{ $row['Basic Salary'] }}</td>
+                <td>{{ $row['Gross Pay (Ksh) (I)'] }}</td>
+                <td>{{ $row['PAYE Tax (Ksh) (T)'] }}</td>
+                @elseif($column === 'shif')
+                <td>{{ $row['PAYROLL NUMBER'] }}</td>
+                <td>{{ $row['FIRSTNAME'] }}</td>
+                <td>{{ $row['LASTNAME'] }}</td>
+                <td>{{ $row['ID NO'] }}</td>
+                <td>{{ $row['KRA PIN'] }}</td>
+                <td>{{ $row['SHIF NO'] }}</td>
+                <td>{{ $row['CONTRIBUTION AMOUNT'] }}</td>
+                <td>{{ $row['PHONE'] }}</td>
+                @elseif($column === 'nssf')
+                <td>{{ $row['PAYROLL NUMBER'] }}</td>
+                <td>{{ $row['SURNAME'] }}</td>
+                <td>{{ $row['OTHER NAMES'] }}</td>
+                <td>{{ $row['ID NO'] }}</td>
+                <td>{{ $row['KRA PIN'] }}</td>
+                <td>{{ $row['NSSF NO'] }}</td>
+                <td>{{ $row['GROSS PAY'] }}</td>
+                <td>{{ $row['VOLUNTARY'] }}</td>
+                @elseif($column === 'housing_levy')
+                <td>{{ $row['EMP NO'] }}</td>
+                <td>{{ $row['FULL NAME'] }}</td>
+                <td>{{ $row['TAX_NO'] }}</td>
+                <td>{{ $row['HOUSE_LEVY AMOUNT'] }}</td>
+                @else
                 <td>{{ $row['employee_name'] }}</td>
                 <td>{{ $row['employee_code'] }}</td>
                 <td>{{ $row['tax_no'] }}</td>
@@ -144,6 +205,7 @@
                 <td>{{ $row['gross_pay'] }}</td>
                 <td>{{ $row['net_pay'] }}</td>
                 <td>{{ $row[$column] }}</td>
+                @endif
             </tr>
             @endforeach
         </tbody>

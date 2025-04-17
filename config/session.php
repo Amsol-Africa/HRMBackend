@@ -129,7 +129,7 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
+        Str::slug(env('APP_NAME', 'laravel'), '_') . '_session'
     ),
 
     /*
@@ -213,5 +213,10 @@ return [
     */
 
     'partitioned' => env('SESSION_PARTITIONED_COOKIE', false),
+    'driver' => env('SESSION_DRIVER', 'database'),
+    'secure' => env('SESSION_SECURE_COOKIE', true),
+    'same_site' => 'none', // Required for cross-origin cookies
+    'domain' => env('SESSION_DOMAIN', '.amsoljobs.africa'),
+    'http_only' => true,
 
 ];

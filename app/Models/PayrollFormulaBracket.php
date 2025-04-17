@@ -18,6 +18,13 @@ class PayrollFormulaBracket extends Model
         'amount',
     ];
 
+    protected $casts = [
+        'min' => 'decimal:2',
+        'max' => 'decimal:2',
+        'rate' => 'decimal:2',
+        'amount' => 'decimal:2',
+    ];
+
     public function formula()
     {
         return $this->belongsTo(PayrollFormula::class, 'payroll_formula_id');

@@ -12,12 +12,22 @@ use App\Models\Task;
 use App\Models\Advance;
 use App\Models\Loan;
 use App\Models\JobPost;
+use App\Models\Employee;
+use App\Models\Location;
+use App\Models\Department;
+use App\Models\JobCategory;
+use Illuminate\Support\Facades\DB;
 
 class Kpi extends Model
 {
     protected $fillable = [
         'name',
         'slug',
+        'business_id',
+        'location_id',
+        'employee_id',
+        'department_id',
+        'job_category_id',
         'model_type',
         'description',
         'calculation_method',
@@ -30,9 +40,42 @@ class Kpi extends Model
         return $this->hasMany(KpiResult::class);
     }
 
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function business()
+    {
+        return $this->belongsTo(Business::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function jobCategory()
+    {
+        return $this->belongsTo(JobCategory::class);
+    }
+
     public function calculate($modelInstance)
     {
+        if ($this->model_type === 'manual') {
+            return null; // Manual KPIs are reviewed, not calculated
+        }
+
         $method = ucfirst($this->calculation_method);
+        if (!method_exists($this, "calculate{$method}")) {
+            return null;
+        }
+
         $value = $this->{"calculate{$method}"}($modelInstance);
 
         $result = new KpiResult([
@@ -57,7 +100,7 @@ class Kpi extends Model
             case '<=':
                 return $value <= $target;
             case '=':
-                return $value == $target;
+                return abs($value - $target) < 0.01;
             default:
                 return false;
         }
@@ -66,17 +109,25 @@ class Kpi extends Model
     protected function calculatePercentage($modelInstance)
     {
         if ($this->model_type === 'App\Models\Attendance') {
-            $employeeId = $modelInstance->employee_id;
-            $businessId = $modelInstance->business_id;
             $month = $modelInstance->date->startOfMonth();
-
             $totalDays = $month->daysInMonth;
-            $presentDays = Attendance::where('employee_id', $employeeId)
-                ->where('business_id', $businessId)
-                ->whereBetween('date', [$month, $month->endOfMonth()])
-                ->where('is_absent', 0)
-                ->count();
 
+            $query = Attendance::whereBetween('date', [$month, $month->endOfMonth()])
+                ->where('is_absent', 0);
+
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->location_id) {
+                $query->where('location_id', $this->location_id);
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+
+            $presentDays = $query->count();
             return $totalDays > 0 ? ($presentDays / $totalDays) * 100 : 0;
         }
         return 0;
@@ -85,12 +136,26 @@ class Kpi extends Model
     protected function calculateCount($modelInstance)
     {
         if ($this->model_type === 'App\Models\Application') {
-            return Application::where('job_post_id', $modelInstance->job_post_id)->count();
+            $query = Application::where('job_post_id', $modelInstance->job_post_id);
+            if ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            } elseif ($this->location_id) {
+                $query->where('location_id', $this->location_id);
+            }
+            return $query->count();
         } elseif ($this->model_type === 'App\Models\Task') {
-            return Task::where('business_id', $modelInstance->business_id)
-                ->where('due_date', '<=', now())
-                ->whereHas('statuses', fn($q) => $q->where('name', 'completed'))
-                ->count();
+            $query = Task::where('due_date', '<=', now())
+                ->whereHas('statuses', fn($q) => $q->where('name', 'completed'));
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+            return $query->count();
         }
         return 0;
     }
@@ -98,14 +163,41 @@ class Kpi extends Model
     protected function calculateAverage($modelInstance)
     {
         if ($this->model_type === 'App\Models\EmployeePayroll') {
-            return EmployeePayroll::where('payroll_id', $modelInstance->payroll_id)
-                ->avg('net_pay') ?? 0;
+            $query = EmployeePayroll::where('payroll_id', $modelInstance->payroll_id);
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->business_id) {
+                $query->whereHas('payroll', fn($q) => $q->where('business_id', $this->business_id));
+            }
+            return $query->avg('net_pay') ?? 0;
         } elseif ($this->model_type === 'App\Models\Advance') {
-            return Advance::where('employee_id', $modelInstance->employee_id)
-                ->avg('amount') ?? 0;
+            $query = Advance::query();
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+            return $query->avg('amount') ?? 0;
         } elseif ($this->model_type === 'App\Models\Loan') {
-            return Loan::where('employee_id', $modelInstance->employee_id)
-                ->avg('amount') ?? 0;
+            $query = Loan::query();
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+            return $query->avg('amount') ?? 0;
         }
         return 0;
     }
@@ -114,13 +206,31 @@ class Kpi extends Model
     {
         if ($this->model_type === 'App\Models\Overtime') {
             $month = $modelInstance->date->startOfMonth();
-            return Overtime::where('employee_id', $modelInstance->employee_id)
-                ->whereBetween('date', [$month, $month->endOfMonth()])
-                ->sum('overtime_hours') ?? 0;
+            $query = Overtime::whereBetween('date', [$month, $month->endOfMonth()]);
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->location_id) {
+                $query->where('location_id', $this->location_id);
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+            return $query->sum('overtime_hours') ?? 0;
         } elseif ($this->model_type === 'App\Models\LeaveRequest') {
-            return LeaveRequest::where('employee_id', $modelInstance->employee_id)
-                ->where('start_date', '>=', now()->startOfYear())
-                ->sum('total_days') ?? 0;
+            $query = LeaveRequest::where('start_date', '>=', now()->startOfYear());
+            if ($this->employee_id) {
+                $query->where('employee_id', $this->employee_id);
+            } elseif ($this->department_id) {
+                $query->whereHas('employee', fn($q) => $q->where('department_id', $this->department_id));
+            } elseif ($this->job_category_id) {
+                $query->whereHas('employee', fn($q) => $q->whereHas('employmentDetails', fn($eq) => $eq->where('job_category_id', $this->job_category_id)));
+            } elseif ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            }
+            return $query->sum('total_days') ?? 0;
         }
         return 0;
     }
@@ -128,27 +238,17 @@ class Kpi extends Model
     protected function calculateRatio($modelInstance)
     {
         if ($this->model_type === 'App\Models\JobPost') {
-            $applications = Application::where('job_post_id', $modelInstance->id)->count();
+            $query = Application::where('job_post_id', $modelInstance->id);
+            if ($this->business_id) {
+                $query->where('business_id', $this->business_id);
+            } elseif ($this->location_id) {
+                $query->where('location_id', $this->location_id);
+            }
+            $applications = $query->count();
             $targetHires = $modelInstance->vacancies ?? 1;
             return $targetHires > 0 ? $applications / $targetHires : 0;
         }
         return 0;
-    }
-
-    public function getIconClass()
-    {
-        return match ($this->model_type) {
-            'App\Models\Attendance' => 'fas fa-calendar-check',
-            'App\Models\Application' => 'fas fa-file-alt',
-            'App\Models\EmployeePayroll' => 'fas fa-money-check-alt',
-            'App\Models\Overtime' => 'fas fa-clock',
-            'App\Models\LeaveRequest' => 'fas fa-plane-departure',
-            'App\Models\Task' => 'fas fa-tasks',
-            'App\Models\Advance' => 'fas fa-hand-holding-usd',
-            'App\Models\Loan' => 'fas fa-piggy-bank',
-            'App\Models\JobPost' => 'fas fa-briefcase',
-            default => 'fas fa-chart-line',
-        };
     }
 
     public function getProgressPercentage()
@@ -160,11 +260,14 @@ class Kpi extends Model
         $result = $this->results->last()->result_value;
         $target = (float) $this->target_value;
 
-        // Handle different comparison operators
+        if (!$target || !$this->comparison_operator) {
+            return 0;
+        }
+
         if ($this->comparison_operator === '>=') {
             return min(100, ($result / $target) * 100);
         } elseif ($this->comparison_operator === '<=') {
-            return min(100, (($target - $result) / $target) * 100 + 50); // Simplified; adjust logic as needed
+            return min(100, (($target - $result) / $target) * 100 + 50);
         } elseif ($this->comparison_operator === '=') {
             return abs($result - $target) < 0.01 ? 100 : min(100, ($result / $target) * 100);
         }

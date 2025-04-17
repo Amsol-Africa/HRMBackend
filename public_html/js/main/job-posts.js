@@ -5,30 +5,20 @@ import JobPostService from "/js/client/JobPostService.js";
 const requestClient = new RequestClient();
 const jobPostService = new JobPostService(requestClient);
 
-// Optionally keep TinyMce if used elsewhere
-function loadTinyMce() {
-    if (typeof tinymce !== 'undefined') {
-        tinymce.init({
-            selector: 'textarea[name="description"].tinyMce',
-            plugins: 'lists link image table',
-            toolbar: 'undo redo | blocks | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent',
-            setup: (editor) => {
-                editor.on('init', () => {
-                    console.log('TinyMCE initialized for editor:', editor.id);
-                });
-            }
-        });
-    } else {
-        console.error('TinyMCE script not loaded. Include <script src="https://cdn.tiny.cloud/1/your-api-key/tinymce/6/tinymce.min.js"></script>');
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function () {
-    // loadTinyMce(); // Uncomment if TinyMCE is still needed elsewhere
-
+document.addEventListener('DOMContentLoaded', () => {
     const generateAiButton = document.querySelector('[data-bs-target="#aiModal"]');
     const aiContentDiv = document.getElementById('aiGeneratedContent');
     const useAiContentBtn = document.getElementById('useAiContent');
+    const filterInput = document.getElementById('jobFilter');
+    const jobPostsContainer = document.getElementById('jobPostsContainer');
+
+    if (document.getElementById('jobPostForm')) {
+        loadTinyMce();
+    }
+
+    if (jobPostsContainer) {
+        getJobPosts();
+    }
 
     if (generateAiButton) {
         generateAiButton.addEventListener('click', async function () {
@@ -65,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const jsonResponse = JSON.parse(responseText);
                 console.log('Parsed JSON response:', jsonResponse);
 
-                // Fix: Check jsonResponse.status, not message
                 if (jsonResponse.message === 'success' && jsonResponse.data && jsonResponse.data.description) {
                     aiContentDiv.innerHTML = jsonResponse.data.description;
                 } else {
@@ -81,86 +70,102 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (useAiContentBtn) {
-        useAiContentBtn.addEventListener('click', function () {
+        useAiContentBtn.addEventListener('click', () => {
             const textarea = document.querySelector('textarea[name="description"]');
             const content = aiContentDiv.innerHTML;
-
-            if (textarea) {
-                // Method 1: Direct value assignment
-                if (typeof tinymce !== 'undefined' && tinymce.get(textarea.id)) {
-                    tinymce.get(textarea.id).setContent(content);
-                    console.log('AI content injected into TinyMCE editor');
-                } else {
-                    textarea.value = content;
-                    console.log('AI content injected into textarea');
-                }
-
-                console.log('HTML directly injected into textarea');
-
-                // Method 2: Simulate copy-paste with Clipboard API
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(content)
-                        .then(() => {
-                            console.log('Content copied to clipboard');
-                            textarea.focus();
-                            document.execCommand('paste'); // Attempt paste (may not work in all browsers)
-                            console.log('Attempted clipboard paste into textarea');
-                        })
-                        .catch(err => {
-                            console.warn('Clipboard API failed:', err);
-                            // Fallback if Clipboard API fails
-                            simulatePaste(textarea, content);
-                        });
-                } else {
-                    // Fallback for browsers without Clipboard API support
-                    console.warn('Clipboard API not available');
-                    simulatePaste(textarea, content);
-                }
-            } else {
-                console.error('Textarea not found');
+            if (textarea && tinymce.get(textarea.id)) {
+                tinymce.get(textarea.id).setContent(content);
+            } else if (textarea) {
+                textarea.value = content;
             }
-            bootstrap.Modal.getInstance(document.getElementById('aiModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('aiModal'))?.hide();
         });
-    } else {
-        console.warn('Use AI Content button not found');
+    }
+
+    if (filterInput) {
+        filterInput.addEventListener('input', debounce(async () => {
+            await getJobPosts(1, filterInput.value);
+        }, 300));
+    }
+
+    const form = document.getElementById('jobPostForm');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+            saveJobPost(document.querySelector('button[type="button"][onclick^="saveJobPost"]'));
+        });
     }
 });
 
-// Fallback function to simulate paste
-function simulatePaste(textarea, content) {
-    textarea.focus();
-    textarea.value = content; // Ensure content is set
-    const event = new Event('input', { bubbles: true });
-    textarea.dispatchEvent(event); // Trigger input event for form validation
-    console.log('Simulated paste into textarea');
+function debounce(func, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
 }
 
-// Existing functions unchanged
-window.getJobPosts = async function (page = 1) {
+window.getJobPosts = async function (page = 1, filter = '') {
+    const container = $("#jobPostsContainer");
     try {
-        let data = { page: page };
-        const JobPosts = await jobPostService.fetch(data);
-        $("#jobPostsContainer").html(JobPosts);
-        new DataTable('#jobPostsTable');
+        container.html('<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading job posts...</div>');
+        const data = { page, filter };
+        const response = await jobPostService.fetch(data);
+        if (typeof response === 'string') {
+            container.html(response);
+        } else if (response && response.data) {
+            container.html(response.data);
+        } else {
+            throw new Error('Invalid response format from server');
+        }
+
+        if ($('#jobPostsTable').length) {
+            if ($.fn.DataTable.isDataTable('#jobPostsTable')) {
+                $('#jobPostsTable').DataTable().destroy();
+            }
+
+            $('#jobPostsTable').DataTable({
+                responsive: true,
+                order: [[4, 'desc']],
+                columnDefs: [{ targets: '_all', searchable: true }],
+                language: {
+                    emptyTable: "No job posts available",
+                    loadingRecords: "Loading..."
+                }
+            });
+        }
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error("Error loading job posts:", error);
+        container.html(`<div class="alert alert-danger">Error loading job posts: ${error.message}</div>`);
+        toastr.error('Failed to load job posts: ' + error.message, "Error");
     }
 };
 
 window.saveJobPost = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-
     tinymce.triggerSave();
 
-    let formData = new FormData(document.getElementById("jobPostForm"));
-
+    const formData = new FormData(document.getElementById("jobPostForm"));
     try {
         if (formData.has('job_post_slug')) {
             await jobPostService.update(formData);
+            // toastr.success("Job post updated successfully!", "Success");
         } else {
             await jobPostService.save(formData);
+            // toastr.success("Job post created successfully!", "Success");
         }
+        const businessSlug = window.businessSlug || 'default';
+        setTimeout(() => {
+            window.location.href = `/business/${businessSlug}/recruitment/job-posts`;
+        }, 1500);
+    } catch (error) {
+        toastr.error('Failed to save job post: ' + error.message, "Error");
     } finally {
         btn_loader(btn, false);
     }
@@ -168,37 +173,53 @@ window.saveJobPost = async function (btn) {
 
 window.editJobPost = async function (btn) {
     btn = $(btn);
-
     const job_post = btn.data("job-post");
-    const data = { job_post: job_post };
-
     try {
-        const form = await jobPostService.edit(data);
-        $('#jobPostFormContainer').html(form);
+        const response = await jobPostService.edit({ job_post });
+        $('#jobPostFormContainer').html(response.data);
+        loadTinyMce();
+    } catch (error) {
+        console.error('Error loading edit form:', error);
+        toastr.error('Failed to load edit form: ' + error.message, "Error");
+    }
+};
+
+window.togglePublic = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+    const job_post = btn.data("job-post");
+    try {
+        const response = await jobPostService.togglePublic({ job_post });
+        await getJobPosts();
+        // toastr.success(response.message || 'Job post visibility toggled successfully!', "Success");
+    } catch (error) {
+        toastr.error('Failed to toggle visibility: ' + error.message, "Error");
     } finally {
+        btn_loader(btn, false);
     }
 };
 
 window.deleteJobPost = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-
     const job_post = btn.data("job-post");
-    const data = { job_post: job_post };
 
     Swal.fire({
         title: "Are you sure?",
-        text: "You won't be able to revert this!",
+        text: "This action cannot be undone!",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#068f6d",
         cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
+        confirmButtonText: "Yes, delete it!"
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                await jobPostService.delete(data);
-                getJobPosts();
+                const response = await jobPostService.delete({ job_post });
+                await getJobPosts();
+                // toastr.success(response.message || 'Job post has been deleted.', "Success");
+            } catch (error) {
+                toastr.error('Failed to delete job post: ' + error.message, "Error");
             } finally {
                 btn_loader(btn, false);
             }
@@ -207,3 +228,49 @@ window.deleteJobPost = async function (btn) {
         }
     });
 };
+
+function loadTinyMce() {
+    if (typeof tinymce === 'undefined') {
+        console.error('TinyMCE is not loaded yet. Ensure the script is included in app.blade.php.');
+        toastr.error('TinyMCE editor could not be loaded. Please check your setup.', "Error");
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.6.1/tinymce.min.js';
+        script.onload = () => {
+            console.log('TinyMCE script loaded dynamically');
+            initializeTinyMce();
+        };
+        script.onerror = () => {
+            console.error('Failed to load TinyMCE script dynamically');
+        };
+        document.head.appendChild(script);
+    } else {
+        initializeTinyMce();
+    }
+}
+
+function initializeTinyMce() {
+    tinymce.remove('.tinyMce');
+    tinymce.init({
+        selector: 'textarea.tinyMce',
+        height: 600,
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+        content_css: '//www.tiny.cloud/css/codepen.min.css',
+        skin: 'oxide',
+        content_style: 'body { font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:1.6; }',
+        setup: function (editor) {
+            editor.on('init', function () {
+                console.log('TinyMCE initialized for editor:', editor.id);
+            });
+            editor.on('error', function (e) {
+                console.error('TinyMCE error:', e);
+                toastr.error('TinyMCE initialization error: ' + e.message, "Error");
+            });
+        }
+    }).then(() => {
+        console.log('TinyMCE initialized successfully');
+    }).catch(error => {
+        console.error('TinyMCE initialization failed:', error);
+        toastr.error('Failed to initialize TinyMCE: ' + error.message, "Error");
+    });
+}

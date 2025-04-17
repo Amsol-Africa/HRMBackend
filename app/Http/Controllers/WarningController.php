@@ -9,6 +9,9 @@ use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmployeeWarningIssued;
+use App\Mail\EmployeeWarningResolved;
 
 class WarningController extends Controller
 {
@@ -92,6 +95,12 @@ class WarningController extends Controller
                 'issued_by' => auth()->user()->id,
             ]);
 
+            // Send email notification to the employee
+            $employee = $warning->employee;
+            if ($employee && $employee->user && $employee->user->email) {
+                Mail::to($employee->user->email)->send(new EmployeeWarningIssued($warning));
+            }
+
             return RequestResponse::created('Warning issued successfully.', $warning->id);
         });
     }
@@ -156,6 +165,7 @@ class WarningController extends Controller
                 }
             }
 
+            $previousStatus = $warning->status; // Store previous status
             $warning->update([
                 'employee_id' => $validatedData['employee_id'],
                 'issue_date' => $validatedData['issue_date'],
@@ -164,6 +174,14 @@ class WarningController extends Controller
                 'status' => $validatedData['status'],
                 'issued_by' => auth()->user()->id,
             ]);
+
+            // Check if status changed to 'resolved' and send email
+            if ($validatedData['status'] === 'resolved' && $previousStatus !== 'resolved') {
+                $employee = $warning->employee;
+                if ($employee && $employee->user && $employee->user->email) {
+                    Mail::to($employee->user->email)->send(new EmployeeWarningResolved($warning));
+                }
+            }
 
             return RequestResponse::ok('Warning updated successfully.');
         });

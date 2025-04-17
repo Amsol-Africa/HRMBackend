@@ -10,176 +10,189 @@ use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
 
 class JobPostController extends Controller
 {
     use HandleTransactions;
 
-    // Fetch Job Posts
+    public function index()
+    {
+        return view('job-posts.index', ['page' => 'Job Posts']);
+    }
+
+    public function create()
+    {
+        return view('job-posts.create', ['page' => 'Create Job Post']);
+    }
+
+    public function editView($business, $jobpost)
+    {
+        $jobPost = JobPost::findBySlug($jobpost);
+        if (!$jobPost) {
+            return redirect()->route('business.recruitment.jobs.index', $business)->with('error', 'Job post not found.');
+        }
+        return view('job-posts.edit', compact('jobPost'));
+    }
+
     public function fetch(Request $request)
     {
         $businessSlug = session('active_business_slug');
+        $query = JobPost::with('business')->orderBy('created_at', 'desc');
 
         if ($businessSlug) {
             $business = Business::findBySlug($businessSlug);
-            $job_posts = JobPost::with('business')->where('business_id', $business->id)->orderBy('created_at', 'desc')->get();
-        } else {
-            $job_posts = JobPost::with('business')->orderBy('created_at', 'desc')->get();
+            $query->where('business_id', $business->id);
         }
 
-        if ($request->is('api/*')) {
-            return RequestResponse::ok('Ok', $job_posts);
+        if ($request->has('filter')) {
+            $filter = $request->input('filter');
+            $query->where(function ($q) use ($filter) {
+                $q->where('title', 'like', "%$filter%")
+                    ->orWhere('place', 'like', "%$filter%")
+                    ->orWhere('employment_type', 'like', "%$filter%");
+            });
         }
 
-        $jobPostsTable = view('job-posts._job_posts_table', compact('job_posts'))->render();
+        $job_posts = $query->get();
+
+        Log::debug($job_posts);
+
+        $jobPostsTable = view('job-posts._table', compact('job_posts'))->render();
         return RequestResponse::ok('Ok', $jobPostsTable);
     }
 
-    // Store New Job Post
+    public function fetchPublic(Request $request)
+    {
+        $job_posts = JobPost::where('is_public', true)
+            ->where('status', 'open')
+            ->where(function ($query) {
+                $query->whereNull('closing_date')
+                    ->orWhere('closing_date', '>=', now());
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return RequestResponse::ok('Ok', $job_posts);
+    }
+
     public function store(Request $request)
     {
-        Log::debug($request->all());
         $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'salary_range' => 'nullable|string',
-            'employment_type' => 'required|string|in:full-time,part-time,contract,internship',
-            'place' => 'required|string',
-            'posted_at' => 'nullable|date',
-            'closed_at' => 'nullable|date|after_or_equal:posted_at',
-        ]);
-
-        if (!empty($validatedData['salary_range'])) {
-            $validatedData['salary_range'] = preg_replace('/,/', '', $validatedData['salary_range']);
-        }
-
-        return $this->handleTransaction(function () use ($validatedData) {
-            $user = auth()->user();
-            $business = Business::findBySlug(session('active_business_slug'));
-
-            $jobPost = $business->jobPosts()->create([
-                'place' => $validatedData['place'],
-                'title' => $validatedData['title'],
-                'description' => $validatedData['description'],
-                'salary_range' => $validatedData['salary_range'] ?? null,
-                'employment_type' => $validatedData['employment_type'],
-                'created_by' => $user->id,
-                'posted_at' => $validatedData['posted_at'] ?? now(),
-                'closed_at' => $validatedData['closed_at'] ?? null,
-            ]);
-
-            $jobPost->setStatus(Status::OPEN);
-
-            return RequestResponse::created('Job Post created successfully.');
-        });
-    }
-
-    // Store New Job Post (Duplicate method, consider merging with store)
-    public function add(Request $request)
-    {
-        Log::debug($request->all());
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'salary_range' => 'nullable|string',
-            'employment_type' => 'required|string|in:full-time,part-time,contract,internship',
-            'place' => 'required|string',
-            'posted_at' => 'nullable|date',
-            'closed_at' => 'nullable|date|after_or_equal:posted_at',
-        ]);
-
-        if (!empty($validatedData['salary_range'])) {
-            $validatedData['salary_range'] = preg_replace('/,/', '', $validatedData['salary_range']);
-        }
-
-        return $this->handleTransaction(function () use ($validatedData) {
-            $user = auth()->user();
-            $business = Business::findBySlug(session('active_business_slug'));
-
-            $jobPost = $business->jobPosts()->create([
-                'place' => $validatedData['place'],
-                'title' => $validatedData['title'],
-                'description' => $validatedData['description'],
-                'salary_range' => $validatedData['salary_range'] ?? null,
-                'employment_type' => $validatedData['employment_type'],
-                'created_by' => $user->id,
-                'posted_at' => $validatedData['posted_at'] ?? now(),
-                'closed_at' => $validatedData['closed_at'] ?? null,
-            ]);
-
-            $jobPost->setStatus(Status::OPEN);
-
-            return RequestResponse::created('Job Post created successfully.');
-        });
-    }
-
-    // Edit Job Post
-    public function edit(Request $request)
-    {
-        $validatedData = $request->validate([
-            'job_post' => 'required|exists:job_posts,id',
-        ]);
-
-        $jobPost = JobPost::findOrFail($validatedData['job_post']);
-        $jobPostForm = view('recruitment.job-posts._form', compact('jobPost'))->render();
-
-        return RequestResponse::ok('Ok', $jobPostForm);
-    }
-
-    // Update Job Post
-    public function update(Request $request)
-    {
-        $validatedData = $request->validate([
-            'job_post_slug' => 'required|exists:job_posts,id',
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'requirements' => 'nullable|string',
             'salary_range' => 'nullable|string',
+            'number_of_positions' => 'required|integer|min:1',
             'employment_type' => 'required|string|in:full-time,part-time,contract,internship',
-            'location_id' => 'required|exists:locations,id',
-            'posted_at' => 'nullable|date',
-            'closed_at' => 'nullable|date|after_or_equal:posted_at',
+            'place' => 'required|string',
+            'closing_date' => 'nullable|date',
+            'is_public' => 'boolean',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $jobPost = JobPost::findOrFail($validatedData['job_post_slug']);
+            $user = auth()->user();
+            $business = Business::findBySlug(session('active_business_slug'));
 
-            $jobPost->update([
-                'location_id' => $validatedData['location_id'],
+            $jobPost = $business->jobPosts()->create([
                 'title' => $validatedData['title'],
                 'description' => $validatedData['description'],
                 'requirements' => $validatedData['requirements'] ?? null,
                 'salary_range' => $validatedData['salary_range'] ?? null,
+                'number_of_positions' => $validatedData['number_of_positions'],
                 'employment_type' => $validatedData['employment_type'],
-                'posted_at' => $validatedData['posted_at'],
-                'closed_at' => $validatedData['closed_at'],
+                'place' => $validatedData['place'],
+                'created_by' => $user->id,
+                'status' => Status::DRAFT,
+                'closing_date' => $validatedData['closing_date'] ?? null,
+                'is_public' => $validatedData['is_public'] ?? false,
             ]);
 
-            return RequestResponse::ok('Job Post updated successfully.', ['job_openings' => $jobPost]);
+            return RequestResponse::created('Job Post created successfully.', ['job_post' => $jobPost]);
         });
     }
 
-    // Delete Job Post
-    public function destroy(Request $request)
+    public function show($business, $jobpost)
+    {
+        $jobPost = JobPost::with('business', 'location', 'creator')
+            ->where('slug', $jobpost)
+            ->firstOrFail();
+
+        if ($jobPost->business->slug !== $business) {
+            return RequestResponse::badRequest('Job post does not belong to this business.');
+        }
+
+        if (request()->is('api/*')) {
+            return RequestResponse::ok('Ok', $jobPost);
+        }
+
+        return view('job-posts.show', compact('jobPost'));
+    }
+
+    public function edit(Request $request)
+    {
+        $validatedData = $request->validate(['job_post' => 'required|exists:job_posts,id']);
+        $jobPost = JobPost::findOrFail($validatedData['job_post']);
+        $jobPostForm = view('job-posts._form', compact('jobPost'))->render();
+        return RequestResponse::ok('Ok', $jobPostForm);
+    }
+
+    public function update(Request $request)
     {
         $validatedData = $request->validate([
-            'job_post' => 'required|exists:job_posts,slug',
+            'job_post_slug' => 'required|exists:job_posts,slug',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'requirements' => 'nullable|string',
+            'salary_range' => 'nullable|string',
+            'number_of_positions' => 'required|integer|min:1',
+            'employment_type' => 'required|string|in:full-time,part-time,contract,internship',
+            'place' => 'required|string',
+            'closing_date' => 'nullable|date',
+            'status' => 'nullable|string|in:draft,open,closed',
+            'is_public' => 'nullable|boolean',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $jobPost = JobPost::findBySlug($validatedData['job_post']);
+            $jobPost = JobPost::where('slug', $validatedData['job_post_slug'])->firstOrFail();
+            $jobPost->update([
+                'title' => $validatedData['title'],
+                'description' => $validatedData['description'],
+                'requirements' => $validatedData['requirements'] ?? null,
+                'salary_range' => $validatedData['salary_range'] ?? null,
+                'number_of_positions' => $validatedData['number_of_positions'],
+                'employment_type' => $validatedData['employment_type'],
+                'place' => $validatedData['place'],
+                'closing_date' => $validatedData['closing_date'] ?? null,
+                'status' => $validatedData['status'] ?? $jobPost->status,
+                'is_public' => $validatedData['is_public'] ?? $jobPost->is_public,
+            ]);
 
-            if ($jobPost) {
-                $jobPost->delete();
-                return RequestResponse::ok('Job Post deleted successfully.');
-            }
-
-            return RequestResponse::badRequest('Failed to delete job post.', 404);
+            return RequestResponse::ok('Job Post updated successfully.', ['job_post' => $jobPost]);
         });
     }
 
-    // Generate Job Description using Gemini API
+    public function destroy(Request $request)
+    {
+        $validatedData = $request->validate(['job_post' => 'required|exists:job_posts,slug']);
+        return $this->handleTransaction(function () use ($validatedData) {
+            $jobPost = JobPost::where('slug', $validatedData['job_post'])->firstOrFail();
+            if ($jobPost->applications()->exists()) {
+                $jobPost->applications()->delete();
+            }
+            $jobPost->delete();
+            return RequestResponse::ok('success', ['message' => 'Job Post and related applications deleted successfully.']);
+        });
+    }
+
+    public function togglePublic(Request $request)
+    {
+        $validatedData = $request->validate(['job_post' => 'required|exists:job_posts,slug']);
+        return $this->handleTransaction(function () use ($validatedData) {
+            $jobPost = JobPost::where('slug', $validatedData['job_post'])->firstOrFail();
+            $jobPost->update(['is_public' => !$jobPost->is_public]);
+            return RequestResponse::ok("success", ['message' => 'Job Post status changed succesfully.']);
+        });
+    }
+
     public function generateDescription(Request $request)
     {
         $validatedData = $request->validate([
@@ -210,7 +223,6 @@ class JobPostController extends Controller
             "<h2>Benefits</h2> (list 3-5 benefits in a <ul> with <li> tags). " .
             "Ensure the HTML is well-structured for search engines and readability. " .
             "Return only the HTML content, starting with <h2> tags, without any additional text or instructions.";
-
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -228,10 +240,9 @@ class JobPostController extends Controller
                 $data = $response->json();
                 $generatedText = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'No content generated';
 
-                // Remove unwanted formatting (```html at the start and ``` at the end)
-                $cleanText = preg_replace('/^```html\s*/', '', $generatedText); // Remove ```html at the start
-                $cleanText = preg_replace('/^```\s*/', '', $cleanText); // Remove standalone ```
-                $cleanText = preg_replace('/```\s*$/', '', $cleanText); // Remove trailing ```
+                $cleanText = preg_replace('/^```html\s*/', '', $generatedText);
+                $cleanText = preg_replace('/^```\s*/', '', $cleanText);
+                $cleanText = preg_replace('/```\s*$/', '', $cleanText);
 
                 return RequestResponse::ok('success', ['description' => $cleanText]);
             } else {

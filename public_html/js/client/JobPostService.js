@@ -8,7 +8,7 @@ class JobPostService {
             const response = await this.requestClient.post('/job-posts/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Fetch error:', error);
             throw error;
         }
     }
@@ -18,8 +18,9 @@ class JobPostService {
             const response = await this.requestClient.post('/job-posts/update', data);
             toastr.info(response.message, "Success");
             this.handleRedirect(response.data.redirect_url);
+            return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Update error:', error);
             throw error;
         }
     }
@@ -29,7 +30,7 @@ class JobPostService {
             const response = await this.requestClient.post('/job-posts/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Edit error:', error);
             throw error;
         }
     }
@@ -38,8 +39,9 @@ class JobPostService {
         try {
             const response = await this.requestClient.post('/job-posts/store', data);
             toastr.success(response.message, "Success");
+            return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Save error:', error);
             throw error;
         }
     }
@@ -48,8 +50,19 @@ class JobPostService {
         try {
             const response = await this.requestClient.post('/job-posts/destroy', data);
             toastr.info(response.message, "Success");
+            return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Delete error:', error);
+            throw error;
+        }
+    }
+
+    async togglePublic(data) {
+        try {
+            const response = await this.requestClient.post('/job-posts/toggle-public', data);
+            return response.data;
+        } catch (error) {
+            console.error('Toggle public error:', error);
             throw error;
         }
     }

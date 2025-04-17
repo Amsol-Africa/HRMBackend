@@ -128,6 +128,7 @@ window.saveLoan = async function (btn) {
         btn_loader(btn, false);
     }
 };
+
 window.editLoan = async function (btn) {
     btn = $(btn);
 
@@ -151,8 +152,8 @@ window.deleteLoan = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    const loan = btn.data("loan");
-    const data = { loan: loan };
+    const loan_id = btn.data("loan");
+    const data = { loan_id: loan_id };
 
     Swal.fire({
         title: "Are you sure?",

@@ -30,7 +30,13 @@ class Business extends Model implements HasMedia
         'business_license_no',
         'physical_address',
         'currency',
+        'verified'
     ];
+
+    protected $casts = [
+        'verified' => 'boolean',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -66,6 +72,11 @@ class Business extends Model implements HasMedia
     public function coreModules()
     {
         return $this->modules()->where('is_core', true);
+    }
+
+    public static function findBySlug($slug)
+    {
+        return static::where('slug', $slug)->firstOrFail();
     }
 
 

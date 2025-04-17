@@ -5,38 +5,29 @@ namespace App\Mail;
 use App\Models\AccessRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Content;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
 class AccessRequestMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $accessRequest;
+    public $tempPassword;
 
-    public function __construct(AccessRequest $accessRequest)
+    public function __construct(AccessRequest $accessRequest, $tempPassword = null)
     {
         $this->accessRequest = $accessRequest;
+        $this->tempPassword = $tempPassword;
     }
 
-    public function envelope(): Envelope
+    public function build()
     {
-        return new Envelope(
-            subject: 'Access Request Mail',
-        );
-    }
-
-    public function content(): Content
-    {
-        return new Content(
-            view: 'emails.access-request',
-        );
-    }
-
-    public function attachments(): array
-    {
-        return [];
+        return $this->subject('Business Access Request')
+            ->view('emails.access_request')
+            ->with([
+                'business' => $this->accessRequest->business,
+                'tempPassword' => $this->tempPassword,
+                'loginUrl' => route('login'),
+            ]);
     }
 }

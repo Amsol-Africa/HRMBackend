@@ -6,10 +6,19 @@ class AuthService {
     async login(data) {
         try {
             const response = await this.requestClient.post('/login', data);
-            Swal.fire('Authenticated..!', response.message, 'success');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: response.message,
+                confirmButtonText: 'OK'
+            });
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            await Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Login failed. Please try again.'
+            });
             throw error;
         }
     }
@@ -17,10 +26,15 @@ class AuthService {
     async register(data) {
         try {
             const response = await this.requestClient.post('/register', data);
-            Swal.fire('Authenticated..!', response.message, 'success');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: response.message,
+                confirmButtonText: 'OK'
+            });
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -28,10 +42,15 @@ class AuthService {
     async setup(data) {
         try {
             const response = await this.requestClient.post('/setup', data);
-            Swal.fire('Business Registered..!', response.message, 'success');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Business Registered',
+                text: response.message,
+                confirmButtonText: 'OK'
+            });
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -39,10 +58,15 @@ class AuthService {
     async logout(data) {
         try {
             const response = await this.requestClient.post('/logout', data);
-            Swal.fire('Logged out!', response.message, 'success');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Logged Out',
+                text: response.message,
+                confirmButtonText: 'OK'
+            });
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -50,27 +74,28 @@ class AuthService {
     async bsImpersonate(data) {
         try {
             const response = await this.requestClient.post('/client-businesses/access', data);
-            Swal.fire('Logged In!', response.message, 'success');
+            await Swal.fire({
+                icon: 'success',
+                title: 'Logged In',
+                text: response.message,
+                confirmButtonText: 'OK'
+            });
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
 
     handleRedirect(route) {
         if (route) {
-            setTimeout(() => {
-                window.location.href = route;
-            }, 1500);
+            window.location.href = route;
         }
     }
 
     handleRedirectToTab(route) {
         if (route) {
-            setTimeout(() => {
-                window.open(route, '_blank');
-            }, 1500);
+            window.open(route, '_blank');
         }
     }
 }

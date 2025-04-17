@@ -193,16 +193,22 @@
                 <a id="userportfolio" href="#">
                     <div class="user__portfolio">
                         <div class="user__portfolio-thumb">
-                            @if (auth()->user()->getImageUrl() && auth()->user()->getImageUrl() !==
-                            'images/default.png')
-                            <!-- Adjust default path -->
-                            <img src="{{ auth()->user()->getImageUrl() }}" alt="User {{ auth()->user()->name }}">
+                            @php
+                            $employee = auth()->user()->employee;
+                            $imageUrl = $employee?->getFirstMediaUrl('avatars');
+                            @endphp
+
+                            @if ($imageUrl)
+                            <img src="{{ $imageUrl }}" alt="User {{ auth()->user()->name }}"
+                                class="rounded-circle border object-fit-cover" style="width: 80px; height: 80px;">
                             @else
-                            <div class="user__initials">
+                            <div class="user__initials d-flex align-items-center justify-content-center rounded-circle border bg-secondary text-white"
+                                style="width: 80px; height: 80px; font-size: 32px;">
                                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                             </div>
                             @endif
                         </div>
+
                         <div class="user__content">
                             <h5>{{ auth()->user()->name }}</h5>
                             <span class="status-dot online">online</span>

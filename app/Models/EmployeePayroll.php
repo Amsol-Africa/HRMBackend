@@ -22,6 +22,7 @@ class EmployeePayroll extends Model
         'housing_levy',
         'helb',
         'taxable_income',
+        'reliefs',
         'personal_relief',
         'insurance_relief',
         'pay_after_tax',
@@ -43,6 +44,7 @@ class EmployeePayroll extends Model
         'allowances' => 'json',
         'deductions' => 'json',
         'overtime' => 'json',
+        'reliefs' => 'json',
         'basic_salary' => 'float',
         'housing_allowance' => 'float',
         'gross_pay' => 'float',
@@ -80,9 +82,6 @@ class EmployeePayroll extends Model
 
     public static function getEmployeePayrollByMonthYear($employeeId, $year = null, $month = null)
     {
-        Log::debug('Year: ' . $year);
-        Log::debug('Month: ' . $month);
-
         return self::where('employee_id', $employeeId)
             ->when($year && $month, function ($query) use ($year, $month) {
                 $query->whereHas('payroll', function ($subQuery) use ($year, $month) {

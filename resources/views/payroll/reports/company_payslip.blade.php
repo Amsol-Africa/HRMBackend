@@ -119,9 +119,9 @@
     <div class="header">
         <div class="left">
             @if($entityType === 'business' && $entity->logo)
-            <img src="{{ asset('storage/' . $entity->logo) }}" alt="{{ $entity->company_name }} Logo" class="logo">
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo" class="logo">
             @elseif($entityType === 'location' && $business->logo)
-            <img src="{{ asset('storage/' . $business->logo) }}" alt="{{ $business->company_name }} Logo" class="logo">
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo" class="logo">
             @else
             <div
                 style="width: 60px; height: 60px; background-color: #e5e7eb; text-align: center; line-height: 60px; font-size: 24pt; font-weight: bold; color: #6b7280; margin-bottom: 10px;">
@@ -131,7 +131,8 @@
             <h1>{{ $entity->company_name ?? $entity->name ?? 'Default Company Name' }}</h1>
             <p class="text-muted">{{ $entity->physical_address ?? 'Default Address' }}</p>
             <p class="text-muted">Phone:
-                {{ ($entityType === 'business' ? $entity->phone : $business->phone) ?? '+123-456-7890' }}</p>
+                {{ ($entityType === 'business' ? $entity->phone : $business->phone) ?? '+123-456-7890' }}
+            </p>
             <p class="text-muted">Email:
                 {{ ($entityType === 'business' && $entity->user ? $entity->user->email : $business->user->email) ?? 'info@company.com' }}
             </p>
@@ -139,7 +140,8 @@
         <div class="right">
             <h2>Payroll Report</h2>
             <p class="text-muted">Period: {{ $payroll->payrun_year }} -
-                {{ str_pad($payroll->payrun_month, 2, '0', STR_PAD_LEFT) }}</p>
+                {{ str_pad($payroll->payrun_month, 2, '0', STR_PAD_LEFT) }}
+            </p>
             <p class="text-muted">Payroll ID: {{ $payroll->id }}</p>
             <p class="text-muted">Currency: {{ $currency ?? 'KES' }}</p>
             <p class="text-muted">Date: {{ now()->format('F d, Y') }}</p>

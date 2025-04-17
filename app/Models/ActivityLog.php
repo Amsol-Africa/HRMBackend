@@ -20,4 +20,13 @@ class ActivityLog extends Model
     {
         return $this->morphTo();
     }
+
+    /**
+     * Scope to filter logs by a specific business.
+     */
+    public function scopeForBusiness($query, $businessId)
+    {
+        return $query->where('loggable_type', Business::class)
+            ->where('loggable_id', $businessId);
+    }
 }

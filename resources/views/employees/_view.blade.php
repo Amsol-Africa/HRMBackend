@@ -9,27 +9,29 @@
             </div>
             <!-- Tabs Navigation -->
             <ul class="nav nav-tabs mb-4" id="employeeTabs" role="tablist">
-                <li class="nav-item">
-                    <a class="nav-link active" id="personal-tab" data-bs-toggle="tab" href="#personal"
-                        role="tab">Personal</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active" id="personal-tab" data-bs-toggle="tab" href="#personal" role="tab"
+                        aria-controls="personal" aria-selected="true">Personal</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="payment-tab" data-bs-toggle="tab" href="#payment" role="tab">Payment</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="payment-tab" data-bs-toggle="tab" href="#payment" role="tab"
+                        aria-controls="payment" aria-selected="false">Payment</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="employment-tab" data-bs-toggle="tab" href="#employment"
-                        role="tab">Employment</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="employment-tab" data-bs-toggle="tab" href="#employment" role="tab"
+                        aria-controls="employment" aria-selected="false">Employment</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="additional-tab" data-bs-toggle="tab" href="#additional"
-                        role="tab">Additional</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="additional-tab" data-bs-toggle="tab" href="#additional" role="tab"
+                        aria-controls="additional" aria-selected="false">Additional</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="documents-tab" data-bs-toggle="tab" href="#documents"
-                        role="tab">Documents</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="documents-tab" data-bs-toggle="tab" href="#documents" role="tab"
+                        aria-controls="documents" aria-selected="false">Documents</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="actions-tab" data-bs-toggle="tab" href="#actions" role="tab">Actions</a>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="actions-tab" data-bs-toggle="tab" href="#actions" role="tab"
+                        aria-controls="actions" aria-selected="false">Actions</a>
                 </li>
             </ul>
 
@@ -67,6 +69,10 @@
                                 </dd>
                                 <dt class="col-5 fw-medium text-muted">Marital Status</dt>
                                 <dd class="col-7">{{ ucfirst($employee->marital_status) ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Place of Birth</dt>
+                                <dd class="col-7">{{ $employee->place_of_birth ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Blood Group</dt>
+                                <dd class="col-7">{{ $employee->blood_group ?? 'N/A' }}</dd>
                             </dl>
                         </div>
 
@@ -82,6 +88,10 @@
                                 <dd class="col-7">{{ $employee->nhif_no ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">NSSF No</dt>
                                 <dd class="col-7">{{ $employee->nssf_no ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Resident Status</dt>
+                                <dd class="col-7">{{ $employee->resident_status ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">KRA Employee Status</dt>
+                                <dd class="col-7">{{ $employee->kra_employee_status ?? 'N/A' }}</dd>
                             </dl>
                         </div>
 
@@ -91,6 +101,8 @@
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Passport No</dt>
                                 <dd class="col-7">{{ $employee->passport_no ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Place of Issue</dt>
+                                <dd class="col-7">{{ $employee->place_of_issue ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Issue Date</dt>
                                 <dd class="col-7">
                                     {{ $employee->passport_issue_date ? date('d M Y', strtotime($employee->passport_issue_date)) : 'N/A' }}
@@ -114,8 +126,6 @@
                                 <dd class="col-7">{{ $employee->address ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Permanent Address</dt>
                                 <dd class="col-7">{{ $employee->permanent_address ?? 'N/A' }}</dd>
-                                <dt class="col-5 fw-medium text-muted">Blood Group</dt>
-                                <dd class="col-7">{{ $employee->blood_group ?? 'N/A' }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -131,10 +141,10 @@
                                 <dt class="col-5 fw-medium text-muted">Basic Salary</dt>
                                 <dd class="col-7">
                                     {{ number_format((float) ($employee->paymentDetails->basic_salary ?? 0), 2) }}
+                                    {{ $employee->paymentDetails->currency ?? '' }}
                                 </dd>
                                 <dt class="col-5 fw-medium text-muted">Payment Mode</dt>
-                                <dd class="col-7">
-                                    {{ strtoupper($employee->paymentDetails->payment_mode ?? 'N/A') }}
+                                <dd class="col-7">{{ strtoupper($employee->paymentDetails->payment_mode ?? 'N/A') }}
                                 </dd>
                                 <dt class="col-5 fw-medium text-muted">Exempt from Payroll</dt>
                                 <dd class="col-7">{{ $employee->is_exempt_from_payroll ? 'Yes' : 'No' }}</dd>
@@ -146,21 +156,17 @@
                             <h6 class="fw-semibold text-muted mb-3">Bank Details</h6>
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Account Name</dt>
-                                <dd class="col-7">
-                                    {{ $employee->paymentDetails->account_name ?? 'N/A' }}
-                                </dd>
+                                <dd class="col-7">{{ $employee->paymentDetails->account_name ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Account Number</dt>
-                                <dd class="col-7">
-                                    {{ $employee->paymentDetails->account_number ?? 'N/A' }}
-                                </dd>
+                                <dd class="col-7">{{ $employee->paymentDetails->account_number ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Bank Name</dt>
-                                <dd class="col-7">
-                                    {{ $employee->paymentDetails->bank_name ?? 'N/A' }}
-                                </dd>
+                                <dd class="col-7">{{ $employee->paymentDetails->bank_name ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Bank Code</dt>
+                                <dd class="col-7">{{ $employee->paymentDetails->bank_code ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Branch</dt>
-                                <dd class="col-7">
-                                    {{ $employee->paymentDetails->bank_branch ?? 'N/A' }}
-                                </dd>
+                                <dd class="col-7">{{ $employee->paymentDetails->bank_branch ?? 'N/A' }}</dd>
+                                <dt class="col-5 fw-medium text-muted">Branch Code</dt>
+                                <dd class="col-7">{{ $employee->paymentDetails->bank_branch_code ?? 'N/A' }}</dd>
                             </dl>
                         </div>
 
@@ -168,8 +174,7 @@
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Recent Payroll</h6>
                             @if($employee->payrolls->isNotEmpty())
-                            @php $latestPayroll = $employee->payrolls->sortByDesc('created_at')->first();
-                            @endphp
+                            @php $latestPayroll = $employee->payrolls->sortByDesc('created_at')->first(); @endphp
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Gross Pay</dt>
                                 <dd class="col-7">{{ number_format((float) ($latestPayroll->gross_pay ?? 0), 2) }}</dd>
@@ -219,7 +224,7 @@
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Employee Since</dt>
                                 <dd class="col-7">
-                                    {{ $employee->created_at ? date('d M Y', strtotime($employee->created_at)) : 'N/A' }}
+                                    {{ optional($employee->employmentDetails)->employment_date ? date('d M Y', strtotime($employee->employmentDetails->employment_date)) : 'N/A' }}
                                 </dd>
                                 <dt class="col-5 fw-medium text-muted">Department</dt>
                                 <dd class="col-7">{{ $employee->department?->name ?? 'N/A' }}</dd>
@@ -231,11 +236,31 @@
                                 <dd class="col-7">
                                     {{ ucfirst(optional($employee->employmentDetails)->employment_term ?? 'N/A') }}
                                 </dd>
+                                <dt class="col-5 fw-medium text-muted">Probation End</dt>
+                                <dd class="col-7">
+                                    {{ optional($employee->employmentDetails)->probation_end_date ? date('d M Y', strtotime($employee->employmentDetails->probation_end_date)) : 'N/A' }}
+                                </dd>
+                                <dt class="col-5 fw-medium text-muted">Contract End</dt>
+                                <dd class="col-7">
+                                    {{ optional($employee->employmentDetails)->contract_end_date ? date('d M Y', strtotime($employee->employmentDetails->contract_end_date)) : 'N/A' }}
+                                </dd>
+                                <dt class="col-5 fw-medium text-muted">Retirement Date</dt>
+                                <dd class="col-7">
+                                    {{ optional($employee->employmentDetails)->retirement_date ? date('d M Y', strtotime($employee->employmentDetails->retirement_date)) : 'N/A' }}
+                                </dd>
                                 <dt class="col-5 fw-medium text-muted">Business</dt>
                                 <dd class="col-7">{{ $employee->business?->company_name ?? 'N/A' }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Location</dt>
                                 <dd class="col-7">{{ $employee->location?->name ?? 'N/A' }}</dd>
                             </dl>
+                        </div>
+
+                        <!-- Job Description -->
+                        <div class="col-md-6">
+                            <h6 class="fw-semibold text-muted mb-3">Job Description</h6>
+                            <p class="text-muted">
+                                {{ optional($employee->employmentDetails)->job_description ?? 'No description provided.' }}
+                            </p>
                         </div>
 
                         <!-- Attendance Snapshot -->
@@ -298,8 +323,6 @@
                                 <dd class="col-7">{{ number_format((float) ($latestOvertime->hours ?? 0), 2) }}</dd>
                                 <dt class="col-5 fw-medium text-muted">Rate</dt>
                                 <dd class="col-7">{{ number_format((float) ($latestOvertime->rate ?? 0), 2) }}</dd>
-                                <dt class="col-5 fw-medium text-muted">Status</dt>
-                                <dd class="col-7"></dd>
                             </dl>
                             @else
                             <p class="text-muted">No overtime records available.</p>
@@ -311,12 +334,11 @@
                 <!-- Additional Details Tab -->
                 <div class="tab-pane fade" id="additional" role="tabpanel" aria-labelledby="additional-tab">
                     <div class="row g-4">
-                        <!-- Academic Qualifications -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Academic Qualifications</h6>
                             @if($employee->academicDetails->isNotEmpty())
-                            @php $latestQualification =
-                            $employee->academicDetails->sortByDesc('end_date')->first(); @endphp
+                            @php $latestQualification = $employee->academicDetails->sortByDesc('end_date')->first();
+                            @endphp
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Institution</dt>
                                 <dd class="col-7">{{ $latestQualification->institution_name ?? 'N/A' }}</dd>
@@ -336,7 +358,6 @@
                             @endif
                         </div>
 
-                        <!-- Allowances -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Allowances</h6>
                             @if($employee->employeeAllowances->isNotEmpty())
@@ -355,7 +376,6 @@
                             @endif
                         </div>
 
-                        <!-- Deductions -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Deductions</h6>
                             @if($employee->employeeDeductions->isNotEmpty())
@@ -376,12 +396,10 @@
                             @endif
                         </div>
 
-                        <!-- Family Members -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Family Members</h6>
                             @if($employee->familyMembers->isNotEmpty())
-                            @php $latestFamily = $employee->familyMembers->sortByDesc('created_at')->first();
-                            @endphp
+                            @php $latestFamily = $employee->familyMembers->sortByDesc('created_at')->first(); @endphp
                             <dl class="row mb-0">
                                 <dt class="col-5 fw-medium text-muted">Name</dt>
                                 <dd class="col-7">{{ $latestFamily->name ?? 'N/A' }}</dd>
@@ -397,7 +415,6 @@
                             @endif
                         </div>
 
-                        <!-- Emergency Contacts -->
                         <div class="col-md-6">
                             <h6 class="fw-semibold text-muted mb-3">Emergency Contact</h6>
                             @if($employee->emergencyContacts->isNotEmpty())
@@ -425,29 +442,25 @@
                             <h6 class="fw-semibold text-muted mb-3">Documents</h6>
                             @if($employee->documents->isNotEmpty())
                             <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                                <table class="table table-hover table-bordered">
+                                    <thead class="table-light">
                                         <tr>
-                                            <th scope="col">Document Name</th>
-                                            <th scope="col">Type</th>
+                                            <th scope="col">Document Type</th>
                                             <th scope="col">Uploaded On</th>
-                                            <th scope="col">Uploaded By</th>
                                             <th scope="col">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach($employee->documents as $document)
                                         <tr>
-                                            <td>{{ $document->document_name ?? 'N/A' }}</td>
                                             <td>{{ $document->document_type ?? 'N/A' }}</td>
-                                            <td>{{ $document->created_at ? date('d M Y', strtotime($document->created_at)) : 'N/A' }}
-                                            </td>
-                                            <td>{{ $document->uploaded_by ?? 'N/A' }}</td>
                                             <td>
-                                                <a href="{{ $document->file_path ? Storage::url($document->file_path) : '#' }}"
-                                                    class="btn btn-sm btn-primary" target="_blank"
-                                                    {{ $document->file_path ? '' : 'disabled' }}>
-                                                    View
+                                                {{ $document->created_at ? date('d M Y', strtotime($document->created_at)) : 'N/A' }}
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('employees.documents.download', [$employee->id, $document->id]) }}"
+                                                    class="btn btn-sm btn-primary">
+                                                    <i class="fa fa-download"></i> Download
                                                 </a>
                                             </td>
                                         </tr>
@@ -479,65 +492,80 @@
 </div>
 
 <style>
-.card {
-    transition: all 0.3s ease;
-    border-radius: 12px;
-}
+    .card {
+        transition: all 0.3s ease;
+        border-radius: 12px;
+    }
 
-.nav-tabs {
-    border-bottom: 2px solid #e9ecef;
-}
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+    }
 
-.nav-tabs .nav-link {
-    color: #495057;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px 8px 0 0;
-    transition: all 0.2s ease;
-}
-
-.nav-tabs .nav-link.active {
-    color: #0d6efd;
-    background-color: #fff;
-    border-color: #e9ecef #e9ecef #fff;
-    font-weight: 600;
-}
-
-.nav-tabs .nav-link:hover {
-    color: #0d6efd;
-}
-
-.btn-sm {
-    min-width: 130px;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-}
-
-.tab-pane {
-    padding: 1rem;
-}
-
-h6.text-muted {
-    border-bottom: 1px solid #e9ecef;
-    padding-bottom: 0.5rem;
-}
-
-dl dt {
-    font-size: 0.9rem;
-}
-
-dl dd {
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-}
-
-@media (max-width: 767.98px) {
     .nav-tabs .nav-link {
-        padding: 0.5rem 1rem;
+        color: #495057;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px 8px 0 0;
+        transition: all 0.2s ease;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        background-color: #fff;
+        border-color: #e9ecef #e9ecef #fff;
+        font-weight: 600;
+    }
+
+    .nav-tabs .nav-link:hover {
+        color: #0d6efd;
     }
 
     .btn-sm {
-        width: 100%;
+        min-width: 130px;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
     }
-}
+
+    .tab-pane {
+        padding: 1rem;
+    }
+
+    h6.text-muted {
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 0.5rem;
+    }
+
+    dl dt {
+        font-size: 0.9rem;
+    }
+
+    dl dd {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    @media (max-width: 767.98px) {
+        .nav-tabs .nav-link {
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-sm {
+            width: 100%;
+        }
+    }
 </style>
+
+<script>
+    $('#viewEmployeeModal').on('shown.bs.modal', function() {
+        const firstTab = new bootstrap.Tab(document.querySelector('#personal-tab'));
+        firstTab.show();
+    });
+
+    $('#viewEmployeeModal').on('hidden.bs.modal', function() {
+        $('#viewEmployeeContainer').html('');
+    });
+</script>

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\SuspiciousLoginController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -13,12 +14,15 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 
 Route::get('invitation/{token}', [RegisteredUserController::class, 'create'])->name('register.token');
 
-Route::middleware('guest')->group(function () {
+Route::middleware('guest', \App\Http\Middleware\CheckBannedIp::class)->group(function () {
     Route::get('/', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('register', [RegisteredUserController::class, 'store']);
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
+
+    Route::get('suspicious-login/{user}/{login}', [SuspiciousLoginController::class, 'handle'])
+        ->name('auth.suspicious-login');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
@@ -35,4 +39,11 @@ Route::middleware('auth')->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+});
+
+
+Route::middleware(\App\Http\Middleware\EnsureTwoFactorPending::class, 'throttle:6,1')->group(function () {
+    Route::get('2fa/verify', [AuthenticatedSessionController::class, 'showTwoFactorForm'])->name('2fa.verify');
+    Route::post('2fa/verify', [AuthenticatedSessionController::class, 'verifyTwoFactorCode']);
+    Route::post('2fa/resend', [AuthenticatedSessionController::class, 'resendTwoFactorCode'])->name('2fa.resend');
 });

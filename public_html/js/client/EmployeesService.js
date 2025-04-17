@@ -10,8 +10,7 @@ class EmployeesService {
 
     async save(data) {
         const response = await this.requestClient.post('/employees/store', data);
-        Swal.fire('Success!', response.message, 'success');
-        return response;
+        return response; // Return full response to access data (employee ID)
     }
 
     async filter(data) {
@@ -19,7 +18,7 @@ class EmployeesService {
             const response = await this.requestClient.post('/employees/filter', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.log(error);
             throw error;
         }
     }
@@ -27,7 +26,6 @@ class EmployeesService {
     async update(data) {
         const id = data.get('employee_id');
         const response = await this.requestClient.post(`/employees/${id}/update`, data);
-        toastr.info(response.message, "Success");
         return response;
     }
 
@@ -39,13 +37,22 @@ class EmployeesService {
     async delete(data) {
         const id = data.employee_id;
         const response = await this.requestClient.post(`/employees/${id}/destroy`, data);
-        toastr.info(response.message, "Success");
         return response;
     }
 
     async view(data) {
         const response = await this.requestClient.post('/employees/view', data);
         return response.data;
+    }
+
+    async uploadDocument(employeeId, data) {
+        const response = await this.requestClient.post(`/employees/${employeeId}/documents/upload`, data);
+        return response;
+    }
+
+    async deleteDocument(employeeId, documentId) {
+        const response = await this.requestClient.post(`/employees/${employeeId}/documents/${documentId}/delete`, {});
+        return response;
     }
 }
 

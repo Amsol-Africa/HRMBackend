@@ -39,6 +39,9 @@ class Employee extends Model implements HasMedia
         'permanent_address',
         'blood_group',
         'is_exempt_from_payroll',
+        'resident_status',
+        'kra_employee_status',
+        'status'
     ];
 
     protected $casts = [
@@ -46,6 +49,8 @@ class Employee extends Model implements HasMedia
         'passport_issue_date' => 'date',
         'passport_expiry_date' => 'date',
         'is_exempt_from_payroll' => 'boolean',
+        'kra_employee_status' => 'string',
+        'status' => Status::class,
     ];
 
     // Relationships
@@ -204,5 +209,10 @@ class Employee extends Model implements HasMedia
     public function payrollSettings()
     {
         return $this->hasOne(PayrollSettings::class);
+    }
+
+    public function taskReviews()
+    {
+        return $this->hasMany(TaskReview::class, 'reviewer_id');
     }
 }

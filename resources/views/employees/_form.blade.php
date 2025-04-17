@@ -13,15 +13,27 @@
             </button>
         </li>
         <li class="nav-item">
+            <button class="nav-link px-3 py-2" id="employment-tab" data-bs-toggle="tab" data-bs-target="#employment"
+                type="button" role="tab">
+                <i class="fa fa-briefcase me-1"></i> Employment
+            </button>
+        </li>
+        <li class="nav-item">
             <button class="nav-link px-3 py-2" id="payment-tab" data-bs-toggle="tab" data-bs-target="#payment"
                 type="button" role="tab">
                 <i class="fa fa-credit-card me-1"></i> Payment
             </button>
         </li>
+        <li class="nav-item">
+            <button class="nav-link px-3 py-2" id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents"
+                type="button" role="tab">
+                <i class="fa fa-file-alt me-1"></i> Documents
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
-        <!-- Personal Tab (unchanged) -->
+        <!-- Personal Tab -->
         <div class="tab-pane fade show active" id="personal" role="tabpanel">
             <!-- Personal Info Group -->
             <div class="mb-3">
@@ -40,33 +52,46 @@
                     <div class="col-md-6">
                         <select name="gender" id="gender" class="form-select border-primary" required>
                             <option value="">Select Gender</option>
-                            <option value="Male"
-                                {{ isset($employee) && $employee->gender === 'Male' ? 'selected' : '' }}>Male</option>
-                            <option value="Female"
-                                {{ isset($employee) && $employee->gender === 'Female' ? 'selected' : '' }}>Female
-                            </option>
+                            <option value="male"
+                                {{ isset($employee) && strtolower($employee->gender) === 'male' ? 'selected' : '' }}>
+                                Male</option>
+                            <option value="female"
+                                {{ isset($employee) && strtolower($employee->gender) === 'female' ? 'selected' : '' }}>
+                                Female</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-6 position-relative">
+                        <label for="date_of_birth" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Date of Birth</label>
                         <input type="date" name="date_of_birth" id="date_of_birth" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->date_of_birth : '' }}" required>
+                            value="{{ isset($employee) && $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('Y-m-d') : '' }}"
+                            required>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="place_of_birth" id="place_of_birth" class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->place_of_birth : '' }}"
+                            placeholder="Place of Birth">
                     </div>
                     <div class="col-md-6">
                         <select name="marital_status" id="marital_status" class="form-select border-primary" required>
                             <option value="">Select Marital Status</option>
-                            <option value="Single"
-                                {{ isset($employee) && $employee->marital_status === 'Single' ? 'selected' : '' }}>
+                            <option value="single"
+                                {{ isset($employee) && strtolower($employee->marital_status) === 'single' ? 'selected' : '' }}>
                                 Single</option>
-                            <option value="Married"
-                                {{ isset($employee) && $employee->marital_status === 'Married' ? 'selected' : '' }}>
+                            <option value="married"
+                                {{ isset($employee) && strtolower($employee->marital_status) === 'married' ? 'selected' : '' }}>
                                 Married</option>
-                            <option value="Divorced"
-                                {{ isset($employee) && $employee->marital_status === 'Divorced' ? 'selected' : '' }}>
+                            <option value="divorced"
+                                {{ isset($employee) && strtolower($employee->marital_status) === 'divorced' ? 'selected' : '' }}>
                                 Divorced</option>
-                            <option value="Widowed"
-                                {{ isset($employee) && $employee->marital_status === 'Widowed' ? 'selected' : '' }}>
+                            <option value="widowed"
+                                {{ isset($employee) && strtolower($employee->marital_status) === 'widowed' ? 'selected' : '' }}>
                                 Widowed</option>
                         </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="blood_group" id="blood_group" class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->blood_group : '' }}" placeholder="Blood Group">
                     </div>
                 </div>
             </div>
@@ -83,6 +108,16 @@
                         <input type="text" name="phone" id="phone" class="form-control border-primary"
                             value="{{ isset($employee) ? $employee->user->phone : '' }}" placeholder="Phone" required>
                     </div>
+                    <div class="col-md-6">
+                        <input type="text" name="alternate_phone" id="alternate_phone"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->alternate_phone : '' }}"
+                            placeholder="Alternate Phone">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="address" id="address" class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->address : '' }}" placeholder="Current Address">
+                    </div>
                     <div class="col-12">
                         <input type="text" name="permanent_address" id="permanent_address"
                             class="form-control border-primary"
@@ -98,24 +133,81 @@
                 <div class="row g-2">
                     <div class="col-md-4">
                         <input type="text" name="national_id" id="national_id" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->national_id : '' }}" placeholder="National ID"
-                            required>
+                            value="{{ isset($employee) ? $employee->national_id : '' }}" placeholder="National ID">
                     </div>
                     <div class="col-md-4">
                         <input type="text" name="tax_no" id="tax_no" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->tax_no : '' }}" placeholder="Tax Number" required>
+                            value="{{ isset($employee) ? $employee->tax_no : '' }}" placeholder="Tax Number">
                     </div>
                     <div class="col-md-4">
                         <input type="text" name="nhif_no" id="nhif_no" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->nhif_no : '' }}" placeholder="NHIF Number" required>
+                            value="{{ isset($employee) ? $employee->nhif_no : '' }}" placeholder="NHIF Number">
                     </div>
                     <div class="col-md-4">
                         <input type="text" name="nssf_no" id="nssf_no" class="form-control border-primary"
-                            value="{{ isset($employee) ? $employee->nssf_no : '' }}" placeholder="NSSF Number" required>
+                            value="{{ isset($employee) ? $employee->nssf_no : '' }}" placeholder="NSSF Number">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="passport_no" id="passport_no" class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->passport_no : '' }}" placeholder="Passport Number">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="place_of_issue" id="place_of_issue" class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->place_of_issue : '' }}"
+                            placeholder="Place of Issue">
+                    </div>
+                    <div class="col-md-4 position-relative">
+                        <label for="passport_issue_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Passport Issue
+                            Date</label>
+                        <input type="date" name="passport_issue_date" id="passport_issue_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && $employee->passport_issue_date ? \Carbon\Carbon::parse($employee->passport_issue_date)->format('Y-m-d') : '' }}"
+                            placeholder="Passport Issue Date">
+                    </div>
+                    <div class="col-md-4 position-relative">
+                        <label for="passport_expiry_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Passport Expiry
+                            Date</label>
+                        <input type="date" name="passport_expiry_date" id="passport_expiry_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && $employee->passport_expiry_date ? \Carbon\Carbon::parse($employee->passport_expiry_date)->format('Y-m-d') : '' }}"
+                            placeholder="Passport Expiry Date">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" name="resident_status" id="resident_status"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) ? $employee->resident_status : '' }}"
+                            placeholder="Resident Status (e.g., Resident, Non-Resident)">
+                    </div>
+                    <div class="col-md-4">
+                        <select name="kra_employee_status" id="kra_employee_status" class="form-select border-primary">
+                            <option value="">Select KRA Employee Status</option>
+                            <option value="Primary Employee"
+                                {{ isset($employee) && $employee->kra_employee_status === 'Primary Employee' ? 'selected' : '' }}>
+                                Primary Employee</option>
+                            <option value="Secondary Employee"
+                                {{ isset($employee) && $employee->kra_employee_status === 'Secondary Employee' ? 'selected' : '' }}>
+                                Secondary Employee</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
+            <!-- Profile Picture -->
+            <div class="mb-3">
+                <h6 class="text-muted fw-semibold mb-2">Profile Picture</h6>
+                <input type="file" name="profile_picture" id="profile_picture" class="form-control border-primary"
+                    accept="image/*" onchange="previewImage(event)">
+                <img id="profile_preview"
+                    src="{{ isset($employee) && $employee->getFirstMediaUrl('avatars') ? $employee->getFirstMediaUrl('avatars') : '' }}"
+                    class="mt-2 rounded"
+                    style="max-width: 100px; display: {{ isset($employee) && $employee->getFirstMediaUrl('avatars') ? 'block' : 'none' }};">
+            </div>
+        </div>
+
+        <!-- Employment Tab -->
+        <div class="tab-pane fade" id="employment" role="tabpanel">
             <!-- Work Info Group -->
             <div class="mb-3">
                 <h6 class="text-muted fw-semibold mb-2">Work Info</h6>
@@ -167,29 +259,67 @@
                             <option value="contract"
                                 {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'contract' ? 'selected' : '' }}>
                                 Contract</option>
-                            <option value="fulltime"
-                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'fulltime' ? 'selected' : '' }}>
-                                Fulltime</option>
+                            <option value="temporary"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'temporary' ? 'selected' : '' }}>
+                                Temporary</option>
+                            <option value="internship"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'internship' ? 'selected' : '' }}>
+                                Internship</option>
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-4 position-relative">
+                        <label for="employment_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Employment
+                            Date</label>
                         <input type="date" name="employment_date" id="employment_date"
                             class="form-control border-primary"
                             value="{{ isset($employee) && optional($employee->employmentDetails)->employment_date ? \Carbon\Carbon::parse($employee->employmentDetails->employment_date)->format('Y-m-d') : '' }}"
                             required>
                     </div>
+                    <div class="col-md-4 position-relative">
+                        <label for="probation_end_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Probation End
+                            Date</label>
+                        <input type="date" name="probation_end_date" id="probation_end_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && optional($employee->employmentDetails)->probation_end_date ? \Carbon\Carbon::parse($employee->employmentDetails->probation_end_date)->format('Y-m-d') : '' }}"
+                            placeholder="Probation End Date">
+                    </div>
+                    <div class="col-md-4 position-relative">
+                        <label for="contract_end_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Contract End
+                            Date</label>
+                        <input type="date" name="contract_end_date" id="contract_end_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && optional($employee->employmentDetails)->contract_end_date ? \Carbon\Carbon::parse($employee->employmentDetails->contract_end_date)->format('Y-m-d') : '' }}"
+                            placeholder="Contract End Date">
+                    </div>
+                    <div class="col-md-4 position-relative">
+                        <label for="retirement_date" class="form-label position-absolute text-muted"
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Retirement
+                            Date</label>
+                        <input type="date" name="retirement_date" id="retirement_date"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) && optional($employee->employmentDetails)->retirement_date ? \Carbon\Carbon::parse($employee->employmentDetails->retirement_date)->format('Y-m-d') : '' }}"
+                            placeholder="Retirement Date">
+                    </div>
+                    <div class="col-12">
+                        <textarea name="job_description" id="job_description" class="form-control border-primary"
+                            rows="3"
+                            placeholder="Job Description">{{ isset($employee) ? optional($employee->employmentDetails)->job_description : '' }}</textarea>
+                    </div>
                 </div>
             </div>
 
-            <!-- Profile Picture -->
+            <!-- Payroll Exemption -->
             <div class="mb-3">
-                <h6 class="text-muted fw-semibold mb-2">Profile Picture</h6>
-                <input type="file" name="profile_picture" id="profile_picture" class="form-control border-primary"
-                    accept="image/*" onchange="previewImage(event)">
-                <img id="profile_preview"
-                    src="{{ isset($employee) && $employee->getFirstMediaUrl('avatars') ? $employee->getFirstMediaUrl('avatars') : '' }}"
-                    class="mt-2 rounded"
-                    style="max-width: 100px; display: {{ isset($employee) && $employee->getFirstMediaUrl('avatars') ? 'block' : 'none' }};">
+                <h6 class="text-muted fw-semibold mb-2">Payroll Exemption</h6>
+                <div class="form-check">
+                    <input type="checkbox" name="is_exempt_from_payroll" id="is_exempt_from_payroll"
+                        class="form-check-input"
+                        {{ isset($employee) && $employee->is_exempt_from_payroll ? 'checked' : '' }} value="1">
+                    <label class="form-check-label" for="is_exempt_from_payroll">Exempt from Payroll</label>
+                </div>
             </div>
         </div>
 
@@ -202,7 +332,7 @@
                     <div class="col-md-8">
                         <input type="number" name="basic_salary" id="basic_salary" class="form-control border-primary"
                             value="{{ isset($employee) ? (optional($employee->paymentDetails)->basic_salary ?? '') : '' }}"
-                            placeholder="Basic Salary">
+                            placeholder="Basic Salary" required step="0.01">
                     </div>
                     <div class="col-md-4">
                         <select name="currency" id="currency" class="form-select border-primary" required>
@@ -254,92 +384,246 @@
                                 Cheque</option>
                         </select>
                     </div>
+                    <div class="col-md-6">
+                        <input type="text" name="bank_code" id="bank_code" class="form-control border-primary"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->bank_code ?? '') : '' }}"
+                            placeholder="Bank Code">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="bank_branch" id="bank_branch" class="form-control border-primary"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->bank_branch ?? '') : '' }}"
+                            placeholder="Bank Branch">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" name="bank_branch_code" id="bank_branch_code"
+                            class="form-control border-primary"
+                            value="{{ isset($employee) ? (optional($employee->paymentDetails)->bank_branch_code ?? '') : '' }}"
+                            placeholder="Bank Branch Code">
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="tab-pane fade" id="documents" role="tabpanel">
+            <div class="mb-3">
+                <h6 class="text-muted fw-semibold mb-3">Upload Documents (Optional)</h6>
+                <div id="documentEntries">
+                    <div class="document-entry card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-4">
+                                    <input type="text" name="document_types[]" class="form-control"
+                                        placeholder="Document Type (e.g., ID, Certificate)">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="file" name="documents[]" class="form-control document-input"
+                                        accept=".pdf,.doc,.docx,.jpg,.png">
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-document">
+                                        <i class="fa fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                                <div class="col-md-12 mt-2 document-preview" style="display: none;">
+                                    <div
+                                        class="preview-container d-flex align-items-center p-2 border rounded bg-light">
+                                        <span class="file-name me-2"></span>
+                                        <a href="#" class="view-file btn btn-sm btn-primary me-2"
+                                            target="_blank">View</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm mb-3" id="addDocument">
+                    <i class="fa fa-plus me-1"></i> Add Another Document
+                </button>
+            </div>
+
+            @if(isset($employee) && $employee->documents->isNotEmpty())
+            <div class="mb-3">
+                <h6 class="text-muted fw-semibold mb-3">Existing Documents</h6>
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Uploaded On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($employee->documents as $document)
+                            <tr data-document-id="{{ $document->id }}">
+                                <td>{{ $document->document_type ?? 'N/A' }}</td>
+                                <td>{{ $document->created_at ? date('d M Y', strtotime($document->created_at)) : 'N/A' }}
+                                </td>
+                                <td>
+                                    <a href="{{ route('employees.documents.download', [$employee->id, $document->id]) }}"
+                                        class="btn btn-sm btn-primary view-document me-1">
+                                        <i class="fa fa-eye"></i> View
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-document"
+                                        data-employee-id="{{ $employee->id }}" data-document-id="{{ $document->id }}">
+                                        <i class="fa fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 
     <!-- Submit Button -->
     <div class="mt-3 text-end">
-        <button type="button" class="btn btn-primary btn-modern px-4 py-2" onclick="saveEmployee(this)">
+        <button type="button" id="submitButton" class="btn btn-primary btn-modern px-4 py-2"
+            onclick="saveEmployee(this)">
             <i class="fa fa-save me-2"></i> {{ isset($employee) ? 'Update' : 'Create' }} Employee
         </button>
     </div>
 </form>
 
 <style>
-.form-control,
-.form-select {
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    transition: border-color 0.2s ease;
-}
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.2s ease;
+    }
 
-.form-control:focus,
-.form-select:focus {
-    border-color: #007bff;
-    box-shadow: none;
-}
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: none;
+    }
 
-.nav-pills .nav-link {
-    border-radius: 0;
-    color: #6c757d;
-    font-weight: 500;
-}
+    .nav-pills .nav-link {
+        border-radius: 0;
+        color: #6c757d;
+        font-weight: 500;
+    }
 
-.nav-pills .nav-link.active {
-    background-color: transparent;
-    color: #007bff;
-    border-bottom: 2px solid #007bff;
-}
+    .nav-pills .nav-link.active {
+        background-color: transparent;
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+    }
 
-.btn-modern {
-    border-radius: 20px;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-}
+    .btn-modern {
+        border-radius: 20px;
+        font-weight: 500;
+        transition: background-color 0.2s ease;
+    }
 
-.btn-modern:hover {
-    background-color: #0056b3;
-}
+    .btn-modern:hover {
+        background-color: #0056b3;
+    }
 
-.bg-light {
-    background-color: #f8f9fa;
-}
+    .bg-light {
+        background-color: #f8f9fa;
+    }
+
+    .document-entry {
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .document-entry:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .preview-container {
+        border-radius: 6px;
+    }
+
+    .document-preview img,
+    .document-preview iframe {
+        max-width: 100%;
+        max-height: 200px;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.85rem;
+    }
 </style>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const form = document.getElementById("employeeForm");
-    const submitButton = document.querySelector("#submitButton"); // Ensure your submit button has this ID
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("employeeForm");
+        const submitButton = document.querySelector("#submitButton");
 
-    function validateForm() {
-        let isValid = true;
-        const requiredFields = form.querySelectorAll("[required]");
+        // Form validation for employee details
+        function validateForm() {
+            let isValid = true;
+            const requiredFields = form.querySelectorAll("[required]:not([name^='document_'])");
 
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add("is-invalid"); // Bootstrap class for invalid input
-                isValid = false;
-            } else {
-                field.classList.remove("is-invalid");
-                field.classList.add("is-valid");
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    field.classList.remove("is-invalid");
+                    field.classList.add("is-valid");
+                }
+            });
+
+            submitButton.disabled = !isValid;
+        }
+
+        form.addEventListener("input", validateForm);
+        form.addEventListener("submit", function(event) {
+            validateForm();
+            if (submitButton.disabled) {
+                event.preventDefault();
+                event.stopPropagation();
             }
         });
 
-        submitButton.disabled = !isValid; // Disable button if form is invalid
-    }
-
-    // Validate on input change
-    form.addEventListener("input", validateForm);
-
-    // Prevent form submission if invalid
-    form.addEventListener("submit", function(event) {
         validateForm();
-        if (submitButton.disabled) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
+
+        // Initialize tabs
+        const tabs = new bootstrap.Tab(document.querySelector('#personal-tab'));
+        tabs.show();
+
+        // Handle tab switching to clear previous content
+        document.querySelectorAll('#employeeTabs .nav-link').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                const target = document.querySelector(e.target.getAttribute('href'));
+                if (target) {
+                    target.classList.add('show', 'active');
+                }
+            });
+        });
     });
-});
+
+    function previewImage(event) {
+        const input = event.target;
+        const preview = document.getElementById('profile_preview');
+
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
 </script>

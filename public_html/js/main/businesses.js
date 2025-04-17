@@ -6,13 +6,13 @@ const requestClient = new RequestClient();
 const businessesService = new BusinessesService(requestClient);
 let currentView = localStorage.getItem('tourPackagesView') || 'table';
 
-window.switchView = function(view) {
+window.switchView = function (view) {
     currentView = view;
     localStorage.setItem('businessesView', view);
     getBusinesses();
 };
 
-window.getBusinesses = async function(page = 1) {
+window.getBusinesses = async function (page = 1) {
     try {
         let data = { page: page, view: currentView };
         const response = await businessesService.fetch(data);
@@ -30,22 +30,65 @@ window.register = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData();
-
-    formData.append("name", $("#name").val());
-    formData.append("company_size", $("#company_size").val());
-    formData.append("industry", $("#industry").val());
-    formData.append("phone", $("#phone").val());
-    formData.append("country", $("#country").val());
-    formData.append("code", $("#code").val());
-
-    const logoInput = $("#logo")[0];
-    if (logoInput.files && logoInput.files[0]) {
-        formData.append("logo", logoInput.files[0]);
+    const form = document.getElementById("hrmSetupForm");
+    if (!form) {
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Form not found. Please try again.",
+            confirmButtonText: "OK",
+        });
+        return;
     }
 
+    const formData = new FormData(form);
+    const logoInput = document.getElementById("logo");
+
+    // Validate logo is provided
+    if (!logoInput?.files?.length) {
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please upload a logo.",
+            confirmButtonText: "OK",
+        });
+        return;
+    }
+
+    formData.append("logo", logoInput.files[0]);
+
     try {
-        await businessesService.store(formData);
+
+        // Add timeout to prevent hanging
+        const response = await Promise.race([
+            businessesService.store(formData),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000))
+        ]);
+
+        if (response.redirect_url) {
+            await Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Business registered successfully!",
+                confirmButtonText: "OK",
+            });
+            window.location.href = response.redirect_url;
+        } else {
+            throw new Error("Redirect URL not provided in response.");
+        }
+    } catch (error) {
+        let errorMessage = error.response?.data?.message || error.message || "Failed to register business.";
+        if (error.response?.data?.errors) {
+            errorMessage = Object.values(error.response.data.errors).flat().join("<br>");
+        }
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            html: errorMessage,
+            confirmButtonText: "OK",
+        });
     } finally {
         btn_loader(btn, false);
     }
@@ -54,9 +97,50 @@ window.register = async function (btn) {
 window.saveModules = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-    let formData = new FormData(document.getElementById("modulesForm"));
+
+    const form = document.getElementById("modulesForm");
+    if (!form) {
+        console.error("Form #modulesForm not found.");
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Form not found. Please try again.",
+            confirmButtonText: "OK",
+        });
+        return;
+    }
+
+    const formData = new FormData(form);
+
     try {
-        await businessesService.saveModules(formData);
+        const response = await Promise.race([
+            businessesService.saveModules(formData),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000))
+        ]);
+
+        if (response.redirect_url) {
+            await Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Modules saved successfully!",
+                confirmButtonText: "OK",
+            });
+            window.location.href = response.redirect_url;
+        } else {
+            throw new Error("Redirect URL not provided in response.");
+        }
+    } catch (error) {
+        let errorMessage = error.response?.data?.message || error.message || "Failed to save modules.";
+        if (error.response?.data?.errors) {
+            errorMessage = Object.values(error.response.data.errors).flat().join("<br>");
+        }
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            html: errorMessage,
+            confirmButtonText: "OK",
+        });
     } finally {
         btn_loader(btn, false);
     }
@@ -66,10 +150,100 @@ window.updateBusiness = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("businessDetailsForm"));
+    const form = document.getElementById("activateBusinessForm");
+    if (!form) {
+        const form = document.getElementById("businessDetailsForm");
+    } else {
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Form not found. Please try again.",
+            confirmButtonText: "OK",
+        });
+    }
+
+    const formData = new FormData(form);
 
     try {
-        await businessesService.update(formData);
+        const response = await Promise.race([
+            businessesService.update(formData),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000))
+        ]);
+
+        if (response.redirect_url) {
+            await Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Business updated successfully! Awaiting verification.",
+                confirmButtonText: "OK",
+            });
+            window.location.href = response.redirect_url;
+        } else {
+            throw new Error("Redirect URL not provided.");
+        }
+    } catch (error) {
+        let errorMessage = error.response?.data?.message || error.message || "Failed to update business.";
+        if (error.response?.data?.errors) {
+            errorMessage = Object.values(error.response.data.errors).flat().join("<br>");
+        }
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            html: errorMessage,
+            confirmButtonText: "OK",
+        });
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
+window.updateExistingBusiness = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const form = document.getElementById("businessDetailsForm");
+    if (!form) {
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Form not found. Please try again.",
+            confirmButtonText: "OK",
+        });
+        return
+    }
+
+    const formData = new FormData(form);
+
+    try {
+        const response = await Promise.race([
+            businessesService.update(formData),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out after 30 seconds")), 30000))
+        ]);
+
+        if (response.redirect_url) {
+            await Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Business updated successfully!",
+                confirmButtonText: "OK",
+            });
+            window.location.href = response.redirect_url;
+        } else {
+            throw new Error("Redirect URL not provided.");
+        }
+    } catch (error) {
+        let errorMessage = error.response?.data?.message || error.message || "Failed to update business.";
+        if (error.response?.data?.errors) {
+            errorMessage = Object.values(error.response.data.errors).flat().join("<br>");
+        }
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            html: errorMessage,
+            confirmButtonText: "OK",
+        });
     } finally {
         btn_loader(btn, false);
     }

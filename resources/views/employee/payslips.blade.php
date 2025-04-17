@@ -1,4 +1,3 @@
-<!-- resources/views/employee/payslips.blade.php -->
 <x-app-layout :title="$page">
     <div class="container py-5">
         <div class="row justify-content-center">
@@ -6,15 +5,6 @@
                 <h2 class="fw-bold text-dark mb-4">{{ $page }}</h2>
                 <div class="card shadow-sm border-0 rounded-3 bg-white">
                     <div class="card-body p-4">
-                        <!-- Employee Information -->
-                        <div class="mb-4">
-                            <h5 class="fw-semibold text-dark">Employee Details</h5>
-                            <p><strong>Name:</strong> {{ $employee->user->name ?? 'N/A' }}</p>
-                            <p><strong>Employee Code:</strong> {{ $employee->employee_code ?? 'N/A' }}</p>
-                        </div>
-
-                        <!-- Payslips Table -->
-                        <h5 class="fw-semibold text-dark mb-3">Available Payslips</h5>
                         <div class="table-responsive">
                             <table class="table table-bordered table-hover" id="payslipsTable">
                                 <thead class="bg-light">
@@ -37,10 +27,14 @@
                                             </span>
                                         </td>
                                         <td>
-                                            <a href="{{ route('payroll.payslip', ['business' => $business->slug, 'employee_id' => $employee->id, 'payroll_id' => $payslip['payroll_id']]) }}"
-                                                class="btn btn-sm btn-primary" title="View Payslip">
-                                                <i class="fa fa-eye"></i> View
+                                            @if($payslip['status'] === '')
+                                            <a href="{{ route('myaccount.payslips.download', ['business' => $business->slug, 'id' => $payslip['payroll_id']]) }}"
+                                                class="btn btn-sm btn-primary" title="Download Payslip">
+                                                <i class="fa fa-download"></i> Download
                                             </a>
+                                            @else
+                                            <span class="text-muted">Not Available</span>
+                                            @endif
                                         </td>
                                     </tr>
                                     @empty
@@ -57,19 +51,6 @@
         </div>
     </div>
 
-    @push('styles')
-    <style>
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-
-    .badge {
-        font-size: 0.9em;
-    }
-    </style>
-    @endpush
-
     @push('scripts')
     <script>
     $(document).ready(function() {
@@ -85,7 +66,7 @@
             order: [
                 [0, 'desc'],
                 [1, 'desc']
-            ] // Sort by year and month descending
+            ]
         });
     });
     </script>

@@ -34,6 +34,15 @@
                                     <div class="invalid-feedback">Please select a month.</div>
                                 </div>
                                 <div class="col-md-6">
+                                    <label for="working_days" class="form-label fw-medium text-dark">Number of Working
+                                        Days <span class="text-danger">*</span></label>
+                                    <input type="number" name="working_days" id="working_days"
+                                        class="form-control shadow-sm border-0 rounded-3" min="1" max="31" value="30"
+                                        required>
+                                    <div class="invalid-feedback">Please enter a valid number of working days (1-31).
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
                                     <label for="location_id" class="form-label fw-medium text-dark">Location <span
                                             class="text-muted small">(Optional)</span></label>
                                     <select name="location_id" id="location_id"

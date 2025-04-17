@@ -1,3 +1,5 @@
+// payroll-process.js
+
 (function ($) {
     let availableItems = {
         allowances: [],
@@ -6,6 +8,13 @@
         loans: [],
         advances: [],
     };
+
+    const taxableAllowances = [
+        "House Allowance", "Transport/Commuter Allowance", "Medical Allowance", "Overtime Allowance",
+        "Acting Allowance", "Responsibility Allowance", "Hardship Allowance", "Risk Allowance", "Sitting Allowance",
+        "Bonuses and Commissions", "Overtime Pay"
+    ];
+    const nonTaxableAllowances = ["Per Diem", "Mileage Reimbursement", "Meal Allowance", "Entertainment Allowance"];
 
     function formatDate(dateString) {
         const date = new Date(dateString);
@@ -45,13 +54,13 @@
             method: 'GET',
             success: function (response) {
                 if (response.message === 'success') {
-                    callback(response.data.amount || 0);
+                    callback(response.data.amount || 0, response.data.rate || 0);
                 } else {
-                    callback(0);
+                    callback(0, 0);
                 }
             },
             error: function () {
-                callback(0);
+                callback(0, 0);
             }
         });
     }
@@ -131,7 +140,7 @@
 
     function loadAllowanceInputs(employee) {
         const allowances = Object.values(employee.allowances || {}).reduce((unique, allowance) => {
-            if (!unique[allowance.item_id] && allowance.is_active !== false) { // Only active items
+            if (!unique[allowance.item_id] && allowance.is_active !== false) {
                 unique[allowance.item_id] = allowance;
             }
             return unique;
@@ -143,60 +152,115 @@
         Object.values(allowances).forEach(allowance => {
             const amount = parseFloat(allowance.amount) || 0;
             const rate = parseFloat(allowance.rate) || 0;
-            const displayName = rate > 0
-                ? `${allowance.item_name} (${rate.toFixed(2)}%)`
+            const basis = allowance.calculation_basis || 'gross_pay';
+            const isTaxable = taxableAllowances.includes(allowance.item_name) || (!nonTaxableAllowances.includes(allowance.item_name) && allowance.is_taxable !== false);
+            const displayName = rate > 0 && basis
+                ? `${allowance.item_name} (${rate.toFixed(2)}% of ${basis})`
                 : `${allowance.item_name} (${formatNumber(amount)})`;
             html += `
             <div class="form-group mb-2" id="allowances-subscribed-${employee.id}-${allowance.item_id}">
                 <div class="form-check">
-                    <input class="form-check-input allowance-checkbox" type="checkbox" name="allowances[${employee.id}][${allowance.item_id}]" value="1" checked data-allowance-id="${allowance.item_id}">
-                    <label class="form-check-label">${displayName}</label>
+                    <input class="form-check-input allowance-checkbox" type="checkbox" 
+                           name="allowances[${employee.id}][${allowance.item_id}]" value="1" checked 
+                           data-allowance-id="${allowance.item_id}">
+                    <label class="form-check-label">${displayName} ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}</label>
                 </div>
                 ${rate > 0 ? `
-                    <input type="number" class="form-control form-control-sm allowance-rate mt-1" name="allowance_rates[${employee.id}][${allowance.item_id}]" value="${rate}" min="0" step="0.01" placeholder="Rate">
+                    <input type="number" class="form-control form-control-sm allowance-rate mt-1" 
+                           name="allowance_rates[${employee.id}][${allowance.item_id}]" value="${rate}" 
+                           min="0" step="0.01" placeholder="Rate (%)" onchange="updateAllowanceDisplay(this, ${employee.id}, ${allowance.item_id}, '${basis}', ${isTaxable})">
                 ` : `
-                    <input type="number" class="form-control form-control-sm allowance-amount amount-input mt-1" name="allowance_amounts[${employee.id}][${allowance.item_id}]" value="${amount}" min="0" step="0.01" placeholder="Amount">
+                    <input type="number" class="form-control form-control-sm allowance-amount amount-input mt-1" 
+                           name="allowance_amounts[${employee.id}][${allowance.item_id}]" value="${amount || 0}" 
+                           min="0" step="0.01" placeholder="Amount" onchange="updateAllowanceDisplay(this, ${employee.id}, ${allowance.item_id}, '${basis}', ${isTaxable})">
                 `}
-            </div>
-        `;
+            </div>`;
         });
         return html;
     }
 
     function loadAvailableAllowances(employee) {
-        const subscribedIds = Object.values(employee.allowances || {})
-            .filter(a => a.is_active !== false)
-            .map(a => a.item_id);
-        const inactiveSubscribed = Object.values(employee.allowances || {})
-            .filter(a => a.is_active === false)
-            .map(a => ({
-                id: a.item_id,
-                name: a.item_name,
-                amount: a.amount || 0,
-                rate: a.rate || 0,
-                type: a.rate > 0 ? 'rate' : 'fixed',
-                calculation_basis: availableItems.allowances.find(i => i.id === a.item_id)?.calculation_basis || ''
-            }));
-        const available = [
-            ...availableItems.allowances.filter(item => !subscribedIds.includes(item.id)),
-            ...inactiveSubscribed
-        ].reduce((unique, item) => {
-            if (!unique[item.id]) unique[item.id] = item;
-            return unique;
-        }, {});
+        const subscribedIds = Object.values(employee.allowances || {}).filter(a => a.is_active !== false).map(a => a.item_id);
+        const available = availableItems.allowances.filter(item => !subscribedIds.includes(item.id));
         let html = '';
-        Object.values(available).forEach(item => {
-            const displayValue = item.type === 'rate'
-                ? `${parseFloat(item.rate || 0).toFixed(2)}% of ${item.calculation_basis || 'N/A'}`
-                : formatNumber(item.amount || 0);
+        available.forEach(item => {
+            const amount = parseFloat(item.amount) || 0;
+            const rate = parseFloat(item.rate) || 0;
+            const basis = item.calculation_basis || 'gross_pay';
+            const isTaxable = taxableAllowances.includes(item.name) || (!nonTaxableAllowances.includes(item.name) && item.is_taxable !== false);
+            const displayValue = rate > 0 && basis
+                ? `${parseFloat(rate).toFixed(2)}% of ${basis}`
+                : formatNumber(amount);
             html += `
             <div class="form-check mb-2" id="allowances-available-${employee.id}-${item.id}">
-                <input class="form-check-input allowance-checkbox" type="checkbox" name="allowances[${employee.id}][${item.id}]" value="1" data-allowance-id="${item.id}">
-                <label class="form-check-label">${item.name} (${displayValue})</label>
-            </div>
-        `;
+                <input class="form-check-input allowance-checkbox" type="checkbox" 
+                       name="allowances[${employee.id}][${item.id}]" value="1" 
+                       data-allowance-id="${item.id}" onchange="handleAllowanceToggle(this, ${employee.id}, ${item.id})">
+                <label class="form-check-label">${item.name} (${displayValue}) ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}</label>
+            </div>`;
         });
         return html || '<p>No available allowances.</p>';
+    }
+
+    function handleAllowanceToggle(checkbox, employeeId, itemId) {
+        const $checkbox = $(checkbox);
+        const $subscribedContainer = $(`#subscribed-allowances-${employeeId}`);
+        const $availableContainer = $(`#available-allowances-${employeeId}`);
+        const isChecked = $checkbox.is(':checked');
+        const item = availableItems.allowances.find(i => i.id === itemId) || {};
+        const defaultAmount = parseFloat(item.amount) || 0;
+        const defaultRate = parseFloat(item.rate) || 0;
+        const basis = item.calculation_basis || 'gross_pay';
+        const isTaxable = taxableAllowances.includes(item.name) || (!nonTaxableAllowances.includes(item.name) && item.is_taxable !== false);
+        const itemName = item.name;
+
+        $(`#allowances-subscribed-${employeeId}-${itemId}`).remove();
+        $(`#allowances-available-${employeeId}-${itemId}`).remove();
+
+        if (isChecked) {
+            const subscribedHtml = `
+                <div class="form-group mb-2" id="allowances-subscribed-${employeeId}-${itemId}">
+                    <div class="form-check">
+                        <input class="form-check-input allowance-checkbox" type="checkbox" 
+                               name="allowances[${employeeId}][${itemId}]" value="1" checked 
+                               data-allowance-id="${itemId}">
+                        <label class="form-check-label">${itemName} (${defaultRate > 0 ? `${defaultRate.toFixed(2)}% of ${basis}` : formatNumber(defaultAmount)}) ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}</label>
+                    </div>
+                    ${defaultRate > 0 ? `
+                        <input type="number" class="form-control form-control-sm allowance-rate mt-1" 
+                               name="allowance_rates[${employeeId}][${itemId}]" value="${defaultRate}" 
+                               min="0" step="0.01" placeholder="Rate (%)" onchange="updateAllowanceDisplay(this, ${employeeId}, ${itemId}, '${basis}', ${isTaxable})">
+                    ` : `
+                        <input type="number" class="form-control form-control-sm allowance-amount amount-input mt-1" 
+                               name="allowance_amounts[${employeeId}][${itemId}]" value="${defaultAmount || 0}" 
+                               min="0" step="0.01" placeholder="Amount" onchange="updateAllowanceDisplay(this, ${employeeId}, ${itemId}, '${basis}', ${isTaxable})">
+                    `}
+                </div>`;
+            $subscribedContainer.append(subscribedHtml);
+            $subscribedContainer.find('p').remove();
+        } else {
+            const availableHtml = `
+                <div class="form-check mb-2" id="allowances-available-${employeeId}-${itemId}">
+                    <input class="form-check-input allowance-checkbox" type="checkbox" 
+                           name="allowances[${employeeId}][${itemId}]" value="1" 
+                           data-allowance-id="${itemId}" onchange="handleAllowanceToggle(this, ${employeeId}, ${itemId})">
+                    <label class="form-check-label">${itemName} (${defaultRate > 0 ? `${defaultRate.toFixed(2)}% of ${basis}` : formatNumber(defaultAmount)}) ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}</label>
+                </div>`;
+            $availableContainer.append(availableHtml);
+            if ($subscribedContainer.find('.form-group').length === 0) {
+                $subscribedContainer.html('<p>No subscribed allowances.</p>');
+            }
+        }
+    }
+
+    function updateAllowanceDisplay(input, employeeId, itemId, basis, isTaxable) {
+        const value = parseFloat(input.value) || 0;
+        const $label = $(`#allowances-subscribed-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        const displayText = input.classList.contains('allowance-rate')
+            ? `${itemName} (${value.toFixed(2)}% of ${basis}) ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}`
+            : `${itemName} (${formatNumber(value)}) ${isTaxable ? '[Taxable]' : '[Non-Taxable]'}`;
+        $label.text(displayText);
     }
 
     function loadDeductionInputs(employee) {
@@ -213,60 +277,111 @@
         Object.values(deductions).forEach(deduction => {
             const amount = parseFloat(deduction.amount) || 0;
             const rate = parseFloat(deduction.rate) || 0;
-            const displayName = rate > 0
-                ? `${deduction.item_name} (${rate.toFixed(2)}%)`
+            const basis = deduction.calculation_basis || 'gross_pay';
+            const isStatutory = deduction.is_statutory;
+            const displayName = rate > 0 && basis
+                ? `${deduction.item_name} (${rate.toFixed(2)}% of ${basis})`
                 : `${deduction.item_name} (${formatNumber(amount)})`;
             html += `
             <div class="form-group mb-2" id="deductions-subscribed-${employee.id}-${deduction.item_id}">
                 <div class="form-check">
-                    <input class="form-check-input deduction-checkbox" type="checkbox" name="deductions[${employee.id}][${deduction.item_id}]" value="1" checked data-deduction-id="${deduction.item_id}">
-                    <label class="form-check-label">${displayName}</label>
+                    <input class="form-check-input deduction-checkbox" type="checkbox" 
+                           name="deductions[${employee.id}][${deduction.item_id}]" value="1" checked 
+                           data-deduction-id="${deduction.item_id}">
+                    <label class="form-check-label">${displayName} ${isStatutory ? '[Statutory]' : '[Optional]'}</label>
                 </div>
                 ${rate > 0 ? `
-                    <input type="number" class="form-control form-control-sm deduction-rate mt-1" name="deduction_rates[${employee.id}][${deduction.item_id}]" value="${rate}" min="0" step="0.01" placeholder="Rate">
+                    <input type="number" class="form-control form-control-sm deduction-rate mt-1" 
+                           name="deduction_rates[${employee.id}][${deduction.item_id}]" value="${rate}" 
+                           min="0" step="0.01" placeholder="Rate (%)" onchange="updateDeductionDisplay(this, ${employee.id}, ${deduction.item_id}, '${basis}', ${isStatutory})">
                 ` : `
-                    <input type="number" class="form-control form-control-sm deduction-amount amount-input mt-1" name="deduction_amounts[${employee.id}][${deduction.item_id}]" value="${amount}" min="0" step="0.01" placeholder="Amount">
+                    <input type="number" class="form-control form-control-sm deduction-amount amount-input mt-1" 
+                           name="deduction_amounts[${employee.id}][${deduction.item_id}]" value="${amount || 0}" 
+                           min="0" step="0.01" placeholder="Amount" onchange="updateDeductionDisplay(this, ${employee.id}, ${deduction.item_id}, '${basis}', ${isStatutory})">
                 `}
-            </div>
-        `;
+            </div>`;
         });
         return html;
     }
 
     function loadAvailableDeductions(employee) {
-        const subscribedIds = Object.values(employee.deductions || {})
-            .filter(d => d.is_active !== false)
-            .map(d => d.item_id);
-        const inactiveSubscribed = Object.values(employee.deductions || {})
-            .filter(d => d.is_active === false)
-            .map(d => ({
-                id: d.item_id,
-                name: d.item_name,
-                amount: d.amount || 0,
-                rate: d.rate || 0,
-                type: d.rate > 0 ? 'rate' : 'fixed',
-                calculation_basis: availableItems.deductions.find(i => i.id === d.item_id)?.calculation_basis || ''
-            }));
-        const available = [
-            ...availableItems.deductions.filter(item => !subscribedIds.includes(item.id)),
-            ...inactiveSubscribed
-        ].reduce((unique, item) => {
-            if (!unique[item.id]) unique[item.id] = item;
-            return unique;
-        }, {});
+        const subscribedIds = Object.values(employee.deductions || {}).filter(d => d.is_active !== false).map(d => d.item_id);
+        const available = availableItems.deductions.filter(item => !subscribedIds.includes(item.id));
         let html = '';
-        Object.values(available).forEach(item => {
-            const displayValue = item.type === 'rate'
-                ? `${parseFloat(item.rate || 0).toFixed(2)}% of ${item.calculation_basis || 'N/A'}`
+        available.forEach(item => {
+            const displayValue = item.rate > 0 && item.calculation_basis
+                ? `${parseFloat(item.rate).toFixed(2)}% of ${item.calculation_basis}`
                 : formatNumber(item.amount || 0);
             html += `
             <div class="form-check mb-2" id="deductions-available-${employee.id}-${item.id}">
-                <input class="form-check-input deduction-checkbox" type="checkbox" name="deductions[${employee.id}][${item.id}]" value="1" data-deduction-id="${item.id}">
-                <label class="form-check-label">${item.name} (${displayValue})</label>
-            </div>
-        `;
+                <input class="form-check-input deduction-checkbox" type="checkbox" 
+                       name="deductions[${employee.id}][${item.id}]" value="1" 
+                       data-deduction-id="${item.id}" onchange="handleDeductionToggle(this, ${employee.id}, ${item.id})">
+                <label class="form-check-label">${item.name} (${displayValue}) ${item.is_statutory ? '[Statutory]' : '[Optional]'}</label>
+            </div>`;
         });
         return html || '<p>No available deductions.</p>';
+    }
+
+    function handleDeductionToggle(checkbox, employeeId, itemId) {
+        const $checkbox = $(checkbox);
+        const $subscribedContainer = $(`#subscribed-deductions-${employeeId}`);
+        const $availableContainer = $(`#available-deductions-${employeeId}`);
+        const isChecked = $checkbox.is(':checked');
+        const item = availableItems.deductions.find(i => i.id === itemId) || {};
+        const defaultAmount = parseFloat(item.amount) || 0;
+        const defaultRate = parseFloat(item.rate) || 0;
+        const basis = item.calculation_basis || 'gross_pay';
+        const isStatutory = item.is_statutory;
+        const itemName = item.name;
+
+        $(`#deductions-subscribed-${employeeId}-${itemId}`).remove();
+        $(`#deductions-available-${employeeId}-${itemId}`).remove();
+
+        if (isChecked) {
+            const subscribedHtml = `
+                <div class="form-group mb-2" id="deductions-subscribed-${employeeId}-${itemId}">
+                    <div class="form-check">
+                        <input class="form-check-input deduction-checkbox" type="checkbox" 
+                               name="deductions[${employeeId}][${itemId}]" value="1" checked 
+                               data-deduction-id="${itemId}">
+                        <label class="form-check-label">${itemName} (${defaultRate > 0 ? `${defaultRate.toFixed(2)}% of ${basis}` : formatNumber(defaultAmount)}) ${isStatutory ? '[Statutory]' : '[Optional]'}</label>
+                    </div>
+                    ${defaultRate > 0 ? `
+                        <input type="number" class="form-control form-control-sm deduction-rate mt-1" 
+                               name="deduction_rates[${employeeId}][${itemId}]" value="${defaultRate}" 
+                               min="0" step="0.01" placeholder="Rate (%)" onchange="updateDeductionDisplay(this, ${employeeId}, ${itemId}, '${basis}', ${isStatutory})">
+                    ` : `
+                        <input type="number" class="form-control form-control-sm deduction-amount amount-input mt-1" 
+                               name="deduction_amounts[${employeeId}][${itemId}]" value="${defaultAmount || 0}" 
+                               min="0" step="0.01" placeholder="Amount" onchange="updateDeductionDisplay(this, ${employeeId}, ${itemId}, '${basis}', ${isStatutory})">
+                    `}
+                </div>`;
+            $subscribedContainer.append(subscribedHtml);
+            $subscribedContainer.find('p').remove();
+        } else {
+            const availableHtml = `
+                <div class="form-check mb-2" id="deductions-available-${employeeId}-${itemId}">
+                    <input class="form-check-input deduction-checkbox" type="checkbox" 
+                           name="deductions[${employeeId}][${itemId}]" value="1" 
+                           data-deduction-id="${itemId}" onchange="handleDeductionToggle(this, ${employeeId}, ${itemId})">
+                    <label class="form-check-label">${itemName} (${defaultRate > 0 ? `${defaultRate.toFixed(2)}% of ${basis}` : formatNumber(defaultAmount)}) ${isStatutory ? '[Statutory]' : '[Optional]'}</label>
+                </div>`;
+            $availableContainer.append(availableHtml);
+            if ($subscribedContainer.find('.form-group').length === 0) {
+                $subscribedContainer.html('<p>No subscribed deductions.</p>');
+            }
+        }
+    }
+
+    function updateDeductionDisplay(input, employeeId, itemId, basis, isStatutory) {
+        const value = parseFloat(input.value) || 0;
+        const $label = $(`#deductions-subscribed-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        const displayText = input.classList.contains('deduction-rate')
+            ? `${itemName} (${value.toFixed(2)}% of ${basis}) ${isStatutory ? '[Statutory]' : '[Optional]'}`
+            : `${itemName} (${formatNumber(value)}) ${isStatutory ? '[Statutory]' : '[Optional]'}`;
+        $label.text(displayText);
     }
 
     function loadReliefInputs(employee) {
@@ -277,56 +392,119 @@
             return unique;
         }, {});
         let html = '';
-        if (Object.keys(reliefs).length === 0) {
-            return '<p>No subscribed reliefs.</p>';
-        }
-        Object.values(reliefs).forEach(relief => {
-            const amount = parseFloat(relief.amount) || 0;
-            const displayName = `${relief.item_name} (${formatNumber(amount)})`;
-            const itemId = relief.item_id || '';
-            html += `
-            <div class="form-group mb-2" id="reliefs-subscribed-${employee.id}-${itemId}">
+        // Always include Personal Relief with fixed value of 2400
+        html += `
+            <div class="form-group mb-2" id="reliefs-subscribed-${employee.id}-1">
                 <div class="form-check">
-                    <input class="form-check-input relief-checkbox" type="checkbox" name="reliefs[${employee.id}][${itemId}]" value="1" checked data-relief-id="${itemId}">
-                    <label class="form-check-label">${displayName}</label>
+                    <input class="form-check-input relief-checkbox" type="checkbox" 
+                           name="reliefs[${employee.id}][1]" value="1" checked disabled 
+                           data-relief-id="1">
+                    <label class="form-check-label">Personal Relief (KES ${formatNumber(2400)})</label>
                 </div>
-                <input type="number" class="form-control form-control-sm relief-amount amount-input mt-1" name="relief_amounts[${employee.id}][${itemId}]" value="${amount}" min="0" step="0.01" placeholder="Amount">
             </div>
         `;
+        Object.values(reliefs).forEach(relief => {
+            if (relief.item_id === 1) return; // Skip Personal Relief
+            const amount = parseFloat(relief.amount) || 0;
+            const item = availableItems.reliefs.find(i => i.id === relief.item_id) || {};
+            const maxLimit = item.limit ? parseFloat(item.limit) : null;
+            const isInsurance = item.name === 'Insurance Relief';
+            const displayName = `${relief.item_name} (${formatNumber(amount)})`;
+            html += `
+            <div class="form-group mb-2" id="reliefs-subscribed-${employee.id}-${relief.item_id}">
+                <div class="form-check">
+                    <input class="form-check-input relief-checkbox" type="checkbox" 
+                           name="reliefs[${employee.id}][${relief.item_id}]" value="1" checked 
+                           data-relief-id="${relief.item_id}">
+                    <label class="form-check-label">${displayName}</label>
+                </div>
+                ${relief.item_id === 5 ? '' : `
+                    <input type="number" class="form-control form-control-sm relief-amount amount-input mt-1" 
+                           name="relief_amounts[${employee.id}][${relief.item_id}]" value="${amount || 0}" 
+                           min="0" step="0.01" ${maxLimit ? `max="${maxLimit}"` : ''} 
+                           placeholder="${isInsurance ? 'Premium Paid' : 'Amount'}" 
+                           onchange="updateReliefAmount(this, ${employee.id}, ${relief.item_id}, ${maxLimit || 'null'})">
+                `}
+            </div>`;
         });
-        return html;
+        return html || '<p>No additional reliefs subscribed.</p>';
     }
 
     function loadAvailableReliefs(employee) {
-        const subscribedIds = Object.values(employee.reliefs || {})
-            .filter(r => r.is_active !== false)
-            .map(r => r.item_id)
-            .filter(id => id);
-        const inactiveSubscribed = Object.values(employee.reliefs || {})
-            .filter(r => r.is_active === false)
-            .map(r => ({
-                id: r.item_id,
-                name: r.item_name,
-                amount: r.amount || 0
-            }));
-        const available = [
-            ...availableItems.reliefs.filter(item => !subscribedIds.includes(item.id)),
-            ...inactiveSubscribed
-        ].reduce((unique, item) => {
-            if (!unique[item.id]) unique[item.id] = item;
-            return unique;
-        }, {});
+        const subscribedIds = Object.values(employee.reliefs || {}).filter(r => r.is_active !== false).map(r => r.item_id).filter(id => id !== 1);
+        const available = availableItems.reliefs.filter(item => !subscribedIds.includes(item.id) && item.id !== 1);
         let html = '';
-        Object.values(available).forEach(item => {
-            const displayValue = formatNumber(item.amount || 0);
+        available.forEach(item => {
+            const maxLimit = item.limit ? parseFloat(item.limit) : null;
+            const defaultAmount = parseFloat(item.amount) || 0;
+            const displayValue = item.id === 5 ? '100% Tax Exemption' : (item.computation_method === 'percentage' ? `${item.percentage_of_amount}% of Input` : formatNumber(defaultAmount));
             html += `
             <div class="form-check mb-2" id="reliefs-available-${employee.id}-${item.id}">
-                <input class="form-check-input relief-checkbox" type="checkbox" name="reliefs[${employee.id}][${item.id}]" value="1" data-relief-id="${item.id}">
-                <label class="form-check-label">${item.name} (${displayValue})</label>
-            </div>
-        `;
+                <input class="form-check-input relief-checkbox" type="checkbox" 
+                       name="reliefs[${employee.id}][${item.id}]" value="1" 
+                       data-relief-id="${item.id}" onchange="handleReliefToggle(this, ${employee.id}, ${item.id})">
+                <label class="form-check-label">${item.name} (${displayValue}${maxLimit ? `, Max KES ${formatNumber(maxLimit)}` : ''})</label>
+            </div>`;
         });
-        return html || '<p>No available reliefs.</p>';
+        return html || '<p>No additional reliefs available.</p>';
+    }
+
+    function handleReliefToggle(checkbox, employeeId, itemId) {
+        const $checkbox = $(checkbox);
+        const $subscribedContainer = $(`#subscribed-reliefs-${employeeId}`);
+        const $availableContainer = $(`#available-reliefs-${employeeId}`);
+        const isChecked = $checkbox.is(':checked');
+        const item = availableItems.reliefs.find(i => i.id === itemId) || {};
+        const maxLimit = item.limit ? parseFloat(item.limit) : null;
+        const isInsurance = item.name === 'Insurance Relief';
+        const defaultAmount = item.id === 5 ? 0 : (parseFloat(item.amount) || 0);
+
+        $(`#reliefs-subscribed-${employeeId}-${itemId}`).remove();
+        $(`#reliefs-available-${employeeId}-${itemId}`).remove();
+
+        if (isChecked) {
+            const subscribedHtml = `
+                <div class="form-group mb-2" id="reliefs-subscribed-${employeeId}-${itemId}">
+                    <div class="form-check">
+                        <input class="form-check-input relief-checkbox" type="checkbox" 
+                               name="reliefs[${employeeId}][${itemId}]" value="1" checked 
+                               data-relief-id="${itemId}">
+                        <label class="form-check-label">${item.name} (${formatNumber(defaultAmount)})</label>
+                    </div>
+                    ${itemId === 5 ? '' : `
+                        <input type="number" class="form-control form-control-sm relief-amount amount-input mt-1" 
+                               name="relief_amounts[${employeeId}][${itemId}]" value="${defaultAmount || 0}" 
+                               min="0" step="0.01" ${maxLimit ? `max="${maxLimit}"` : ''} 
+                               placeholder="${isInsurance ? 'Premium Paid' : 'Amount'}" 
+                               onchange="updateReliefAmount(this, ${employeeId}, ${itemId}, ${maxLimit || 'null'})">
+                    `}
+                </div>`;
+            $subscribedContainer.append(subscribedHtml);
+            if ($subscribedContainer.find('p').length > 0 && $subscribedContainer.find('.form-group').length > 1) {
+                $subscribedContainer.find('p').remove();
+            }
+        } else {
+            const availableHtml = `
+                <div class="form-check mb-2" id="reliefs-available-${employeeId}-${itemId}">
+                    <input class="form-check-input relief-checkbox" type="checkbox" 
+                           name="reliefs[${employeeId}][${itemId}]" value="1" 
+                           data-relief-id="${itemId}" onchange="handleReliefToggle(this, ${employeeId}, ${itemId})">
+                    <label class="form-check-label">${item.name} (${item.id === 5 ? '100% Tax Exemption' : formatNumber(defaultAmount)}${maxLimit ? `, Max KES ${formatNumber(maxLimit)}` : ''})</label>
+                </div>`;
+            $availableContainer.append(availableHtml);
+        }
+    }
+
+    function updateReliefAmount(input, employeeId, itemId, maxLimit) {
+        let value = parseFloat(input.value) || 0;
+        if (maxLimit && value > maxLimit) {
+            value = maxLimit;
+            input.value = value;
+            Swal.fire('Warning', `Maximum limit for this relief is KES ${formatNumber(maxLimit)}.`, 'warning');
+        }
+        const $label = $(`#reliefs-subscribed-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        $label.text(`${itemName} (${formatNumber(value)})`);
     }
 
     function loadOvertimeInputs(employee) {
@@ -339,7 +517,7 @@
             const hours = parseFloat(overtime.amount) || 0;
             const isSelected = overtime.is_active !== false;
             const formattedDate = formatDate(overtime.item_name.split('on ')[1] || new Date());
-            const displayName = `Overtime on ${formattedDate} (${formatNumber(hours)})`;
+            const displayName = `Overtime on ${formattedDate} (${formatNumber(hours)} hrs)`;
             html += `
             <div class="form-group mb-2" id="overtime-${employee.id}-${overtime.item_id}">
                 <div class="form-check">
@@ -350,13 +528,20 @@
                 </div>
                 <div class="mt-1">
                     <input type="number" class="form-control form-control-sm overtime-hours" 
-                           name="overtime_hours[${employee.id}][${overtime.item_id}]" value="${hours}" 
-                           min="0" step="0.1" placeholder="Hours Worked">
+                           name="overtime_hours[${employee.id}][${overtime.item_id}]" value="${hours || 0}" 
+                           min="0" step="0.1" placeholder="Hours Worked" 
+                           onchange="updateOvertimeDisplay(this, ${employee.id}, ${overtime.item_id})">
                 </div>
-            </div>
-        `;
+            </div>`;
         });
         return html;
+    }
+
+    function updateOvertimeDisplay(input, employeeId, itemId) {
+        const hours = parseFloat(input.value) || 0;
+        const $label = $(`#overtime-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        $label.text(`${itemName} (${formatNumber(hours)} hrs)`);
     }
 
     function loadLoanInputs(employee) {
@@ -372,57 +557,100 @@
         }
         Object.values(loans).forEach(loan => {
             const remaining = parseFloat(loan.amount) || 0;
-            const amountToRecover = parseFloat(loan.amount) || remaining;
+            const amountToRecover = parseFloat(loan.amount_to_recover) || remaining;
             const formattedDate = formatDate(loan.item_name.split('started ')[1] || new Date());
             if (remaining > 0) {
                 const displayName = `Loan on ${formattedDate} (Remaining: ${formatNumber(remaining)})`;
                 html += `
                 <div class="form-group mb-2" id="loans-subscribed-${employee.id}-${loan.item_id}">
                     <div class="form-check">
-                        <input class="form-check-input loan-checkbox" type="checkbox" name="loans[${employee.id}][${loan.item_id}]" value="1" checked data-loan-id="${loan.item_id}" data-max-amount="${remaining}">
+                        <input class="form-check-input loan-checkbox" type="checkbox" 
+                               name="loans[${employee.id}][${loan.item_id}]" value="1" checked 
+                               data-loan-id="${loan.item_id}" data-max-amount="${remaining}">
                         <label class="form-check-label">${displayName}</label>
                     </div>
-                    <input type="number" class="form-control form-control-sm loan-amount amount-input mt-1" name="loan_amounts[${employee.id}][${loan.item_id}]" value="${amountToRecover}" min="0" max="${remaining}" step="0.01" placeholder="Amount to Recover">
-                </div>
-            `;
+                    <input type="number" class="form-control form-control-sm loan-amount amount-input mt-1" 
+                           name="loan_amounts[${employee.id}][${loan.item_id}]" value="${amountToRecover || remaining}" 
+                           min="0" max="${remaining}" step="0.01" placeholder="Amount to Recover" 
+                           onchange="updateLoanDisplay(this, ${employee.id}, ${loan.item_id}, ${remaining})">
+                </div>`;
             }
         });
         return html;
     }
 
     function loadAvailableLoans(employee) {
-        const subscribedIds = Object.values(employee.loans || {})
-            .filter(l => l.is_active !== false)
-            .map(l => l.item_id);
-        const inactiveSubscribed = Object.values(employee.loans || {})
-            .filter(l => l.is_active === false)
-            .map(l => ({
-                id: l.item_id,
-                employee_id: employee.id,
-                start_date: l.item_name.split('started ')[1] || new Date(),
-                amount: l.amount || 0,
-                remaining: l.amount || 0
-            }));
-        const available = [
-            ...availableItems.loans.filter(item => item.employee_id === employee.id && !subscribedIds.includes(item.id)),
-            ...inactiveSubscribed
-        ].reduce((unique, item) => {
-            if (!unique[item.id]) unique[item.id] = item;
-            return unique;
-        }, {});
+        const subscribedIds = Object.values(employee.loans || {}).filter(l => l.is_active !== false).map(l => l.item_id);
+        const available = availableItems.loans.filter(item => item.employee_id === employee.id && !subscribedIds.includes(item.id));
         let html = '';
-        Object.values(available).forEach(item => {
+        available.forEach(item => {
             const remaining = parseFloat(item.remaining) || 0;
             const formattedDate = formatDate(item.start_date);
             const displayName = `Loan on ${formattedDate} (Remaining: ${formatNumber(remaining)})`;
             html += `
             <div class="form-check mb-2" id="loans-available-${employee.id}-${item.id}">
-                <input class="form-check-input loan-checkbox" type="checkbox" name="loans[${employee.id}][${item.id}]" value="1" data-loan-id="${item.id}" data-max-amount="${remaining}">
+                <input class="form-check-input loan-checkbox" type="checkbox" 
+                       name="loans[${employee.id}][${item.id}]" value="1" 
+                       data-loan-id="${item.id}" data-max-amount="${remaining}" onchange="handleLoanToggle(this, ${employee.id}, ${item.id})">
                 <label class="form-check-label">${displayName}</label>
-            </div>
-        `;
+            </div>`;
         });
         return html || '<p>No available loans.</p>';
+    }
+
+    function handleLoanToggle(checkbox, employeeId, itemId) {
+        const $checkbox = $(checkbox);
+        const $subscribedContainer = $(`#subscribed-loans-${employeeId}`);
+        const $availableContainer = $(`#available-loans-${employeeId}`);
+        const isChecked = $checkbox.is(':checked');
+        const item = availableItems.loans.find(i => i.id === itemId) || {};
+        const remaining = parseFloat(item.remaining) || 0;
+        const formattedDate = formatDate(item.start_date);
+
+        $(`#loans-subscribed-${employeeId}-${itemId}`).remove();
+        $(`#loans-available-${employeeId}-${itemId}`).remove();
+
+        if (isChecked) {
+            const subscribedHtml = `
+                <div class="form-group mb-2" id="loans-subscribed-${employeeId}-${itemId}">
+                    <div class="form-check">
+                        <input class="form-check-input loan-checkbox" type="checkbox" 
+                               name="loans[${employeeId}][${itemId}]" value="1" checked 
+                               data-loan-id="${itemId}" data-max-amount="${remaining}">
+                        <label class="form-check-label">Loan on ${formattedDate} (Remaining: ${formatNumber(remaining)})</label>
+                    </div>
+                    <input type="number" class="form-control form-control-sm loan-amount amount-input mt-1" 
+                           name="loan_amounts[${employeeId}][${itemId}]" value="${remaining}" 
+                           min="0" max="${remaining}" step="0.01" placeholder="Amount to Recover" 
+                           onchange="updateLoanDisplay(this, ${employeeId}, ${itemId}, ${remaining})">
+                </div>`;
+            $subscribedContainer.append(subscribedHtml);
+            $subscribedContainer.find('p').remove();
+        } else {
+            const availableHtml = `
+                <div class="form-check mb-2" id="loans-available-${employeeId}-${itemId}">
+                    <input class="form-check-input loan-checkbox" type="checkbox" 
+                           name="loans[${employeeId}][${itemId}]" value="1" 
+                           data-loan-id="${itemId}" data-max-amount="${remaining}" onchange="handleLoanToggle(this, ${employeeId}, ${itemId})">
+                    <label class="form-check-label">Loan on ${formattedDate} (Remaining: ${formatNumber(remaining)})</label>
+                </div>`;
+            $availableContainer.append(availableHtml);
+            if ($subscribedContainer.find('.form-group').length === 0) {
+                $subscribedContainer.html('<p>No subscribed loans.</p>');
+            }
+        }
+    }
+
+    function updateLoanDisplay(input, employeeId, itemId, maxAmount) {
+        let value = parseFloat(input.value) || 0;
+        if (value > maxAmount) {
+            value = maxAmount;
+            input.value = value;
+            Swal.fire('Warning', `Maximum recoverable amount is KES ${formatNumber(maxAmount)}.`, 'warning');
+        }
+        const $label = $(`#loans-subscribed-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        $label.text(`${itemName} (Remaining: ${formatNumber(maxAmount)})`);
     }
 
     function loadAdvanceInputs(employee) {
@@ -438,177 +666,142 @@
         }
         Object.values(advances).forEach(advance => {
             const amount = parseFloat(advance.amount) || 0;
-            const amountToRecover = parseFloat(advance.amount) || amount;
+            const amountToRecover = parseFloat(advance.amount_to_recover) || amount;
             const formattedDate = formatDate(advance.item_name.split('on ')[1] || new Date());
             const displayName = `Advance on ${formattedDate} (Amount: ${formatNumber(amount)})`;
             html += `
             <div class="form-group mb-2" id="advances-subscribed-${employee.id}-${advance.item_id}">
                 <div class="form-check">
-                    <input class="form-check-input advance-checkbox" type="checkbox" name="advances[${employee.id}][${advance.item_id}]" value="1" checked data-advance-id="${advance.item_id}" data-max-amount="${amount}">
+                    <input class="form-check-input advance-checkbox" type="checkbox" 
+                           name="advances[${employee.id}][${advance.item_id}]" value="1" checked 
+                           data-advance-id="${advance.item_id}" data-max-amount="${amount}">
                     <label class="form-check-label">${displayName}</label>
                 </div>
-                <input type="number" class="form-control form-control-sm advance-amount amount-input mt-1" name="advance_amounts[${employee.id}][${advance.item_id}]" value="${amountToRecover}" min="0" max="${amount}" step="0.01" placeholder="Amount to Recover">
-            </div>
-        `;
+                <input type="number" class="form-control form-control-sm advance-amount amount-input mt-1" 
+                       name="advance_amounts[${employee.id}][${advance.item_id}]" value="${amountToRecover || amount}" 
+                       min="0" max="${amount}" step="0.01" placeholder="Amount to Recover" 
+                       onchange="updateAdvanceDisplay(this, ${employee.id}, ${advance.item_id}, ${amount})">
+            </div>`;
         });
         return html;
     }
 
     function loadAvailableAdvances(employee) {
-        const subscribedIds = Object.values(employee.advances || {})
-            .filter(a => a.is_active !== false)
-            .map(a => a.item_id);
-        const inactiveSubscribed = Object.values(employee.advances || {})
-            .filter(a => a.is_active === false)
-            .map(a => ({
-                id: a.item_id,
-                employee_id: employee.id,
-                date: a.item_name.split('on ')[1] || new Date(),
-                amount: a.amount || 0
-            }));
-        const available = [
-            ...availableItems.advances.filter(item => item.employee_id === employee.id && !subscribedIds.includes(item.id)),
-            ...inactiveSubscribed
-        ].reduce((unique, item) => {
-            if (!unique[item.id]) unique[item.id] = item;
-            return unique;
-        }, {});
+        const subscribedIds = Object.values(employee.advances || {}).filter(a => a.is_active !== false).map(a => a.item_id);
+        const available = availableItems.advances.filter(item => item.employee_id === employee.id && !subscribedIds.includes(item.id));
         let html = '';
-        Object.values(available).forEach(item => {
+        available.forEach(item => {
             const amount = parseFloat(item.amount) || 0;
             const formattedDate = formatDate(item.date);
             const displayName = `Advance on ${formattedDate} (Amount: ${formatNumber(amount)})`;
             html += `
             <div class="form-check mb-2" id="advances-available-${employee.id}-${item.id}">
-                <input class="form-check-input advance-checkbox" type="checkbox" name="advances[${employee.id}][${item.id}]" value="1" data-advance-id="${item.id}" data-max-amount="${amount}">
+                <input class="form-check-input advance-checkbox" type="checkbox" 
+                       name="advances[${employee.id}][${item.id}]" value="1" 
+                       data-advance-id="${item.id}" data-max-amount="${amount}" onchange="handleAdvanceToggle(this, ${employee.id}, ${item.id})">
                 <label class="form-check-label">${displayName}</label>
-            </div>
-        `;
+            </div>`;
         });
         return html || '<p>No available advances.</p>';
     }
 
-    function handleItemToggle(checkbox, type, employeeId, itemId, itemName, additionalInfo = '') {
+    function handleAdvanceToggle(checkbox, employeeId, itemId) {
         const $checkbox = $(checkbox);
-        const $subscribedContainer = $(`#subscribed-${type}-${employeeId}`);
-        const $availableContainer = $(`#available-${type}-${employeeId}`);
+        const $subscribedContainer = $(`#subscribed-advances-${employeeId}`);
+        const $availableContainer = $(`#available-advances-${employeeId}`);
         const isChecked = $checkbox.is(':checked');
-        const maxAmount = $checkbox.data('max-amount') || null;
-        const item = availableItems[type].find(i => i.id === itemId) || {};
-        const defaultAmount = parseFloat(item.amount || 0);
-        const defaultRate = parseFloat(item.rate || 0);
-        const calculationBasis = item.calculation_basis || '';
+        const item = availableItems.advances.find(i => i.id === itemId) || {};
+        const amount = parseFloat(item.amount) || 0;
+        const formattedDate = formatDate(item.date);
 
-        // Remove existing entries
-        $(`#${type}-subscribed-${employeeId}-${itemId}`).remove();
-        $(`#${type}-available-${employeeId}-${itemId}`).remove();
+        $(`#advances-subscribed-${employeeId}-${itemId}`).remove();
+        $(`#advances-available-${employeeId}-${itemId}`).remove();
 
         if (isChecked) {
-            // Check if item already exists in subscribed section (prevent duplicates)
-            if ($subscribedContainer.find(`#${type}-subscribed-${employeeId}-${itemId}`).length === 0) {
-                const isRateBased = item.type === 'rate';
-                const subscribedHtml = `
-                    <div class="form-group mb-2" id="${type}-subscribed-${employeeId}-${itemId}">
-                        <div class="form-check">
-                            <input class="form-check-input ${type}-checkbox" type="checkbox" 
-                                   name="${type}[${employeeId}][${itemId}]" value="1" checked 
-                                   data-${type}-id="${itemId}" ${maxAmount ? `data-max-amount="${maxAmount}"` : ''}>
-                            <label class="form-check-label">${itemName}${calculationBasis ? ` (${calculationBasis})` : ''}${additionalInfo}</label>
-                        </div>
-                        ${isRateBased ? `
-                            <input type="number" class="form-control form-control-sm ${type}-rate mt-1" 
-                                   name="${type}_rates[${employeeId}][${itemId}]" value="${defaultRate}" 
-                                   min="0" step="0.01" placeholder="Rate">
-                        ` : `
-                            <input type="number" class="form-control form-control-sm ${type}-amount amount-input mt-1" 
-                                   name="${type}_amounts[${employeeId}][${itemId}]" value="${defaultAmount}" 
-                                   min="0" ${maxAmount ? `max="${maxAmount}"` : ''} step="0.01" placeholder="Amount">
-                        `}
+            const subscribedHtml = `
+                <div class="form-group mb-2" id="advances-subscribed-${employeeId}-${itemId}">
+                    <div class="form-check">
+                        <input class="form-check-input advance-checkbox" type="checkbox" 
+                               name="advances[${employeeId}][${itemId}]" value="1" checked 
+                               data-advance-id="${itemId}" data-max-amount="${amount}">
+                        <label class="form-check-label">Advance on ${formattedDate} (Amount: ${formatNumber(amount)})</label>
                     </div>
-                `;
-                $subscribedContainer.append(subscribedHtml);
-                if ($subscribedContainer.find('p').length > 0) $subscribedContainer.find('p').remove();
-            }
+                    <input type="number" class="form-control form-control-sm advance-amount amount-input mt-1" 
+                           name="advance_amounts[${employeeId}][${itemId}]" value="${amount}" 
+                           min="0" max="${amount}" step="0.01" placeholder="Amount to Recover" 
+                           onchange="updateAdvanceDisplay(this, ${employeeId}, ${itemId}, ${amount})">
+                </div>`;
+            $subscribedContainer.append(subscribedHtml);
+            $subscribedContainer.find('p').remove();
         } else {
-            // Add to available only if not already present
-            if ($availableContainer.find(`#${type}-available-${employeeId}-${itemId}`).length === 0) {
-                const availableHtml = `
-                    <div class="form-check mb-2" id="${type}-available-${employeeId}-${itemId}">
-                        <input class="form-check-input ${type}-checkbox" type="checkbox" 
-                               name="${type}[${employeeId}][${itemId}]" value="1" 
-                               data-${type}-id="${itemId}" ${maxAmount ? `data-max-amount="${maxAmount}"` : ''}>
-                        <label class="form-check-label">${itemName}${calculationBasis ? ` (${calculationBasis})` : ''}${additionalInfo}</label>
-                    </div>
-                `;
-                $availableContainer.append(availableHtml);
-                if ($availableContainer.find('p').length > 0 && $availableContainer.find('.form-check').length > 0) {
-                    $availableContainer.find('p').remove();
-                }
-            }
+            const availableHtml = `
+                <div class="form-check mb-2" id="advances-available-${employeeId}-${itemId}">
+                    <input class="form-check-input advance-checkbox" type="checkbox" 
+                           name="advances[${employeeId}][${itemId}]" value="1" 
+                           data-advance-id="${itemId}" data-max-amount="${amount}" onchange="handleAdvanceToggle(this, ${employeeId}, ${itemId})">
+                    <label class="form-check-label">Advance on ${formattedDate} (Amount: ${formatNumber(amount)})</label>
+                </div>`;
+            $availableContainer.append(availableHtml);
             if ($subscribedContainer.find('.form-group').length === 0) {
-                $subscribedContainer.html(`<p>No subscribed ${type}.</p>`);
+                $subscribedContainer.html('<p>No subscribed advances.</p>');
             }
         }
-        attachEventListenerForType(type, employeeId, itemId);
+    }
+
+    function updateAdvanceDisplay(input, employeeId, itemId, maxAmount) {
+        let value = parseFloat(input.value) || 0;
+        if (value > maxAmount) {
+            value = maxAmount;
+            input.value = value;
+            Swal.fire('Warning', `Maximum recoverable amount is KES ${formatNumber(maxAmount)}.`, 'warning');
+        }
+        const $label = $(`#advances-subscribed-${employeeId}-${itemId} .form-check-label`);
+        const itemName = $label.text().split(' (')[0];
+        $label.text(`${itemName} (Amount: ${formatNumber(maxAmount)})`);
     }
 
     function attachEventListeners() {
-        $('.allowance-checkbox, .allowances-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.allowance-checkbox').on('change', '.allowance-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
-            const itemId = $(this).data('allowance-id') || $(this).data('allowances-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'allowances', employeeId, itemId, itemName, additionalInfo);
+            const itemId = $(this).data('allowance-id');
+            handleAllowanceToggle(this, employeeId, itemId);
         });
 
-        $('.deduction-checkbox, .deductions-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.deduction-checkbox').on('change', '.deduction-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
-            const itemId = $(this).data('deduction-id') || $(this).data('deductions-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'deductions', employeeId, itemId, itemName, additionalInfo);
+            const itemId = $(this).data('deduction-id');
+            handleDeductionToggle(this, employeeId, itemId);
         });
 
-        $('.relief-checkbox, .reliefs-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.relief-checkbox').on('change', '.relief-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
-            const itemId = $(this).data('relief-id') || $(this).data('reliefs-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'reliefs', employeeId, itemId, itemName, additionalInfo);
+            const itemId = $(this).data('relief-id');
+            handleReliefToggle(this, employeeId, itemId);
         });
 
-        $('.loan-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.loan-checkbox').on('change', '.loan-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
             const itemId = $(this).data('loan-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'loans', employeeId, itemId, itemName, additionalInfo);
+            handleLoanToggle(this, employeeId, itemId);
         });
 
-        $('.advance-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.advance-checkbox').on('change', '.advance-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
             const itemId = $(this).data('advance-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'advances', employeeId, itemId, itemName, additionalInfo);
+            handleAdvanceToggle(this, employeeId, itemId);
         });
 
-        $('.overtime-checkbox').off('change').on('change', function () {
+        $('#payrollSettingsSection').off('change', '.overtime-checkbox').on('change', '.overtime-checkbox', function () {
             const employeeId = $(this).closest('tr').data('employee-id');
             const itemId = $(this).data('overtime-id');
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, 'overtime', employeeId, itemId, itemName, additionalInfo);
+            handleItemToggle(this, 'overtime', employeeId, itemId, '', '');
         });
     }
 
-    function attachEventListenerForType(type, employeeId, itemId) {
-        const $checkbox = $(`#${type}-subscribed-${employeeId}-${itemId} .${type}-checkbox, #${type}-available-${employeeId}-${itemId} .${type}-checkbox`);
-        $checkbox.off('change').on('change', function () {
-            const itemName = $(this).next('label').text().replace(/ \(.+\)/g, '');
-            const additionalInfo = $(this).next('label').text().match(/ \(.+\)/g) || '';
-            handleItemToggle(this, type, employeeId, itemId, itemName, additionalInfo);
-        });
+    function handleItemToggle(checkbox, type, employeeId, itemId, itemName, additionalInfo) {
+        const $checkbox = $(checkbox);
+        const isChecked = $checkbox.is(':checked');
+        $checkbox.prop('checked', isChecked);
     }
 
     window.savePayrollSettings = function () {
@@ -625,7 +818,6 @@
                 const employeeId = $(this).data('employee-id');
                 if (!itemsByEmployee[employeeId]) itemsByEmployee[employeeId] = {};
 
-                // Collect both subscribed and available items
                 const $checkboxes = $(this).find(`#subscribed-${type}-${employeeId} .${checkboxClasses.join(', .')}, #available-${type}-${employeeId} .${checkboxClasses.join(', .')}`);
                 $checkboxes.each(function () {
                     const itemId = $(this).data(idAttrs[0]) || $(this).data(idAttrs[1]);
@@ -635,12 +827,19 @@
                     const $group = $(this).closest('.form-group');
                     const $amountInput = $group.find(`.${amountClasses.join(', .')}`);
                     const $rateInput = rateClass ? $group.find(`.${rateClass}`) : null;
-                    const amount = $amountInput.length ? parseFloat($amountInput.val() || 0) : 0;
+                    let amount = $amountInput.length ? parseFloat($amountInput.val() || 0) : 0;
                     const rate = $rateInput ? parseFloat($rateInput.val() || 0) : 0;
                     const itemName = $(this).next('label').text().trim();
 
+                    // Enforce Personal Relief (item_id = 1) to always be 2400 when active
+                    if (type === 'reliefs' && itemId === '1' && isActive) {
+                        amount = 2400; // Fixed value for Personal Relief
+                    }
+
                     itemsByEmployee[employeeId][itemId] = { is_active: isActive, amount: amount, rate: rate };
-                    if (isActive && amount === 0 && (!rateClass || rate === 0)) {
+
+                    // Skip Personal Relief from zero amount check since it's enforced to 2400
+                    if (isActive && amount === 0 && (!rateClass || rate === 0) && !(type === 'reliefs' && itemId === '1')) {
                         zeroAmountItems.push(`${itemName} for Employee ID: ${employeeId}`);
                     }
                 });
@@ -649,9 +848,9 @@
         };
 
         const tables = [
-            { type: 'allowances', tableBody: '#allowancesTableBody', checkboxClasses: ['allowance-checkbox', 'allowances-checkbox'], amountClasses: ['allowance-amount', 'allowances-amount'], rateClass: 'allowance-rate', idAttrs: ['allowance-id', 'allowances-id'] },
-            { type: 'deductions', tableBody: '#deductionsTableBody', checkboxClasses: ['deduction-checkbox', 'deductions-checkbox'], amountClasses: ['deduction-amount', 'deductions-amount'], rateClass: 'deduction-rate', idAttrs: ['deduction-id', 'deductions-id'] },
-            { type: 'reliefs', tableBody: '#reliefsTableBody', checkboxClasses: ['relief-checkbox', 'reliefs-checkbox'], amountClasses: ['relief-amount', 'reliefs-amount'], rateClass: null, idAttrs: ['relief-id', 'reliefs-id'] },
+            { type: 'allowances', tableBody: '#allowancesTableBody', checkboxClasses: ['allowance-checkbox'], amountClasses: ['allowance-amount'], rateClass: 'allowance-rate', idAttrs: ['allowance-id'] },
+            { type: 'deductions', tableBody: '#deductionsTableBody', checkboxClasses: ['deduction-checkbox'], amountClasses: ['deduction-amount'], rateClass: 'deduction-rate', idAttrs: ['deduction-id'] },
+            { type: 'reliefs', tableBody: '#reliefsTableBody', checkboxClasses: ['relief-checkbox'], amountClasses: ['relief-amount'], rateClass: null, idAttrs: ['relief-id'] },
             { type: 'loans', tableBody: '#loansTableBody', checkboxClasses: ['loan-checkbox'], amountClasses: ['loan-amount'], rateClass: null, idAttrs: ['loan-id'] },
             { type: 'advances', tableBody: '#advancesTableBody', checkboxClasses: ['advance-checkbox'], amountClasses: ['advance-amount'], rateClass: null, idAttrs: ['advance-id'] },
             { type: 'absenteeism', tableBody: '#absenteeismTableBody' },
@@ -769,8 +968,13 @@
                         const $group = $(this).closest('.form-group');
                         const $amountInput = $group.find(`.${amountClasses.join(', .')}`);
                         const $rateInput = rateClass ? $group.find(`.${rateClass}`) : null;
-                        const amount = $amountInput.length ? parseFloat($amountInput.val() || 0) : 0;
+                        let amount = $amountInput.length ? parseFloat($amountInput.val() || 0) : 0;
                         const rate = $rateInput ? parseFloat($rateInput.val() || 0) : 0;
+
+                        // Ensure Personal Relief is always 2400 when active
+                        if (type === 'reliefs' && itemId === '1') {
+                            amount = 2400;
+                        }
 
                         employees[employeeId][type][itemId] = { is_active: true, amount, rate };
                     });
@@ -788,7 +992,6 @@
         const settingsData = collectAllSettings();
         formData.append('settings', JSON.stringify(settingsData));
 
-        // Keep exempted_employees JSON string for backend filtering
         console.log('Form Data:', JSON.stringify(Object.fromEntries(formData.entries()), null, 2));
 
         $previewContainer.empty();

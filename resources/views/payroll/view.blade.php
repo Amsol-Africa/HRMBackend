@@ -63,8 +63,7 @@
                             'insurance_relief' => 'Insurance Relief', 'pay_after_tax' => 'Pay After Tax',
                             'loan_repayment' => 'Loans', 'advance_recovery' => 'Advances',
                             'deductions_after_tax' => 'Deductions After Tax', 'attendance_present' => 'Days Present',
-                            'attendance_absent' => 'Days Absent', 'days_in_month' => 'Days in Month',
-                            'bank_name' => 'Bank Name', 'account_number' => 'Account Number'
+                            'attendance_absent' => 'Days Absent'
                             ] as $columnKey => $columnName)
                             <div class="dropend">
                                 <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown"
@@ -82,8 +81,8 @@
                         </div>
                     </div>
                     <button class="btn btn-outline-info modern-btn" data-bs-toggle="modal"
-                        data-bs-target="#aiInsightsModal">
-                        <i class="bi bi-lightbulb me-1"></i> AI Insights
+                        data-bs-target="#analyticsModal">
+                        <i class="bi bi-bar-chart-line me-1"></i> Payroll Analytics
                     </button>
                 </div>
             </div>
@@ -94,24 +93,21 @@
                             <th>#</th>
                             <th>Employee</th>
                             <th>Basic Salary ({{ $payroll->currency ?? 'KES' }})</th>
-                            <th>Gross Pay</th>
+                            <th>Allowances</th>
                             <th>Overtime</th>
+                            <th>Gross Pay</th>
                             <th>SHIF</th>
                             <th>NSSF</th>
-                            <th>PAYE</th>
                             <th>Housing Levy</th>
                             <th>HELB</th>
-                            <th>Loans</th>
-                            <th>Advances</th>
-                            <th>Custom Deductions</th>
                             <th>Taxable Income</th>
-                            <th>Personal Relief</th>
-                            <th>Insurance Relief</th>
-                            <th>Pay After Tax</th>
-                            <th>Deductions After Tax</th>
+                            <th>PAYE (Before Reliefs)</th>
+                            <th>Reliefs</th>
+                            <th>PAYE</th>
+                            <th>Deductions</th>
+                            <th>Advances</th>
+                            <th>Loans</th>
                             <th>Net Pay</th>
-                            <th>Days Present</th>
-                            <th>Days Absent</th>
                             <th>Bank Name</th>
                             <th>Account Number</th>
                             <th>Actions</th>
@@ -123,32 +119,42 @@
                         $deductions = json_decode($ep->deductions, true) ?? [];
                         $overtime = json_decode($ep->overtime, true) ?? ['amount' => 0];
                         $allowances = json_decode($ep->allowances, true) ?? [];
+                        $reliefs = json_decode($ep->reliefs, true) ?? []; // Read from employee_payrolls.reliefs
+
                         $customDeductions = array_filter($deductions, fn($d) => !in_array($d['name'] ?? '', ['SHIF', 'NSSF', 'PAYE', 'Housing Levy', 'HELB', 'Loan Repayment', 'Advance Recovery', 'Absenteeism Charge']));
                         $totalCustomDeductions = array_sum(array_map(fn($d) => $d['amount'] ?? 0, $customDeductions));
+
+                        // Prepare reliefs display for any type of relief
+                        $reliefsDisplay = [];
+                        foreach ($reliefs as $reliefKey => $reliefData) {
+                            if (is_array($reliefData) && isset($reliefData['amount'])) {
+                                $reliefName = ucwords(str_replace('-', ' ', $reliefKey));
+                                $reliefsDisplay[] = "{$reliefName} (" . number_format($reliefData['amount'], 2) . ")";
+                            }
+                        }
+                        $reliefsText = !empty($reliefsDisplay) ? implode(', ', $reliefsDisplay) : 'None';
                         ?>
                         <tr data-employee-payroll-id="{{ $ep->id }}">
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $ep->employee->user->name ?? 'N/A' }}</td>
                             <td>{{ number_format($ep->basic_salary ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->gross_pay ?? 0, 2) }}</td>
+                            <td>{{ collect($allowances)->map(fn($a) => "{$a['name']} (" . number_format($a['amount'] ?? 0, 2) . ")")->implode(', ') ?: 'None' }}
+                            </td>
                             <td>{{ number_format($overtime['amount'] ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->gross_pay ?? 0, 2) }}</td>
                             <td>{{ number_format($ep->shif ?? ($deductions['shif'] ?? 0), 2) }}</td>
                             <td>{{ number_format($ep->nssf ?? ($deductions['nssf'] ?? 0), 2) }}</td>
-                            <td>{{ number_format($ep->paye ?? ($deductions['paye'] ?? 0), 2) }}</td>
                             <td>{{ number_format($ep->housing_levy ?? ($deductions['housing_levy'] ?? 0), 2) }}</td>
                             <td>{{ number_format($ep->helb ?? ($deductions['helb'] ?? 0), 2) }}</td>
-                            <td>{{ number_format($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0), 2) }}</td>
+                            <td>{{ number_format($ep->taxable_income ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->paye_before_reliefs ?? 0, 2) }}</td>
+                            <td>{{ $reliefsText }}</td>
+                            <td>{{ number_format($ep->paye ?? 0, 2) }}</td>
+                            <td>{{ number_format($totalCustomDeductions, 2) }}</td>
                             <td>{{ number_format($ep->advance_recovery ?? ($deductions['advance_recovery'] ?? 0), 2) }}
                             </td>
-                            <td>{{ number_format($totalCustomDeductions, 2) }}</td>
-                            <td>{{ number_format($ep->taxable_income ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->personal_relief ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->insurance_relief ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->pay_after_tax ?? 0, 2) }}</td>
-                            <td>{{ number_format($ep->deductions_after_tax ?? 0, 2) }}</td>
+                            <td>{{ number_format($ep->loan_repayment ?? ($deductions['loan_repayment'] ?? 0), 2) }}</td>
                             <td>{{ number_format($ep->net_pay ?? 0, 2) }}</td>
-                            <td>{{ $ep->attendance_present ?? 0 }}</td>
-                            <td>{{ $ep->attendance_absent ?? 0 }}</td>
                             <td>{{ $ep->bank_name ?? 'N/A' }}</td>
                             <td>{{ $ep->account_number ?? 'N/A' }}</td>
                             <td>
@@ -162,6 +168,11 @@
                                     data-employee-payroll-id="{{ $ep->id }}" title="Email Payslip">
                                     <i class="fa fa-envelope"></i>
                                 </button>
+                                <button class="btn btn-sm btn-outline-success download-single-p9 me-1"
+                                    data-employee-id="{{ $ep->employee_id }}" data-year="{{ $payroll->payrun_year }}"
+                                    title="Download P9">
+                                    <i class="fa fa-file-download"></i>
+                                </button>
                             </td>
                         </tr>
                         @endforeach
@@ -170,26 +181,23 @@
                         <tr>
                             <td colspan="2" class="text-end fw-bold">Totals:</td>
                             <td class="fw-bold">{{ number_format($totals['totalBasicSalary'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalGrossPay'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalAllowances'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalOvertime'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalGrossPay'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalShif'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalNssf'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalPaye'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalHousingLevy'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalHelb'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalLoans'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalAdvances'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalCustomDeductions'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalTaxableIncome'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalPersonalRelief'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalInsuranceRelief'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalPayAfterTax'], 2) }}</td>
-                            <td class="fw-bold">{{ number_format($totals['totalDeductionsAfterTax'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalPayeBeforeReliefs'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalReliefs'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalPaye'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalCustomDeductions'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalAdvances'], 2) }}</td>
+                            <td class="fw-bold">{{ number_format($totals['totalLoans'], 2) }}</td>
                             <td class="fw-bold">{{ number_format($totals['totalNetPay'], 2) }}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
+                            <td></td> <!-- Placeholder for Bank Name -->
+                            <td></td> <!-- Placeholder for Account Number -->
                             <td></td>
                         </tr>
                     </tfoot>
@@ -211,57 +219,74 @@
             </div>
         </div>
 
-        <div class="mt-4">
-            <button class="btn btn-primary modern-btn me-2" onclick="sendPayslips({{ $payroll->id }})">
+        <div class="mt-4 d-flex flex-wrap align-items-center gap-2">
+            <!-- Send Payslips Button -->
+            <button class="btn btn-primary modern-btn flex-shrink-0" onclick="sendPayslips({{ $payroll->id }})">
                 <i class="bi bi-envelope me-1"></i> Send Payslips
             </button>
+
+            <!-- Download PDF Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'pdf']) }}"
-                class="btn btn-outline-secondary modern-btn me-2">
+                class="btn btn-outline-secondary modern-btn flex-shrink-0">
                 <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
             </a>
+
+            <!-- Download CSV Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'csv']) }}"
-                class="btn btn-outline-secondary modern-btn me-2">
+                class="btn btn-outline-secondary modern-btn flex-shrink-0">
                 <i class="bi bi-file-earmark-text me-1"></i> Download CSV
             </a>
+
+            <!-- Download XLSX Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'xlsx']) }}"
-                class="btn btn-outline-secondary modern-btn me-2">
+                class="btn btn-outline-secondary modern-btn flex-shrink-0">
                 <i class="bi bi-file-earmark-excel me-1"></i> Download XLSX
             </a>
+
+            <!-- Download P9 Dropdown -->
+            <div class="dropdown flex-shrink-0">
+                <button class="btn btn-primary dropdown-toggle d-flex align-items-center modern-btn" type="button"
+                    id="downloadP9Dropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-download me-2"></i> Download P9
+                </button>
+                <div class="dropdown-menu modern-dropdown shadow-sm" aria-labelledby="downloadP9Dropdown">
+                    <a class="dropdown-item download-p9" href="#" data-format="pdf">PDF</a>
+                    <a class="dropdown-item download-p9" href="#" data-format="csv">CSV</a>
+                    <a class="dropdown-item download-p9" href="#" data-format="xlsx">XLSX</a>
+                </div>
+            </div>
         </div>
 
-        <!-- AI Insights Modal -->
-        <div class="modal fade" id="aiInsightsModal" tabindex="-1" aria-labelledby="aiInsightsModalLabel"
+        <!-- Payroll Analytics Modal -->
+        <div class="modal fade" id="analyticsModal" tabindex="-1" aria-labelledby="analyticsModalLabel"
             aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="aiInsightsModalLabel">AI Insights</h5>
+                        <h5 class="modal-title" id="analyticsModalLabel">Payroll Analytics</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <h6 class="fw-bold">Payroll Analysis</h6>
-                        <p class="text-muted">Insights based on current payroll data:</p>
-                        <ul>
-                            <li>Total Net Pay: {{ number_format($totals['totalNetPay'], 2) }}
-                                {{ $payroll->currency ?? 'KES' }}
-                            </li>
-                            <li>Average Net Pay:
-                                {{ number_format($totals['totalNetPay'] / ($payroll->employeePayrolls->count() ?: 1), 2) }}
-                                {{ $payroll->currency ?? 'KES' }}
-                            </li>
-                            <li>Total Taxable Income: {{ number_format($totals['totalTaxableIncome'], 2) }}</li>
-                            <li>Total Statutory Deductions:
-                                {{ number_format($totals['totalShif'] + $totals['totalNssf'] + $totals['totalPaye'] + $totals['totalHousingLevy'] + $totals['totalHelb'], 2) }}
-                            </li>
-                        </ul>
-                        <h6 class="fw-bold mt-4">Recommendations</h6>
-                        <p class="text-muted">Suggestions to optimize payroll:</p>
-                        <ul>
-                            <li>Overtime costs ({{ number_format($totals['totalOvertime'], 2) }}) could be reviewed for
-                                efficiency.</li>
-                            <li>High loan repayments ({{ number_format($totals['totalLoans'], 2) }}) suggest assessing
-                                employee financial support policies.</li>
-                        </ul>
+                        <div class="row">
+                            <!-- Pie Chart -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title fw-bold text-center">Payroll Distribution</h6>
+                                        <canvas id="payrollPieChart" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Bar Chart -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title fw-bold text-center">Payroll Totals</h6>
+                                        <canvas id="payrollBarChart" height="200"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary modern-btn"
@@ -311,11 +336,31 @@
     .modern-table td {
         white-space: nowrap;
     }
+
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-title {
+        margin-bottom: 1rem;
+        color: #333;
+    }
     </style>
     @endpush
 
     @push('scripts')
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <script>
+    const payrollTotals = @json($totals);
+    const payrollCurrency = '{{ $payroll->currency }}';
+
     function sendPayslips(payrollId) {
         const businessSlug = '{{ $business->slug }}';
         fetch(`/business/${businessSlug}/payroll/send-payslips`, {
@@ -397,6 +442,168 @@
                         `<i class="bi bi-download me-2"></i> Download Column`;
                 }, 2000);
             });
+        });
+
+        // New Download P9 Handler
+        document.querySelectorAll(".download-p9").forEach(item => {
+            item.addEventListener("click", function(e) {
+                e.preventDefault();
+                const format = this.getAttribute("data-format");
+                const button = document.getElementById("downloadP9Dropdown");
+                const businessSlug = '{{ $business->slug }}';
+                const payrollId = '{{ $payroll->id }}';
+                button.innerHTML =
+                    `<i class="bi bi-download me-2"></i> Downloading P9 (${format.toUpperCase()})`;
+                const url =
+                    `{{ route('business.payroll.download_p9', ['business' => $business->slug, 'year' => $payroll->payrun_year, 'format' => ':format']) }}`
+                    .replace(':format', format);
+                window.location.href = url;
+                setTimeout(() => {
+                    button.innerHTML =
+                        `<i class="bi bi-download me-2"></i> Download P9`;
+                }, 2000);
+            });
+        });
+
+
+        document.querySelectorAll('.download-single-p9').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const employeeId = this.getAttribute('data-employee-id');
+                const year = this.getAttribute('data-year');
+                const format = 'pdf';
+                const businessSlug = '{{ $business->slug }}';
+                const url =
+                    `/business/${businessSlug}/payroll/p9/${employeeId}/${year}/${format}`;
+                window.location.href = url;
+            });
+        });
+        // Chart.js Initialization
+        const pieCtx = document.getElementById('payrollPieChart').getContext('2d');
+        const barCtx = document.getElementById('payrollBarChart').getContext('2d');
+
+        // Pie Chart - Payroll Distribution
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Basic Salary', 'Overtime', 'Statutory Deductions', 'Net Pay'],
+                datasets: [{
+                    data: [
+                        payrollTotals.totalBasicSalary,
+                        payrollTotals.totalOvertime,
+                        payrollTotals.totalStatutoryDeductions,
+                        payrollTotals.totalNetPay
+                    ],
+                    backgroundColor: [
+                        '#4CAF50', // Green
+                        '#FF9800', // Orange
+                        '#F44336', // Red
+                        '#2196F3' // Blue
+                    ],
+                    borderWidth: 1,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: {
+                                size: 14,
+                                family: "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif"
+                            },
+                            color: '#333'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += `${context.parsed.toFixed(2)} ${payrollCurrency}`;
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Bar Chart - Payroll Totals
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Gross Pay', 'Statutory Deductions', 'Net Pay'],
+                datasets: [{
+                    label: `Payroll Totals (${payrollCurrency})`,
+                    data: [
+                        payrollTotals.totalGrossPay,
+                        payrollTotals.totalStatutoryDeductions,
+                        payrollTotals.totalNetPay
+                    ],
+                    backgroundColor: [
+                        '#4CAF50', // Green
+                        '#F44336', // Red
+                        '#2196F3' // Blue
+                    ],
+                    borderColor: [
+                        '#388E3C',
+                        '#D32F2F',
+                        '#1976D2'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return `${value.toFixed(0)} ${payrollCurrency}`;
+                            },
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 14
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += `${context.parsed.y.toFixed(2)} ${payrollCurrency}`;
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
         });
     });
     </script>

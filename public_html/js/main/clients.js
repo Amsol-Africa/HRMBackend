@@ -3,14 +3,26 @@ import RequestClient from "/js/client/RequestClient.js";
 import BusinessesService from "/js/client/BusinessesService.js";
 
 const requestClient = new RequestClient();
-const clientsService = new BusinessesService(requestClient);
+const businessesService = new BusinessesService(requestClient);
 
-window.getClients = async function(page = 1) {
+if (!window.currentBusinessSlug) {
+    console.warn("currentBusinessSlug not defined, falling back to 'amsol'");
+    window.currentBusinessSlug = 'amsol';
+}
+
+window.getClients = async function (page = 1) {
     try {
-        let data = { page: page };
-        const response = await clientsService.clients(data);
+        const response = await businessesService.clients({ page });
         $("#clientsContainer").html(response);
+        if ($('#clientsTable').length) {
+            new DataTable('#clientsTable', {
+                pageLength: 10,
+                searching: true,
+                ordering: true,
+            });
+        }
     } catch (error) {
+        Swal.fire('Error', 'Failed to load clients.', 'error');
         console.error("Error loading clients:", error);
     }
 };
@@ -19,78 +31,133 @@ window.requestAccess = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("requestAccessForm"));
+    const formData = new FormData(document.getElementById("requestAccessForm"));
 
     try {
-        await clientsService.requestAccess(formData);
+        const response = await businessesService.requestAccess(formData);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message,
+        });
+        $("#requestAccessForm")[0].reset();
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to send request.',
+        });
     } finally {
         btn_loader(btn, false);
     }
 };
 
-window.grantAccess = async function (btn) {
+window.grantAccess = async function (btn, requestId) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("grantAccessForm"));
+    const formData = new FormData();
+    formData.append('request_id', requestId);
+    formData.append('role', $('#role-' + requestId).val());
 
     try {
-        await clientsService.grantAccess(formData);
+        const response = await businessesService.grantAccess(formData);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message,
+        });
+        window.location.reload();
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to grant access.',
+        });
     } finally {
         btn_loader(btn, false);
     }
 };
 
-window.addClient = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-
-    let formData = new FormData();
-
-    formData.append("name", $("#name").val());
-    formData.append("company_size", $("#company_size").val());
-    formData.append("industry", $("#industry").val());
-    formData.append("phone", $("#phone").val());
-    formData.append("country", $("#country").val());
-    formData.append("code", $("#code").val());
-
-    const logoInput = $("#logo")[0];
-    if (logoInput.files && logoInput.files[0]) {
-        formData.append("logo", logoInput.files[0]);
-    }
-
+window.impersonateBusiness = async function (businessSlug) {
     try {
-        await clientsService.store(formData);
-    } finally {
-        btn_loader(btn, false);
+        const response = await businessesService.post(`/businesses/${window.currentBusinessSlug}/clients/${businessSlug}/impersonate`, {});
+        window.location.href = response.data.redirect_url;
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to impersonate business.',
+        });
     }
 };
 
-window.delete = async function (btn) {
+window.verifyBusiness = async function (btn, businessSlug) {
+    btn = $(btn);
+    $(`#remarksModal-${businessSlug}`).modal('show');
+    window.currentBusinessSlugForAction = businessSlug;
+    window.currentAction = 'verify';
+};
+
+window.deactivateBusiness = async function (btn, businessSlug) {
+    btn = $(btn);
+    $(`#remarksModal-${businessSlug}`).modal('show');
+    window.currentBusinessSlugForAction = businessSlug;
+    window.currentAction = 'deactivate';
+};
+
+window.submitRemarks = async function (businessSlug) {
+    const remarks = $(`#remarks-${businessSlug}`).val();
+    if (!remarks.trim()) {
+        Swal.fire('Error', 'Remarks are required.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('remarks', remarks);
+
+    const action = window.currentAction === 'verify' ? 'verify' : 'deactivate';
+    const url = `/businesses/${window.currentBusinessSlug}/clients/${businessSlug}/${action}`;
+
+    try {
+        const response = await businessesService.post(url, formData);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message,
+        });
+        $(`#remarksModal-${businessSlug}`).modal('hide');
+        getClients();
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || `Failed to ${action} business.`,
+        });
+    }
+};
+
+window.assignModules = async function (btn, businessSlug) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    const businessSlug = btn.data("business-slug");
-    const data = { slug: businessSlug };
+    const formData = new FormData(document.getElementById("modulesForm-" + businessSlug));
 
-    Swal.fire({
-        title: "Are you sure?",
-        text: "You won't be able to revert this!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#068f6d",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                await clientsService.delete(data);
-                getClients();
-            } finally {
-                btn_loader(btn, false);
-            }
-        } else {
-            btn_loader(btn, false);
-        }
-    });
+    try {
+        const response = await businessesService.post(`/businesses/${window.currentBusinessSlug}/clients/${businessSlug}/modules/assign`, formData);
+        Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message,
+        });
+        $(`#modulesModal-${businessSlug}`).modal('hide');
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to assign modules.',
+        });
+    } finally {
+        btn_loader(btn, false);
+    }
 };

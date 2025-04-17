@@ -40,7 +40,8 @@ class Applicant extends Model
         return $this->hasMany(Application::class);
     }
     public function skills()
-{
-    return $this->belongsToMany(Skill::class)->withPivot('skill_level');
-}
+    {
+        return $this->belongsToMany(Skill::class, 'applicant_skills')
+            ->withPivot('skill_level');
+    }
 }

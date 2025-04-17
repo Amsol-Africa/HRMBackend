@@ -21,12 +21,17 @@
     }
 
     .email-header {
-        background-color: #004a99;
+        background-color: #ffffff;
         color: #ffffff;
         text-align: center;
         padding: 20px;
         font-size: 24px;
         font-weight: bold;
+    }
+
+    .email-header img {
+        max-width: 150px;
+        margin-bottom: 10px;
     }
 
     .email-body {
@@ -46,6 +51,11 @@
         font-size: 14px;
         color: #666666;
     }
+
+    .email-footer a {
+        color: #004a99;
+        text-decoration: none;
+    }
     </style>
 </head>
 
@@ -53,7 +63,8 @@
     <div class="email-container">
         <!-- Header -->
         <div class="email-header">
-            Your Payslip is Ready
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo">
+            <div>Your Payslip is Ready</div>
         </div>
 
         <!-- Body -->
@@ -68,7 +79,8 @@
         <div class="email-footer">
             Best Regards, <br>
             <strong>{{ config('app.name') }} Team</strong> <br>
-            <em>Ensuring your financial well-being.</em>
+            <em>Ensuring your financial well-being</em> <br>
+            <a href="{{ config('app.url') }}">{{ config('app.url') }}</a>
         </div>
     </div>
 </body>

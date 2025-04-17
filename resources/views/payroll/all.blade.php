@@ -19,10 +19,9 @@
                         </div>
                         <div class="col-md-2">
                             <label for="year" class="form-label">Year</label>
-                            <select name="year" id="year" class="form-select shadow-sm border-0">
-                                @foreach ($years as $year)
-                                <option value="{{ $year }}"
-                                    {{ isset($selectedYear) && $selectedYear == $year ? 'selected' : '' }}>
+                            <select name="year" class="form-select" required>
+                                @foreach($years as $year)
+                                <option value="{{ $year }}" {{ $year == now()->year ? 'selected' : '' }}>
                                     {{ $year }}
                                 </option>
                                 @endforeach

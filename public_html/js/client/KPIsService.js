@@ -6,40 +6,21 @@ class KPIsService {
     async fetch(data) {
         try {
             const response = await this.requestClient.post('/kpis/fetch', data);
-            return response.data;
+            if (!response.success) throw new Error(response.message || 'Failed to fetch KPIs');
+            return response;
         } catch (error) {
-            console.log(error);
+            console.error('Fetch KPIs error:', error);
             throw error;
         }
     }
 
-    async update(data) {
+    async fetchCards(data) {
         try {
-            const response = await this.requestClient.post('/kpis/update', data);
-            toastr.info(response.message, "Success");
-            this.handleRedirect(response.data.redirect_url);
+            const response = await this.requestClient.post('/kpis/fetch-cards', data);
+            if (!response.success) throw new Error(response.message || 'Failed to fetch KPI cards');
+            return response;
         } catch (error) {
-            console.log(error);
-            throw error;
-        }
-    }
-
-    async edit(data) {
-        try {
-            const response = await this.requestClient.post('/kpis/edit', data);
-            return response.data;
-        } catch (error) {
-            console.log(error);
-            throw error;
-        }
-    }
-
-    async timelines(data) {
-        try {
-            const response = await this.requestClient.post('/kpis/timelines', data);
-            return response.data;
-        } catch (error) {
-            console.log(error);
+            console.error('Fetch KPI cards error:', error);
             throw error;
         }
     }
@@ -47,19 +28,65 @@ class KPIsService {
     async save(data) {
         try {
             const response = await this.requestClient.post('/kpis/store', data);
-            toastr.success(response.message, "Success");
+            if (!response.success) throw new Error(response.message || 'Failed to save KPI');
+            return response;
         } catch (error) {
-            console.log(error);
+            console.error('Save KPI error:', error);
             throw error;
         }
     }
 
-    async progress(data) {
+    async edit(data) {
         try {
-            const response = await this.requestClient.post('/kpis/progress', data);
-            toastr.success(response.message, "Success");
+            const response = await this.requestClient.post('/kpis/edit', data);
+            if (!response.success) throw new Error(response.message || 'Failed to load edit form');
+            return response;
         } catch (error) {
-            console.log(error);
+            console.error('Edit KPI error:', error);
+            throw error;
+        }
+    }
+
+    async update(data) {
+        try {
+            const response = await this.requestClient.post('/kpis/update', data);
+            if (!response.success) throw new Error(response.message || 'Failed to update KPI');
+            return response;
+        } catch (error) {
+            console.error('Update KPI error:', error);
+            throw error;
+        }
+    }
+
+    async review(data) {
+        try {
+            const response = await this.requestClient.post('/kpis/review', data);
+            if (!response.success) throw new Error(response.message || 'Failed to review KPI');
+            return response;
+        } catch (error) {
+            console.error('Review KPI error:', error);
+            throw error;
+        }
+    }
+
+    async updateReview(data) {
+        try {
+            const response = await this.requestClient.post('/kpis/update-review', data);
+            if (!response.success) throw new Error(response.message || 'Failed to update review');
+            return response;
+        } catch (error) {
+            console.error('Update review error:', error);
+            throw error;
+        }
+    }
+
+    async deleteReview(data) {
+        try {
+            const response = await this.requestClient.post('/kpis/delete-review', data);
+            if (!response.success) throw new Error(response.message || 'Failed to delete review');
+            return response;
+        } catch (error) {
+            console.error('Delete review error:', error);
             throw error;
         }
     }
@@ -67,18 +94,22 @@ class KPIsService {
     async delete(data) {
         try {
             const response = await this.requestClient.post('/kpis/destroy', data);
-            toastr.info(response.message, "Success");
+            if (!response.success) throw new Error(response.message || 'Failed to delete KPI');
+            return response;
         } catch (error) {
-            console.log(error);
+            console.error('Delete KPI error:', error);
             throw error;
         }
     }
 
-    handleRedirect(route) {
-        if (route) {
-            setTimeout(() => {
-                window.location.href = route;
-            }, 1500);
+    async results(data) {
+        try {
+            const response = await this.requestClient.post('/kpis/results', data);
+            if (!response.success) throw new Error(response.message || 'Failed to load results');
+            return response;
+        } catch (error) {
+            console.error('Results KPI error:', error);
+            throw error;
         }
     }
 }

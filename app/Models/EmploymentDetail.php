@@ -21,6 +21,14 @@ class EmploymentDetail extends Model
         'job_description'
     ];
 
+    protected $casts = [
+        'contract_end_date' => 'date',
+        'employment_term' => 'string',
+        'status' => 'string',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

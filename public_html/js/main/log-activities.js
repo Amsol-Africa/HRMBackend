@@ -6,10 +6,18 @@ const requestClient = new RequestClient();
 const activitiesService = new ActivitiesService(requestClient);
 
 window.logActivities = async function (btn) {
-    const data = {};
+    const businessSlug = document.getElementById('active_business_slug')?.value;
+    if (!businessSlug) {
+        $('#activityLogsContainer').html('<p class="text-danger">Error: No active business selected.</p>');
+        return;
+    }
+
+    const data = { business_slug: businessSlug };
+
     try {
         const logs = await activitiesService.fetch(data);
-        $('#activityLogsContainer').html(logs)
-    } finally {
+        $('#activityLogsContainer').html(logs);
+    } catch (error) {
+        $('#activityLogsContainer').html('<p class="text-danger">Failed to load activities. Please try again.</p>');
     }
 };

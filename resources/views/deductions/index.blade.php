@@ -17,6 +17,7 @@
                         @include('deductions._table', ['deductions' => $deductions])
                     </div>
                 </div>
+                <div id="deductionModalContainer"></div>
             </div>
         </div>
     </div>

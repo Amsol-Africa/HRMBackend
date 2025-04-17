@@ -8,19 +8,25 @@ class JobApplicationService {
             const response = await this.requestClient.post('/applications/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw new Error(error.response?.data?.message || 'Failed to fetch applications');
+        }
+    }
+
+    async save(data) {
+        try {
+            const response = await this.requestClient.post('/applications/store', data);
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message || 'Failed to save application');
         }
     }
 
     async update(data) {
         try {
             const response = await this.requestClient.post('/applications/update', data);
-            toastr.info(response.message, "Success");
-            this.handleRedirect(response.data.redirect_url);
+            return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw new Error(error.response?.data?.message || 'Failed to update application');
         }
     }
 
@@ -29,36 +35,66 @@ class JobApplicationService {
             const response = await this.requestClient.post('/applications/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
-        }
-    }
-
-    async save(data) {
-        try {
-            const response = await this.requestClient.post('/applications/store', data);
-            toastr.success(response.message, "Success");
-        } catch (error) {
-            console.log(error)
-            throw error;
+            throw new Error(error.response?.data?.message || 'Failed to edit application');
         }
     }
 
     async delete(data) {
         try {
-            const response = await this.requestClient.post('/applications/delete', data);
-            toastr.info(response.message, "Success");
+            const response = await this.requestClient.post('/applications/destroy', data);
+            return response.data;
         } catch (error) {
-            console.log(error)
-            throw error;
+            throw new Error(error.response?.data?.message || 'Failed to delete applications');
         }
     }
 
-    handleRedirect(route) {
-        if (route) {
-            setTimeout(() => {
-                window.location.href = route;
-            }, 1500);
+    async updateStage(data) {
+        try {
+            const response = await this.requestClient.post('/applications/update-stage', data);
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message || 'Failed to update stage');
+        }
+    }
+
+    async shortlist(data) {
+        try {
+            const response = await this.requestClient.post('/applications/shortlist', data);
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message || 'Failed to shortlist applications');
+        }
+    }
+
+    async scheduleInterview(data) {
+        try {
+            const response = await this.requestClient.post('/applications/schedule-interview', data);
+            return response.data;
+        } catch (error) {
+            throw new Error(error.response?.data?.message || 'Failed to schedule interview');
+        }
+    }
+
+    async export(data) {
+        try {
+            const response = await this.requestClient.post('/applications/export', data, true);
+            return response;
+        } catch (error) {
+            throw new Error(error.response?.data?.message || 'Failed to export applications');
+        }
+    }
+
+    async downloadDocument(data) {
+        try {
+            const response = await this.requestClient.post(
+                '/applicants/download-document',
+                data,
+                { responseType: 'blob' }
+            );
+            return response;
+        } catch (error) {
+            console.error('Download error in service:', error);
+            throw error;
         }
     }
 }

@@ -3,10 +3,14 @@
         <thead class="bg-light">
             <tr>
                 <th scope="col" class="text-dark fw-semibold">Name</th>
+                <th scope="col" class="text-dark fw-semibold">Country</th>
                 <th scope="col" class="text-dark fw-semibold">Type</th>
                 <th scope="col" class="text-dark fw-semibold">Basis</th>
+                <th scope="col" class="text-dark fw-semibold">Statutory</th>
                 <th scope="col" class="text-dark fw-semibold">Progressive</th>
-                <th scope="col" class="text-dark fw-semibold">Minimum Amount</th>
+                <th scope="col" class="text-dark fw-semibold">Amount</th>
+                <th scope="col" class="text-dark fw-semibold">Limit</th>
+                <th scope="col" class="text-dark fw-semibold">Round Off</th>
                 <th scope="col" class="text-dark fw-semibold">Applies To</th>
                 <th scope="col" class="text-dark fw-semibold text-end">Actions</th>
             </tr>
@@ -15,11 +19,15 @@
             @forelse ($formulas as $formula)
             <tr>
                 <td>{{ $formula->name }}</td>
+                <td>{{ $formula->country_code }}</td>
                 <td>{{ ucfirst($formula->formula_type) }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', $formula->calculation_basis)) }}</td>
+                <td>{{ $formula->is_statutory ? 'Yes' : 'No' }}</td>
                 <td>{{ $formula->is_progressive ? 'Yes' : 'No' }}</td>
-                <td>{{ is_null($formula->minimum_amount) || $formula->minimum_amount == 0 ? 'N/A' : $formula->minimum_amount }}
+                <td>{{ is_null($formula->minimum_amount) || $formula->minimum_amount == 0 ? 'N/A' : number_format($formula->minimum_amount, 2) }}
                 </td>
+                <td>{{ $formula->limit ? number_format($formula->limit, 2) : 'N/A' }}</td>
+                <td>{{ $formula->round_off ? ucwords(str_replace('_', ' ', $formula->round_off)) : 'None' }}</td>
                 <td>{{ ucfirst($formula->applies_to) }}</td>
                 <td class="text-end">
                     <div class="btn-group" role="group">
@@ -28,7 +36,7 @@
                             <i class="fa fa-edit"></i> Edit
                         </button>
                         <button class="btn btn-sm btn-outline-danger" data-formula="{{ $formula->id }}"
-                            onclick="deleteFormula(this)">
+                            onclick="deleteFormula(this)" {{ $formula->is_statutory ? 'disabled' : '' }}>
                             <i class="fa fa-trash"></i> Delete
                         </button>
                     </div>
@@ -36,7 +44,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="7" class="text-center text-muted py-4">
+                <td colspan="11" class="text-center text-muted py-4">
                     <i class="fa fa-info-circle me-2"></i> No payroll formulas defined yet.
                 </td>
             </tr>
@@ -44,34 +52,3 @@
         </tbody>
     </table>
 </div>
-
-@push('styles')
-<style>
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .table th,
-    .table td {
-        vertical-align: middle;
-    }
-
-    .btn-group .btn {
-        padding: 6px 12px;
-    }
-
-    @media (max-width: 576px) {
-        .btn-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .btn-group .btn {
-            width: 100%;
-            text-align: center;
-        }
-    }
-</style>
-@endpush

@@ -47,6 +47,7 @@
     <!-- Intro.js CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js/minified/introjs.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
 
 
 </head>
@@ -56,9 +57,9 @@
     <input type="text" id="receipient_id" value="{{ auth()->user()->id }}" hidden>
 
     <style>
-    body {
-        visibility: hidden;
-    }
+        body {
+            visibility: hidden;
+        }
     </style>
 
     <div class="preloader" id="preloader">
@@ -98,9 +99,9 @@
 
     </div>
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document.body.style.visibility = "visible";
-    });
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.style.visibility = "visible";
+        });
     </script>
     <!-- Intro.js JS -->
     <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
@@ -109,17 +110,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    @if(isset($title) && $title === 'Add Job Posts')
-    <script src="https://cdn.tiny.cloud/1/3kfd12d1nvownxb4sd23epa9oexib4c3nzwidt83yg1m4xew/tinymce/7/tinymce.min.js"
-        referrerpolicy="origin"></script>
-    <script>
-    tinymce.init({
-        selector: 'textarea.tinyMce',
-        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
-    });
-    </script>
-    @endif
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.6.1/tinymce.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -170,103 +161,98 @@
     <script src="{{ asset('assets/js/vendor/sidebar.js') }}"></script>
     <script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
     <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
 
     <script src="{{ asset('js/init.js') }}"></script>
     {{-- <script src="{{ asset('js/pusher.js') }}"></script> --}}
     <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
 
     <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
 
-        toggleButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const fieldId = this.id.replace('toggle', '').toLowerCase();
-                const passwordField = document.getElementById(fieldId);
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const fieldId = this.id.replace('toggle', '').toLowerCase();
+                    const passwordField = document.getElementById(fieldId);
 
-                if (passwordField) {
-                    const type = passwordField.getAttribute('type') === 'password' ? 'text' :
-                        'password';
-                    passwordField.setAttribute('type', type);
-                    this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
+                    if (passwordField) {
+                        const type = passwordField.getAttribute('type') === 'password' ? 'text' :
+                            'password';
+                        passwordField.setAttribute('type', type);
+                        this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
+                    }
+                });
+            });
+
+
+            $(".switch-role").click(function() {
+                let selectedRole = $(this).data("role");
+
+                $.ajax({
+                    url: $("#switchRoleForm").attr("action"),
+                    method: "POST",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                        role: selectedRole
+                    },
+                    success: function(response) {
+                        window.location.href = response.redirect;
+                    },
+                    error: function(error) {
+                        console.log(error);
+                        alert("You do not have permission to switch to this role.");
+                    }
+                });
+            });
+
+        });
+
+        // Select all phone input fields with the class .phone-input-control
+        const phoneInputFields = document.querySelectorAll('.phone-input-control');
+
+        phoneInputFields.forEach((phoneInput, index) => {
+            const codeInput = document.querySelector(phoneInput.dataset.codeInput || `#code${index}`);
+            const countryInput = document.querySelector(phoneInput.dataset.countryInput || `#country${index}`);
+
+            // Initialize IntlTelInput
+            const iti = window.intlTelInput(phoneInput, {
+                initialCountry: 'ke', // Default to Kenya, can be dynamic if needed
+                separateDialCode: true,
+                utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js',
+            });
+
+            // Update code and country fields on country change
+            phoneInput.addEventListener('countrychange', function() {
+                if (codeInput) {
+                    codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
+                }
+                if (countryInput) {
+                    countryInput.value = iti.getSelectedCountryData().name;
                 }
             });
-        });
 
-
-        $(".switch-role").click(function() {
-            let selectedRole = $(this).data("role");
-
-            $.ajax({
-                url: $("#switchRoleForm").attr("action"),
-                method: "POST",
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr("content"),
-                    role: selectedRole
-                },
-                success: function(response) {
-                    window.location.href = response.redirect;
-                },
-                error: function(error) {
-                    console.log(error);
-                    alert("You do not have permission to switch to this role.");
-                }
-            });
-        });
-
-    });
-
-    // Select all phone input fields
-    const phoneInputFields = document.querySelectorAll(".phone-input-control");
-
-    // Initialize each phone input with country code
-    phoneInputFields.forEach((phoneInputField, index) => {
-        initializePhoneInput(phoneInputField, index);
-
-        console.log(index)
-
-        phoneInputField.addEventListener("countrychange", function() {
-            const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
-            const selectedCountryData = phoneInput.getSelectedCountryData();
-            const codeField = document.querySelector(`#code${index}`);
-            const countryField = document.querySelector(`#country${index}`);
-
-            if (codeField) codeField.value = selectedCountryData.dialCode;
-            if (countryField) countryField.value = selectedCountryData.name;
-        });
-    });
-
-    function initializePhoneInput(phoneInputField, index) {
-        const phoneInput = window.intlTelInput(phoneInputField, {
-            preferredCountries: ["ke", "us", "ca"],
-            initialCountry: "auto",
-            nationalMode: true,
-            geoIpLookup: getIp,
-            separateDialCode: true,
-            utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-        });
-
-        phoneInputField.addEventListener("countrychange", function() {
-            const selectedCountryData = phoneInput.getSelectedCountryData();
-            const codeField = document.querySelector(`#code${index}`);
-            const countryField = document.querySelector(`#country${index}`);
-
-            if (codeField) codeField.value = selectedCountryData.dialCode;
-            if (countryField) countryField.value = selectedCountryData.name;
-        });
-    }
-
-    function getIp(callback) {
-        fetch('https://ipinfo.io/json?token=a876c4d470b426', {
-            headers: {
-                'Accept': 'application/json'
+            // Set initial values
+            if (codeInput) {
+                codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
             }
-        }).then((resp) => resp.json()).catch(() => {
-            return {
-                country: 'ke',
-            };
-        }).then((resp) => callback(resp.country));
-    }
+            if (countryInput) {
+                countryInput.value = iti.getSelectedCountryData().name;
+            }
+        });
+
+        function getIp(callback) {
+            fetch('https://ipinfo.io/json?token=a876c4d470b426', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then((resp) => resp.json()).catch(() => {
+                return {
+                    country: 'ke',
+                };
+            }).then((resp) => callback(resp.country));
+        }
     </script>
 
     @stack('scripts')

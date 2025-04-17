@@ -13,6 +13,8 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Str;
+use App\Notifications\TwoFactorCodeNotification;
 
 class User extends Authenticatable implements HasMedia, MustVerifyEmail
 {
@@ -105,4 +107,58 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return session('active_role', null);
     }
 
+
+    public function requiresTwoFactorAuthentication(): bool
+    {
+        return $this->hasRole('business-admin');
+    }
+
+    public function generateTwoFactorCode(): void
+    {
+        // Delete any existing codes for the user
+        \DB::table('two_factor_codes')->where('user_id', $this->id)->delete();
+
+        // Generate a 6-digit code
+        $code = Str::random(6, '0123456789');
+
+        // Store the code
+        \DB::table('two_factor_codes')->insert([
+            'user_id' => $this->id,
+            'code' => $code,
+            'expires_at' => now()->addMinutes(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Send the code via email
+        $this->notify(new TwoFactorCodeNotification($code));
+    }
+
+    public function verifyTwoFactorCode(string $code): bool
+    {
+        $record = \DB::table('two_factor_codes')
+            ->where('user_id', $this->id)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$record) {
+            return false;
+        }
+
+        if ($record->attempts >= 3) {
+            \DB::table('two_factor_codes')->where('user_id', $this->id)->delete();
+            return false;
+        }
+
+        if ($record->code === $code) {
+            \DB::table('two_factor_codes')->where('user_id', $this->id)->delete();
+            return true;
+        }
+
+        \DB::table('two_factor_codes')
+            ->where('user_id', $this->id)
+            ->increment('attempts');
+
+        return false;
+    }
 }

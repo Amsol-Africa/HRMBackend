@@ -10,15 +10,15 @@ class CreateKpiResultsTable extends Migration
     {
         Schema::create('kpi_results', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('kpi_id')->constrained()->onDelete('cascade');
-            $table->string('model_type'); // e.g., "App\Models\Attendance"
-            $table->unsignedBigInteger('model_id'); // e.g., attendance record ID
-            $table->decimal('result_value', 10, 2); // Calculated KPI value
-            $table->boolean('meets_target')->default(false); // Did it meet the target?
-            $table->date('measured_at'); // Date of measurement
+            $table->unsignedBigInteger('kpi_id');
+            $table->string('model_type');
+            $table->unsignedBigInteger('model_id');
+            $table->decimal('result_value', 15, 2)->nullable();
+            $table->boolean('meets_target')->default(false);
+            $table->date('measured_at');
             $table->timestamps();
 
-            $table->index(['model_type', 'model_id']);
+            $table->foreign('kpi_id')->references('id')->on('kpis')->onDelete('cascade');
         });
     }
 

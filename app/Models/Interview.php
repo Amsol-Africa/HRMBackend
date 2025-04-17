@@ -24,6 +24,7 @@ class Interview extends Model
         'scheduled_at',
         'status',
         'feedback',
+        'created_by', // Ensure this is fillable
     ];
 
     protected $casts = [
@@ -39,10 +40,12 @@ class Interview extends Model
     {
         return $this->belongsTo(User::class, 'interviewer_id');
     }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
     public function feedback()
     {
         return $this->hasOne(InterviewFeedback::class);
@@ -51,8 +54,6 @@ class Interview extends Model
     public function reschedule($newDateTime)
     {
         $this->update(['scheduled_at' => $newDateTime, 'status' => 'scheduled']);
-
-        // Notify applicant & interviewer
         $this->jobApplication->applicant->user->notify(new InterviewRescheduledNotification($this));
         if ($this->interviewer) {
             $this->interviewer->notify(new InterviewRescheduledNotification($this));
@@ -62,13 +63,12 @@ class Interview extends Model
     public function cancel($reason)
     {
         $this->update(['status' => 'canceled']);
-
-        // Notify applicant & interviewer
         $this->jobApplication->applicant->user->notify(new InterviewCanceledNotification($this, $reason));
         if ($this->interviewer) {
             $this->interviewer->notify(new InterviewCanceledNotification($this, $reason));
         }
     }
+
     public function confirm()
     {
         $this->update(['status' => 'confirmed']);
@@ -77,12 +77,8 @@ class Interview extends Model
     public function decline($reason)
     {
         $this->update(['status' => 'declined', 'decline_reason' => $reason]);
-
-        // Notify HR about the decline
         $this->jobApplication->business->hrUsers()->each(function ($hr) {
             $hr->notify(new InterviewDeclinedNotification($this));
         });
     }
-
-
 }
