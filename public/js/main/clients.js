@@ -82,8 +82,17 @@ window.grantAccess = async function (btn, requestId) {
 window.impersonateBusiness = async function (businessSlug) {
     try {
         const response = await businessesService.post(`/businesses/${window.currentBusinessSlug}/clients/${businessSlug}/impersonate`, {});
-        window.location.href = response.data.redirect_url;
+        if (response.data.redirect_url) {
+            window.location.href = response.data.redirect_url;
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: response.message || 'Impersonation successful.',
+            });
+        }
     } catch (error) {
+        console.error('Impersonation error:', error.response?.data);
         Swal.fire({
             icon: 'error',
             title: 'Error',

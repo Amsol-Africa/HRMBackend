@@ -19,7 +19,7 @@ class Client extends Model
     {
         return $this->belongsTo(Business::class, 'client_business');
     }
-    public function employee() //who manages the managed business, from another business that is not the managed business
+    public function employee()
     {
         return $this->belongsTo(User::class, 'employee_id');
     }
