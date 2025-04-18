@@ -314,13 +314,10 @@ class BusinessController extends Controller
             if ($businessSlug !== 'amsol') {
                 return RequestResponse::badRequest('API token generation is restricted to amsol.');
             }
-
-            // Generate a unique plain token
             do {
                 $apiToken = Str::random(60);
             } while (Business::where('api_token', Hash::make($apiToken))->exists());
 
-            // Store the hashed token
             $business->update([
                 'api_token' => Hash::make($apiToken),
                 'updated_at' => now(),
@@ -332,7 +329,6 @@ class BusinessController extends Controller
                 'timestamp' => now(),
             ]);
 
-            // Store plain token in session for one-time display
             session()->flash('api_token', $apiToken);
             session()->flash('api_token_warning', 'Previous API token is now invalid.');
 

@@ -103,8 +103,6 @@ class PayrollController extends Controller
         $nonExemptedEmployees = $employees->filter(fn($e) => !array_key_exists($e->id, $options['exempted_employees']));
         $daysInMonth = $request->working_days;
 
-        // log::info("Days in month", $daysInMonth);
-
         $years = range(date('Y') + 5, date('Y'));
 
         return RequestResponse::ok('success', [
@@ -223,11 +221,6 @@ class PayrollController extends Controller
                     'is_active' => false,
                 ];
             })->toArray();
-
-        \Log::info($deductions);
-        \Log::info($reliefs);
-        \Log::info($loans);
-        \Log::info($advances);
 
         return RequestResponse::ok('success', [
             'allowances' => $allowances,
@@ -380,8 +373,6 @@ class PayrollController extends Controller
                 ],
             ];
 
-            Log::info("Formatted employee data for ID {$employee->id}", $formattedEmployee);
-
             return $formattedEmployee;
         })->values()->toArray();
 
@@ -396,12 +387,6 @@ class PayrollController extends Controller
         $year = $request->year;
         $month = $request->month;
         $employees = $request->employees;
-
-        Log::info('Incoming payroll settings data:', [
-            'year' => $year,
-            'month' => $month,
-            'employees' => $employees,
-        ]);
 
         if (!is_numeric($year) || !is_numeric($month) || !is_array($employees) || empty($employees)) {
             return RequestResponse::badRequest('Missing or invalid required fields: year, month, or employees.');
@@ -430,8 +415,6 @@ class PayrollController extends Controller
                     'advances' => $this->formatSettingsData($employeeData['advances'] ?? [], $existingSettings?->advances ?? [], $employee, Advance::class),
                     'absenteeism_charge' => floatval($employeeData['absenteeism_charge']['amount'] ?? ($existingSettings?->absenteeism_charge ?? 0)),
                 ];
-
-                Log::info("Saving payroll settings for employee ID {$employeeId}", $mergedData);
 
                 PayrollSettings::updateOrCreate(
                     [
@@ -529,14 +512,6 @@ class PayrollController extends Controller
         $options = $previewData['options'];
         $nonExemptedEmployeeIds = $previewData['non_exempted_employee_ids'];
 
-        Log::info('Store method started', [
-            'business_id' => $businessId,
-            'year' => $year,
-            'month' => $month,
-            'employee_count' => count($nonExemptedEmployeeIds),
-            'request_data' => $request->all(),
-        ]);
-
         if (empty($payrollData)) {
             Log::warning('No payroll data in session');
             return RequestResponse::badRequest('No payroll data available to store.');
@@ -556,7 +531,6 @@ class PayrollController extends Controller
                     'staff' => count($payrollData),
                     'currency' => $business->currency ?? 'KES',
                 ]);
-                Log::info('Payroll updated', ['payroll_id' => $payroll->id]);
             } else {
                 $payroll = Payroll::create([
                     'payrun_year' => $year,
@@ -568,7 +542,6 @@ class PayrollController extends Controller
                     'staff' => count($payrollData),
                     'currency' => $business->currency ?? 'KES',
                 ]);
-                Log::info('Payroll created', ['payroll_id' => $payroll->id]);
             }
 
             foreach ($payrollData as $data) {
@@ -610,10 +583,8 @@ class PayrollController extends Controller
 
                 if ($employeePayroll) {
                     $employeePayroll->update($payrollAttributes);
-                    Log::info('Employee payroll updated', ['employee_id' => $data['employee_id'], 'payroll_id' => $payroll->id]);
                 } else {
                     EmployeePayroll::create($payrollAttributes);
-                    Log::info('Employee payroll created', ['employee_id' => $data['employee_id'], 'payroll_id' => $payroll->id]);
                 }
 
                 $this->updateLoanAndAdvance($data, $year, $month, $options);
@@ -626,12 +597,6 @@ class PayrollController extends Controller
                 'redirect_url' => route('business.payroll.view', ['business' => $business->slug, 'id' => $payroll->id]),
             ]);
         }, function ($e) use ($year, $month) {
-            Log::error('Payroll store failed', [
-                'year' => $year,
-                'month' => $month,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
             return RequestResponse::badRequest('Failed to process payroll: ' . $e->getMessage());
         });
     }
@@ -889,12 +854,6 @@ class PayrollController extends Controller
 
         $warnings = $this->checkMissingData($nonExemptedEmployees);
 
-        Log::info('Preview request data', [
-            'request' => $request->all(),
-            'options' => $options,
-            'non_exempted_employee_ids' => $nonExemptedEmployees->pluck('id')->toArray(),
-        ]);
-
         if (!empty($warnings)) {
             return response()->json([
                 'message' => 'Resolve warnings before previewing.',
@@ -926,8 +885,6 @@ class PayrollController extends Controller
 
         $payrollData = $this->calculatePayroll($nonExemptedEmployees, $year, $month, $options, $daysInMonth);
 
-        Log::debug('Payroll data calculated', ['payroll_data' => $payrollData]);
-
         // Store payroll data and metadata in session
         session([
             'payroll_preview_data' => [
@@ -958,18 +915,9 @@ class PayrollController extends Controller
         $payrollData = [];
         $period = Carbon::create($year, $month);
 
-        Log::info('Starting payroll calculation', [
-            'year' => $year,
-            'month' => $month,
-            'employee_count' => $employees->count(),
-            'country' => $business->country,
-        ]);
-
         foreach ($employees as $employee) {
             $employeeId = $employee->id;
             $settings = $options['payroll_settings'][$employeeId] ?? null;
-
-            Log::debug('Processing employee', ['employee_id' => $employeeId]);
 
             $paymentDetail = EmployeePaymentDetail::where('employee_id', $employeeId)->first();
             $basicSalary = floatval($paymentDetail->basic_salary ?? 0);
@@ -1108,7 +1056,7 @@ class PayrollController extends Controller
                 'deductions' => array_merge($deductions, [['name' => 'Absenteeism Charge', 'amount' => $absenteeismCharge]]),
                 'net_pay' => $netPay,
                 'taxable_income' => $taxableIncome,
-                'reliefs' => $reliefs, // Already includes all reliefs
+                'reliefs' => $reliefs,
                 'personal_relief' => $personalRelief,
                 'insurance_relief' => $insuranceRelief,
                 'bank_name' => $bankName,
@@ -1119,11 +1067,7 @@ class PayrollController extends Controller
                 'attendance_absent' => $absentDays,
                 'days_in_month' => $daysInMonth,
             ];
-
-            Log::debug('Employee payroll data', ['employee_id' => $employeeId, 'data' => $payrollData[$employeeId]]);
         }
-
-        Log::info('Payroll calculation completed', ['payroll_data_count' => count($payrollData)]);
         return $payrollData;
     }
 
@@ -1148,8 +1092,7 @@ class PayrollController extends Controller
                 'total' => $nssfTotal,
             ];
 
-            // PAYE calculated separately after taxable income
-            $deductions['paye'] = 0; // Placeholder
+            $deductions['paye'] = 0;
         } else {
             $deductions = [
                 'nssf' => ['employee' => 0, 'employer' => 0, 'total' => 0],
@@ -1174,7 +1117,6 @@ class PayrollController extends Controller
             ->first();
 
         if (!$formula) {
-            Log::warning("No payroll formula found for slug: {$slug}", ['business_id' => $businessId]);
             return $this->fallbackStatutoryDeduction($slug, $grossPay, $taxablePay);
         }
 
@@ -2124,29 +2066,29 @@ class PayrollController extends Controller
 
         return view('payroll.view', compact('business', 'payroll', 'entity', 'entityType', 'page', 'totals'));
     }
-    
+
     public function downloadColumn(Request $request, $payroll_id, $column, $format)
     {
         $businessSlug = $request->route('business') ?? session('active_business_slug');
         $business = Business::findBySlug($businessSlug);
-    
+
         $payroll_id = $request->id;
         $column = $request->column;
         $format = $request->format;
-    
+
         if (!$business) {
             Log::error("Business not found for slug: " . ($businessSlug ?? 'Not set'));
             abort(404, 'Business not found.');
         }
-    
+
         $payroll = Payroll::where('business_id', $business->id)
             ->where('id', $payroll_id)
             ->with(['employeePayrolls.employee.user', 'employeePayrolls.employee'])
             ->firstOrFail();
-    
+
         $payrunYear = $payroll->payrun_year;
         $payrunMonth = $payroll->payrun_month;
-    
+
         $validColumns = [
             'basic_salary',
             'gross_pay',
@@ -2173,14 +2115,14 @@ class PayrollController extends Controller
             'bank_name',
             'account_number'
         ];
-    
+
         $column = strtolower(trim($column));
         $format = strtolower(trim($format));
         if (!in_array($column, $validColumns)) {
             Log::warning("Invalid column name requested: {$column}");
             abort(400, 'Invalid column name.');
         }
-    
+
         $data = $payroll->employeePayrolls->map(function ($ep) use ($column) {
             $employee = $ep->employee;
             $user = $employee->user;
@@ -2188,18 +2130,18 @@ class PayrollController extends Controller
             $allowances = json_decode($ep->allowances, true) ?? [];
             $reliefs = json_decode($ep->reliefs, true) ?? [];
             $overtime = floatval(json_decode($ep->overtime, true)['amount'] ?? 0);
-    
+
             $getAllowance = function ($name) use ($allowances) {
                 foreach ($allowances as $allowance) {
                     if (strtolower($allowance['name'] ?? '') === strtolower($name)) return floatval($allowance['amount'] ?? 0);
                 }
                 return 0.0;
             };
-    
+
             $getRelief = function ($key) use ($reliefs, $ep) {
                 return isset($reliefs[$key]['amount']) ? floatval($reliefs[$key]['amount']) : floatval($ep->$key ?? 0);
             };
-    
+
             // Base row with common fields for all columns
             $row = [
                 'employee_name' => $user->name ?? 'N/A',
@@ -2209,14 +2151,14 @@ class PayrollController extends Controller
                 'gross_pay' => number_format($ep->gross_pay ?? 0, 2),
                 'net_pay' => number_format($ep->net_pay ?? 0, 2),
             ];
-    
+
             if ($column === 'paye') {
                 // Use direct values from employee_payrolls for PAYE and PAYE before reliefs
                 $payeValue = floatval($ep->paye ?? 0); // Direct PAYE from table
                 $payeBeforeReliefs = floatval($ep->paye_before_reliefs ?? 0); // Direct value from table
                 $personalRelief = $getRelief('personal-relief');
                 $insuranceRelief = $getRelief('insurance-relief');
-    
+
                 // Strict order for PAYE as requested
                 $payeRow = [
                     $employee->tax_no ?? 'N/A', // PIN of Employee
@@ -2255,7 +2197,7 @@ class PayrollController extends Controller
                     '', // PAYE (computed by kra)
                     number_format($payeValue, 2) // Self Assessed PAYE (direct from table)
                 ];
-    
+
                 return $payeRow;
             } else {
                 switch ($column) {
@@ -2275,7 +2217,7 @@ class PayrollController extends Controller
                             $user->phone ?? 'N/A', // PHONE
                         ];
                         break;
-    
+
                     case 'nssf':
                         $fullName = $user->name ?? 'N/A';
                         $nameParts = explode(' ', $fullName, 2);
@@ -2292,7 +2234,7 @@ class PayrollController extends Controller
                             '', // VOLUNTARY
                         ];
                         break;
-    
+
                     case 'housing_levy':
                         $row = [
                             $employee->employee_code ?? 'N/A', // EMP NO
@@ -2301,7 +2243,7 @@ class PayrollController extends Controller
                             number_format($ep->housing_levy ?? 0, 2), // HOUSE_LEVY AMOUNT
                         ];
                         break;
-    
+
                     default:
                         $value = match ($column) {
                             'basic_salary' => $ep->basic_salary ?? 0,
@@ -2330,14 +2272,14 @@ class PayrollController extends Controller
                 }
                 return array_values($row);
             }
-    
+
             return $row;
         })->toArray();
-    
+
         $monthName = Carbon::createFromFormat('m', $payrunMonth)->format('F');
         $fileName = "payroll-{$payrunYear}-{$monthName}-{$column}.{$format}";
         $currency = $payroll->currency ?? 'KES';
-    
+
         switch ($format) {
             case 'pdf':
                 try {
@@ -2390,7 +2332,7 @@ class PayrollController extends Controller
                     Log::error("PDF generation failed for payroll {$payroll_id}, column {$column}: " . $e->getMessage());
                     abort(500, 'Failed to generate PDF.');
                 }
-    
+
             case 'csv':
                 $headers = [];
                 if ($column === 'paye') {
@@ -2425,25 +2367,25 @@ class PayrollController extends Controller
                         'HOUSE_LEVY AMOUNT',
                     ];
                 }
-    
+
                 $csvData = '';
                 if (!empty($headers)) {
                     $csvData .= implode(',', array_map(function ($header) {
                         return '"' . str_replace('"', '""', $header) . '"';
                     }, $headers)) . "\n";
                 }
-    
+
                 foreach ($data as $row) {
                     $csvData .= implode(',', array_map(function ($value) {
                         return is_numeric($value) ? $value : '"' . str_replace('"', '""', $value) . '"';
                     }, $row)) . "\n";
                 }
-    
+
                 return Response::make($csvData, 200, [
                     'Content-Type' => 'text/csv',
                     'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
                 ]);
-    
+
             case 'xlsx':
                 try {
                     return Excel::download(new class($data, $column) implements
@@ -2451,18 +2393,18 @@ class PayrollController extends Controller
                         \Maatwebsite\Excel\Concerns\WithHeadings {
                         private $data;
                         private $column;
-    
+
                         public function __construct(array $data, string $column)
                         {
                             $this->data = $data;
                             $this->column = $column;
                         }
-    
+
                         public function array(): array
                         {
                             return $this->data;
                         }
-    
+
                         public function headings(): array
                         {
                             if ($this->column === 'paye') {
@@ -2540,7 +2482,7 @@ class PayrollController extends Controller
                     Log::error("Excel generation failed for payroll {$payroll_id}, column {$column}: " . $e->getMessage());
                     abort(500, 'Failed to generate Excel file.');
                 }
-    
+
             default:
                 Log::warning("Invalid format requested: {$format}");
                 abort(400, 'Invalid format.');

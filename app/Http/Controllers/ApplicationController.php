@@ -8,6 +8,7 @@ use App\Models\Business;
 use App\Models\Application;
 use App\Models\Applicant;
 use App\Models\Interview;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
@@ -256,7 +257,7 @@ class ApplicationController extends Controller
                 return RequestResponse::badRequest('An error occurred while submitting your application: ' . $exception->getMessage());
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return RequestResponse::badRequest($e->errors());
+            return RequestResponse::badRequest('Validation failed', $e->errors());
         } catch (\Exception $e) {
             Log::error('Unexpected error in externalStore: ' . $e->getMessage(), [
                 'request' => $request->except('api_token'),

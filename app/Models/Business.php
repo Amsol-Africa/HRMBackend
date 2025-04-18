@@ -30,7 +30,8 @@ class Business extends Model implements HasMedia
         'business_license_no',
         'physical_address',
         'currency',
-        'verified'
+        'verified',
+        'api_token',
     ];
 
     protected $casts = [
