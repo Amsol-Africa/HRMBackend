@@ -49,7 +49,7 @@
                 </form>
 
                 <p class="text-center mt-4">
-                    <a href="{{ route('login') }}" class="text-indigo-600 hover:underline">
+                    <a href="{{ route('login') }}" class="fw-bold text-decoration-underline">
                         {{ __('Back to Login') }}
                     </a>
                 </p>

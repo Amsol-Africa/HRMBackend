@@ -76,11 +76,11 @@
                 </form>
 
                 <p class="text-center mt-3">
-                    <a href="{{ route('password.request') }}" class="text-indigo-600 hover:underline">
+                    <a href="{{ route('password.request') }}" class="fw-bold text-decoration-underline">
                         {{ __('Request a new reset link') }}
                     </a>
                     <span class="mx-2">|</span>
-                    <a href="{{ route('login') }}" class="text-indigo-600 hover:underline">
+                    <a href="{{ route('login') }}" class="fw-bold text-decoration-underline">
                         {{ __('Back to Login') }}
                     </a>
                 </p>

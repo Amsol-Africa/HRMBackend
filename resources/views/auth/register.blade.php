@@ -72,18 +72,9 @@
                 <p class="text-center">
                     <span>Have an account?</span>
                     <a href="{{ route('login') }}">
-                        <span>Login</span>
+                        <span class="fw-bold text-decoration-underline">Login</span>
                     </a>
                 </p>
-
-                <div class="divider mb-10 text-center">
-                    <div class="divider-text">or</div>
-                </div>
-
-                <div class="common-social">
-                    <a href="javascript:;"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="javascript:;"><i class="fa-brands fa-google"></i></a>
-                </div>
 
             </div>
         </div>

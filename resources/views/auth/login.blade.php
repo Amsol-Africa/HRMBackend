@@ -43,12 +43,12 @@
                 </form>
                 <p class="text-center mt-3">
                     <span>Don't have an account?</span>
-                    <a href="{{ route('register') }}" class="text-indigo-600 hover:underline">
+                    <a href="{{ route('register') }}" class="fw-bold text-decoration-underline">
                         <span>Get started</span>
                     </a>
                 </p>
                 <p class="text-center mt-2">
-                    <a href="{{ route('password.request') }}" class="text-indigo-600 hover:underline">
+                    <a href="{{ route('password.request') }}" class="fw-bold text-decoration-underline">
                         Forgot your password?
                     </a>
                 </p>
