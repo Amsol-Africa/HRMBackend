@@ -77,11 +77,11 @@
                                 <label for="phone" class="form-label">Contact Phone</label>
                             </div>
                             <div class="form__input">
-                                <input class="phone-input-control" name="phone" id="phone" type="tel" required
+                                <input class="shadow-sm phone-input-control" name="phone" id="phone" type="tel" required
                                     autocomplete="tel" value="{{ old('phone', $business->phone ?? '') }}">
-                                <input name="code" hidden id="code" type="text" required autocomplete="tel-country-code"
+                                <input name="code" hidden id="code" type="text" autocomplete="tel-country-code"
                                     value="{{ old('code', $business->code ?? '') }}">
-                                <input name="country" hidden id="country" type="text" required autocomplete="country"
+                                <input name="country" hidden id="country" type="text" autocomplete="country"
                                     value="{{ old('country', $business->country ?? '') }}">
                                 @error('phone') <span class="text-danger">{{ $message }}</span> @enderror
                             </div>
