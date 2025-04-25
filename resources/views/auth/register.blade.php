@@ -20,7 +20,7 @@
                     @csrf
 
                     @if (isset($registration_token) && !empty($registration_token))
-                        <input type="text" hidden name="registration_token" value="{{ $registration_token }}">
+                    <input type="text" hidden name="registration_token" value="{{ $registration_token }}">
                     @endif
 
                     <div class="from__input-box">
@@ -28,7 +28,8 @@
                             <label for="name">Full Name</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Full Name" name="name" id="name" :value="old('name')" type="text" required autocomplete="name">
+                            <input class="form-control" placeholder="Full Name" name="name" id="name"
+                                :value="old('name')" type="text" required autocomplete="name">
                         </div>
                     </div>
                     <div class="from__input-box">
@@ -36,7 +37,8 @@
                             <label for="email">Email</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Email" name="email" id="email" type="email" required autocomplete="email">
+                            <input class="form-control" placeholder="Email" name="email" id="email" type="email"
+                                required autocomplete="email">
                         </div>
                     </div>
                     <div class="from__input-box">
@@ -44,7 +46,8 @@
                             <label for="phone">Phone</label>
                         </div>
                         <div class="form__input">
-                            <input class="phone-input-control" name="phone" id="phone" type="text" required autocomplete="phone">
+                            <input class="phone-input-control" name="phone" id="phone" type="text" required
+                                autocomplete="phone">
                             <input name="code" id="code" type="text" hidden required autocomplete="code">
                             <input name="country" id="country" type="text" hidden required autocomplete="country">
                         </div>
@@ -54,12 +57,15 @@
                             <label for="password">Password</label>
                         </div>
                         <div class="form__input">
-                            <input class="form-control" placeholder="Password" type="password" name="password" required id="password">
-                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i></div>
+                            <input class="form-control" placeholder="Password" type="password" name="password" required
+                                id="password">
+                            <div class="pass-icon" id="passwordToggle"><i class="fa-sharp fa-light fa-eye-slash"></i>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i class="bi bi-check-circle me-1"></i> Sign Up</button>
+                        <button class="btn btn-primary w-100" onclick="register(this)" type="button"> <i
+                                class="bi bi-check-circle me-1"></i> Sign Up</button>
                     </div>
                 </form>
 
@@ -83,5 +89,17 @@
         </div>
     </div>
 
+    <style>
+    .iti {
+        width: 100%;
+    }
 
+    .iti__country-name {
+        display: inline-block !important;
+        margin-left: 6px;
+        color: #000;
+        font-weight: 400;
+        width: 275px;
+    }
+    </style>
 </x-auth-layout>

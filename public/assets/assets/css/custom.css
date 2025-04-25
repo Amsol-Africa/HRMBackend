@@ -18,16 +18,13 @@
     transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
-/* .iti--separate-dial-code .iti__selected-flag {
-    background-color: transparent !important;
-    border-right: 1px solid #068f6d;
-} */
-
-/* .iti__country-list {
-    margin: 5px 0 0 -1px !important;
-    overflow-x: hidden !important;
-    border-radius: 25px !important;
-} */
+.iti__country-name {
+    display: inline-block !important;
+    margin-left: 6px;
+    color: #000;
+    font-weight: 400;
+    border: 1px solid red;
+}
 
 .module-card {
     transition: transform 0.3s ease, box-shadow 0.3s ease;

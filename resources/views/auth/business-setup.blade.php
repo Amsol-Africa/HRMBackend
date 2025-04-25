@@ -73,14 +73,18 @@
                         </div>
 
                         <div class="from__input-box mb-4">
-                            <label for="phone" class="form-label">Contact Phone</label>
-                            <input class="form-control shadow-sm" name="phone" id="phone" type="tel" required
-                                autocomplete="phone" value="{{ old('phone', $business->phone ?? '') }}">
-                            <input name="code" hidden id="code" type="text" required autocomplete="code"
-                                value="{{ old('code', $business->code ?? '') }}">
-                            <input name="country" hidden id="country" type="text" required autocomplete="country"
-                                value="{{ old('country', $business->country ?? '') }}">
-                            @error('phone') <span class="text-danger">{{ $message }}</span> @enderror
+                            <div class="form__input-title">
+                                <label for="phone" class="form-label">Contact Phone</label>
+                            </div>
+                            <div class="form__input">
+                                <input class="phone-input-control" name="phone" id="phone" type="tel" required
+                                    autocomplete="tel" value="{{ old('phone', $business->phone ?? '') }}">
+                                <input name="code" hidden id="code" type="text" required autocomplete="tel-country-code"
+                                    value="{{ old('code', $business->code ?? '') }}">
+                                <input name="country" hidden id="country" type="text" required autocomplete="country"
+                                    value="{{ old('country', $business->country ?? '') }}">
+                                @error('phone') <span class="text-danger">{{ $message }}</span> @enderror
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-end">
@@ -151,164 +155,157 @@
         </div>
     </div>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <style>
-        .card__wrapper {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            width: 100%;
-            max-width: 450px;
-            margin: auto;
-        }
+    .card__wrapper {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        width: 100%;
+        max-width: 450px;
+        margin: auto;
+    }
 
-        .form-control,
-        .form-select {
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            transition: all 0.3s ease;
-        }
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        padding: 12px;
+        transition: all 0.3s ease;
+    }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
-        }
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+    }
 
-        .btn-primary {
-            background: linear-gradient(90deg, #007bff, #0056b3);
-            border: none;
-            border-radius: 8px;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-        }
+    .btn-primary {
+        background: linear-gradient(90deg, #007bff, #0056b3);
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+    }
 
-        .btn-primary:hover {
-            background: linear-gradient(90deg, #0056b3, #003d80);
-            transform: translateY(-2px);
-        }
+    .btn-primary:hover {
+        background: linear-gradient(90deg, #0056b3, #003d80);
+        transform: translateY(-2px);
+    }
 
-        .btn-outline-secondary {
-            border-radius: 8px;
-            padding: 12px 24px;
-            transition: all 0.3s ease;
-        }
+    .btn-outline-secondary {
+        border-radius: 8px;
+        padding: 12px 24px;
+        transition: all 0.3s ease;
+    }
 
-        .progress {
-            border-radius: 4px;
-            background: #e9ecef;
-        }
+    .progress {
+        border-radius: 4px;
+        background: #e9ecef;
+    }
 
-        .progress-bar {
-            transition: width 0.3s ease;
-        }
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
 
-        .step {
-            transition: all 0.3s ease;
-        }
+    .step {
+        transition: all 0.3s ease;
+    }
 
-        .step:not(.active) {
-            display: none;
-            opacity: 0;
-        }
+    .step:not(.active) {
+        display: none;
+        opacity: 0;
+    }
 
-        .step.active {
-            display: block;
-            opacity: 1;
-        }
+    .step.active {
+        display: block;
+        opacity: 1;
+    }
 
-        label.form-label {
-            font-weight: 500;
-            color: #333;
-        }
+    label.form-label {
+        font-weight: 500;
+        color: #333;
+    }
 
-        .text-muted {
-            color: #6c757d !important;
-        }
+    .text-muted {
+        color: #6c757d !important;
+    }
 
-        #address-suggestions option {
-            padding: 8px;
-        }
+    #address-suggestions option {
+        padding: 8px;
+    }
 
-        .is-invalid {
-            border-color: #dc3545 !important;
-        }
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
 
-        .text-danger {
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
+    .text-danger {
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .iti {
+        width: 100%;
+    }
+
+    .iti__country-name {
+        display: inline-block !important;
+        margin-left: 6px;
+        color: #000;
+        font-weight: 400;
+        width: 275px;
+    }
     </style>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const phoneInput = document.querySelector("#phone");
-            const codeInput = document.querySelector("#code");
-            const countryInput = document.querySelector("#country");
+    document.addEventListener("DOMContentLoaded", function() {
 
-            const iti = window.intlTelInput(phoneInput, {
-                initialCountry: "ke",
-                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
-                separateDialCode: true,
-            });
+        const step1 = document.getElementById("step1");
+        const step2 = document.getElementById("step2");
+        const nextBtn = document.getElementById("nextBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const progressBar = document.getElementById("progressBar");
+        const stepIndicator = document.getElementById("stepIndicator");
 
-            phoneInput.addEventListener("countrychange", function() {
-                codeInput.value = "+" + iti.getSelectedCountryData().dialCode;
-                countryInput.value = iti.getSelectedCountryData().name;
-            });
-
-            codeInput.value = "+" + iti.getSelectedCountryData().dialCode;
-            countryInput.value = iti.getSelectedCountryData().name;
-
-            const step1 = document.getElementById("step1");
-            const step2 = document.getElementById("step2");
-            const nextBtn = document.getElementById("nextBtn");
-            const prevBtn = document.getElementById("prevBtn");
-            const progressBar = document.getElementById("progressBar");
-            const stepIndicator = document.getElementById("stepIndicator");
-
-            function validateStep1() {
-                const inputs = step1.querySelectorAll("input[required], select[required]");
-                let valid = true;
-                inputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        valid = false;
-                        input.classList.add("is-invalid");
-                        let errorSpan = input.parentElement.querySelector(".text-danger");
-                        if (!errorSpan) {
-                            errorSpan = document.createElement("span");
-                            errorSpan.className = "text-danger";
-                            errorSpan.textContent =
-                                `${input.name.charAt(0).toUpperCase() + input.name.slice(1)} is required.`;
-                            input.parentElement.appendChild(errorSpan);
-                        }
-                    } else {
-                        input.classList.remove("is-invalid");
-                        const errorSpan = input.parentElement.querySelector(".text-danger");
-                        if (errorSpan) errorSpan.remove();
+        function validateStep1() {
+            const inputs = step1.querySelectorAll("input[required], select[required]");
+            let valid = true;
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    valid = false;
+                    input.classList.add("is-invalid");
+                    let errorSpan = input.parentElement.querySelector(".text-danger");
+                    if (!errorSpan) {
+                        errorSpan = document.createElement("span");
+                        errorSpan.className = "text-danger";
+                        errorSpan.textContent =
+                            `${input.name.charAt(0).toUpperCase() + input.name.slice(1)} is required.`;
+                        input.parentElement.appendChild(errorSpan);
                     }
-                });
-                return valid;
-            }
-
-            nextBtn.addEventListener("click", () => {
-                if (validateStep1()) {
-                    step1.classList.remove("active");
-                    step2.classList.add("active");
-                    progressBar.style.width = "100%";
-                    progressBar.setAttribute("aria-valuenow", "100");
-                    stepIndicator.textContent = "Step 2 of 2: Additional Details";
+                } else {
+                    input.classList.remove("is-invalid");
+                    const errorSpan = input.parentElement.querySelector(".text-danger");
+                    if (errorSpan) errorSpan.remove();
                 }
             });
+            return valid;
+        }
 
-            prevBtn.addEventListener("click", () => {
-                step2.classList.remove("active");
-                step1.classList.add("active");
-                progressBar.style.width = "50%";
-                progressBar.setAttribute("aria-valuenow", "50");
-                stepIndicator.textContent = "Step 1 of 2: Basic Information";
-            });
+        nextBtn.addEventListener("click", () => {
+            if (validateStep1()) {
+                step1.classList.remove("active");
+                step2.classList.add("active");
+                progressBar.style.width = "100%";
+                progressBar.setAttribute("aria-valuenow", "100");
+                stepIndicator.textContent = "Step 2 of 2: Additional Details";
+            }
         });
+
+        prevBtn.addEventListener("click", () => {
+            step2.classList.remove("active");
+            step1.classList.add("active");
+            progressBar.style.width = "50%";
+            progressBar.setAttribute("aria-valuenow", "50");
+            stepIndicator.textContent = "Step 1 of 2: Basic Information";
+        });
+    });
     </script>
 </x-setup-layout>
