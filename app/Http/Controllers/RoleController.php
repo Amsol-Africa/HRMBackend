@@ -26,22 +26,18 @@ class RoleController extends Controller
         return view('roles.create', compact('permissions'));
     }
 
-    public function editView($business, $role)
+    public function editView($role)
     {
-        $role = Role::where('name', $role)->firstOrFail();
+        $role = Role::where('name', $role)->where('name', '!=', 'applicant')->firstOrFail();
         $permissions = Permission::all();
         return view('roles.edit', compact('role', 'permissions'));
     }
 
     public function fetch(Request $request)
     {
-        $businessSlug = session('active_business_slug');
-        $query = Role::with('permissions')->orderBy('created_at', 'desc');
-
-        if ($businessSlug) {
-            $business = Business::findBySlug($businessSlug);
-            $query->where('business_id', $business->id);
-        }
+        $query = Role::with('permissions')
+            ->where('name', '!=', 'applicant')
+            ->orderBy('created_at', 'desc');
 
         if ($request->has('filter')) {
             $filter = $request->input('filter');
@@ -62,11 +58,10 @@ class RoleController extends Controller
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $business = Business::findBySlug(session('active_business_slug'));
             $role = Role::create([
                 'name' => $validatedData['name'],
                 'guard_name' => 'web',
-                'business_id' => $business->id,
+                'business_id' => null, // Global roles
             ]);
 
             if (!empty($validatedData['permissions'])) {
@@ -77,23 +72,21 @@ class RoleController extends Controller
         });
     }
 
-    public function show($business, $role)
+    public function show($role)
     {
-        $role = Role::with('permissions', 'users')->where('name', $role)->firstOrFail();
-        $businessModel = Business::findBySlug($business);
+        $role = Role::with('permissions', 'users')
+            ->where('name', $role)
+            ->where('name', '!=', 'applicant')
+            ->firstOrFail();
 
-        // Handle null business_id
-        if (!$role->business || $role->business->slug !== $business) {
-            Log::warning("Role {$role->name} has no business or mismatched business slug: {$business}");
-            if ($businessModel) {
-                $role->business_id = $businessModel->id;
-                $role->save();
-            } else {
-                return RequestResponse::badRequest('Invalid business or role configuration.');
-            }
+        $businessSlug = session('active_business_slug');
+        $businessModel = $businessSlug ? Business::findBySlug($businessSlug) : null;
+
+        if (!$businessModel) {
+            return RequestResponse::badRequest('No active business selected.');
         }
 
-        // Fetch users belonging to the current business
+        // Fetch users belonging to the active business
         $users = User::whereHas('employee', function ($query) use ($businessModel) {
             $query->where('business_id', $businessModel->id);
         })->get();
@@ -104,7 +97,9 @@ class RoleController extends Controller
     public function edit(Request $request)
     {
         $validatedData = $request->validate(['role' => 'required|exists:roles,id']);
-        $role = Role::with('permissions')->findOrFail($validatedData['role']);
+        $role = Role::with('permissions')
+            ->where('name', '!=', 'applicant')
+            ->findOrFail($validatedData['role']);
         $permissions = Permission::all();
         $roleForm = view('roles._form', compact('role', 'permissions'))->render();
         return RequestResponse::ok('Ok', $roleForm);
@@ -120,7 +115,9 @@ class RoleController extends Controller
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
-            $role = Role::where('name', $validatedData['role_name'])->firstOrFail();
+            $role = Role::where('name', $validatedData['role_name'])
+                ->where('name', '!=', 'applicant')
+                ->firstOrFail();
             $role->update(['name' => $validatedData['name']]);
             $role->syncPermissions($validatedData['permissions'] ?? []);
 
@@ -132,7 +129,9 @@ class RoleController extends Controller
     {
         $validatedData = $request->validate(['role' => 'required|exists:roles,name']);
         return $this->handleTransaction(function () use ($validatedData) {
-            $role = Role::where('name', $validatedData['role'])->firstOrFail();
+            $role = Role::where('name', $validatedData['role'])
+                ->where('name', '!=', 'applicant')
+                ->firstOrFail();
             $role->users()->each(function ($user) use ($role) {
                 $user->removeRole($role);
             });
@@ -151,13 +150,9 @@ class RoleController extends Controller
         ]);
 
         return $this->handleTransaction(function () use ($validatedData, $request) {
-            $role = Role::findOrFail($validatedData['role_id']);
+            $role = Role::where('name', '!=', 'applicant')
+                ->findOrFail($validatedData['role_id']);
             $user = User::findOrFail($validatedData['user_id']);
-
-            // Ensure user belongs to the same business
-            if ($user->employee && $user->employee->business_id !== $role->business_id) {
-                return RequestResponse::badRequest('User does not belong to the same business as the role.');
-            }
 
             if ($request->input('_method') === 'DELETE') {
                 $user->removeRole($role);

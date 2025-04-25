@@ -5,13 +5,15 @@
             <div id="roleFormContainer">
                 @include('roles._form')
             </div>
+            <div class="mt-3">
+                <a href="{{ route('roles.index') }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
+            </div>
         </div>
     </div>
 
     @push('scripts')
-    <script>
-    window.businessSlug = "{{ $currentBusiness->slug }}";
-    </script>
     <script src="{{ asset('js/main/roles.js') }}" type="module"></script>
     @endpush
 </x-app-layout>

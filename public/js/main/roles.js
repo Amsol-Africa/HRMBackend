@@ -74,7 +74,7 @@ window.getRoles = async function (page = 1, filter = '') {
 
             $('#rolesTable').DataTable({
                 responsive: true,
-                order: [[3, 'desc']],
+                order: [[2, 'desc']],
                 columnDefs: [{ targets: '_all', searchable: true }],
                 language: {
                     emptyTable: "No roles available",
@@ -99,9 +99,8 @@ window.saveRole = async function (btn) {
         } else {
             await roleService.save(formData);
         }
-        const businessSlug = window.businessSlug || 'default';
         setTimeout(() => {
-            window.location.href = `/business/${businessSlug}/roles`;
+            window.location.href = '/roles';
         }, 1500);
     } catch (error) {
         toastr.error('Failed to save role: ' + error.message, "Error");

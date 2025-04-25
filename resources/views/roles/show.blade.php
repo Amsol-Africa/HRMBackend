@@ -8,7 +8,6 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Business:</strong> {{ $role->business->company_name ?? 'N/A' }}</p>
                             <p><strong>Created:</strong> {{ $role->created_at->format('d M Y H:i') }}</p>
                             <p><strong>Updated:</strong> {{ $role->updated_at->format('d M Y H:i') }}</p>
                         </div>
@@ -74,11 +73,10 @@
                         </table>
                     </div>
                     <div class="mt-3">
-                        <a href="{{ route('business.roles.edit', ['business' => $businessModel->slug, 'role' => $role->name]) }}"
-                            class="btn btn-warning">
+                        <a href="{{ route('roles.edit', $role->name) }}" class="btn btn-warning">
                             <i class="bi bi-pencil"></i> Edit
                         </a>
-                        <a href="{{ route('business.roles.index', $businessModel->slug) }}" class="btn btn-secondary">
+                        <a href="{{ route('roles.index') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Back
                         </a>
                     </div>
