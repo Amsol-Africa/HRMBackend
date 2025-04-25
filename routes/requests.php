@@ -35,6 +35,7 @@ use App\Http\Controllers\EmployeeDeductionController;
 use App\Http\Controllers\KPIsController;
 use App\Http\Controllers\WarningController;
 use App\Http\Controllers\PayGradesController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\EmployeeReliefsController;
 
 Route::post('/business/{businessSlug}/generate-token', [BusinessController::class, 'generateApiToken'])
@@ -370,5 +371,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/edit', [PayGradesController::class, 'edit'])->name('edit');
         Route::post('/{id}/update', [PayGradesController::class, 'update'])->name('update');
         Route::post('/{id}/destroy', [PayGradesController::class, 'destroy'])->name('destroy');
+    });
+
+    // roles
+    Route::name('roles.')->prefix('roles')->group(function () {
+        Route::post('fetch', [RoleController::class, 'fetch'])->name('fetch');
+        Route::post('store', [RoleController::class, 'store'])->name('store');
+        Route::post('edit', [RoleController::class, 'edit'])->name('edit');
+        Route::post('update', [RoleController::class, 'update'])->name('update');
+        Route::post('destroy', [RoleController::class, 'destroy'])->name('destroy');
+        Route::post('assign', [RoleController::class, 'assign'])->name('assign');
     });
 });

@@ -15,6 +15,7 @@ use App\Http\Controllers\PayrollFormulaController;
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\KPIsController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TaskController;
 use App\Models\Business;
 
@@ -155,6 +156,12 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('profile', [ProfileController::class, 'edit'])->name('profile.index');
 
         Route::get('pay-grades', [DashboardController::class, 'payGrades'])->name('pay-grades.index');
+
+        // roles
+        Route::get('/roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'editView'])->name('roles.edit');
     });
 
     Route::middleware(['ensure_role', 'role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {

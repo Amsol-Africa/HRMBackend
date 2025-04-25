@@ -29,6 +29,9 @@ use App\Notifications\TerminationNotification;
 use Illuminate\Support\Facades\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\HandleTransactions;
+use Illuminate\Support\Facades\Password;
+use App\Notifications\WelcomeEmployeeNotification;
+use App\Models\Role;
 
 use function Laravel\Prompts\error;
 
@@ -164,8 +167,6 @@ class EmployeeController extends Controller
             'document_types.*' => 'nullable|string|max:255',
         ]);
 
-        Log::debug('Creating Employee - Validated Data:', $validated);
-
         $business = Business::findBySlug(session('active_business_slug'));
 
         try {
@@ -175,8 +176,22 @@ class EmployeeController extends Controller
                 'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
-                'password' => "amsol_employee",
+                'password' => null,
             ]);
+
+            $token = Password::createToken($user);
+            $user->sendPasswordResetNotification($token);
+
+            $user->notify(new WelcomeEmployeeNotification($user, $token));
+
+            $role = Role::where('name', 'business-employee')
+                ->where('business_id', $business->id)
+                ->first();
+            if ($role) {
+                $user->assignRole($role);
+            } else {
+                Log::warning('business-employee role not found for business.', ['business_id' => $business->id]);
+            }
 
             $employee = Employee::create([
                 'user_id' => $user->id,
@@ -817,8 +832,23 @@ class EmployeeController extends Controller
                         'name' => trim("{$row['first_name']} {$row['last_name']}"),
                         'email' => $row['email'],
                         'phone' => $row['phone'],
-                        'password' => Hash::make("amsol_employee"),
+                        'password' => null,
                     ]);
+
+                    $token = Password::createToken($user);
+                    $user->sendPasswordResetNotification($token);
+
+                    $user->notify(new WelcomeEmployeeNotification($user, $token));
+
+                    $role = Role::where('name', 'business-employee')
+                        ->where('business_id', $business->id)
+                        ->first();
+                    if ($role) {
+                        $user->assignRole($role);
+                    } else {
+                        Log::warning('business-employee role not found for business.', ['business_id' => $business->id]);
+                        $errors[] = "Row " . ($index + 2) . ": business-employee role not found.";
+                    }
 
                     $employee = $business->employees()->create([
                         'user_id' => $user->id,

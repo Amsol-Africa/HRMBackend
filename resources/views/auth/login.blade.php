@@ -1,9 +1,7 @@
 <x-auth-layout>
-    {{-- <x-auth-session-status class="mb-4" :status="session('status')" /> --}}
     <div class="authentication-wrapper basic-authentication">
         <div class="authentication-inner">
             <div class="card__wrapper">
-
                 <div class="authentication-top text-center mb-20">
                     <a href="javascript:;" class="authentication-logo logo-black">
                         <img src="{{ asset('media/amsol-logo.png') }}" alt="{{ config('app.name') }}">
@@ -38,14 +36,20 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" type="button" onclick="login(this)"> <i
-                                class="bi bi-check-circle me-1"></i> Login</button>
+                        <button class="btn btn-primary w-100" type="button" onclick="login(this)">
+                            <i class="bi bi-check-circle me-1"></i> Login
+                        </button>
                     </div>
                 </form>
-                <p class="text-center">
+                <p class="text-center mt-3">
                     <span>Don't have an account?</span>
-                    <a href="{{ route('register') }}">
+                    <a href="{{ route('register') }}" class="text-indigo-600 hover:underline">
                         <span>Get started</span>
+                    </a>
+                </p>
+                <p class="text-center mt-2">
+                    <a href="{{ route('password.request') }}" class="text-indigo-600 hover:underline">
+                        Forgot your password?
                     </a>
                 </p>
             </div>

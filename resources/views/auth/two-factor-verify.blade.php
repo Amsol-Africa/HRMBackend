@@ -158,14 +158,12 @@
         const form = document.getElementById('2fa-form');
         const resendLink = document.getElementById('resend-code');
 
-        // Handle input navigation and pasting
         inputs.forEach((input, index) => {
-            // input.addEventListener('input', () => {
-            //     input.value = input.value.replace(/\D/g, '');
-            //     if (input.value.length === 1 && index < inputs.length - 1) {
-            //         inputs[index + 1].focus();
-            //     }
-            // });
+            input.addEventListener('input', (e) => {
+                if (e.target.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Backspace' && input.value === '' && index > 0) {
                     inputs[index - 1].focus();
@@ -173,7 +171,7 @@
             });
             input.addEventListener('paste', (e) => {
                 e.preventDefault();
-                const pasted = e.clipboardData.getData('text').replace(/\D/g, '');
+                const pasted = e.clipboardData.getData('text').trim().slice(0, inputs.length);
                 if (pasted.length > 0) {
                     for (let i = 0; i < Math.min(pasted.length, inputs.length); i++) {
                         inputs[i].value = pasted[i];
@@ -204,7 +202,6 @@
             }
 
             try {
-                console.log('Submitting 2FA code:', code);
                 const response = await fetch(form.action, {
                     method: 'POST',
                     headers: {
@@ -217,12 +214,9 @@
                     })
                 });
 
-                console.log('2FA Response Status:', response.status);
                 const data = await response.json();
-                console.log('2FA Response Data:', data);
 
                 if (response.ok) {
-                    console.log('Success path entered');
                     inputs.forEach(input => {
                         input.classList.add('success');
                         input.classList.remove('error');
@@ -234,11 +228,9 @@
                         confirmButtonText: 'OK'
                     });
                     if (data.data?.redirect_url) {
-                        console.log('Redirecting to:', data.data.redirect_url);
                         window.location.href = data.data.redirect_url;
                         return;
                     } else {
-                        console.log('No redirect_url provided');
                         await Swal.fire({
                             icon: 'warning',
                             title: 'Warning',
@@ -246,7 +238,6 @@
                         });
                     }
                 } else {
-                    console.log('Error path entered:', data.message);
                     inputs.forEach(input => {
                         input.classList.add('error');
                         input.classList.remove('success');
@@ -259,7 +250,6 @@
                     inputs.forEach(input => input.classList.remove('error'));
                 }
             } catch (error) {
-                console.error('2FA Submission Error:', error);
                 inputs.forEach(input => {
                     input.classList.add('error');
                     input.classList.remove('success');
@@ -277,7 +267,6 @@
         resendLink.addEventListener('click', async (e) => {
             e.preventDefault();
             try {
-                console.log('Requesting resend code');
                 const response = await fetch('{{ route("2fa.resend") }}', {
                     method: 'POST',
                     headers: {
@@ -285,9 +274,7 @@
                         'Accept': 'application/json'
                     }
                 });
-                console.log('Resend Response Status:', response.status);
                 const data = await response.json();
-                console.log('Resend Response Data:', data);
                 await Swal.fire({
                     icon: response.ok ? 'success' : 'error',
                     title: response.ok ? 'Success' : 'Error',
@@ -301,7 +288,6 @@
                     inputs[0].focus();
                 }
             } catch (error) {
-                console.error('Resend Error:', error);
                 await Swal.fire({
                     icon: 'error',
                     title: 'Error',

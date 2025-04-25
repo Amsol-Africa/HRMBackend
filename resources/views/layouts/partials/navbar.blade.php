@@ -58,6 +58,12 @@
                                 Configure Organization
                             </a>
                         </li>
+                        <li class="slide {{ request()->routeIs('business.roles.*') ? 'active' : '' }}">
+                            <a class="sidebar__menu-item {{ request()->routeIs('business.roles.*') ? 'active' : '' }}"
+                                href="{{ route('business.roles.index', $currentBusiness->slug) }}">
+                                Roles Management
+                            </a>
+                        </li>
                         <li class="slide {{ request()->routeIs('business.pay-schedule') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.pay-schedule') ? 'active' : '' }}"
                                 href="{{ route('business.pay-schedule', $currentBusiness->slug) }}">
@@ -90,6 +96,8 @@
                         </li>
                     </ul>
                 </li>
+
+
 
                 <!-- Employee Management Dropdown -->
                 <li

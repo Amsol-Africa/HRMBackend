@@ -95,7 +95,19 @@ class ApplicationController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'applicant_id' => 'required|exists:applicants,id',
+            'applicant_id' => [
+                'required',
+                'exists:applicants,id',
+                function ($attribute, $value, $fail) use ($request) {
+                    $job_post = JobPost::findBySlug($request->job_post_id);
+                    if (Application::where('applicant_id', $value)
+                        ->where('job_post_id', $job_post->id)
+                        ->exists()
+                    ) {
+                        $fail('You have already applied to this job.');
+                    }
+                },
+            ],
             'job_post_id' => 'required|exists:job_posts,slug',
             'cover_letter' => 'nullable|string',
             'attachments.*' => 'file|mimes:pdf,doc,docx|max:2048',
@@ -139,7 +151,27 @@ class ApplicationController extends Controller
                 'last_name' => 'required|string|max:100',
                 'email' => 'required|email|unique:users,email|max:255',
                 'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/|unique:users,phone',
-                'job_post_id' => 'required|exists:job_posts,slug',
+                'job_post_id' => [
+                    'required',
+                    'exists:job_posts,slug',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $job_post = JobPost::where('slug', $value)
+                            ->where('is_public', true)
+                            ->where('status', 'open')
+                            ->first();
+                        if ($job_post && $request->email) {
+                            $user = User::where('email', $request->email)->first();
+                            $applicant = $user ? Applicant::where('user_id', $user->id)->first() : null;
+                            if (
+                                $applicant && Application::where('applicant_id', $applicant->id)
+                                ->where('job_post_id', $job_post->id)
+                                ->exists()
+                            ) {
+                                $fail('You have already applied to this job.');
+                            }
+                        }
+                    },
+                ],
                 'cover_letter' => 'nullable|string|max:5000',
                 'attachments.*' => 'file|mimes:pdf,doc,docx|max:2048',
                 'attachments' => 'array|max:5',

@@ -38,6 +38,89 @@ window.register = async function (btn) {
     }
 };
 
+window.forgotPassword = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const form = $('#forgot-password-form');
+    const formData = form.serialize();
+
+    try {
+        const response = await requestClient.post(form.attr('action'), formData, {
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+            },
+        });
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message || 'A password reset link has been sent to your email.',
+            confirmButtonText: 'OK',
+        });
+
+        form[0].reset();
+    } catch (error) {
+        await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to send reset link. Please try again.',
+        });
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
+window.resetPassword = async function (btn) {
+    btn = $(btn);
+    btn_loader(btn, true);
+
+    const form = $('#reset-password-form');
+    const formData = Object.fromEntries(new FormData(form[0]).entries());
+
+    try {
+        const response = await requestClient.post('/reset-password', formData, {
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+        });
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: response.message || 'Your password has been reset successfully.',
+            confirmButtonText: 'OK',
+        });
+
+        window.location.href = response.data?.redirect_url || '/login';
+    } catch (error) {
+        await Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to reset password. Please try again.',
+        });
+    } finally {
+        btn_loader(btn, false);
+    }
+};
+
+// Bind event listeners
+$(document).ready(function () {
+    $('#forgot-password-form').on('submit', function (e) {
+        e.preventDefault();
+        window.forgotPassword($('#forgot-password-button'));
+    });
+
+    $('#reset-password-form').on('submit', function (e) {
+        e.preventDefault();
+        window.resetPassword($('#reset-password-button'));
+    });
+});
+
 window.logout = async function (btn) {
     try {
         await authService.logout({});
