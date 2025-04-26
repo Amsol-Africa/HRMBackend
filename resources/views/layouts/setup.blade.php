@@ -145,10 +145,10 @@
 
             const iti = window.intlTelInput(phoneInput, {
                 preferredCountries: ['ke', 'ug', 'gb', 'ng', 'rw', 'za', 'tz', 'tn', 'et',
-                    'za'],
+                    'za'
+                ],
                 initialCountry: "auto",
                 nationalMode: true,
-                geoIpLookup: getIp,
                 separateDialCode: true,
                 geoIpLookup: function(callback) {
                     getIp(function(countryCode) {
@@ -167,6 +167,9 @@
                 }
                 updateSelectedCountryName(phoneInput, iti);
             });
+
+            codeInput.value = "+" + iti.getSelectedCountryData().dialCode;
+            countryInput.value = iti.getSelectedCountryData().name;
 
             const initialPhone = phoneInput.value;
             const initialCode = codeInput ? codeInput.value : '';
@@ -208,6 +211,12 @@
                             '.text-danger');
                         if (errorSpan) errorSpan.remove();
                         phoneInput.value = iti.getNumber();
+                        if (codeInput) {
+                            codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
+                        }
+                        if (countryInput) {
+                            countryInput.value = iti.getSelectedCountryData().name;
+                        }
                     }
                 });
             }

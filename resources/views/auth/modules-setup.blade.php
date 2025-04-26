@@ -8,7 +8,7 @@
                 <a href="javascript:;" class="authentication-logo logo-white">
                     <img src="{{ asset('media/amsol-logo.png') }}" alt="{{ config('app.name') }} - Logo">
                 </a>
-                <h4 class="mb-15">Choose Your Modules - Customize Your Experience</h4>
+                <h4 class="mb-15">Choose Your Modules - Pick at least one</h4>
                 <p class="mb-15">
                     Begin by selecting the modules that best suit your organization’s needs. Personalize the platform
                     and maximize its capabilities.
@@ -64,7 +64,7 @@
 
                 <div class="row g-2">
                     <div class="col-md-10">
-                        <button type="button" onclick="saveModules(this)" class="btn btn-primary px-5 w-100">
+                        <button type="button" id="saveModulesBtn" class="btn btn-primary px-5 w-100">
                             <i class="bi bi-check-circle"></i> Activate Selected Modules
                         </button>
                     </div>
@@ -81,34 +81,33 @@
     @push('scripts')
     <script src="{{ asset('js/main/businesses.js') }}" type="module"></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Ensure at least one module is selected
-            const form = document.getElementById("modulesForm");
-            const saveButton = form.querySelector('button[onclick="saveModules(this)"]');
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("modulesForm");
+        const saveButton = document.getElementById("saveModulesBtn");
 
-            saveButton.addEventListener("click", function(e) {
-                const checkboxes = form.querySelectorAll('input[name="modules[]"]:checked');
-                if (checkboxes.length === 0) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "Please select at least one module.",
-                        confirmButtonText: "OK",
-                    });
-                    return;
-                }
-                console.log("Triggering module setup submission");
-                saveModules(saveButton);
-            });
-
-            // Disable core module checkboxes visually
-            const coreCheckboxes = form.querySelectorAll('input[name="modules[]"][disabled]');
-            coreCheckboxes.forEach(checkbox => {
-                checkbox.parentElement.classList.add('text-muted');
-                checkbox.parentElement.title = "This module is included by default.";
-            });
+        saveButton.addEventListener("click", async function(e) {
+            const checkboxes = form.querySelectorAll(
+                'input[name="modules[]"]:checked:not([disabled])');
+            if (checkboxes.length === 0) {
+                await Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "Please select at least one non-core module to continue.",
+                    confirmButtonText: "OK",
+                });
+                return;
+            }
+            console.log("Triggering module setup submission");
+            saveModules(saveButton);
         });
+
+        // Disable core module checkboxes visually
+        const coreCheckboxes = form.querySelectorAll('input[name="modules[]"][disabled]');
+        coreCheckboxes.forEach(checkbox => {
+            checkbox.parentElement.classList.add('text-muted');
+            checkbox.parentElement.title = "This module is included by default.";
+        });
+    });
     </script>
     @endpush
 </x-auth-layout>

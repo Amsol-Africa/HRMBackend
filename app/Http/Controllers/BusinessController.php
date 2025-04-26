@@ -35,7 +35,6 @@ class BusinessController extends Controller
 
     public function store(Request $request)
     {
-        Log::info('Reached BusinessController@store', ['user_id' => auth()->id(), 'input' => $request->all()]);
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:businesses,company_name',
@@ -116,11 +115,6 @@ class BusinessController extends Controller
                 $this->notifyBusinessOwner($business, $user, 'created');
 
                 $redirect_url = route('setup.modules');
-
-                Log::info('Business created successfully', [
-                    'business_id' => $business->id,
-                    'redirect_url' => $redirect_url
-                ]);
 
                 return RequestResponse::created('Business registered successfully.', [
                     'redirect_url' => $redirect_url,
@@ -290,13 +284,11 @@ class BusinessController extends Controller
             $user->notify(new BusinessChangedNotification($business, $user, $action));
             return RequestResponse::ok('Notification sent successfully.');
         } catch (TransportException $e) {
-            Log::error('Failed to send notification email: ' . $e->getMessage());
             return RequestResponse::badRequest('Failed to send notification email.', [
                 'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage()
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Unexpected error sending notification: ' . $e->getMessage());
             return RequestResponse::badRequest('An unexpected error occurred while sending the notification.', [
                 'error_code' => $e->getCode(),
                 'error_message' => $e->getMessage()

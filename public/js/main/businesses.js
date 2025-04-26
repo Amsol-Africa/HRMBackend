@@ -45,7 +45,6 @@ window.register = async function (btn) {
     const formData = new FormData(form);
     const logoInput = document.getElementById("logo");
 
-    // Validate logo is provided
     if (!logoInput?.files?.length) {
         btn_loader(btn, false);
         await Swal.fire({
@@ -106,6 +105,18 @@ window.saveModules = async function (btn) {
             icon: "error",
             title: "Error",
             text: "Form not found. Please try again.",
+            confirmButtonText: "OK",
+        });
+        return;
+    }
+
+    const nonCoreCheckboxes = form.querySelectorAll('input[name="modules[]"]:checked:not([disabled])');
+    if (nonCoreCheckboxes.length === 0) {
+        btn_loader(btn, false);
+        await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Please select at least one non-core module to continue.",
             confirmButtonText: "OK",
         });
         return;

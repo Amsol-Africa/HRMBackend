@@ -79,7 +79,7 @@
                             <div class="form__input">
                                 <input class="shadow-sm phone-input-control" name="phone" id="phone" type="tel" required
                                     autocomplete="tel" value="{{ old('phone', $business->phone ?? '') }}">
-                                <input name="code" hidden id="code" type="text" autocomplete="tel-country-code"
+                                <input name="code" hidden id="code" type="text" autocomplete="code"
                                     value="{{ old('code', $business->code ?? '') }}">
                                 <input name="country" hidden id="country" type="text" autocomplete="country"
                                     value="{{ old('country', $business->country ?? '') }}">
@@ -131,8 +131,9 @@
                         </div>
 
                         <div class="from__input-box mb-4">
-                            <label for="logo" class="form-label">Upload Your Logo (Optional)</label>
-                            <input class="form-control shadow-sm" type="file" name="logo" id="logo" accept="image/*">
+                            <label for="logo" class="form-label">Upload Your Logo</label>
+                            <input class="form-control shadow-sm" type="file" name="logo" required id="logo"
+                                accept="image/*">
                             @if($business && $business->hasMedia('businesses'))
                             <div class="mt-2">
                                 <img src="{{ $business->getFirstMediaUrl('businesses', 'thumb') }}" alt="Current Logo"
@@ -257,6 +258,47 @@
     </style>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const phoneInputField = document.querySelector(".phone-input-control");
+
+        if (phoneInputField) {
+            initializePhoneInput();
+
+            phoneInputField.addEventListener("countrychange", function() {
+                const phoneInput = window.intlTelInputGlobals.getInstance(phoneInputField);
+                const selectedCountryData = phoneInput.getSelectedCountryData();
+                document.querySelector("#code").value = selectedCountryData.dialCode;
+                document.querySelector("#country").value = selectedCountryData.name;
+            });
+        }
+
+        function initializePhoneInput() {
+            const phoneInput = window.intlTelInput(phoneInputField, {
+                preferredCountries: ['ke', 'ug', 'gb', 'rw', 'ng', 'za', 'tz', 'tn', 'et', 'za'],
+                initialCountry: "auto",
+                nationalMode: true,
+                geoIpLookup: getIp,
+                separateDialCode: true,
+                utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+            });
+
+            phoneInputField.addEventListener("countrychange", function() {
+                const selectedCountryData = phoneInput.getSelectedCountryData();
+                document.querySelector("#code").value = selectedCountryData.dialCode;
+                document.querySelector("#COUNTRY").value = selectedCountryData.dialCode;
+            });
+        }
+
+        function getIp(callback) {
+            fetch('https://ipinfo.io/json?token=a876c4d470b426', {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            }).then((resp) => resp.json()).catch(() => {
+                return {
+                    country: 'ke',
+                };
+            }).then((resp) => callback(resp.country));
+        }
 
         const step1 = document.getElementById("step1");
         const step2 = document.getElementById("step2");
@@ -306,6 +348,7 @@
             progressBar.setAttribute("aria-valuenow", "50");
             stepIndicator.textContent = "Step 1 of 2: Basic Information";
         });
+
     });
     </script>
 </x-setup-layout>
