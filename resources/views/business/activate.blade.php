@@ -227,25 +227,87 @@
                 </div>
             </card>
         </div>
-        <div class="col-md-4">
-            <p>Business Logo</p>
+        <div class="col-md-3">
+            <p>Business Details</p>
             <div class="card mb-3">
                 <div class="card-body text-center">
-                    <img src="{{ $business->getImageUrl() }}" alt="{{ $business->company_name }}" class="img-fluid"
-                        style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    <h6>Verification Status</h6>
+                    <i id="verificationIcon"
+                        class="bi {{ $business->verified ? 'bi-check-circle text-success' : 'bi-x-circle text-danger' }}"
+                        title="{{ $business->verified ? 'Verified' : 'Not Verified' }}"></i>
+                    <hr>
+                    <h6>Business Logo</h6>
+                    <div style="overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                        <img src="{{ $business->getImageUrl() }}" alt="{{ $business->company_name }}" class="img-fluid"
+                            style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                    </div>
                 </div>
             </div>
 
-            <p>Verification Status</p>
-            <div class="card">
+            <!-- Registration Certificate -->
+            <p>Registration Certificate</p>
+            <div class="card mb-3 shadow-sm">
                 <div class="card-body text-center">
-                    @if($business->verified)
-                    <span class="badge bg-success">Verified</span>
+                    @if($business->getFirstMediaUrl('registration_certificates'))
+                    <a id="registrationCertificateLink"
+                        href="{{ $business->getFirstMediaUrl('registration_certificates') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center" target="_blank" download>
+                        <i class="bi bi-file-earmark-text-fill me-2 fs-5"></i>
+                        Registration Certificate
+                    </a>
                     @else
-                    <span class="badge bg-warning">Pending Activation</span>
+                    <div class="text-muted">No registration certificate uploaded.</div>
                     @endif
                 </div>
             </div>
+
+            <!-- Tax Pin Certificate -->
+            <p>Tax Pin Certificate</p>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    @if($business->getFirstMediaUrl('tax_pin_certificates'))
+                    <a id="taxPinCertificateLink" href="{{ $business->getFirstMediaUrl('tax_pin_certificates') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center" target="_blank" download>
+                        <i class="bi bi-file-earmark-text-fill me-2 fs-5"></i>
+                        Tax Pin Certificate
+                    </a>
+                    @else
+                    <div class="text-muted">No tax pin certificate uploaded.</div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Business License Certificate -->
+            <p>Business License Certificate</p>
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body text-center">
+                    @if($business->getFirstMediaUrl('business_license_certificates'))
+                    <a id="businessLicenseCertificateLink"
+                        href="{{ $business->getFirstMediaUrl('business_license_certificates') }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center" target="_blank" download>
+                        <i class="bi bi-file-earmark-text-fill me-2 fs-5"></i>
+                        Business License Certificate
+                    </a>
+                    @else
+                    <div class="text-muted">No business license certificate uploaded.</div>
+                    @endif
+                </div>
+            </div>
+
+            @if($business->verified && $business->slug === 'amsol')
+            <!-- API Token -->
+            <p>API Token</p>
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <a href="{{ route('business.api-token', $business->slug) }}"
+                        class="btn btn-outline-primary d-inline-flex align-items-center">
+                        <i class="bi bi-key me-2 fs-5"></i>
+                        Manage API Token
+                    </a>
+                </div>
+            </div>
+            @endif
+
         </div>
     </div>
 

@@ -35,7 +35,6 @@ class BusinessController extends Controller
 
     public function store(Request $request)
     {
-
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:businesses,company_name',
             'company_size' => 'required|string|max:255',
@@ -48,9 +47,9 @@ class BusinessController extends Controller
             'business_license_no' => 'required|string|max:255|unique:businesses,business_license_no',
             'physical_address' => 'required|string|max:255',
             'logo' => 'required|file|image|max:1024',
-            'registration_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
-            'tax_pin_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
-            'business_license_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
+            'registration_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
+            'tax_pin_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
+            'business_license_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
         ]);
 
         return $this->handleTransaction(function () use ($request, $validatedData) {
@@ -169,9 +168,9 @@ class BusinessController extends Controller
             'business_license_no' => 'required|string|max:255|unique:businesses,business_license_no,' . Business::findBySlug($request->business_slug)->id,
             'physical_address' => 'required|string|max:255',
             'logo' => 'nullable|file|image|max:1024',
-            'registration_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
-            'tax_pin_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
-            'business_license_certificate' => 'nullable|file|mimes:pdf,image|max:2048',
+            'registration_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
+            'tax_pin_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
+            'business_license_certificate' => 'nullable|file|mimes:pdf,image,docx|max:2048',
         ]);
 
         return $this->handleTransaction(function () use ($request, $validatedData) {

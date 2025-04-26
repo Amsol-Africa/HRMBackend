@@ -206,7 +206,7 @@
 
             </form>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <p>Business Details</p>
             <div class="card mb-3">
                 <div class="card-body text-center">

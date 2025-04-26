@@ -164,14 +164,6 @@ window.updateBusiness = async function (btn) {
     const form = document.getElementById("activateBusinessForm");
     if (!form) {
         const form = document.getElementById("businessDetailsForm");
-    } else {
-        btn_loader(btn, false);
-        await Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Form not found. Please try again.",
-            confirmButtonText: "OK",
-        });
     }
 
     const formData = new FormData(form);
