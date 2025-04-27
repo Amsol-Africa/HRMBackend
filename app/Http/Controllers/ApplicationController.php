@@ -285,9 +285,14 @@ class ApplicationController extends Controller
     public function reports()
     {
         $business = Business::findBySlug(session('active_business_slug'));
-        $applications = $business->applications()->with('applicant.user', 'jobPost')->latest()->take(10)->get();
+        $applications = $business->applications()
+            ->with('applicant.user', 'jobPost')
+            ->latest()
+            ->get();
+
         return view('applications.reports', compact('applications'));
     }
+
 
     public function update(Request $request)
     {

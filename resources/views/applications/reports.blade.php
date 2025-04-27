@@ -2,7 +2,7 @@
     <div class="container py-5">
         <div class="card shadow-md">
             <div class="card-header text-white">
-                <h3 class="mb-0">Recent Job Applications</h3>
+                <h3 class="mb-0">Job Applications Report</h3>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
