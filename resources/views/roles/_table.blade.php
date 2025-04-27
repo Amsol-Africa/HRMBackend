@@ -15,15 +15,10 @@
             <td>{{ $role->created_at->format('d M Y') }}</td>
             <td>
                 <div class="btn-group" role="group">
-                    <a href="{{ route('roles.show', $role->name) }}" class="btn btn-info btn-sm">
+                    <a href="{{ route('business.roles.show', ['business' => $businessSlug, 'role' => urlencode($role->name)]) }}"
+                        class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i> View
                     </a>
-                    <a href="{{ route('roles.edit', $role->name) }}" class="btn btn-warning btn-sm">
-                        <i class="bi bi-pencil"></i> Edit
-                    </a>
-                    <button class="btn btn-danger btn-sm" data-role="{{ $role->name }}" onclick="deleteRole(this)">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
                 </div>
             </td>
         </tr>

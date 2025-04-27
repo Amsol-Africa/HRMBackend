@@ -38,7 +38,6 @@ class AuthenticatedSessionController extends Controller
             $credentials = $request->only('email', 'password');
             $remember = $request->boolean('remember');
 
-            // Track failed attempts
             $attempt = LoginAttempt::firstOrCreate(['ip_address' => $ip], ['attempts' => 0]);
 
             if ($attempt->isBanned()) {
@@ -281,7 +280,6 @@ class AuthenticatedSessionController extends Controller
             return route('myaccount.index', $business->slug);
         }
 
-        // Fallback redirect if no role matches
         return route('login');
     }
 

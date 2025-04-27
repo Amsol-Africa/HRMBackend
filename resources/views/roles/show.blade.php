@@ -25,27 +25,27 @@
                         </div>
                     </div>
                     <div class="mt-4">
-                        <h6>Assign Role to User</h6>
+                        <h6>Assign Role to Employee</h6>
                         <form id="assignRoleForm" class="needs-validation" novalidate>
                             @csrf
                             <input type="hidden" name="role_id" value="{{ $role->id }}">
                             <div class="mb-3">
-                                <label for="user_id" class="form-label">Select User <span
+                                <label for="user_id" class="form-label">Select Employee <span
                                         class="text-danger">*</span></label>
                                 <select name="user_id" id="user_id" class="form-select" required>
-                                    <option value="">Select a user</option>
+                                    <option value="">Select an employee</option>
                                     @foreach($users as $user)
                                     <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                     @endforeach
                                 </select>
-                                <div class="invalid-feedback">Please select a user.</div>
+                                <div class="invalid-feedback">Please select an employee.</div>
                             </div>
                             <button type="button" onclick="assignRole(this)" class="btn btn-primary">Assign
                                 Role</button>
                         </form>
                     </div>
                     <div class="mt-4">
-                        <h6>Users with this Role</h6>
+                        <h6>Employees with this Role</h6>
                         <table class="table table-hover table-striped" id="assignedUsersTable">
                             <thead class="table-dark">
                                 <tr>
@@ -56,8 +56,8 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($role->users as $index => $user)
-                                <tr>
+                                @foreach($roleUsers as $index => $user)
+                                <tr data-user-id="{{ $user->id }}">
                                     <td>{{ $index + 1 }}</td>
                                     <td>{{ $user->name }}</td>
                                     <td>{{ $user->email }}</td>
@@ -73,10 +73,8 @@
                         </table>
                     </div>
                     <div class="mt-3">
-                        <a href="{{ route('roles.edit', $role->name) }}" class="btn btn-warning">
-                            <i class="bi bi-pencil"></i> Edit
-                        </a>
-                        <a href="{{ route('roles.index') }}" class="btn btn-secondary">
+                        <a href="{{ route('business.roles.index', ['business' => $businessSlug]) }}"
+                            class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Back
                         </a>
                     </div>

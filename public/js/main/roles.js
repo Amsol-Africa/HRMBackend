@@ -89,65 +89,33 @@ window.getRoles = async function (page = 1, filter = '') {
     }
 };
 
-window.saveRole = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-    const formData = new FormData(document.getElementById("roleForm"));
-    try {
-        if (formData.has('role_name')) {
-            await roleService.update(formData);
-        } else {
-            await roleService.save(formData);
-        }
-        setTimeout(() => {
-            window.location.href = '/roles';
-        }, 1500);
-    } catch (error) {
-        toastr.error('Failed to save role: ' + error.message, "Error");
-    } finally {
-        btn_loader(btn, false);
-    }
-};
-
-window.deleteRole = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-    const role = btn.data("role");
-
-    Swal.fire({
-        title: "Are you sure?",
-        text: "This action cannot be undone!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#068f6d",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, delete it!"
-    }).then(async (result) => {
-        if (result.isConfirmed) {
-            try {
-                const response = await roleService.delete({ role });
-                await getRoles();
-            } catch (error) {
-                toastr.error('Failed to delete role: ' + error.message, "Error");
-            } finally {
-                btn_loader(btn, false);
-            }
-        } else {
-            btn_loader(btn, false);
-        }
-    });
-};
-
 window.assignRole = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-    const formData = new FormData(document.getElementById("assignRoleForm"));
+    const form = document.getElementById("assignRoleForm");
+    const formData = new FormData(form);
     try {
-        await roleService.assign(formData);
+        const response = await roleService.assign(formData);
+
+        const userId = formData.get('user_id');
+        const roleId = formData.get('role_id');
+        const userName = $('#user_id option:selected').text().split(' (')[0];
+        const userEmail = $('#user_id option:selected').text().match(/\(([^)]+)\)/)[1];
+
+        const table = $('#assignedUsersTable').DataTable();
+        const rowCount = table.rows().count() + 1;
+        table.row.add([
+            rowCount,
+            userName,
+            userEmail,
+            `<button class="btn btn-danger btn-sm" data-user="${userId}" data-role="${roleId}" onclick="removeRole(this)">
+                <i class="bi bi-trash"></i> Remove
+            </button>`
+        ]).draw();
+
         toastr.success('Role assigned successfully.', "Success");
-        setTimeout(() => {
-            window.location.reload();
-        }, 1000);
+        form.reset();
+        form.classList.remove('was-validated');
     } catch (error) {
         toastr.error('Failed to assign role: ' + error.message, "Error");
     } finally {
@@ -172,15 +140,17 @@ window.removeRole = async function (btn) {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                const response = await requestClient.post('/roles/assign', {
+                const response = await roleService.assign({
                     role_id: roleId,
                     user_id: userId,
-                    _method: 'DELETE'
+                    remove: true
                 });
+
+                const table = $('#assignedUsersTable').DataTable();
+                const row = btn.closest('tr');
+                table.row(row).remove().draw();
+
                 toastr.success('Role removed successfully.', "Success");
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
             } catch (error) {
                 toastr.error('Failed to remove role: ' + error.message, "Error");
             } finally {

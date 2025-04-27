@@ -4,9 +4,6 @@
             <div class="card shadow-sm">
                 <div class="card-header d-flex align-items-center justify-content-between text-white">
                     <h5 class="mb-0">Roles Management</h5>
-                    <a href="{{ route('roles.create') }}" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus-square-dotted me-2"></i> Add Role
-                    </a>
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
