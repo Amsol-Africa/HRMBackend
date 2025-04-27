@@ -55,4 +55,16 @@
             </div>
         </div>
     </div>
+    <style>
+    .btn-primary {
+        background-color: #0A4B9F;
+        border-color: #0A4B9F;
+        border-radius: 6px;
+    }
+
+    .btn-primary:hover {
+        background-color: #083e84;
+        border-color: #083e84;
+    }
+    </style>
 </x-auth-layout>

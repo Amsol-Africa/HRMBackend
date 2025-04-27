@@ -27,58 +27,6 @@ window.getClients = async function (page = 1) {
     }
 };
 
-window.requestAccess = async function (btn) {
-    btn = $(btn);
-    btn_loader(btn, true);
-
-    const formData = new FormData(document.getElementById("requestAccessForm"));
-
-    try {
-        const response = await businessesService.requestAccess(formData);
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: response.message,
-        });
-        $("#requestAccessForm")[0].reset();
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to send request.',
-        });
-    } finally {
-        btn_loader(btn, false);
-    }
-};
-
-window.grantAccess = async function (btn, requestId) {
-    btn = $(btn);
-    btn_loader(btn, true);
-
-    const formData = new FormData();
-    formData.append('request_id', requestId);
-    formData.append('role', $('#role-' + requestId).val());
-
-    try {
-        const response = await businessesService.grantAccess(formData);
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: response.message,
-        });
-        window.location.reload();
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to grant access.',
-        });
-    } finally {
-        btn_loader(btn, false);
-    }
-};
-
 window.impersonateBusiness = async function (businessSlug) {
     try {
         const response = await businessesService.post(`/businesses/${window.currentBusinessSlug}/clients/${businessSlug}/impersonate`, {});
