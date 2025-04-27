@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="container py-5">
         <div class="card shadow-md">
-            <div class="card-header text-white bg-primary">
+            <div class="card-header text-white">
                 <h3 class="mb-0">Recent Job Applications</h3>
             </div>
             <div class="card-body">
@@ -46,8 +46,10 @@
                     </table>
                 </div>
                 <div class="text-end mt-3">
-                    <button class="btn btn-success" onclick="exportApplications(this)"><i
-                            class="bi bi-file-earmark-arrow-down"></i> Export Report</button>
+                    <button class="btn btn-success" onclick="exportApplications(this)" @if($applications->isEmpty())
+                        disabled @endif>
+                        <i class="bi bi-file-earmark-arrow-down"></i> Export Report
+                    </button>
                 </div>
             </div>
         </div>

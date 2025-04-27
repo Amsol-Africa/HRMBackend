@@ -77,7 +77,7 @@ class JobApplicationService {
 
     async export(data) {
         try {
-            const response = await this.requestClient.post('/applications/export', data, true);
+            const response = await this.requestClient.post('/applications/export', data, true, { responseType: 'blob' });
             return response;
         } catch (error) {
             throw new Error(error.response?.data?.message || 'Failed to export applications');

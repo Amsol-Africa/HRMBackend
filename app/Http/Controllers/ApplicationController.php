@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ApplicationExport;
 
 class ApplicationController extends Controller
 {
@@ -185,32 +187,18 @@ class ApplicationController extends Controller
             $business = Business::where('slug', 'amsol')->first();
 
             if (!$business) {
-                Log::warning('Business with slug amsol not found', [
-                    'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
             if (!$business->api_token) {
-                Log::warning('No API token set for amsol', [
-                    'business_id' => $business->id,
-                ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
             try {
                 if (!Hash::check($validated['api_token'], $business->api_token)) {
-                    Log::warning('Invalid API token for amsol', [
-                        'business_id' => $business->id,
-                        'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                    ]);
                     return RequestResponse::unauthorized('Invalid or unauthorized API token.');
                 }
             } catch (\Exception $e) {
-                Log::error('Token verification failed: ' . $e->getMessage(), [
-                    'business_id' => $business->id,
-                    'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
@@ -267,13 +255,6 @@ class ApplicationController extends Controller
                     }
                 }
 
-                Log::info('External application submitted', [
-                    'email' => $validated['email'],
-                    'job_post_id' => $jobPost->id,
-                    'business_id' => $business->id,
-                    'application_id' => $application->id,
-                ]);
-
                 Mail::to($user->email)->queue(new ApplicationReceived($application));
 
                 return RequestResponse::ok('Application submitted successfully', [
@@ -282,18 +263,11 @@ class ApplicationController extends Controller
                     'status' => $application->stage,
                 ]);
             }, function ($exception) {
-                Log::error('External application submission failed: ' . $exception->getMessage(), [
-                    'email' => $validated['email'],
-                    'job_post_id' => $validated['job_post_id'],
-                ]);
                 return RequestResponse::badRequest('An error occurred while submitting your application: ' . $exception->getMessage());
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             return RequestResponse::badRequest('Validation failed', $e->errors());
         } catch (\Exception $e) {
-            Log::error('Unexpected error in externalStore: ' . $e->getMessage(), [
-                'request' => $request->except('api_token'),
-            ]);
             return RequestResponse::badRequest('An unexpected error occurred.');
         }
     }
@@ -310,7 +284,8 @@ class ApplicationController extends Controller
 
     public function reports()
     {
-        $applications = Application::with('applicant.user', 'jobPost')->latest()->take(10)->get();
+        $business = Business::findBySlug(session('active_business_slug'));
+        $applications = $business->applications()->with('applicant.user', 'jobPost')->latest()->take(10)->get();
         return view('applications.reports', compact('applications'));
     }
 
@@ -423,6 +398,12 @@ class ApplicationController extends Controller
     {
         $business = Business::findBySlug(session('active_business_slug'));
         $query = $business->applications()->with('applicant.user', 'jobPost');
-        return response()->json($query->get());
+        $applications = $query->get();
+
+        if ($applications->isEmpty()) {
+            return response()->json(['message' => 'No applications available to export'], 400);
+        }
+
+        return Excel::download(new ApplicationExport($applications), 'applications_' . now()->format('Y-m-d_His') . '.xlsx');
     }
 }

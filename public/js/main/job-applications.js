@@ -235,7 +235,7 @@ window.exportApplications = async function (btn) {
     btn_loader(btn, true);
     try {
         const response = await jobApplicationService.export({ _token: csrfToken });
-        const url = window.URL.createObjectURL(response);
+        const url = window.URL.createObjectURL(new Blob([response]));
         const a = document.createElement('a');
         a.href = url;
         a.download = `applications_${new Date().toISOString()}.xlsx`;
@@ -245,7 +245,8 @@ window.exportApplications = async function (btn) {
         window.URL.revokeObjectURL(url);
         toastr.success('Applications exported successfully!', "Success");
     } catch (error) {
-        toastr.error('Failed to export applications: ' + error.message, "Error");
+        const message = error.message || 'Failed to export applications';
+        toastr.error(message, "Error");
     } finally {
         btn_loader(btn, false);
     }
