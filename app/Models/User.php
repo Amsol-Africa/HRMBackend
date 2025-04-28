@@ -107,10 +107,9 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         return session('active_role', null);
     }
 
-
     public function requiresTwoFactorAuthentication(): bool
     {
-        return $this->hasRole('business-admin');
+        return $this->hasAnyRole(['business-admin', 'business-hr', 'business-finance']);
     }
 
     public function generateTwoFactorCode(): void

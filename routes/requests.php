@@ -36,6 +36,7 @@ use App\Http\Controllers\KPIsController;
 use App\Http\Controllers\WarningController;
 use App\Http\Controllers\PayGradesController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\EmployeeReliefsController;
 
 Route::post('/business/{businessSlug}/generate-token', [BusinessController::class, 'generateApiToken'])
@@ -54,8 +55,6 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('businesses/{business_slug}')->name('business.clients.')->group(function () {
         Route::prefix('clients')->group(function () {
             Route::post('fetch', [ClientController::class, 'fetch'])->name('fetch');
-            Route::post('request-access', [ClientController::class, 'requestAccess'])->name('request-access');
-            Route::post('grant-access', [ClientController::class, 'grantAccess'])->name('grant-access');
             Route::post('{client_business_slug}/impersonate', [ClientController::class, 'impersonateManagedBusiness'])->name('impersonate');
             Route::post('{client_business_slug}/verify', [ClientController::class, 'verifyBusiness'])->name('verify');
             Route::post('{client_business_slug}/deactivate', [ClientController::class, 'deactivateBusiness'])->name('deactivate');
@@ -381,5 +380,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [RoleController::class, 'update'])->name('update');
         Route::post('destroy', [RoleController::class, 'destroy'])->name('destroy');
         Route::post('assign', [RoleController::class, 'assign'])->name('assign');
+    });
+
+    // surveys
+    Route::prefix('surveys')->name('surveys.')->group(function () {
+        Route::post('/fetch', [SurveyController::class, 'fetch'])->name('fetch');
+        Route::post('/', [SurveyController::class, 'store'])->name('store');
+        Route::post('/{survey}/update', [SurveyController::class, 'update'])->name('update');
+        Route::post('/{survey}/destroy', [SurveyController::class, 'destroy'])->name('destroy');
     });
 });

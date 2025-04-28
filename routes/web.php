@@ -17,6 +17,8 @@ use App\Http\Controllers\KPIsController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\SurveyController;
+use App\Http\Controllers\PublicSurveyController;
 use App\Models\Business;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetchPublic'])->name('jobs.openings');
@@ -28,17 +30,15 @@ Route::get('/business/{businessSlug}/api-token', [BusinessController::class, 'sh
 Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http\Middleware\EnsureTwoFactorAuthenticated::class])->group(function () {
     Route::post('/switch-role', [RoleSwitchController::class, 'switchRole'])->name('switch.role');
 
-    Route::middleware(['ensure_role', 'role:business-admin'])->name('location.')->prefix('location/{location:slug}')->group(function () {
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance'])->name('location.')->prefix('location/{location:slug}')->group(function () {
         Route::get('/payroll/{id}/download-column/{column}/{format}', [PayrollController::class, 'downloadColumn'])->name('payroll.download_column');
     });
 
-    Route::middleware(['ensure_role', 'role:business-admin'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('/clients/{clientBusiness:slug}', [ClientController::class, 'view'])->name('clients.view');
         Route::get('/locations', [DashboardController::class, 'locations'])->name('locations.index');
-        Route::get('/clients/request-access', [ClientController::class, 'showRequestAccess'])->name('clients.request-access');
-        Route::get('/clients/grant-access', [ClientController::class, 'showGrantAccess'])->name('clients.grant-access');
         Route::get('/organization-setup', [BusinessController::class, 'setup'])->name('organization-setup');
         Route::get('/pay-schedule', [DashboardController::class, 'paySchedule'])->name('pay-schedule');
 
@@ -162,6 +162,17 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('/roles/create', [RoleController::class, 'create'])->name('roles.create');
         Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
         Route::get('/roles/{role}/edit', [RoleController::class, 'editView'])->name('roles.edit');
+
+        // surveys
+        Route::prefix('surveys')->name('surveys.')->group(function () {
+            Route::get('/', [SurveyController::class, 'index'])->name('index');
+            Route::get('/create', [SurveyController::class, 'create'])->name('create');
+            Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
+            Route::get('/{survey}/edit', [SurveyController::class, 'edit'])->name('edit');
+            Route::get('/{survey}/preview', [SurveyController::class, 'preview'])->name('preview');
+            Route::get('/{survey}/responses', [SurveyController::class, 'responses'])->name('responses');
+            Route::get('/{survey}/export', [SurveyController::class, 'export'])->name('export');
+        });
     });
 
     Route::middleware(['ensure_role', 'role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
@@ -221,6 +232,12 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('business/{business:slug}/activate', [BusinessController::class, 'activate'])->name('business.activate');
+
+// Public survey routes
+Route::prefix('surveys')->name('surveys.public.')->group(function () {
+    Route::get('/{survey}', [PublicSurveyController::class, 'show'])->name('show');
+    Route::post('/{survey}/submit', [PublicSurveyController::class, 'submit'])->name('submit');
+});
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/requests.php';
