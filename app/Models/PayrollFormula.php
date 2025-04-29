@@ -16,19 +16,19 @@ class PayrollFormula extends Model
 
     protected $fillable = [
         'business_id',
-        'country_code',
+        'country',
         'name',
         'slug',
         'description',
         'formula_type',
         'calculation_basis',
-        'is_progressive',
         'is_statutory',
+        'is_progressive',
         'minimum_amount',
         'limit',
         'round_off',
         'applies_to',
-        'expression',
+        'expression'
     ];
 
     protected $casts = [

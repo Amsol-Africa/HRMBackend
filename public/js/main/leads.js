@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportButtons = document.querySelectorAll('.export-leads');
 
     if (leadsContainer) {
-        getLeads();
+        getLeads(); // Initial load
     }
 
     if (filterInput) {
@@ -65,10 +65,12 @@ function debounce(func, wait) {
 window.getLeads = async function (page = 1, filter = '') {
     const container = $("#leadsTable");
     try {
+        console.log('Fetching leads with filter:', filter, 'page:', page);
         container.html('<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading leads...</div>');
-        const response = await requestClient.post('/crm/leads/fetch', { page, filter });
 
+        const response = await requestClient.post('/crm/leads/fetch', { page, filter });
         let jsonResponse;
+
         if (response instanceof Blob) {
             const text = await response.text();
             jsonResponse = JSON.parse(text);
@@ -76,34 +78,78 @@ window.getLeads = async function (page = 1, filter = '') {
             jsonResponse = response;
         }
 
-        if (typeof jsonResponse.data === 'string') {
-            container.html(jsonResponse.data);
-        } else {
-            throw new Error('Invalid response format from server');
+        console.log('Fetch leads response:', jsonResponse);
+
+        // Validate response
+        if (typeof jsonResponse.data !== 'string') {
+            throw new Error('Invalid response format: Expected HTML string for table data');
         }
 
-        if ($('#leadsDataTable').length) {
-            if ($.fn.DataTable.isDataTable('#leadsDataTable')) {
-                $('#leadsDataTable').DataTable().destroy();
+        // Update container with new table HTML
+        container.html(jsonResponse.data);
+
+        // Handle server message
+        const messageContainer = $('#leads-message');
+        if (jsonResponse.message && messageContainer.length) {
+            messageContainer.text(jsonResponse.message).show();
+        } else if (messageContainer.length) {
+            messageContainer.hide();
+        }
+
+        // Find the table
+        const table = $('#leadsDataTable');
+        if (!table.length) {
+            console.warn('Table #leadsDataTable not found in DOM');
+            container.html('<div class="alert alert-warning">Table not found. Please try again.</div>');
+            return;
+        }
+
+        // Check if the table is empty
+        const isEmpty = jsonResponse.count === 0 || table.data('empty') === 'true';
+        console.log('Table empty state:', isEmpty, 'Count:', jsonResponse.count);
+
+        // Destroy existing DataTable if it exists
+        if ($.fn.DataTable.isDataTable('#leadsDataTable')) {
+            console.log('Destroying existing DataTable');
+            $('#leadsDataTable').DataTable().destroy();
+            table.empty(); // Clear any residual content
+        }
+
+        // Skip DataTables initialization for empty tables
+        if (isEmpty) {
+            console.log('Skipping DataTables initialization for empty table');
+            bindDeleteButtons();
+            return;
+        }
+
+        // Ensure the table is fully rendered before initializing DataTables
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        console.log('Table HTML before DataTables:', table.html());
+
+        // Initialize DataTables
+        table.DataTable({
+            responsive: true,
+            pageLength: 10,
+            order: [[0, 'desc']],
+            columnDefs: [{ targets: '_all', searchable: true }],
+            language: {
+                emptyTable: `No leads available. <a href="/business/${document.getElementById('businessSlug')?.value || 'default'}/crm/leads/create">Create a new lead</a>.`,
+                loadingRecords: "Loading..."
             }
+        });
 
-            $('#leadsDataTable').DataTable({
-                responsive: true,
-                pageLength: 10,
-                order: [[0, 'desc']],
-                columnDefs: [{ targets: '_all', searchable: true }],
-                language: {
-                    emptyTable: "No leads available",
-                    loadingRecords: "Loading..."
-                }
-            });
-        }
+        console.log('DataTable initialized successfully');
 
         bindDeleteButtons();
     } catch (error) {
-        console.error("Error loading leads:", error);
-        container.html(`<div class="alert alert-danger">Error loading leads: ${error.message}</div>`);
-        toastr.error(`Failed to load leads: ${error.message}`, "Error");
+        console.error('Error loading leads:', error.message, error.stack);
+        container.html(`
+            <div class="alert alert-danger">
+                Error loading leads: ${error.message}. Please try again later.
+            </div>
+        `);
+        toastr.error(`Failed to load leads: ${error.message}`, 'Error');
     }
 };
 

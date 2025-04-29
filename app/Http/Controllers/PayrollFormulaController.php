@@ -25,15 +25,20 @@ class PayrollFormulaController extends Controller
             return redirect()->back()->with('error', 'Business not found.');
         }
 
-        // Fetch both business-specific and system-wide formulas
-        $formulas = PayrollFormula::with('brackets')
-            ->where(function ($query) use ($business) {
-                $query->where('business_id', $business->id)->orWhereNull('business_id');
-            })
-            ->get();
+        // Fetch formulas based on business slug
+        $formulas = $this->getFormulasForBusiness($business);
 
         $employees = Employee::where('business_id', $business->id)->with('payrollDetail')->get();
-        $countries = ['KE' => 'Kenya', 'NG' => 'Nigeria', 'UG' => 'Uganda', 'TZ' => 'Tanzania', 'RW' => 'Rwanda', 'SN' => 'Senegal', 'ZA' => 'South Africa', 'ET' => 'Ethiopia'];
+        $countries = [
+            'Kenya' => 'Kenya',
+            'Nigeria' => 'Nigeria',
+            'Uganda' => 'Uganda',
+            'Tanzania' => 'Tanzania',
+            'Rwanda' => 'Rwanda',
+            'Senegal' => 'Senegal',
+            'South Africa' => 'South Africa',
+            'Ethiopia' => 'Ethiopia'
+        ];
 
         return view('payroll-formulas.index', compact('formulas', 'business', 'page', 'employees', 'countries'));
     }
@@ -41,7 +46,7 @@ class PayrollFormulaController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'country_code' => 'required|in:KE,NG,UG,TZ,RW,SN,ZA,ET',
+            'country' => 'required|in:Kenya,Nigeria,Uganda,Tanzania,Rwanda,Senegal,South Africa,Ethiopia',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'formula_type' => 'required|in:rate,fixed,progressive,expression',
@@ -63,13 +68,17 @@ class PayrollFormulaController extends Controller
 
         return $this->handleTransaction(function () use ($validated, $request) {
             $business = Business::findBySlug(session('active_business_slug'));
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.');
+            }
+
             $expression = $validated['formula_type'] === 'expression'
                 ? "max({$validated['calculation_basis']} * " . ($validated['expression_rate'] / 100) . ", " . ($validated['expression_minimum'] ?? 0) . ")"
                 : null;
 
             $formula = PayrollFormula::create([
-                'business_id' => $business ? $business->id : null,
-                'country_code' => $validated['country_code'],
+                'business_id' => $business->id,
+                'country' => $validated['country'],
                 'name' => $validated['name'],
                 'slug' => Str::slug($validated['name']),
                 'description' => $validated['description'],
@@ -108,14 +117,10 @@ class PayrollFormulaController extends Controller
                 return RequestResponse::badRequest('Business not found.');
             }
 
-            // Fetch both business-specific and system-wide formulas
-            $formulas = PayrollFormula::with('brackets')
-                ->where(function ($query) use ($business) {
-                    $query->where('business_id', $business->id)->orWhereNull('business_id');
-                })
-                ->get();
+            // Fetch formulas based on business slug
+            $formulas = $this->getFormulasForBusiness($business);
 
-            $formulasTable = view('payroll-formulas._table', compact('formulas'))->render();
+            $formulasTable = view('payroll-formulas._table', compact('formulas', 'business'))->render();
 
             return RequestResponse::ok('Payroll formulas fetched successfully.', [
                 'html' => $formulasTable,
@@ -138,6 +143,11 @@ class PayrollFormulaController extends Controller
             return RequestResponse::badRequest('Business not found.');
         }
 
+        // Restrict edit for non-amsol businesses
+        if ($business->slug !== 'amsol') {
+            return RequestResponse::forbidden('Only Amsol can edit payroll formulas.');
+        }
+
         $formula = null;
         if (!empty($validatedData['formula_id'])) {
             $formula = PayrollFormula::with('brackets')
@@ -148,7 +158,16 @@ class PayrollFormulaController extends Controller
                 ->firstOrFail();
         }
 
-        $countries = ['KE' => 'Kenya', 'NG' => 'Nigeria', 'UG' => 'Uganda', 'TZ' => 'Tanzania', 'RW' => 'Rwanda', 'SN' => 'Senegal', 'ZA' => 'South Africa', 'ET' => 'Ethiopia'];
+        $countries = [
+            'Kenya' => 'Kenya',
+            'Nigeria' => 'Nigeria',
+            'Uganda' => 'Uganda',
+            'Tanzania' => 'Tanzania',
+            'Rwanda' => 'Rwanda',
+            'Senegal' => 'Senegal',
+            'South Africa' => 'South Africa',
+            'Ethiopia' => 'Ethiopia'
+        ];
         $form = view('payroll-formulas._form', compact('formula', 'countries'))->render();
         return RequestResponse::ok('Payroll formula form loaded successfully.', $form);
     }
@@ -157,7 +176,7 @@ class PayrollFormulaController extends Controller
     {
         $validated = $request->validate([
             'formula_id' => 'required|exists:payroll_formulas,id',
-            'country_code' => 'required|in:KE,NG,UG,TZ,RW,SN,ZA,ET',
+            'country' => 'required|in:Kenya,Nigeria,Uganda,Tanzania,Rwanda,Senegal,South Africa,Ethiopia',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'formula_type' => 'required|in:rate,fixed,progressive,expression',
@@ -179,6 +198,15 @@ class PayrollFormulaController extends Controller
 
         return $this->handleTransaction(function () use ($validated, $id) {
             $business = Business::findBySlug(session('active_business_slug'));
+            if (!$business) {
+                return RequestResponse::badRequest('Business not found.');
+            }
+
+            // Restrict update for non-amsol businesses
+            if ($business->slug !== 'amsol') {
+                return RequestResponse::forbidden('Only Amsol can update payroll formulas.');
+            }
+
             $formula = PayrollFormula::where('id', $id)
                 ->where(function ($query) use ($business) {
                     $query->where('business_id', $business->id)->orWhereNull('business_id');
@@ -194,7 +222,7 @@ class PayrollFormulaController extends Controller
                 : null;
 
             $formula->update([
-                'country_code' => $validated['country_code'],
+                'country' => $validated['country'],
                 'name' => $validated['name'],
                 'slug' => Str::slug($validated['name']),
                 'description' => $validated['description'],
@@ -238,12 +266,23 @@ class PayrollFormulaController extends Controller
                 return RequestResponse::badRequest('Business not found.');
             }
 
+            // Restrict delete for non-amsol businesses
+            if ($business->slug !== 'amsol') {
+                return RequestResponse::forbidden('Only Amsol can delete payroll formulas.');
+            }
+
             $formula = PayrollFormula::where('id', $id)
-                ->where('business_id', $business->id)
+                ->where(function ($query) use ($business) {
+                    $query->where('business_id', $business->id)->orWhereNull('business_id');
+                })
                 ->firstOrFail();
 
             if ($formula->id != $validatedData['formula_id']) {
                 return RequestResponse::badRequest('Formula ID mismatch.');
+            }
+
+            if ($formula->is_statutory) {
+                return RequestResponse::badRequest('Statutory formulas cannot be deleted.');
             }
 
             $formula->brackets()->delete();
@@ -270,7 +309,9 @@ class PayrollFormulaController extends Controller
             $employee = Employee::where('business_id', $business->id)
                 ->where('id', $validatedData['employee_id'])
                 ->firstOrFail();
-            $formula = PayrollFormula::where('business_id', $business->id)
+            $formula = PayrollFormula::where(function ($query) use ($business) {
+                $query->where('business_id', $business->id)->orWhereNull('business_id');
+            })
                 ->where('id', $validatedData['formula_id'])
                 ->firstOrFail();
 
@@ -294,5 +335,25 @@ class PayrollFormulaController extends Controller
         return response()->json([
             'html' => view('payroll-formulas._bracket', compact('index', 'bracket'))->render()
         ]);
+    }
+
+    /**
+     * Fetch payroll formulas based on business slug and country.
+     */
+    protected function getFormulasForBusiness(Business $business)
+    {
+        if ($business->slug === 'amsol') {
+            // Amsol fetches all formulas
+            return PayrollFormula::with('brackets')->get();
+        }
+
+        // Non-amsol businesses fetch formulas matching their country
+        return PayrollFormula::with('brackets')
+            ->where(function ($query) use ($business) {
+                $query->where('business_id', $business->id)
+                    ->orWhereNull('business_id');
+            })
+            ->where('country', $business->country)
+            ->get();
     }
 }

@@ -12,14 +12,16 @@
                 <th scope="col" class="text-dark fw-semibold">Limit</th>
                 <th scope="col" class="text-dark fw-semibold">Round Off</th>
                 <th scope="col" class="text-dark fw-semibold">Applies To</th>
+                @if($business->slug === 'amsol')
                 <th scope="col" class="text-dark fw-semibold text-end">Actions</th>
+                @endif
             </tr>
         </thead>
         <tbody>
             @forelse ($formulas as $formula)
             <tr>
                 <td>{{ $formula->name }}</td>
-                <td>{{ $formula->country_code }}</td>
+                <td>{{ $formula->country }}</td>
                 <td>{{ ucfirst($formula->formula_type) }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', $formula->calculation_basis)) }}</td>
                 <td>{{ $formula->is_statutory ? 'Yes' : 'No' }}</td>
@@ -31,6 +33,7 @@
                 <td>{{ ucfirst($formula->applies_to) }}</td>
                 <td class="text-end">
                     <div class="btn-group" role="group">
+                        @if($business->slug === 'amsol')
                         <button class="btn btn-sm btn-outline-warning me-2" data-formula="{{ $formula->id }}"
                             onclick="editFormula(this)">
                             <i class="fa fa-edit"></i> Edit
@@ -39,6 +42,7 @@
                             onclick="deleteFormula(this)" {{ $formula->is_statutory ? 'disabled' : '' }}>
                             <i class="fa fa-trash"></i> Delete
                         </button>
+                        @endif
                     </div>
                 </td>
             </tr>

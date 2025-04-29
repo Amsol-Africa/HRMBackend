@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Models\Lead;
 
 class ContactSubmissionController extends Controller
 {
@@ -21,39 +22,45 @@ class ContactSubmissionController extends Controller
         try {
             $validated = $request->validate([
                 'api_token' => 'required|string',
-                'first_name' => 'required|string|max:100',
-                'last_name' => 'required|string|max:100',
+                'business_slug' => 'required|string',
+                'first_name' => 'nullable|string|max:255',
+                'last_name' => 'nullable|string|max:255',
                 'email' => 'required|email|max:255',
-                'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
+                'phone' => 'nullable|string|max:255',
                 'company_name' => 'nullable|string|max:255',
-                'country' => 'required|string|max:100',
-                'inquiry_type' => 'required|string|in:General,Support,Sales,Partnership',
-                'message' => 'required|string|max:5000',
+                'country' => 'nullable|string|max:255',
+                'inquiry_type' => 'required|string|max:255',
+                'message' => 'required|string',
+                'utm_source' => 'nullable|string|max:255',
+                'utm_medium' => 'nullable|string|max:255',
+                'utm_campaign' => 'nullable|string|max:255',
             ], [
                 'phone.regex' => 'The phone number must be a valid international format (e.g., +1234567890).',
-                'inquiry_type.in' => 'The inquiry type must be one of: General, Support, Sales, Partnership.',
             ]);
 
-            $business = Business::where('slug', 'amsol')->first();
+            $business = Business::where('slug', $validated['business_slug'])->first();
 
             if (!$business) {
-                Log::warning('Business with slug amsol not found', [
+                Log::warning('Business not found', [
+                    'slug' => $validated['business_slug'],
                     'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
                 ]);
-                return RequestResponse::unauthorized('Invalid or unauthorized API token.');
+                return RequestResponse::unauthorized('Invalid business or unauthorized API token.');
             }
 
             if (!$business->api_token) {
-                Log::warning('No API token set for amsol', [
+                Log::warning('No API token set for business', [
                     'business_id' => $business->id,
+                    'slug' => $validated['business_slug'],
                 ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
             try {
                 if (!Hash::check($validated['api_token'], $business->api_token)) {
-                    Log::warning('Invalid API token for amsol', [
+                    Log::warning('Invalid API token for business', [
                         'business_id' => $business->id,
+                        'slug' => $validated['business_slug'],
                         'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
                     ]);
                     return RequestResponse::unauthorized('Invalid or unauthorized API token.');
@@ -61,6 +68,7 @@ class ContactSubmissionController extends Controller
             } catch (\Exception $e) {
                 Log::error('Token verification failed: ' . $e->getMessage(), [
                     'business_id' => $business->id,
+                    'slug' => $validated['business_slug'],
                     'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
                 ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
@@ -69,18 +77,34 @@ class ContactSubmissionController extends Controller
             return $this->handleTransaction(function () use ($validated, $business) {
                 $submission = ContactSubmission::create([
                     'business_id' => $business->id,
-                    'first_name' => $validated['first_name'],
-                    'last_name' => $validated['last_name'],
+                    'first_name' => $validated['first_name'] ?? '',
+                    'last_name' => $validated['last_name'] ?? '',
                     'email' => $validated['email'],
-                    'phone' => $validated['phone'],
-                    'company_name' => $validated['company_name'],
-                    'country' => $validated['country'],
+                    'phone' => $validated['phone'] ?? null,
+                    'company_name' => $validated['company_name'] ?? null,
+                    'country' => $validated['country'] ?? null,
                     'inquiry_type' => $validated['inquiry_type'],
                     'message' => $validated['message'],
-                    'status' => 'pending',
+                    'source' => 'api',
+                    'utm_source' => $validated['utm_source'] ?? null,
+                    'utm_medium' => $validated['utm_medium'] ?? null,
+                    'utm_campaign' => $validated['utm_campaign'] ?? null,
+                    'status' => 'new',
                 ]);
 
-                Log::info('Contact submission created', [
+                // Create a corresponding Lead with business_id
+                Lead::create([
+                    'business_id' => $business->id, // Set business_id
+                    'contact_submission_id' => $submission->id,
+                    'name' => trim($submission->first_name . ' ' . $submission->last_name) ?: 'Unknown',
+                    'email' => $submission->email,
+                    'phone' => $submission->phone,
+                    'source' => 'api',
+                    'status' => $submission->status,
+                    'user_id' => null, // No authenticated user for API
+                ]);
+
+                Log::info('Contact submission and lead created', [
                     'submission_id' => $submission->id,
                     'email' => $validated['email'],
                     'business_id' => $business->id,

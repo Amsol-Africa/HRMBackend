@@ -571,13 +571,30 @@ class CrmController extends Controller
     public function fetchLeads(Request $request)
     {
         $businessSlug = session('active_business_slug');
+
+        if (!$businessSlug) {
+            return response()->json([
+                'error' => 'No active business selected',
+                'data' => view('crm.leads._table', ['leads' => collect([])])->render()
+            ], 400);
+        }
+
+        $business = \App\Models\Business::findBySlug($businessSlug);
+        if (!$business) {
+            return response()->json([
+                'error' => 'Invalid business slug',
+                'data' => view('crm.leads._table', ['leads' => collect([])])->render()
+            ], 404);
+        }
+
         $query = Lead::query()->orderBy('created_at', 'desc');
 
-        if ($businessSlug) {
-            $business = \App\Models\Business::findBySlug($businessSlug);
-            $query->whereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)))
-                ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id));
-        }
+        $query->where(function ($q) use ($business) {
+            $q->where('business_id', $business->id)
+                ->orWhereHas('contactSubmission', fn($q) => $q->where('business_id', $business->id))
+                ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id))
+                ->orWhereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)));
+        });
 
         if ($request->has('filter')) {
             $filter = $request->input('filter');
@@ -587,8 +604,14 @@ class CrmController extends Controller
         }
 
         $leads = $query->get();
+
         $table = view('crm.leads._table', compact('leads'))->render();
-        return RequestResponse::ok('Ok', $table);
+
+        return response()->json([
+            'data' => $table,
+            'count' => $leads->count(),
+            'message' => $leads->isEmpty() ? 'No leads found for this business.' : null
+        ]);
     }
 
     public function storeLead(Request $request)

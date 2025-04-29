@@ -1,4 +1,5 @@
-<table id="leadsDataTable" class="table table-bordered table-hover">
+<table id="leadsDataTable" class="table table-bordered table-hover"
+    data-empty="{{ $leads->isEmpty() ? 'true' : 'false' }}">
     <thead>
         <tr>
             <th>Name</th>
@@ -35,7 +36,9 @@
         </tr>
         @empty
         <tr>
-            <td colspan="6" class="text-center">No leads available</td>
+            <td colspan="6" class="text-center">
+                No leads available.
+            </td>
         </tr>
         @endforelse
     </tbody>

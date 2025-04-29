@@ -12,12 +12,10 @@
         <div class="col-md-6">
             <label for="country_code" class="form-label fw-medium text-dark">Country <span
                     class="text-danger">*</span></label>
-            <select name="country_code" id="country_code" class="form-select" required>
-                @foreach($countries as $code => $name)
-                <option value="{{ $code }}"
-                    {{ isset($formula) && $formula->country_code == $code ? 'selected' : ($code == 'KE' ? 'selected' : '') }}>
-                    {{ $name }}
-                </option>
+            <select name="country" class="form-control">
+                @foreach($countries as $value => $label)
+                <option value="{{ $value }}" {{ old('country', $formula->country ?? '') == $value ? 'selected' : '' }}>
+                    {{ $label }}</option>
                 @endforeach
             </select>
         </div>
