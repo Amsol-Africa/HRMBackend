@@ -20,6 +20,11 @@ class Campaign extends Model
         'end_date',
         'status',
         'has_survey',
+        'survey_config',
+    ];
+
+    protected $casts = [
+        'survey_config' => 'array',
     ];
 
     public function business()

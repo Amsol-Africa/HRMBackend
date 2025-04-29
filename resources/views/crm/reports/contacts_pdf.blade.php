@@ -2,20 +2,26 @@
 <html>
 
 <head>
-    <title>Contact Submissions Report</title>
+    <title>Contacts Report - {{ $business->company_name }}</title>
     <style>
     body {
         font-family: Arial, sans-serif;
+        font-size: 12px;
+    }
+
+    h1 {
+        text-align: center;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
+        margin-top: 20px;
     }
 
     th,
     td {
-        border: 1px solid #ddd;
+        border: 1px solid #000;
         padding: 8px;
         text-align: left;
     }
@@ -27,7 +33,7 @@
 </head>
 
 <body>
-    <h1>Contact Submissions Report</h1>
+    <h1>Contacts Report - {{ $business->company_name }}</h1>
     <table>
         <thead>
             <tr>
@@ -35,21 +41,31 @@
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
+                <th>Company</th>
+                <th>Country</th>
+                <th>Inquiry Type</th>
                 <th>Status</th>
                 <th>Source</th>
-                <th>Created At</th>
+                <th>UTM Source</th>
+                <th>UTM Medium</th>
+                <th>UTM Campaign</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($contacts as $index => $contact)
+            @foreach ($contacts as $index => $submission)
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td>{{ $contact->name }}</td>
-                <td>{{ $contact->email }}</td>
-                <td>{{ $contact->phone ?? 'N/A' }}</td>
-                <td>{{ ucfirst($contact->status) }}</td>
-                <td>{{ $contact->source ?? 'Unknown' }}</td>
-                <td>{{ $contact->created_at->format('Y-m-d H:i:s') }}</td>
+                <td>{{ trim($submission->first_name . ' ' . $submission->last_name) ?: 'Unknown' }}</td>
+                <td>{{ $submission->email }}</td>
+                <td>{{ $submission->phone ?? 'N/A' }}</td>
+                <td>{{ $submission->company_name ?? 'N/A' }}</td>
+                <td>{{ $submission->country ?? 'N/A' }}</td>
+                <td>{{ $submission->inquiry_type }}</td>
+                <td>{{ ucfirst($submission->status) }}</td>
+                <td>{{ $submission->source ?? 'Unknown' }}</td>
+                <td>{{ $submission->utm_source ?? 'N/A' }}</td>
+                <td>{{ $submission->utm_medium ?? 'N/A' }}</td>
+                <td>{{ $submission->utm_campaign ?? 'N/A' }}</td>
             </tr>
             @endforeach
         </tbody>

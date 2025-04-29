@@ -1,4 +1,4 @@
-<table class="table table-hover table-striped" id="contactsTable">
+<table class="table table-hover table-striped" id="contactsDataTable">
     <thead class="table-dark">
         <tr>
             <th>#</th>
@@ -17,7 +17,7 @@
         <tr>
             <td>{{ $index + 1 }}</td>
             <td>{{ trim($submission->first_name . ' ' . $submission->last_name) ?: 'N/A' }}</td>
-            <td>{{ $submission->email }}</td>
+            <td>{{ $submission->email ?? 'N/A' }}</td>
             <td>{{ $submission->phone ?? 'N/A' }}</td>
             <td>{{ $submission->company_name ?? 'N/A' }}</td>
             <td>{{ $submission->inquiry_type ?? 'N/A' }}</td>
@@ -39,8 +39,7 @@
                         class="btn btn-info btn-sm">
                         <i class="bi bi-eye"></i>
                     </a>
-                    <button class="btn btn-danger btn-sm" data-submission="{{ $submission->id }}"
-                        onclick="deleteContact(this)">
+                    <button class="btn btn-danger btn-sm delete-contact" data-id="{{ $submission->id }}">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>

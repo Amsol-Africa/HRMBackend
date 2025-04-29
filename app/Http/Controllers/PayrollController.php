@@ -45,6 +45,7 @@ use App\Models\PayrollSettings;
 use App\Models\EmployeePaymentDetail;
 use Illuminate\Support\Facades\Http;
 use App\Exports\P9Export;
+use App\Exports\BankAdviceExport;
 
 use function Illuminate\Log\log;
 
@@ -2584,6 +2585,61 @@ class PayrollController extends Controller
         } catch (\Exception $e) {
             \Log::error("Report generation failed for type {$type}: " . $e->getMessage());
             abort(500, 'Failed to generate report.');
+        }
+    }
+
+    public function downloadBankAdvice($year, $month, Request $request)
+    {
+
+        $year = $request->year;
+        $month = $request->month;
+        \Log::info("downloadBankAdvice called: business_slug=" . session('active_business_slug') . ", year=$request->year, month=$request->month, format=" . $request->format);
+
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            \Log::error("Business not found for slug: " . session('active_business_slug'));
+            abort(404, 'Business not found.');
+        }
+
+        $month = str_pad((int)$month, 2, '0', STR_PAD_LEFT);
+
+        $format = $request->format;
+        $payroll = Payroll::where('business_id', $business->id)
+            ->where('payrun_year', $year)
+            ->where('payrun_month', $month)
+            ->with(['employeePayrolls.employee.paymentDetails', 'business'])
+            ->firstOrFail();
+
+        switch (strtolower($format)) {
+            case 'pdf':
+                if (!view()->exists("payroll.reports.bank_advice")) {
+                    \Log::error("Bank advice view not found: payroll.reports.bank_advice");
+                    abort(404, 'Bank advice view not found.');
+                }
+
+                try {
+                    $pdf = Pdf::loadView('payroll.reports.bank_advice', [
+                        'payroll' => $payroll,
+                    ])->setPaper('a4', 'landscape');
+
+                    return $pdf->download("bank_advice_{$payroll->payrun_year}_{$payroll->payrun_month}.pdf");
+                } catch (\Exception $e) {
+                    \Log::error("PDF generation failed: " . $e->getMessage());
+                    abort(500, 'Failed to generate PDF.');
+                }
+
+            case 'csv':
+            case 'xlsx':
+                try {
+                    return Excel::download(new BankAdviceExport($payroll), "bank_advice_{$payroll->payrun_year}_{$payroll->payrun_month}.{$format}");
+                } catch (\Exception $e) {
+                    \Log::error("Excel/CSV export failed: " . $e->getMessage());
+                    abort(500, 'Failed to export data.');
+                }
+
+            default:
+                \Log::error("Unsupported format: $format");
+                abort(400, 'Unsupported format.');
         }
     }
 

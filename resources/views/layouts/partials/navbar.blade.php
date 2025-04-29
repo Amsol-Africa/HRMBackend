@@ -334,24 +334,6 @@
                 </ul>
             </li>
 
-            <!-- Feedback Management Dropdown (Surveys) -->
-            <li class="slide has-sub {{ request()->routeIs('business.surveys.*') ? 'active open' : '' }}">
-                <a href="javascript:void(0);"
-                    class="sidebar__menu-item {{ request()->routeIs('business.surveys.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-angle-down side-menu__angle"></i>
-                    <div class="side-menu__icon"><i class="fa-solid fa-poll"></i></div>
-                    <span class="sidebar__menu-label">Feedback Management</span>
-                </a>
-                <ul class="sidebar-menu child1 {{ request()->routeIs('business.surveys.*') ? 'active' : '' }}">
-                    <li class="slide {{ request()->routeIs('business.surveys.index') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item {{ request()->routeIs('business.surveys.index') ? 'active' : '' }}"
-                            href="{{ route('business.surveys.index', $currentBusiness->slug) }}">
-                            Manage Surveys
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
             <!-- CRM -->
             <li class="slide has-sub {{ request()->routeIs('business.crm.*') ? 'active open' : '' }}">
                 <a href="javascript:void(0);" class="sidebar__menu-item">
@@ -376,12 +358,6 @@
                         <a class="sidebar__menu-item"
                             href="{{ route('business.crm.leads.index', $currentBusiness->slug) }}">
                             Leads
-                        </a>
-                    </li>
-                    <li class="slide {{ request()->routeIs('business.crm.reports.*') ? 'active' : '' }}">
-                        <a class="sidebar__menu-item"
-                            href="{{ route('business.crm.reports.index', $currentBusiness->slug) }}">
-                            Reports
                         </a>
                     </li>
                 </ul>

@@ -316,63 +316,63 @@
     @push('scripts')
     <script src="{{ asset('js/main/payroll-process.js') }}"></script>
     <script>
-    function toggleSelectAll(checkbox) {
-        const isChecked = $(checkbox).is(':checked');
-        $('#employeeTableBody .employee-checkbox').prop('checked', isChecked);
-        updateExemptedEmployees();
-    }
-
-    function updateExemptedEmployees() {
-        const exempted = {};
-        $('#employeeTableBody .employee-checkbox').each(function() {
-            const employeeId = $(this).data('employee-id');
-            exempted[employeeId] = $(this).is(':checked') ? 0 : 1;
-        });
-        $('#exemptedEmployees').val(JSON.stringify(exempted));
-    }
-
-    function fetchEmployees() {
-        const formData = new FormData(document.getElementById('payrollForm'));
-        $.ajax({
-            url: '/payroll/fetch',
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function(response) {
-                if (response.message === 'success') {
-                    $('#employeeTableBody').html(response.data.html);
-                    updateExemptedEmployees();
-                    console.log(response);
-                } else {
-                    Swal.fire('Error!', response.message || 'Failed to fetch employees.', 'error');
-                }
-            },
-            error: function(xhr) {
-                Swal.fire('Error!', xhr.responseJSON?.message || 'Failed to fetch employees.', 'error');
-            }
-        });
-    }
-
-    function togglePayrollSettings() {
-        const $settingsSection = $('#payrollSettingsSection');
-        const $form = $('#payrollForm');
-        if ($settingsSection.is(':visible')) {
-            $settingsSection.hide();
-            $form.show();
-        } else {
-            configurePayrollSettings();
-            $settingsSection.show();
-            $form.hide();
+        function toggleSelectAll(checkbox) {
+            const isChecked = $(checkbox).is(':checked');
+            $('#employeeTableBody .employee-checkbox').prop('checked', isChecked);
+            updateExemptedEmployees();
         }
-    }
 
-    $(document).ready(function() {
-        updateExemptedEmployees();
-        $('#payrollForm').on('submit', function(e) {
-            e.preventDefault();
+        function updateExemptedEmployees() {
+            const exempted = {};
+            $('#employeeTableBody .employee-checkbox').each(function() {
+                const employeeId = $(this).data('employee-id');
+                exempted[employeeId] = $(this).is(':checked') ? 0 : 1;
+            });
+            $('#exemptedEmployees').val(JSON.stringify(exempted));
+        }
+
+        function fetchEmployees() {
+            const formData = new FormData(document.getElementById('payrollForm'));
+            $.ajax({
+                url: '/payroll/fetch',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.message === 'success') {
+                        $('#employeeTableBody').html(response.data.html);
+                        updateExemptedEmployees();
+                        console.log(response);
+                    } else {
+                        Swal.fire('Error!', response.message || 'Failed to fetch employees.', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    Swal.fire('Error!', xhr.responseJSON?.message || 'Failed to fetch employees.', 'error');
+                }
+            });
+        }
+
+        function togglePayrollSettings() {
+            const $settingsSection = $('#payrollSettingsSection');
+            const $form = $('#payrollForm');
+            if ($settingsSection.is(':visible')) {
+                $settingsSection.hide();
+                $form.show();
+            } else {
+                configurePayrollSettings();
+                $settingsSection.show();
+                $form.hide();
+            }
+        }
+
+        $(document).ready(function() {
+            updateExemptedEmployees();
+            $('#payrollForm').on('submit', function(e) {
+                e.preventDefault();
+            });
         });
-    });
     </script>
     @endpush
 </x-app-layout>

@@ -20,7 +20,7 @@
             <td>{{ ucfirst($lead->status) }}</td>
             <td>{{ $lead->created_at->format('Y-m-d H:i:s') }}</td>
             <td>
-                <a href="{{ route('business.crm.leads.view', ['business' => Auth::user()->currentBusiness->slug, 'lead' => $lead->id]) }}"
+                <a href="{{ route('business.crm.leads.view', ['business' => $currentBusiness->slug, 'lead' => $lead->id]) }}"
                     class="btn btn-sm btn-outline-primary">View</a>
             </td>
         </tr>

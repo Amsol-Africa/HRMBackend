@@ -10,24 +10,35 @@ class Lead extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'contact_submission_id',
+        'business_id',
         'campaign_id',
+        'contact_submission_id',
+        'user_id',
         'name',
         'email',
         'phone',
+        'country',
+        'message',
+        'source',
         'status',
         'label',
-        'source'
+        'survey_responses',
     ];
 
     protected $casts = [
+        'survey_responses' => 'array',
         'status' => 'string',
+        'label' => 'string',
     ];
 
-    public function user()
+    public function business()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Business::class);
+    }
+
+    public function campaign()
+    {
+        return $this->belongsTo(Campaign::class);
     }
 
     public function contactSubmission()
@@ -35,9 +46,9 @@ class Lead extends Model
         return $this->belongsTo(ContactSubmission::class);
     }
 
-    public function campaign()
+    public function user()
     {
-        return $this->belongsTo(Campaign::class);
+        return $this->belongsTo(User::class);
     }
 
     public function activities()

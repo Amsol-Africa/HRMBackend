@@ -23,27 +23,31 @@ class SurveysExport implements FromCollection, WithHeadings, WithMapping
 
     public function headings(): array
     {
-        return [
-            'ID',
-            'Name',
-            'Email',
-            'Country',
-            'Feedback',
-            'Status',
-            'Submitted At',
-        ];
+        $headings = ['ID', 'Name', 'Email', 'Country', 'Feedback', 'Status', 'Submitted At'];
+        if ($this->leads->isNotEmpty()) {
+            $firstLead = $this->leads->first();
+            foreach ($firstLead->survey_responses ?? [] as $field) {
+                $headings[] = $field['label'];
+            }
+        }
+        return $headings;
     }
 
     public function map($lead): array
     {
-        return [
+        $row = [
             $lead->id,
             $lead->name,
             $lead->email,
             $lead->country,
-            $lead->message,
+            $lead->feedback,
             $lead->status,
             $lead->created_at->toDateTimeString(),
         ];
+        // Add response values
+        foreach ($lead->survey_responses ?? [] as $field) {
+            $row[] = $field['value'] ?? 'N/A';
+        }
+        return $row;
     }
 }

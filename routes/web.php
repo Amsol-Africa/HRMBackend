@@ -71,6 +71,7 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('/payroll/payslip/{employee_id}', [PayrollController::class, 'viewPayslip'])->name('payroll.payslip');
 
         Route::get('/payroll/download-p9/{year}/{format}', [PayrollController::class, 'downloadP9'])->name('payroll.download_p9');
+        Route::get('/payroll/download-bank-advice/{year}/{month}/{format}', [PayrollController::class, 'downloadBankAdvice'])->name('payroll.download_bank_advice');
         Route::get('/payroll/p9/{employeeId}/{year}/{format}', [PayrollController::class, 'downloadSingleP9'])->name('payroll.download_single_p9');
 
         Route::post('/payroll/send-payslips', [PayrollController::class, 'sendPayslips'])->name('payroll.send_payslips');
@@ -175,8 +176,14 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/{survey}/export', [SurveyController::class, 'export'])->name('export');
         });
 
-        // CRM
         Route::prefix('crm')->name('crm.')->group(function () {
+
+            // Move export route to the top to avoid precedence issues
+            Route::get('reports/export/{type}/{format}', [CrmController::class, 'exportReport'])
+                ->name('reports.export')
+                ->where(['type' => 'leads|campaigns|contacts', 'format' => 'xlsx|csv|pdf']);
+
+
             Route::get('/contacts', [CrmController::class, 'contacts'])->name('contacts.index');
             Route::get('/contacts/create', [CrmController::class, 'createContact'])->name('contacts.create');
             Route::get('/contacts/{submission}', [CrmController::class, 'viewContact'])->name('contacts.view');
@@ -185,13 +192,13 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/campaigns/create', [CrmController::class, 'createCampaign'])->name('campaigns.create');
             Route::get('/campaigns/{campaign}', [CrmController::class, 'viewCampaign'])->name('campaigns.view');
             Route::get('/campaigns/{campaign}/analytics', [CrmController::class, 'analytics'])->name('campaigns.analytics');
+            Route::get('/campaigns/{campaign}/surveys/export', [CrmController::class, 'exportSurveys'])->name('campaigns.surveys.export');
+            Route::get('/campaigns/{campaign}/surveys/create', [CrmController::class, 'createSurvey'])->name('campaigns.surveys.create');
+            Route::post('/campaigns/{campaign}/surveys/store', [CrmController::class, 'storeSurvey'])->name('campaigns.surveys.store');
 
             Route::get('/leads', [CrmController::class, 'leads'])->name('leads.index');
             Route::get('/leads/create', [CrmController::class, 'createLead'])->name('leads.create');
             Route::get('/leads/{lead}', [CrmController::class, 'viewLead'])->name('leads.view');
-
-            Route::get('/reports', [CrmController::class, 'reports'])->name('reports.index');
-            Route::get('/reports/export/{type}/{format}', [CrmController::class, 'exportReport'])->name('reports.export');
         });
     });
 

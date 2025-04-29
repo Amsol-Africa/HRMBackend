@@ -118,16 +118,25 @@
     <!-- Header -->
     <div class="header">
         <div class="left">
-            @if($entityType === 'business' && $entity->logo)
-            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo" class="logo">
-            @elseif($entityType === 'location' && $business->logo)
-            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo" class="logo">
+            @php
+            $logoUrl = $business->getImageUrl();
+            $logoBase64 = null;
+
+            $filePath = public_path(parse_url($logoUrl, PHP_URL_PATH));
+
+            if (is_file($filePath)) {
+            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+            $logoBase64 = 'data:image/' . $ext . ';base64,' . base64_encode(file_get_contents($filePath));
+            }
+            @endphp
+
+            @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="{{ $business->company_name }} Logo"
+                style="max-height:60px; max-width:150px; object-fit:contain;">
             @else
-            <div
-                style="width: 60px; height: 60px; background-color: #e5e7eb; text-align: center; line-height: 60px; font-size: 24pt; font-weight: bold; color: #6b7280; margin-bottom: 10px;">
-                {{ strtoupper(substr($entity->company_name ?? $entity->name ?? 'Company', 0, 1)) }}
-            </div>
+            <div class="logo-placeholder">{{ strtoupper(substr($business->company_name ?? 'Company', 0, 1)) }}</div>
             @endif
+
             <h1>{{ $entity->company_name ?? $entity->name ?? 'Default Company Name' }}</h1>
             <p class="text-muted">{{ $entity->physical_address ?? 'Default Address' }}</p>
             <p class="text-muted">Phone:

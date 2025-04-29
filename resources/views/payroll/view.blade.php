@@ -1,15 +1,14 @@
 <x-app-layout title="{{ $page }}">
     <div class="container py-5" id="payroll-document">
-        <!-- Header (unchanged) -->
         <div class="invoice-header mb-4 p-4 bg-white shadow-sm rounded">
             <div class="row align-items-center">
                 <div class="col-md-6 d-flex align-items-center">
-                    @if($entityType === 'business' && $entity->logo)
-                    <img src="{{ asset('storage/' . $entity->logo) }}" alt="{{ $entity->company_name }} Logo"
-                        class="me-3" style="max-height: 60px; max-width: 150px; object-fit: contain;">
-                    @elseif($entityType === 'location' && $business->logo)
-                    <img src="{{ asset('storage/' . $business->logo) }}" alt="{{ $business->company_name }} Logo"
-                        class="me-3" style="max-height: 60px; max-width: 150px; object-fit: contain;">
+                    @if($entityType === 'business')
+                    <img src="{{ $entity->getImageUrl() }}" alt="{{ $entity->company_name }} Logo" class="me-3"
+                        style="max-height: 60px; max-width: 150px; object-fit: contain;">
+                    @elseif($entityType === 'location')
+                    <img src="{{ $business->getImageUrl() }}" alt="{{ $business->company_name }} Logo" class="me-3"
+                        style="max-height: 60px; max-width: 150px; object-fit: contain;">
                     @else
                     <div class="me-3 bg-light rounded d-flex align-items-center justify-content-center"
                         style="width: 60px; height: 60px;">
@@ -26,7 +25,7 @@
                             {{ ($entityType === 'business' ? $entity->phone : $business->phone) ?? '+123-456-7890' }}
                         </p>
                         <p class="text-muted small mb-0">Email:
-                            {{ ($entityType === 'business' && $entity->user ? $entity->user->email : $business->user->email) ?? 'info@company.com' }}
+                            {{ ($entityType === 'business' && $entity->user ? $entity->user->email : $business->user->email) ?? 'companyemail@company.com' }}
                         </p>
                     </div>
                 </div>
@@ -45,40 +44,25 @@
         <div class="invoice-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="h5 fw-bold mb-0 text-dark">Payroll Details</h4>
-                <div class="d-flex">
-                    <div class="ml-5 mx-3">
-                        <button class="btn btn-primary dropdown-toggle d-flex align-items-center" type="button"
-                            id="downloadColumnDropdown" data-bs-toggle="dropdown" aria-expanded="false"
-                            style="border-radius: 8px; font-weight: 600; white-space: nowrap;">
-                            <i class="bi bi-download me-2"></i> Download Column
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                            id="exportReportsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Export Reports
                         </button>
-                        <div class="dropdown-menu modern-dropdown shadow-sm" aria-labelledby="downloadColumnDropdown"
-                            style="min-width: 12rem;">
+                        <ul class="dropdown-menu" aria-labelledby="exportReportsDropdown">
                             @foreach([
                             'basic_salary' => 'Basic Salary', 'gross_pay' => 'Gross Pay', 'net_pay' => 'Net Pay',
-                            'overtime' => 'Overtime', 'shif' => 'SHIF', 'nssf' => 'NSSF', 'paye' => 'PAYE',
-                            'paye_before_reliefs' => 'PAYE Before Reliefs', 'housing_levy' => 'Housing Levy',
-                            'helb' => 'HELB', 'taxable_income' => 'Taxable Income', 'personal_relief' => 'Personal
-                            Relief',
-                            'insurance_relief' => 'Insurance Relief', 'pay_after_tax' => 'Pay After Tax',
-                            'loan_repayment' => 'Loans', 'advance_recovery' => 'Advances',
-                            'deductions_after_tax' => 'Deductions After Tax', 'attendance_present' => 'Days Present',
-                            'attendance_absent' => 'Days Absent'
+                            'overtime' => 'Overtime', 'shif' => 'SHIF', 'nssf' => 'NSSF', 'paye' => 'PAYE'
                             ] as $columnKey => $columnName)
-                            <div class="dropend">
-                                <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown"
-                                    style="white-space: nowrap;">{{ $columnName }}</a>
-                                <div class="dropdown-menu modern-dropdown shadow-sm" style="min-width: 10rem;">
-                                    <a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
-                                        data-format="pdf" style="white-space: nowrap;">PDF</a>
-                                    <a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
-                                        data-format="csv" style="white-space: nowrap;">CSV</a>
-                                    <a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
-                                        data-format="xlsx" style="white-space: nowrap;">XLSX</a>
-                                </div>
-                            </div>
+                            <li><a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
+                                    data-format="pdf">{{ $columnName }} (PDF)</a></li>
+                            <li><a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
+                                    data-format="csv">{{ $columnName }} (CSV)</a></li>
+                            <li><a class="dropdown-item download-column" href="#" data-column="{{ $columnKey }}"
+                                    data-format="xlsx">{{ $columnName }} (XLSX)</a></li>
                             @endforeach
-                        </div>
+                        </ul>
                     </div>
                     <button class="btn btn-outline-info modern-btn" data-bs-toggle="modal"
                         data-bs-target="#analyticsModal">
@@ -228,32 +212,46 @@
             <!-- Download PDF Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'pdf']) }}"
                 class="btn btn-outline-secondary modern-btn flex-shrink-0">
-                <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                <i class="bi bi-file-earmark-pdf me-1"></i> Company Payslip PDF
             </a>
 
             <!-- Download CSV Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'csv']) }}"
                 class="btn btn-outline-secondary modern-btn flex-shrink-0">
-                <i class="bi bi-file-earmark-text me-1"></i> Download CSV
+                <i class="bi bi-file-earmark-text me-1"></i> Company Payslip CSV
             </a>
 
             <!-- Download XLSX Button -->
             <a href="{{ route('business.payroll.reports', ['business' => $business->slug, $entityType => $entity->slug, 'id' => $payroll->id, 'format' => 'xlsx']) }}"
                 class="btn btn-outline-secondary modern-btn flex-shrink-0">
-                <i class="bi bi-file-earmark-excel me-1"></i> Download XLSX
+                <i class="bi bi-file-earmark-excel me-1"></i> Company Payslip XLSX
             </a>
 
-            <!-- Download P9 Dropdown -->
-            <div class="dropdown flex-shrink-0">
-                <button class="btn btn-primary dropdown-toggle d-flex align-items-center modern-btn" type="button"
-                    id="downloadP9Dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-download me-2"></i> Download P9
+            <!-- Download Bank Advice Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                    id="exportBankAdviceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    Bank Advice
                 </button>
-                <div class="dropdown-menu modern-dropdown shadow-sm" aria-labelledby="downloadP9Dropdown">
-                    <a class="dropdown-item download-p9" href="#" data-format="pdf">PDF</a>
-                    <a class="dropdown-item download-p9" href="#" data-format="csv">CSV</a>
-                    <a class="dropdown-item download-p9" href="#" data-format="xlsx">XLSX</a>
-                </div>
+                <ul class="dropdown-menu" aria-labelledby="exportBankAdviceDropdown">
+                    <li><a class="dropdown-item download-bank-advice" href="#" data-format="xlsx">Export as XLSX</a>
+                    </li>
+                    <li><a class="dropdown-item download-bank-advice" href="#" data-format="csv">Export as CSV</a></li>
+                    <li><a class="dropdown-item download-bank-advice" href="#" data-format="pdf">Export as PDF</a></li>
+                </ul>
+            </div>
+
+            <!-- Download P9 Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="exportP9Dropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    Export P9
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="exportP9Dropdown">
+                    <li><a class="dropdown-item download-p9" href="#" data-format="xlsx">Export as XLSX</a></li>
+                    <li><a class="dropdown-item download-p9" href="#" data-format="csv">Export as CSV</a></li>
+                    <li><a class="dropdown-item download-p9" href="#" data-format="pdf">Export as PDF</a></li>
+                </ul>
             </div>
         </div>
 
@@ -422,25 +420,21 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         document.querySelectorAll(".download-column").forEach(item => {
-            item.addEventListener("click", function(e) {
+            item.addEventListener("click", async function(e) {
                 e.preventDefault();
                 const column = this.getAttribute("data-column");
                 const format = this.getAttribute("data-format");
-                const button = document.getElementById("downloadColumnDropdown");
                 const businessSlug = '{{ $business->slug }}';
                 const payrollId = '{{ $payroll->id }}';
-                button.innerHTML =
-                    `<i class="bi bi-download me-2"></i> Downloading ${column} (${format.toUpperCase()})`;
-                const url =
-                    `{{ route('business.payroll.download_column', ['business' => $business->slug, 'id' => $payroll->id, 'column' => ':column', 'format' => ':format']) }}`
-                    .replace(':column', column)
-                    .replace(':format', format);
-                console.log("Generated URL:", url);
-                window.location.href = url;
-                setTimeout(() => {
-                    button.innerHTML =
-                        `<i class="bi bi-download me-2"></i> Download Column`;
-                }, 2000);
+                try {
+                    const url =
+                        `{{ route('business.payroll.download_column', ['business' => $business->slug, 'id' => $payroll->id, 'column' => ':column', 'format' => ':format']) }}`
+                        .replace(':column', column)
+                        .replace(':format', format);
+                    window.location.href = url;
+                } catch (error) {
+                    toastr.error('Failed to initiate download. Please try again.');
+                }
             });
         });
 
@@ -449,22 +443,57 @@
             item.addEventListener("click", function(e) {
                 e.preventDefault();
                 const format = this.getAttribute("data-format");
-                const button = document.getElementById("downloadP9Dropdown");
                 const businessSlug = '{{ $business->slug }}';
                 const payrollId = '{{ $payroll->id }}';
-                button.innerHTML =
-                    `<i class="bi bi-download me-2"></i> Downloading P9 (${format.toUpperCase()})`;
                 const url =
                     `{{ route('business.payroll.download_p9', ['business' => $business->slug, 'year' => $payroll->payrun_year, 'format' => ':format']) }}`
                     .replace(':format', format);
                 window.location.href = url;
-                setTimeout(() => {
-                    button.innerHTML =
-                        `<i class="bi bi-download me-2"></i> Download P9`;
-                }, 2000);
             });
         });
 
+        const items = document.querySelectorAll('.download-bank-advice');
+        if (items.length === 0) {
+            console.error('No elements found with class "download-bank-advice"');
+            return;
+        }
+
+        items.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                try {
+                    const format = this.getAttribute('data-format');
+                    const businessSlug = '{{ $business->slug ?? '
+                    ' }}';
+                    const month = '{{ $payroll->payrun_month ?? '
+                    ' }}';
+                    const year = '{{ $payroll->payrun_year ?? '
+                    ' }}';
+
+                    if (!businessSlug || !month || !year || !format) {
+                        console.error('Missing required variables:', {
+                            businessSlug,
+                            month,
+                            year,
+                            format
+                        });
+                        return;
+                    }
+
+                    const url =
+                        `{{ route('business.payroll.download_bank_advice', ['business' => ':business', 'year' => ':year', 'month' => ':month', 'format' => ':format']) }}`
+                        .replace(':business', encodeURIComponent(businessSlug))
+                        .replace(':year', encodeURIComponent(year))
+                        .replace(':month', encodeURIComponent(month))
+                        .replace(':format', encodeURIComponent(format));
+
+                    console.log('Generated URL:', url);
+                    window.location.href = url;
+                } catch (error) {
+                    console.error('Error generating bank advice URL:', error);
+                }
+            });
+        });
 
         document.querySelectorAll('.download-single-p9').forEach(button => {
             button.addEventListener('click', function(e) {

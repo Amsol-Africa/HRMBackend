@@ -5,100 +5,111 @@
     <meta charset="UTF-8">
     <title>Payslip - {{ $employeePayroll->employee->user->name ?? 'Employee' }}</title>
     <style>
-    body {
-        margin: 0;
-        padding: 20px;
-        background-color: #f4f4f4;
-    }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
 
-    .payslip {
-        width: 500px;
-        margin: 0 auto;
-        background-color: #fff;
-        padding: 15px;
-        border: 1px solid #ccc;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
+        .payslip {
+            width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 15px;
+            border: 1px solid #ccc;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
-    .header {
-        text-align: center;
-        border-bottom: 2px solid #000;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-    }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
 
-    .header h1 {
-        font-size: 18px;
-        margin: 0;
-    }
+        .header h1 {
+            font-size: 18px;
+            margin: 0;
+        }
 
-    .header h2 {
-        font-size: 14px;
-        margin: 5px 0 0;
-        color: #555;
-    }
+        .header h2 {
+            font-size: 14px;
+            margin: 5px 0 0;
+            color: #555;
+        }
 
-    .section {
-        margin-bottom: 15px;
-    }
+        .section {
+            margin-bottom: 15px;
+        }
 
-    .section h3 {
-        font-size: 14px;
-        font-weight: bold;
-        margin: 0 0 5px 0;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 2px;
-    }
+        .section h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
+        }
 
-    .details p,
-    .summary p {
-        font-size: 12px;
-        margin: 3px 0;
-    }
+        .details p,
+        .summary p {
+            font-size: 12px;
+            margin: 3px 0;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-    }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
 
-    th,
-    td {
-        padding: 5px;
-        border: 1px solid #ddd;
-        text-align: left;
-    }
+        th,
+        td {
+            padding: 5px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
 
-    th {
-        background-color: #f5f5f5;
-        font-weight: bold;
-    }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
 
-    .total {
-        font-weight: bold;
-        background-color: #f9f9f9;
-    }
+        .total {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
 
-    .footer {
-        text-align: center;
-        font-size: 10px;
-        color: #777;
-        margin-top: 15px;
-        border-top: 1px solid #ddd;
-        padding-top: 10px;
-    }
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #777;
+            margin-top: 15px;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
     </style>
 </head>
 
 <body>
     <div class="payslip">
         <div class="header">
-            @if($entityType === 'business' && $entity->logo)
-            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo"
-                style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
-            @elseif($entityType === 'location' && $business->logo)
-            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo"
-                style="max-height: 50px; max-width: 100px; margin-bottom: 5px;">
+            @php
+            $logoUrl = $business->getImageUrl();
+            $logoBase64 = null;
+
+            $filePath = public_path(parse_url($logoUrl, PHP_URL_PATH));
+
+            if (is_file($filePath)) {
+            $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+            $logoBase64 = 'data:image/' . $ext . ';base64,' . base64_encode(file_get_contents($filePath));
+            }
+            @endphp
+
+            @if($logoBase64)
+            <img src="{{ $logoBase64 }}" alt="{{ $business->company_name }} Logo"
+                style="max-height:60px; max-width:150px; object-fit:contain;">
+            @else
+            <div class="logo-placeholder">{{ strtoupper(substr($business->company_name ?? 'Company', 0, 1)) }}</div>
             @endif
             <h1>{{ $entity->company_name ?? $entity->name ?? 'Business Name' }}</h1>
             <p>{{ $entity->physical_address ?? 'N/A' }}</p>

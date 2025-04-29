@@ -40,6 +40,21 @@
             color: #004aad;
         }
 
+        .responses {
+            margin-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+        }
+
+        .responses h4 {
+            color: #004aad;
+            margin-bottom: 10px;
+        }
+
+        .responses p {
+            margin: 5px 0;
+        }
+
         .footer {
             text-align: center;
             padding: 10px 0;
@@ -52,17 +67,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo">
+            <img src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }}">
         </div>
         <div class="content">
             <h2>Thank You, {{ $name }}!</h2>
             <p>We appreciate your feedback for our <strong>{{ $campaign_name }}</strong> campaign. Your input helps us
-                improve our services and better meet your needs.</p>
+                improve our services.</p>
+            <div class="responses">
+                <h4>Your Responses</h4>
+                @foreach ($responses as $field)
+                <p><strong>{{ $field['label'] }}:</strong> {{ $field['value'] ?? 'N/A' }}</p>
+                @endforeach
+            </div>
             <p>If you have any further comments or questions, please feel free to reach out.</p>
             <p>Best regards,<br>The {{ config('app.name') }} Team</p>
         </div>
         <div class="footer">
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
+            <p>© {{ date('Y') }} {{ config('app.name') }}. All rights reserved.</p>
         </div>
     </div>
 </body>

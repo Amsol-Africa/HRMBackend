@@ -2,52 +2,49 @@
 
 namespace App\Exports;
 
-use App\Models\Survey;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
+use Illuminate\Support\Collection;
+use App\Models\Lead;
 
-class SurveyResponsesExport implements FromCollection, WithHeadings, WithMapping
+class SurveyResponsesExport implements FromCollection, WithHeadings
 {
-    protected $survey;
+    protected $lead;
 
-    public function __construct(Survey $survey)
+    public function __construct(Lead $lead)
     {
-        $this->survey = $survey;
+        $this->lead = $lead;
     }
 
     public function collection()
     {
-        return $this->survey->responses()->with(['answers', 'answers.question', 'answers.option'])->get();
+        $data = [
+            'name' => $this->lead->name,
+            'email' => $this->lead->email,
+            'country' => $this->lead->country,
+        ];
+
+        // Add survey responses dynamically
+        if ($this->lead->survey_responses) {
+            foreach ($this->lead->survey_responses as $field) {
+                $data[$field['label']] = $field['value'] ?? 'N/A';
+            }
+        }
+
+        return new Collection([$data]);
     }
 
     public function headings(): array
     {
-        $questions = $this->survey->questions()->pluck('question_text')->toArray();
-        return array_merge(
-            ['Response ID', 'Submitted At', 'User ID', 'Is Anonymous'],
-            $questions
-        );
-    }
+        $headings = ['Name', 'Email', 'Country'];
 
-    public function map($response): array
-    {
-        $answers = [];
-        foreach ($this->survey->questions as $question) {
-            $answer = $response->answers->where('survey_question_id', $question->id)->first();
-            $answers[] = $answer
-                ? ($answer->option ? $answer->option->option_text : ($answer->answer_text ?? 'N/A'))
-                : 'N/A';
+        // Add survey response field labels
+        if ($this->lead->survey_responses) {
+            foreach ($this->lead->survey_responses as $field) {
+                $headings[] = $field['label'];
+            }
         }
 
-        return array_merge(
-            [
-                $response->id,
-                $response->submitted_at->format('Y-m-d H:i:s'),
-                $response->user_id ?? 'N/A',
-                $response->is_anonymous ? 'Yes' : 'No',
-            ],
-            $answers
-        );
+        return $headings;
     }
 }

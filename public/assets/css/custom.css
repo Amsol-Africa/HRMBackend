@@ -180,3 +180,108 @@
     border-radius: 50%;
     display: inline-block;
 }
+
+/* Fix button styling */
+.btn.dropdown-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+    min-height: 2.25rem !important; /* Bootstrap 5.3.3 default for btn-sm */
+    min-width: 80px !important; /* Ensure sufficient width */
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.875rem !important; /* Match btn-sm */
+    line-height: 1.5 !important;
+    font-weight: 400 !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    border: 1px solid #6c757d !important; /* btn-outline-secondary border */
+    border-radius: 0.25rem !important;
+    color: #6c757d !important; /* btn-outline-secondary color */
+    background-color: transparent !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+        border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.btn.dropdown-toggle:hover {
+    color: #6c757d !important;
+    background-color: #f8f9fa !important;
+    border-color: #6c757d !important;
+}
+
+.btn.dropdown-toggle::after {
+    vertical-align: 0.255em !important;
+    margin-left: 0.255em !important;
+    border-top: 0.3em solid !important;
+    border-right: 0.3em solid transparent !important;
+    border-left: 0.3em solid transparent !important;
+}
+
+/* Ensure dropdown menu renders correctly */
+.dropdown-menu {
+    z-index: 1050 !important; /* Override z-index conflicts */
+    min-width: 10rem;
+    margin: 0.125rem 0 0;
+    padding: 0.5rem 0;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+    position: absolute !important;
+    background-color: #fff;
+}
+
+/* Style dropdown items */
+.dropdown-item {
+    padding: 0.25rem 1rem;
+    font-size: 0.875rem;
+    color: #212529;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Style dropdown divider */
+.dropdown-divider {
+    margin: 0.5rem 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* Sub-dropdown styling */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-top: -1px;
+    display: none;
+    min-width: 10rem;
+    border-radius: 0.25rem;
+    z-index: 1050 !important;
+}
+
+.dropdown-submenu:hover .dropdown-menu {
+    display: block;
+}
+
+/* Ensure dropdown toggle button aligns properly */
+.dropdown-toggle::after {
+    vertical-align: 0.255em;
+}
+
+/* Fix potential overflow issues */
+.dropdown {
+    position: relative;
+}
+
+/* Ensure dropdowns are not clipped in containers */
+.card,
+.container-fluid,
+.app__slide-wrapper {
+    overflow: visible !important;
+}

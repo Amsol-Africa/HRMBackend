@@ -59,9 +59,9 @@
     <input type="text" id="receipient_id" value="{{ auth()->user()->id }}" hidden>
 
     <style>
-    body {
-        visibility: hidden;
-    }
+        body {
+            visibility: hidden;
+        }
     </style>
 
     <div class="preloader" id="preloader">
@@ -101,9 +101,9 @@
 
     </div>
     <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document.body.style.visibility = "visible";
-    });
+        document.addEventListener("DOMContentLoaded", () => {
+            document.body.style.visibility = "visible";
+        });
     </script>
     <!-- Intro.js JS -->
     <script src="https://cdn.jsdelivr.net/npm/intro.js/minified/intro.min.js"></script>
@@ -172,148 +172,214 @@
     <script src="{{ asset('js/main/logout.js') }}" type="module"></script>
 
     <script type="text/javascript">
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleButtons = document.querySelectorAll('[id^="passwordToggle"]');
 
-        toggleButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const fieldId = this.id.replace('toggle', '').toLowerCase();
-                const passwordField = document.getElementById(fieldId);
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const fieldId = this.id.replace('toggle', '').toLowerCase();
+                    const passwordField = document.getElementById(fieldId);
 
-                if (passwordField) {
-                    const type = passwordField.getAttribute('type') === 'password' ? 'text' :
-                        'password';
-                    passwordField.setAttribute('type', type);
-                    this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
-                }
-            });
-        });
-
-
-        $(".switch-role").click(function() {
-            let selectedRole = $(this).data("role");
-
-            $.ajax({
-                url: $("#switchRoleForm").attr("action"),
-                method: "POST",
-                data: {
-                    _token: $('meta[name="csrf-token"]').attr("content"),
-                    role: selectedRole
-                },
-                success: function(response) {
-                    window.location.href = response.redirect;
-                },
-                error: function(error) {
-                    console.log(error);
-                    alert("You do not have permission to switch to this role.");
-                }
-            });
-        });
-
-    });
-
-    const phoneInputFields = document.querySelectorAll('.phone-input-control');
-
-    phoneInputFields.forEach((phoneInput, index) => {
-        const codeInput = document.querySelector(phoneInput.dataset.codeInput || `#code${index}`);
-        const countryInput = document.querySelector(phoneInput.dataset.countryInput || `#country${index}`);
-
-        const iti = window.intlTelInput(phoneInput, {
-
-            separateDialCode: true,
-            geoIpLookup: function(callback) {
-                getIp(function(countryCode) {
-                    callback(countryCode.toLowerCase());
-                });
-            },
-            utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/js/utils.min.js',
-        });
-
-        phoneInput.addEventListener('countrychange', function() {
-            if (codeInput) {
-                codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
-            }
-            if (countryInput) {
-                countryInput.value = iti.getSelectedCountryData().name;
-            }
-            updateSelectedCountryName(phoneInput, iti);
-        });
-
-        const initialPhone = phoneInput.value;
-        const initialCode = codeInput ? codeInput.value : '';
-        const initialCountry = countryInput ? countryInput.value : '';
-
-        if (initialPhone) {
-            iti.setNumber(initialPhone);
-            if (codeInput && initialCode) {
-                codeInput.value = initialCode;
-            }
-            if (countryInput && initialCountry) {
-                countryInput.value = initialCountry;
-            }
-        } else {
-            if (codeInput) {
-                codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
-            }
-            if (countryInput) {
-                countryInput.value = iti.getSelectedCountryData().name;
-            }
-        }
-
-        const form = phoneInput.closest('form');
-        if (form) {
-            form.addEventListener('submit', function(event) {
-                if (!iti.isValidNumber()) {
-                    event.preventDefault();
-                    phoneInput.classList.add('is-invalid');
-                    let errorSpan = phoneInput.parentElement.querySelector('.text-danger');
-                    if (!errorSpan) {
-                        errorSpan = document.createElement('span');
-                        errorSpan.className = 'text-danger';
-                        errorSpan.textContent = 'Please enter a valid phone number.';
-                        phoneInput.parentElement.appendChild(errorSpan);
+                    if (passwordField) {
+                        const type = passwordField.getAttribute('type') === 'password' ? 'text' :
+                            'password';
+                        passwordField.setAttribute('type', type);
+                        this.innerHTML = type === 'password' ? '👁️' : '👁️‍🗨️';
                     }
-                } else {
-                    phoneInput.classList.remove('is-invalid');
-                    const errorSpan = phoneInput.parentElement.querySelector('.text-danger');
-                    if (errorSpan) errorSpan.remove();
-                    phoneInput.value = iti.getNumber();
+                });
+            });
+
+
+            $(".switch-role").click(function() {
+                let selectedRole = $(this).data("role");
+
+                $.ajax({
+                    url: $("#switchRoleForm").attr("action"),
+                    method: "POST",
+                    data: {
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                        role: selectedRole
+                    },
+                    success: function(response) {
+                        window.location.href = response.redirect;
+                    },
+                    error: function(error) {
+                        console.log(error);
+                        alert("You do not have permission to switch to this role.");
+                    }
+                });
+            });
+
+
+            // Initialize all dropdowns with global configuration
+            document.querySelectorAll('.dropdown-toggle').forEach(button => {
+                if (!button.dataset.initialized) {
+                    try {
+                        new bootstrap.Dropdown(button, {
+                            boundary: document.querySelector('body'),
+                            popperConfig: function(defaultBsPopperConfig) {
+                                return {
+                                    ...defaultBsPopperConfig,
+                                    placement: 'bottom-end',
+                                    strategy: 'fixed',
+                                    modifiers: [{
+                                            name: 'preventOverflow',
+                                            options: {
+                                                boundary: 'viewport',
+                                            },
+                                        },
+                                        {
+                                            name: 'offset',
+                                            options: {
+                                                offset: [0, 2],
+                                            },
+                                        },
+                                    ],
+                                };
+                            }
+                        });
+                        button.dataset.initialized = 'true';
+                        console.log('Initialized dropdown:', button.id);
+                    } catch (error) {
+                        console.error('Dropdown initialization failed for', button.id, ':', error);
+                    }
                 }
             });
-        }
-    });
 
-    function updateSelectedCountryName(phoneInput, iti) {
-        const selectedFlag = phoneInput.parentNode.querySelector('.iti__selected-flag');
-        let nameSpan = selectedFlag.querySelector('.selected-country-name');
+            // Handle sub-dropdown hover behavior
+            document.querySelectorAll('.dropdown-submenu').forEach(submenu => {
+                submenu.addEventListener('mouseenter', function() {
+                    const submenuMenu = this.querySelector('.dropdown-menu');
+                    if (submenuMenu) {
+                        submenuMenu.classList.add('show');
+                    }
+                });
+                submenu.addEventListener('mouseleave', function() {
+                    const submenuMenu = this.querySelector('.dropdown-menu');
+                    if (submenuMenu) {
+                        submenuMenu.classList.remove('show');
+                    }
+                });
+            });
 
-        const countryData = iti.getSelectedCountryData();
 
-        if (!nameSpan) {
-            nameSpan = document.createElement('span');
-            nameSpan.className = 'selected-country-name';
-            nameSpan.style.marginLeft = '6px';
-            nameSpan.style.fontWeight = '500';
-            selectedFlag.appendChild(nameSpan);
-        }
+            document.querySelectorAll('.dropdown').forEach(dropdown => {
+                dropdown.addEventListener('mouseleave', function() {
+                    const dropdownMenu = this.querySelector('.dropdown-menu');
+                    if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                        const dropdownInstance = bootstrap.Dropdown.getInstance(this.querySelector(
+                            '.dropdown-toggle'));
+                        if (dropdownInstance) {
+                            dropdownInstance.hide();
+                        }
+                    }
+                });
+            });
+        });
 
-        nameSpan.textContent = countryData.name;
-    }
 
-    function getIp(callback) {
-        fetch('https://ipinfo.io/json?token=a876c4d470b426', {
-                headers: {
-                    'Accept': 'application/json'
+        const phoneInputFields = document.querySelectorAll('.phone-input-control');
+
+        phoneInputFields.forEach((phoneInput, index) => {
+            const codeInput = document.querySelector(phoneInput.dataset.codeInput || `#code${index}`);
+            const countryInput = document.querySelector(phoneInput.dataset.countryInput || `#country${index}`);
+
+            const iti = window.intlTelInput(phoneInput, {
+
+                separateDialCode: true,
+                geoIpLookup: function(callback) {
+                    getIp(function(countryCode) {
+                        callback(countryCode.toLowerCase());
+                    });
+                },
+                utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.12/js/utils.min.js',
+            });
+
+            phoneInput.addEventListener('countrychange', function() {
+                if (codeInput) {
+                    codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
                 }
-            })
-            .then((resp) => resp.json())
-            .catch(() => {
-                return {
-                    country: 'ke'
-                };
-            })
-            .then((resp) => callback(resp.country));
-    }
+                if (countryInput) {
+                    countryInput.value = iti.getSelectedCountryData().name;
+                }
+                updateSelectedCountryName(phoneInput, iti);
+            });
+
+            const initialPhone = phoneInput.value;
+            const initialCode = codeInput ? codeInput.value : '';
+            const initialCountry = countryInput ? countryInput.value : '';
+
+            if (initialPhone) {
+                iti.setNumber(initialPhone);
+                if (codeInput && initialCode) {
+                    codeInput.value = initialCode;
+                }
+                if (countryInput && initialCountry) {
+                    countryInput.value = initialCountry;
+                }
+            } else {
+                if (codeInput) {
+                    codeInput.value = '+' + iti.getSelectedCountryData().dialCode;
+                }
+                if (countryInput) {
+                    countryInput.value = iti.getSelectedCountryData().name;
+                }
+            }
+
+            const form = phoneInput.closest('form');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    if (!iti.isValidNumber()) {
+                        event.preventDefault();
+                        phoneInput.classList.add('is-invalid');
+                        let errorSpan = phoneInput.parentElement.querySelector('.text-danger');
+                        if (!errorSpan) {
+                            errorSpan = document.createElement('span');
+                            errorSpan.className = 'text-danger';
+                            errorSpan.textContent = 'Please enter a valid phone number.';
+                            phoneInput.parentElement.appendChild(errorSpan);
+                        }
+                    } else {
+                        phoneInput.classList.remove('is-invalid');
+                        const errorSpan = phoneInput.parentElement.querySelector('.text-danger');
+                        if (errorSpan) errorSpan.remove();
+                        phoneInput.value = iti.getNumber();
+                    }
+                });
+            }
+        });
+
+        function updateSelectedCountryName(phoneInput, iti) {
+            const selectedFlag = phoneInput.parentNode.querySelector('.iti__selected-flag');
+            let nameSpan = selectedFlag.querySelector('.selected-country-name');
+
+            const countryData = iti.getSelectedCountryData();
+
+            if (!nameSpan) {
+                nameSpan = document.createElement('span');
+                nameSpan.className = 'selected-country-name';
+                nameSpan.style.marginLeft = '6px';
+                nameSpan.style.fontWeight = '500';
+                selectedFlag.appendChild(nameSpan);
+            }
+
+            nameSpan.textContent = countryData.name;
+        }
+
+        function getIp(callback) {
+            fetch('https://ipinfo.io/json?token=a876c4d470b426', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then((resp) => resp.json())
+                .catch(() => {
+                    return {
+                        country: 'ke'
+                    };
+                })
+                .then((resp) => callback(resp.country));
+        }
     </script>
 
     @stack('scripts')

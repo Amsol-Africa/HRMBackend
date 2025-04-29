@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const campaignForm = document.getElementById('campaignForm');
     const visitsContainer = document.getElementById('visitsTable');
     const surveyContainer = document.getElementById('surveyTable');
+    const exportButtons = document.querySelectorAll('.export-campaigns');
 
     // Load campaigns if container exists
     if (campaignsContainer) {
@@ -38,8 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Bind copy link buttons (initially and after table reload)
+    // Handle export buttons
+    exportButtons.forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const format = button.dataset.format;
+            await exportCampaigns(format);
+        });
+    });
+
+    // Bind copy link and delete buttons
     bindCopyLinkButtons();
+    bindDeleteButtons();
 });
 
 // Debounce function
@@ -58,7 +69,6 @@ window.getCampaigns = async function (page = 1, filter = '') {
         container.html('<div class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading campaigns...</div>');
         const response = await requestClient.post('/crm/campaigns/fetch', { page, filter });
 
-        // Handle Blob response
         let jsonResponse;
         if (response instanceof Blob) {
             const text = await response.text();
@@ -73,7 +83,6 @@ window.getCampaigns = async function (page = 1, filter = '') {
             throw new Error('Invalid response format from server');
         }
 
-        // Initialize DataTable
         if ($('#campaignsDataTable').length) {
             if ($.fn.DataTable.isDataTable('#campaignsDataTable')) {
                 $('#campaignsDataTable').DataTable().destroy();
@@ -91,7 +100,6 @@ window.getCampaigns = async function (page = 1, filter = '') {
             });
         }
 
-        // Rebind event listeners
         bindCopyLinkButtons();
         bindDeleteButtons();
     } catch (error) {
@@ -111,7 +119,6 @@ window.getAnalytics = async function (container, type) {
 
         const response = await requestClient.post('/crm/campaigns/analytics/fetch', { campaign_id: campaignId, type });
 
-        // Handle Blob response
         let jsonResponse;
         if (response instanceof Blob) {
             const text = await response.text();
@@ -126,7 +133,6 @@ window.getAnalytics = async function (container, type) {
             throw new Error('Invalid response format from server');
         }
 
-        // Initialize DataTable
         const tableId = type === 'visits' ? '#visitsDataTable' : '#surveyDataTable';
         if ($(tableId).length) {
             if ($.fn.DataTable.isDataTable(tableId)) {
@@ -136,7 +142,7 @@ window.getAnalytics = async function (container, type) {
             $(tableId).DataTable({
                 responsive: true,
                 pageLength: 10,
-                order: [[type === 'visits' ? 5 : 6, 'desc']], // Sort by created_at
+                order: [[type === 'visits' ? 5 : 6, 'desc']],
                 columnDefs: [{ targets: '_all', searchable: true }],
                 language: {
                     emptyTable: type === 'visits' ? 'No visits recorded' : 'No survey results available',
@@ -145,7 +151,6 @@ window.getAnalytics = async function (container, type) {
             });
         }
 
-        // Rebind copy link buttons
         bindCopyLinkButtons();
     } catch (error) {
         console.error(`Error loading ${type}:`, error);
@@ -157,7 +162,7 @@ window.getAnalytics = async function (container, type) {
 // Create a new campaign
 async function createCampaign(form) {
     const submitButton = form.querySelector('button[type="submit"]');
-    const $submitButton = $(submitButton); // Convert to jQuery object for btn_loader
+    const $submitButton = $(submitButton);
     try {
         btn_loader($submitButton, true);
         const formData = new FormData(form);
@@ -181,10 +186,76 @@ async function createCampaign(form) {
     }
 }
 
+// Export campaigns
+async function exportCampaigns(format) {
+    try {
+        const businessSlug = document.getElementById('businessSlug')?.value ||
+            document.querySelector('meta[name="business-slug"]')?.content;
+
+        if (!businessSlug) {
+            throw new Error('Business slug is missing. Please select a business.');
+        }
+
+        const exportUrl = `/business/${businessSlug}/crm/reports/export/campaigns/${format}`;
+        console.log(`Initiating campaign export: ${exportUrl}`);
+
+        const response = await requestClient.request(
+            'GET',
+            exportUrl,
+            null,
+            true
+        );
+
+        if (!(response instanceof Blob)) {
+            throw new Error('Expected a Blob response for file download, received: ' + response.constructor.name);
+        }
+
+        const url = window.URL.createObjectURL(response);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `campaigns_report_${businessSlug}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+        console.error('Error exporting campaigns:', error.message, error.stack);
+        let errorMessage = error.message;
+        if (error.message.includes('Request failed')) {
+            try {
+                const response = await error.response.json();
+                errorMessage = response.error || response.message || errorMessage;
+            } catch {
+                // Fallback to generic message
+            }
+        }
+        if (errorMessage.includes('Non-JSON error')) {
+            console.error('Received non-JSON response, possibly a server error or redirect');
+            toastr.error('Failed to export campaigns: Invalid server response. Please check the server logs.', 'Error');
+        } else if (errorMessage.includes('Unauthorized') || errorMessage.includes('401')) {
+            Swal.fire({
+                title: 'Session Expired',
+                text: 'Your session has expired. Please log in again.',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+            }).then(() => {
+                window.location.href = '/login';
+            });
+        } else if (errorMessage.includes('Forbidden') || errorMessage.includes('403')) {
+            toastr.error('You do not have permission to export campaigns.', 'Error');
+        } else if (errorMessage.includes('Not Found') || errorMessage.includes('404')) {
+            toastr.error('Export route not found. Please check the business context.', 'Error');
+        } else {
+            toastr.error(`Failed to export campaigns: ${errorMessage}`, 'Error');
+        }
+    }
+}
+
 // Copy short link to clipboard
 function bindCopyLinkButtons() {
     document.querySelectorAll('.copy-link').forEach(button => {
-        button.removeEventListener('click', handleCopyLink); // Prevent multiple bindings
+        button.removeEventListener('click', handleCopyLink);
         button.addEventListener('click', handleCopyLink);
     });
 }
@@ -201,7 +272,7 @@ function handleCopyLink(event) {
 // Delete a campaign
 function bindDeleteButtons() {
     document.querySelectorAll('.delete-campaign').forEach(button => {
-        button.removeEventListener('click', handleDeleteCampaign); // Prevent multiple bindings
+        button.removeEventListener('click', handleDeleteCampaign);
         button.addEventListener('click', handleDeleteCampaign);
     });
 }

@@ -11,7 +11,7 @@ use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Exports\LeadsExport;
+use App\Exports\LeadExport;
 use App\Exports\ContactsExport;
 use App\Exports\CampaignsExport;
 use App\Exports\SurveysExport;
@@ -23,12 +23,21 @@ use Jenssegers\Agent\Agent;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SurveyConfirmation;
+use Illuminate\Validation\Rule;
 
 use Illuminate\Support\Str;
 
 class CrmController extends Controller
 {
     use HandleTransactions;
+
+    private $validLabels = [
+        'High Priority',
+        'Low Priority',
+        'Follow Up',
+        'Hot Lead',
+        'Cold Lead',
+    ];
 
     // Contact Submissions
     public function contacts()
@@ -245,6 +254,53 @@ class CrmController extends Controller
         });
     }
 
+
+    public function createSurvey($business, Campaign $campaign)
+    {
+        $currentBusiness = Business::findBySlug($business);
+        if ($campaign->business_id !== $currentBusiness->id) {
+            abort(403);
+        }
+        return view('crm.surveys.create', compact('campaign', 'currentBusiness'));
+    }
+
+    public function storeSurvey(Request $request, $business, Campaign $campaign)
+    {
+        $currentBusiness = Business::findBySlug($business);
+        if ($campaign->business_id !== $currentBusiness->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'fields' => 'required|array',
+            'fields.*.type' => 'required|in:text,textarea,star',
+            'fields.*.label' => 'required|string|max:255',
+            'fields.*.required' => 'boolean',
+        ]);
+
+        return $this->handleTransaction(function () use ($campaign, $validated) {
+            $currentBusiness = Business::findBySlug($business);
+            $fields = array_map(function ($field, $index) {
+                return [
+                    'id' => 'field_' . $index . '_' . Str::random(8),
+                    'type' => $field['type'],
+                    'label' => $field['label'],
+                    'required' => $field['required'] ?? false,
+                ];
+            }, $validated['fields'], array_keys($validated['fields']));
+
+            $campaign->update([
+                'has_survey' => true,
+                'survey_config' => ['fields' => $fields],
+            ]);
+
+            return response()->json([
+                'message' => 'Survey created successfully.',
+                'redirect_url' => route('business.crm.campaigns.view', ['business' => $currentBusiness->slug, 'campaign' => $campaign->id]),
+            ]);
+        });
+    }
+
     // handle short link
     public function handleShortLink($slug)
     {
@@ -326,60 +382,109 @@ class CrmController extends Controller
 
     public function submitSurvey(Request $request, $slug)
     {
-        $shortLink = ShortLink::where('slug', $slug)->firstOrFail();
-        $campaign = $shortLink->campaign;
-
-        $validated = $request->validate([
-            'name' => 'nullable|string|max:255',
-            'email' => 'required|email|max:255',
-            'country' => 'required|string|max:100',
-            'message' => 'required|string',
-        ]);
-
-        // Check for existing lead to prevent duplicates
-        $existingLead = Lead::where('campaign_id', $campaign->id)
-            ->where('email', $validated['email'])
-            ->first();
-
-        if ($existingLead) {
+        $ip = $request->ip();
+        $rateLimitKey = "survey-submit:{$ip}";
+        if (RateLimiter::tooManyAttempts($rateLimitKey, 10)) {
             return response()->json([
-                'message' => 'You have already submitted feedback for this campaign.',
-                'redirect_url' => $campaign->target_url,
-            ], 409); // Conflict status
+                'message' => 'Too many attempts. Please try again later.',
+            ], 429);
         }
 
-        return $this->handleTransaction(function () use ($validated, $campaign) {
-            $lead = Lead::create([
-                'business_id' => $campaign->business_id,
-                'campaign_id' => $campaign->id,
-                'name' => $validated['name'] ?: 'Anonymous',
-                'email' => $validated['email'],
-                'country' => $validated['country'],
-                'message' => $validated['message'],
-                'status' => 'new',
-            ]);
+        try {
+            $shortLink = ShortLink::where('slug', $slug)->firstOrFail();
+            $campaign = $shortLink->campaign;
 
-            // Log activity
-            LeadActivity::create([
-                'lead_id' => $lead->id,
-                'user_id' => null, // Public user, no auth
-                'activity_type' => 'note',
-                'description' => 'Survey submitted via campaign.',
-            ]);
+            $validationRules = [
+                'name' => ['nullable', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255'],
+                'country' => ['required', 'string', 'max:255'],
+            ];
+            $surveyResponses = [];
 
-            // Send confirmation email
-            try {
-                Mail::to($validated['email'])->send(new SurveyConfirmation($campaign, $lead));
-            } catch (\Exception $e) {
-                \Log::error("Failed to send survey confirmation email: {$e->getMessage()}");
-                // Continue despite email failure
+            foreach ($campaign->survey_config['fields'] ?? [] as $field) {
+                $rules = [];
+                if ($field['required']) {
+                    $rules[] = 'required';
+                }
+                if ($field['type'] === 'text' || $field['type'] === 'textarea') {
+                    $rules[] = 'string';
+                    $rules[] = 'max:255';
+                } elseif ($field['type'] === 'star') {
+                    $rules[] = 'integer';
+                    $rules[] = 'min:1';
+                    $rules[] = 'max:5';
+                }
+                $validationRules[$field['id']] = $rules;
+
+                $value = $request->input($field['id']);
+                if ($value !== null) {
+                    $value = Str::of($value)->trim()->stripTags();
+                }
+                $surveyResponses[$field['id']] = [
+                    'label' => $field['label'],
+                    'type' => $field['type'],
+                    'value' => $value,
+                ];
             }
 
+            $validated = $request->validate($validationRules);
+
+            $existingLead = Lead::where('campaign_id', $campaign->id)
+                ->where('email', $request->email)
+                ->first();
+
+            if ($existingLead) {
+                RateLimiter::increment($rateLimitKey);
+                return response()->json([
+                    'message' => 'You have already submitted feedback for this campaign.',
+                    'redirect_url' => $campaign->target_url,
+                ], 409);
+            }
+
+            return $this->handleTransaction(function () use ($request, $campaign, $surveyResponses) {
+                $lead = Lead::create([
+                    'business_id' => $campaign->business_id,
+                    'campaign_id' => $campaign->id,
+                    'name' => $request->name ? Str::of($request->name)->trim()->stripTags() : 'Anonymous',
+                    'email' => Str::of($request->email)->trim(),
+                    'country' => Str::of($request->country)->trim()->stripTags(),
+                    'survey_responses' => $surveyResponses,
+                    'status' => 'new',
+                ]);
+
+                LeadActivity::create([
+                    'lead_id' => $lead->id,
+                    'user_id' => null,
+                    'activity_type' => 'note',
+                    'description' => 'Survey submitted via campaign.',
+                ]);
+
+                try {
+                    Mail::to($request->email)->send(new SurveyConfirmation($campaign, $lead));
+                } catch (\Exception $e) {
+                    Log::error("Failed to send survey confirmation email: {$e->getMessage()}");
+                }
+
+                RateLimiter::increment($rateLimitKey);
+
+                return response()->json([
+                    'message' => 'Thank you for your feedback! A confirmation has been sent to your email.',
+                    'redirect_url' => $campaign->target_url,
+                ]);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            RateLimiter::increment($rateLimitKey);
             return response()->json([
-                'message' => 'Thank you for your feedback! A confirmation has been sent to your email.',
-                'redirect_url' => $campaign->target_url,
-            ]);
-        });
+                'message' => 'Validation failed.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            RateLimiter::increment($rateLimitKey);
+            Log::error("Survey submission failed for slug {$slug}: {$e->getMessage()}");
+            return response()->json([
+                'message' => 'An unexpected error occurred. Please try again later.',
+            ], 500);
+        }
     }
 
     public function exportSurveys($slug, Campaign $campaign)
@@ -432,12 +537,29 @@ class CrmController extends Controller
     // Leads
     public function leads()
     {
-        return view('crm.leads.index', ['page' => 'Leads']);
+        return view('crm.leads.index', [
+            'page' => 'Leads',
+            'leadLabels' => config('crm.lead_labels', [])
+        ]);
     }
 
     public function createLead()
     {
-        return view('crm.leads.create', ['page' => 'Create Lead']);
+        $businessSlug = session('active_business_slug');
+        if (!$businessSlug) {
+            return redirect()->route('business.select')->with('error', 'Please select a business.');
+        }
+        $business = \App\Models\Business::findBySlug($businessSlug);
+        if (!$business) {
+            return redirect()->route('business.select')->with('error', 'Invalid business selected.');
+        }
+        $campaigns = \App\Models\Campaign::where('business_id', $business->id)->get();
+        return view('crm.leads.create', [
+            'page' => 'Create Lead',
+            'campaigns' => $campaigns,
+            'currentBusiness' => $business,
+            'leadLabels' => config('crm.lead_labels', [])
+        ]);
     }
 
     public function viewLead($business, Lead $lead)
@@ -513,6 +635,43 @@ class CrmController extends Controller
         });
     }
 
+    public function updateLead(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|exists:leads,id',
+            'status' => 'required|in:new,contacted,qualified,converted,lost',
+            'label' => 'nullable|in:' . implode(',', $this->validLabels),
+        ]);
+
+        return $this->handleTransaction(function () use ($validated) {
+            $lead = Lead::findOrFail($validated['id']);
+            $changes = [];
+
+            if ($lead->status !== $validated['status']) {
+                $changes[] = "Status changed to '{$validated['status']}'";
+                $lead->status = $validated['status'];
+            }
+
+            if (isset($validated['label']) && $lead->label !== $validated['label']) {
+                $changes[] = "Label changed to '{$validated['label']}'";
+                $lead->label = $validated['label'];
+            }
+
+            $lead->save();
+
+            if (!empty($changes)) {
+                LeadActivity::create([
+                    'lead_id' => $lead->id,
+                    'user_id' => auth()->id(),
+                    'activity_type' => 'status_change',
+                    'description' => implode(', ', $changes),
+                ]);
+            }
+
+            return RequestResponse::ok('Lead updated successfully.', ['lead' => $lead]);
+        });
+    }
+
     public function storeLeadActivity(Request $request)
     {
         $validated = $request->validate([
@@ -527,48 +686,99 @@ class CrmController extends Controller
         });
     }
 
-    // Reports
-    public function reports()
+    public function destroyLead(Request $request)
     {
-        return view('crm.reports.index', ['page' => 'CRM Reports']);
+        $validated = $request->validate([
+            'id' => 'required|exists:leads,id',
+        ]);
+
+        return $this->handleTransaction(function () use ($validated) {
+            $lead = Lead::findOrFail($validated['id']);
+            $lead->delete();
+            return response()->json(['message' => 'Lead deleted successfully.']);
+        });
     }
 
-    public function exportReport(Request $request, $type, $format)
+    public function exportReport(Request $request)
     {
-        $businessSlug = session('active_business_slug');
-        $business = \App\Models\Business::findBySlug($businessSlug);
+        try {
+            $businessSlug = session('active_business_slug');
+            $routeParameters = $request->route()->parameters();
 
-        if ($type === 'contacts') {
-            $contacts = ContactSubmission::where('business_id', $business->id)->get();
+            // Extract type and format from route parameters
+            $type = $routeParameters['type'] ?? null;
+            $format = $routeParameters['format'] ?? null;
 
-            if ($format === 'pdf') {
-                $pdf = Pdf::loadView('crm.reports.contacts_pdf', ['contacts' => $contacts]);
-                return $pdf->download('contacts_report.pdf');
-            } elseif ($format === 'csv' || $format === 'xlsx') {
-                return Excel::download(new ContactsExport($contacts), "contacts_report.$format");
+            if (!$type || !$format) {
+                return response()->json(['error' => 'Missing report type or format'], 400);
             }
-        } elseif ($type === 'leads') {
-            $leads = Lead::whereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)))
-                ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id))
-                ->get();
 
-            if ($format === 'pdf') {
-                $pdf = Pdf::loadView('crm.reports.leads_pdf', ['leads' => $leads]);
-                return $pdf->download('leads_report.pdf');
-            } elseif ($format === 'csv' || $format === 'xlsx') {
-                return Excel::download(new LeadsExport($leads), "leads_report.$format");
-            }
-        } elseif ($type === 'campaigns') {
-            $campaigns = Campaign::where('business_id', $business->id)->get();
+            $business = \App\Models\Business::findBySlug($businessSlug);
 
-            if ($format === 'pdf') {
-                $pdf = Pdf::loadView('crm.reports.campaigns_pdf', ['campaigns' => $campaigns]);
-                return $pdf->download('campaigns_report.pdf');
-            } elseif ($format === 'csv' || $format === 'xlsx') {
-                return Excel::download(new CampaignsExport($campaigns), "campaigns_report.$format");
+            log:
+            info($business);
+
+            if (!$business) {
+                return response()->json(['error' => 'Business not found'], 404);
             }
+
+            if ($type === 'contacts') {
+                $contacts = ContactSubmission::where('business_id', $business->id)->get();
+
+                if ($format === 'pdf') {
+                    $pdf = Pdf::loadView('crm.reports.contacts_pdf', ['contacts' => $contacts, 'business' => $business])
+                        ->setPaper('a4', 'landscape');
+                    return $pdf->download("contacts_report_{$businessSlug}.pdf");
+                } elseif ($format === 'csv') {
+                    return Excel::download(new ContactsExport($contacts), "contacts_report_{$businessSlug}.csv", \Maatwebsite\Excel\Excel::CSV);
+                } elseif ($format === 'xlsx') {
+                    return Excel::download(new ContactsExport($contacts), "contacts_report_{$businessSlug}.xlsx", \Maatwebsite\Excel\Excel::XLSX);
+                } else {
+                    return response()->json(['error' => 'Invalid report format specified'], 400);
+                }
+            } elseif ($type === 'leads') {
+                $leads = Lead::whereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)))
+                    ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id))
+                    ->with('campaign')
+                    ->get();
+
+                if ($format === 'pdf') {
+                    $pdf = Pdf::loadView('crm.reports.leads_pdf', ['leads' => $leads, 'business' => $business])
+                        ->setPaper('a4', 'landscape');
+                    return $pdf->download("leads_report_{$businessSlug}.pdf");
+                } elseif ($format === 'csv') {
+                    return Excel::download(new LeadExport($leads), "leads_report_{$businessSlug}.csv", \Maatwebsite\Excel\Excel::CSV);
+                } elseif ($format === 'xlsx') {
+                    return Excel::download(new LeadExport($leads), "leads_report_{$businessSlug}.xlsx", \Maatwebsite\Excel\Excel::XLSX);
+                } else {
+                    return response()->json(['error' => 'Invalid report format specified'], 400);
+                }
+            } elseif ($type === 'campaigns') {
+                $campaigns = Campaign::where('business_id', $business->id)
+                    ->withCount('leads')
+                    ->get();
+
+                if ($format === 'pdf') {
+                    $pdf = Pdf::loadView('crm.reports.campaigns_pdf', ['campaigns' => $campaigns, 'business' => $business])
+                        ->setPaper('a4', 'landscape');
+                    return $pdf->download("campaigns_report_{$businessSlug}.pdf");
+                } elseif ($format === 'csv') {
+                    return Excel::download(new CampaignsExport($campaigns), "campaigns_report_{$businessSlug}.csv", \Maatwebsite\Excel\Excel::CSV);
+                } elseif ($format === 'xlsx') {
+                    return Excel::download(new CampaignsExport($campaigns), "campaigns_report_{$businessSlug}.xlsx", \Maatwebsite\Excel\Excel::XLSX);
+                } else {
+                    return response()->json(['error' => 'Invalid report format specified'], 400);
+                }
+            }
+            return response()->json(['error' => 'Invalid report type specified'], 400);
+        } catch (\Exception $e) {
+            \Log::error('Export report error: ' . $e->getMessage(), [
+                'type' => $type,
+                'format' => $format,
+                'business_slug' => $businessSlug,
+                'exception' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'An error occurred while exporting the report: ' . $e->getMessage()], 500);
         }
-
-        return redirect()->back()->with('error', 'Invalid report type or format.');
     }
 }
