@@ -352,6 +352,41 @@
                 </ul>
             </li>
 
+            <!-- CRM -->
+            <li class="slide has-sub {{ request()->routeIs('business.crm.*') ? 'active open' : '' }}">
+                <a href="javascript:void(0);" class="sidebar__menu-item">
+                    <i class="fa-solid fa-angle-down side-menu__angle"></i>
+                    <div class="side-menu__icon"><i class="fa-solid fa-users"></i></div>
+                    <span class="sidebar__menu-label">CRM</span>
+                </a>
+                <ul class="sidebar-menu child1 {{ request()->routeIs('business.crm.*') ? 'active' : '' }}">
+                    <li class="slide {{ request()->routeIs('business.crm.contacts.*') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item"
+                            href="{{ route('business.crm.contacts.index', $currentBusiness->slug) }}">
+                            Contact Submissions
+                        </a>
+                    </li>
+                    <li class="slide {{ request()->routeIs('business.crm.campaigns.*') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item"
+                            href="{{ route('business.crm.campaigns.index', $currentBusiness->slug) }}">
+                            Campaigns
+                        </a>
+                    </li>
+                    <li class="slide {{ request()->routeIs('business.crm.leads.*') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item"
+                            href="{{ route('business.crm.leads.index', $currentBusiness->slug) }}">
+                            Leads
+                        </a>
+                    </li>
+                    <li class="slide {{ request()->routeIs('business.crm.reports.*') ? 'active' : '' }}">
+                        <a class="sidebar__menu-item"
+                            href="{{ route('business.crm.reports.index', $currentBusiness->slug) }}">
+                            Reports
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
             <!-- Recruitment Management Dropdown -->
             <li
                 class="slide has-sub {{ request()->routeIs('business.recruitment.*') || request()->routeIs('business.applicants.*') || request()->routeIs('business.applications.*') ? 'active open' : '' }}">

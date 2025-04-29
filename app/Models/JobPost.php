@@ -20,16 +20,16 @@ class JobPost extends Model
         'title',
         'slug',
         'description',
-        'requirements', // Added
+        'requirements',
         'salary_range',
-        'number_of_positions', // Added
+        'number_of_positions',
         'employment_type',
         'place',
         'created_by',
         'closed_at',
-        'status', // Added
-        'closing_date', // Added
-        'is_public', // Added
+        'status',
+        'closing_date',
+        'is_public',
     ];
 
     public function getSlugOptions(): SlugOptions
@@ -39,9 +39,9 @@ class JobPost extends Model
 
     protected $casts = [
         'closed_at' => 'datetime',
-        'closing_date' => 'date', // Added
-        'is_public' => 'boolean', // Added
-        'number_of_positions' => 'integer', // Added (optional, for type consistency)
+        'closing_date' => 'date',
+        'is_public' => 'boolean',
+        'number_of_positions' => 'integer',
     ];
 
     // Relationship with Business

@@ -246,4 +246,9 @@ class Business extends Model implements HasMedia
     {
         return $this->totalActiveLoanAmount() - $this->totalActiveRepaidAmount();
     }
+
+    public function campaigns()
+    {
+        return $this->hasMany(Campaign::class);
+    }
 }

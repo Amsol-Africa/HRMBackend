@@ -19,6 +19,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PublicSurveyController;
+use App\Http\Controllers\CrmController;
 use App\Models\Business;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetchPublic'])->name('jobs.openings');
@@ -173,6 +174,25 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/{survey}/responses', [SurveyController::class, 'responses'])->name('responses');
             Route::get('/{survey}/export', [SurveyController::class, 'export'])->name('export');
         });
+
+        // CRM
+        Route::prefix('crm')->name('crm.')->group(function () {
+            Route::get('/contacts', [CrmController::class, 'contacts'])->name('contacts.index');
+            Route::get('/contacts/create', [CrmController::class, 'createContact'])->name('contacts.create');
+            Route::get('/contacts/{submission}', [CrmController::class, 'viewContact'])->name('contacts.view');
+
+            Route::get('/campaigns', [CrmController::class, 'campaigns'])->name('campaigns.index');
+            Route::get('/campaigns/create', [CrmController::class, 'createCampaign'])->name('campaigns.create');
+            Route::get('/campaigns/{campaign}', [CrmController::class, 'viewCampaign'])->name('campaigns.view');
+            Route::get('/campaigns/{campaign}/analytics', [CrmController::class, 'analytics'])->name('campaigns.analytics');
+
+            Route::get('/leads', [CrmController::class, 'leads'])->name('leads.index');
+            Route::get('/leads/create', [CrmController::class, 'createLead'])->name('leads.create');
+            Route::get('/leads/{lead}', [CrmController::class, 'viewLead'])->name('leads.view');
+
+            Route::get('/reports', [CrmController::class, 'reports'])->name('reports.index');
+            Route::get('/reports/export/{type}/{format}', [CrmController::class, 'exportReport'])->name('reports.export');
+        });
     });
 
     Route::middleware(['ensure_role', 'role:business-employee'])->name('myaccount.')->prefix('myaccount/{business:slug}')->group(function () {
@@ -232,6 +252,11 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('business/{business:slug}/activate', [BusinessController::class, 'activate'])->name('business.activate');
+
+// Short link routes
+Route::get('/campaign/{slug}', [CrmController::class, 'handleShortLink'])->name('short.link');
+Route::post('/campaign/{slug}/submit', [CrmController::class, 'submitSurvey'])->name('short.link.submit');
+Route::get('/campaign/{slug}/skip', [CrmController::class, 'skipShortLink'])->name('short.link.skip');
 
 // Public survey routes
 Route::prefix('surveys')->name('surveys.public.')->group(function () {

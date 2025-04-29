@@ -7,6 +7,10 @@
             max-width: 600px;
             margin: auto;
             font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         .header {
@@ -16,15 +20,47 @@
             text-align: center;
         }
 
+        .logo {
+            display: block;
+            margin: 0 auto 10px auto;
+            max-width: 150px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: normal;
+        }
+
         .body {
             padding: 20px;
-            background: #f9f9f9;
+            background: #ffffff;
+            text-align: center;
+        }
+
+        .body p {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #068f6d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 16px;
         }
 
         .footer {
             background: #e0e0e0;
             padding: 10px;
             text-align: center;
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
@@ -32,18 +68,23 @@
 <body>
     <div class="container">
         <div class="header">
-            <h2>Your Business Status: {{ ucfirst($status) }}</h2>
+            <img class="logo" src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo">
+            <h2 class="title">Your Business Status: {{ ucfirst($status) }}</h2>
         </div>
+
         <div class="body">
-            <p>Your business, {{ $business->company_name }}, has been {{ $status }}.</p>
+            <p>Your business, <strong>{{ $business->company_name }}</strong>, has been <strong>{{ $status }}</strong>.
+            </p>
+
             <p><strong>Remarks:</strong> {{ $remarks }}</p>
+
             @if($status === 'deactivated')
             <p>Please contact the administrator for further details.</p>
             @endif
-            <a href="{{ $loginUrl }}"
-                style="display: inline-block; padding: 10px 20px; background: #068f6d; color: white; text-decoration: none;">Log
-                In</a>
+
+            <a href="{{ $loginUrl }}" class="button">Log In</a>
         </div>
+
         <div class="footer">
             <p>&copy; {{ config('app.name') }}. All rights reserved.</p>
         </div>

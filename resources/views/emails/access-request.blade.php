@@ -3,36 +3,49 @@
 
 <head>
     <style>
-        .container {
-            max-width: 600px;
-            margin: auto;
-            font-family: Arial, sans-serif;
-        }
+    .container {
+        max-width: 600px;
+        margin: auto;
+        font-family: Arial, sans-serif;
+    }
 
-        .header {
-            background: #068f6d;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
+    .header {
+        background: #068f6d;
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
 
-        .body {
-            padding: 20px;
-            background: #f9f9f9;
-        }
+    .body {
+        padding: 20px;
+        background: #f9f9f9;
+    }
 
-        .footer {
-            background: #e0e0e0;
-            padding: 10px;
-            text-align: center;
-        }
+    .footer {
+        background: #e0e0e0;
+        padding: 10px;
+        text-align: center;
+    }
+
+    .logo {
+        display: block;
+        margin: 0 auto 10px auto;
+        max-width: 150px;
+    }
+
+    .title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: normal;
+    }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="header">
-            <h2>Access Request for {{ $business->company_name }}</h2>
+            <img class="logo" src="{{ config('app.url') }}/media/amsol-logo.png" alt="{{ config('app.name') }} Logo">
+            <h2 class="title">Your Business Status: {{ ucfirst($status) }}</h2>
         </div>
         <div class="body">
             <p>You have been granted access to {{ $business->company_name }}.</p>

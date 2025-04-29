@@ -5,29 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ContactSubmission extends Model
+class Campaign extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'business_id',
-        'first_name',
-        'last_name',
-        'email',
-        'phone',
-        'company_name',
-        'country',
-        'inquiry_type',
-        'message',
-        'source',
+        'name',
         'utm_source',
         'utm_medium',
         'utm_campaign',
+        'target_url',
+        'start_date',
+        'end_date',
         'status',
-    ];
-
-    protected $casts = [
-        'status' => 'string',
+        'has_survey',
     ];
 
     public function business()
@@ -35,8 +27,13 @@ class ContactSubmission extends Model
         return $this->belongsTo(Business::class);
     }
 
-    public function lead()
+    public function shortLink()
     {
-        return $this->hasOne(Lead::class);
+        return $this->hasOne(ShortLink::class);
+    }
+
+    public function leads()
+    {
+        return $this->hasMany(Lead::class);
     }
 }

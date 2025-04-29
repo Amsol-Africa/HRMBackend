@@ -160,4 +160,14 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
 
         return false;
     }
+
+    public function contactSubmissions()
+    {
+        return $this->hasMany(ContactSubmission::class);
+    }
+
+    public function leads()
+    {
+        return $this->hasMany(Lead::class);
+    }
 }

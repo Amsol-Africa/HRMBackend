@@ -55,8 +55,6 @@ class JobPostController extends Controller
 
         $job_posts = $query->get();
 
-        Log::debug($job_posts);
-
         $jobPostsTable = view('job-posts._table', compact('job_posts'))->render();
         return RequestResponse::ok('Ok', $jobPostsTable);
     }

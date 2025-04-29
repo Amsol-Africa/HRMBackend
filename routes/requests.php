@@ -38,6 +38,7 @@ use App\Http\Controllers\PayGradesController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\EmployeeReliefsController;
+use App\Http\Controllers\CrmController;
 
 Route::post('/business/{businessSlug}/generate-token', [BusinessController::class, 'generateApiToken'])
     ->middleware('auth')
@@ -388,5 +389,27 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/', [SurveyController::class, 'store'])->name('store');
         Route::post('/{survey}/update', [SurveyController::class, 'update'])->name('update');
         Route::post('/{survey}/destroy', [SurveyController::class, 'destroy'])->name('destroy');
+    });
+
+    // CRM
+    Route::name('crm.')->prefix('crm')->group(function () {
+        Route::post('/contacts/fetch', [CrmController::class, 'fetchContacts'])->name('contacts.fetch');
+        Route::post('/contacts/store', [CrmController::class, 'storeContact'])->name('contacts.store');
+        Route::post('/contacts/update', [CrmController::class, 'updateContact'])->name('contacts.update');
+        Route::post('/contacts/destroy', [CrmController::class, 'destroyContact'])->name('contacts.destroy');
+
+        Route::post('/campaigns/fetch', [CrmController::class, 'fetchCampaigns'])->name('campaigns.fetch');
+        Route::post('/campaigns/store', [CrmController::class, 'storeCampaign'])->name('campaigns.store');
+        Route::post('/campaigns/update', [CrmController::class, 'updateCampaign'])->name('campaigns.update');
+        Route::post('/campaigns/destroy', [CrmController::class, 'destroyCampaign'])->name('campaigns.destroy');
+        Route::post('/campaigns/analytics/fetch', [CrmController::class, 'fetchAnalytics'])->name('campaigns.analytics.fetch');
+
+        Route::post('/leads/fetch', [CrmController::class, 'fetchLeads'])->name('leads.fetch');
+        Route::post('/leads/store', [CrmController::class, 'storeLead'])->name('leads.store');
+        Route::post('/leads/update', [CrmController::class, 'updateLead'])->name('leads.update');
+        Route::post('/leads/destroy', [CrmController::class, 'destroyLead'])->name('leads.destroy');
+        Route::post('/leads/label', [CrmController::class, 'labelLead'])->name('leads.label');
+
+        Route::post('/lead-activities/store', [CrmController::class, 'storeLeadActivity'])->name('lead-activities.store');
     });
 });
