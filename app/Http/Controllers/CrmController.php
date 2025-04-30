@@ -256,7 +256,6 @@ class CrmController extends Controller
         });
     }
 
-
     public function createSurvey($business, Campaign $campaign)
     {
         $currentBusiness = Business::findBySlug($business);
@@ -434,7 +433,7 @@ class CrmController extends Controller
 
                 $value = $request->input($field['id']);
                 if ($value !== null) {
-                    $value = Str::of($value)->trim()->stripTags();
+                    $value = (string) Str::of($value)->trim()->stripTags();
                 }
                 $surveyResponses[$field['id']] = [
                     'label' => $field['label'],
@@ -459,12 +458,55 @@ class CrmController extends Controller
             }
 
             return $this->handleTransaction(function () use ($request, $campaign, $surveyResponses, $rateLimitKey) {
+                // Extract email from survey responses (label containing "email")
+                $email = null;
+                $name = null;
+                foreach ($surveyResponses as $response) {
+                    $labelLower = Str::lower($response['label']);
+                    if (Str::contains($labelLower, ['email', 'e-mail']) && $response['value']) {
+                        try {
+                            $request->validate(['survey_email' => 'email:rfc,dns'], ['survey_email' => $response['value']]);
+                            $email = (string) Str::of($response['value'])->trim();
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            Log::warning("Invalid email found in survey responses: {$response['value']}");
+                        }
+                    }
+                    if (Str::contains($labelLower, ['name', 'full name', "what's your name"]) && $response['value']) {
+                        try {
+                            $request->validate(['survey_name' => 'string|max:255'], ['survey_name' => $response['value']]);
+                            $name = (string) Str::of($response['value'])->trim();
+                        } catch (\Illuminate\Validation\ValidationException $e) {
+                            Log::warning("Invalid name found in survey responses: {$response['value']}");
+                        }
+                    }
+                }
+
+                // Fallback to request email if no email found in survey responses
+                if (!$email && $request->email) {
+                    try {
+                        $request->validate(['request_email' => 'email:rfc,dns'], ['request_email' => $request->email]);
+                        $email = (string) Str::of($request->email)->trim();
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        Log::warning("Invalid email in request: {$request->email}");
+                    }
+                }
+
+                // Fallback to request name if no name found in survey responses
+                if (!$name && $request->name) {
+                    try {
+                        $request->validate(['request_name' => 'string|max:255'], ['request_name' => $request->name]);
+                        $name = (string) Str::of($request->name)->trim();
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        Log::warning("Invalid name in request: {$request->name}");
+                    }
+                }
+
                 $lead = Lead::create([
                     'business_id' => $campaign->business_id,
                     'campaign_id' => $campaign->id,
-                    'name' => $request->name ? Str::of($request->name)->trim()->stripTags() : 'Anonymous',
-                    'email' => Str::of($request->email)->trim(),
-                    'country' => Str::of($request->country)->trim()->stripTags(),
+                    'name' => $name ?: 'Anonymous',
+                    'email' => $email, // Allow null if no valid email found
+                    'country' => $request->country ? (string) Str::of($request->country)->trim()->stripTags() : null,
                     'survey_responses' => $surveyResponses,
                     'status' => 'new',
                 ]);
@@ -476,17 +518,25 @@ class CrmController extends Controller
                     'description' => 'Survey submitted via campaign.',
                 ]);
 
-                try {
-                    Mail::to($request->email)->send(new SurveyConfirmation($campaign, $lead));
-                    Log::info("Survey confirmation email sent to: {$request->email}");
-                } catch (\Exception $e) {
-                    Log::error("Failed to send survey confirmation email to {$request->email}: {$e->getMessage()}");
+                $emailSent = false;
+                if ($email) {
+                    try {
+                        Mail::to($email)->send(new SurveyConfirmation($campaign, $lead));
+                        Log::info("Survey confirmation email sent to: {$email}");
+                        $emailSent = true;
+                    } catch (\Exception $e) {
+                        Log::error("Failed to send survey confirmation email to {$email}: {$e->getMessage()}");
+                    }
+                } else {
+                    Log::info("No valid email provided for survey submission; skipping email send.");
                 }
 
                 RateLimiter::increment($rateLimitKey);
 
                 return response()->json([
-                    'message' => 'Thank you for your feedback! A confirmation has been sent to your email.',
+                    'message' => $emailSent
+                        ? 'Thank you for your feedback! A confirmation has been sent to your email.'
+                        : 'Thank you for your feedback!',
                     'redirect_url' => $campaign->target_url,
                 ]);
             });

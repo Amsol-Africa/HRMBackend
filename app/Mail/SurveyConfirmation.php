@@ -23,12 +23,17 @@ class SurveyConfirmation extends Mailable
 
     public function build()
     {
+        if (!$this->lead->email) {
+            \Log::warning("No email provided for SurveyConfirmation for lead ID {$this->lead->id}");
+            return $this; // Skip sending
+        }
+
         return $this->subject('Thank You for Your Feedback!')
             ->view('emails.survey_confirmation')
             ->with([
-                'campaign_name' => $this->campaign->name,
-                'name' => $this->lead->name,
-                'responses' => $this->lead->survey_responses,
+                'campaign_name' => $this->campaign->name ?? 'Unknown Campaign',
+                'name' => $this->lead->name ?? 'Not Asked',
+                'responses' => $this->lead->survey_responses ?? [],
             ]);
     }
 }
