@@ -36,10 +36,30 @@ class BusinessController extends Controller
     public function redirectToDashboard(Request $request)
     {
         $user = auth()->user();
-        $business = $user->business()->first();
 
-        if ($business) {
+        if ($user->hasRole('business-admin')) {
+            $business = $user->business()->first();
+            if ($user->status === 'setup' || !$business) {
+                return redirect()->route('setup.business');
+            } elseif ($user->status === 'module') {
+                return redirect()->route('setup.modules');
+            }
+            session(['active_business_slug' => $business->slug, 'active_role' => 'business-admin']);
             return redirect()->route('business.index', ['business' => $business->slug]);
+        } elseif ($user->hasRole('business-hr') || $user->hasRole('business-finance')) {
+            $business = $user->employee->business;
+            if (!$business) {
+                return redirect()->route('setup.business');
+            }
+            session(['active_business_slug' => $business->slug, 'active_role' => $user->hasRole('business-hr') ? 'business-hr' : 'business-finance']);
+            return redirect()->route('business.index', ['business' => $business->slug]);
+        } elseif ($user->hasRole('business-employee')) {
+            $business = $user->employee->business;
+            if (!$business) {
+                return redirect()->route('setup.business');
+            }
+            session(['active_business_slug' => $business->slug, 'active_role' => 'business-employee']);
+            return redirect()->route('myaccount.index', ['business' => $business->slug]);
         }
         return redirect()->route('setup.business');
     }
