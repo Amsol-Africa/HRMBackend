@@ -33,6 +33,17 @@ class BusinessController extends Controller
         return view('auth.business-setup', compact('page', 'description', 'industries', 'business'));
     }
 
+    public function redirectToDashboard(Request $request)
+    {
+        $user = auth()->user();
+        $business = $user->business()->first();
+
+        if ($business) {
+            return redirect()->route('business.index', ['business' => $business->slug]);
+        }
+        return redirect()->route('setup.business');
+    }
+
     public function store(Request $request)
     {
         $validatedData = $request->validate([

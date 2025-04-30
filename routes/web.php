@@ -246,6 +246,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/payroll-template/csv', [PayrollController::class, 'downloadCsvTemplate'])->name('payroll-template.csv');
     Route::get('/payroll-template/xlsx', [PayrollController::class, 'downloadXlsxTemplate'])->name('payroll-template.xlsx');
+
+    Route::middleware('auth')->get('/dashboard', [BusinessController::class, 'redirectToDashboard'])->name('dashboard');
 });
 
 Route::middleware(['auth'])->group(function () {
