@@ -41,36 +41,18 @@ class ContactSubmissionController extends Controller
             $business = Business::where('slug', $validated['business_slug'])->first();
 
             if (!$business) {
-                Log::warning('Business not found', [
-                    'slug' => $validated['business_slug'],
-                    'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                ]);
                 return RequestResponse::unauthorized('Invalid business or unauthorized API token.');
             }
 
             if (!$business->api_token) {
-                Log::warning('No API token set for business', [
-                    'business_id' => $business->id,
-                    'slug' => $validated['business_slug'],
-                ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
             try {
                 if (!Hash::check($validated['api_token'], $business->api_token)) {
-                    Log::warning('Invalid API token for business', [
-                        'business_id' => $business->id,
-                        'slug' => $validated['business_slug'],
-                        'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                    ]);
                     return RequestResponse::unauthorized('Invalid or unauthorized API token.');
                 }
             } catch (\Exception $e) {
-                Log::error('Token verification failed: ' . $e->getMessage(), [
-                    'business_id' => $business->id,
-                    'slug' => $validated['business_slug'],
-                    'api_token' => Str::mask($validated['api_token'], '*', 4, -4),
-                ]);
                 return RequestResponse::unauthorized('Invalid or unauthorized API token.');
             }
 
@@ -94,20 +76,14 @@ class ContactSubmissionController extends Controller
 
                 // Create a corresponding Lead with business_id
                 Lead::create([
-                    'business_id' => $business->id, // Set business_id
+                    'business_id' => $business->id,
                     'contact_submission_id' => $submission->id,
                     'name' => trim($submission->first_name . ' ' . $submission->last_name) ?: 'Unknown',
                     'email' => $submission->email,
                     'phone' => $submission->phone,
                     'source' => 'api',
                     'status' => $submission->status,
-                    'user_id' => null, // No authenticated user for API
-                ]);
-
-                Log::info('Contact submission and lead created', [
-                    'submission_id' => $submission->id,
-                    'email' => $validated['email'],
-                    'business_id' => $business->id,
+                    'user_id' => null,
                 ]);
 
                 return RequestResponse::ok('Contact submission received successfully', [
@@ -115,9 +91,6 @@ class ContactSubmissionController extends Controller
                     'status' => $submission->status,
                 ]);
             }, function ($exception) {
-                Log::error('Contact submission failed: ' . $exception->getMessage(), [
-                    'email' => $validated['email'],
-                ]);
                 return RequestResponse::badRequest('An error occurred while processing your submission: ' . $exception->getMessage());
             });
         } catch (ValidationException $e) {

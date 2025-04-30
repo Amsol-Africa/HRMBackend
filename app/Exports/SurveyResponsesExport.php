@@ -6,6 +6,7 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Illuminate\Support\Collection;
 use App\Models\Lead;
+use Illuminate\Support\Facades\Log;
 
 class SurveyResponsesExport implements FromCollection, WithHeadings
 {
@@ -18,19 +19,26 @@ class SurveyResponsesExport implements FromCollection, WithHeadings
 
     public function collection()
     {
-        $data = [
-            'name' => $this->lead->name,
-            'email' => $this->lead->email,
-            'country' => $this->lead->country,
-        ];
-
-        // Add survey responses dynamically
-        if ($this->lead->survey_responses) {
-            foreach ($this->lead->survey_responses as $field) {
-                $data[$field['label']] = $field['value'] ?? 'N/A';
-            }
+        if (!$this->lead) {
+            Log::error("Lead is null in SurveyResponsesExport");
+            return new Collection([]);
         }
 
+        $data = [
+            'name' => $this->lead->name ?? 'N/A',
+            'email' => $this->lead->email ?? 'N/A',
+            'country' => $this->lead->country ?? 'N/A',
+        ];
+
+        if (is_array($this->lead->survey_responses)) {
+            foreach ($this->lead->survey_responses as $field) {
+                $data[$field['label'] ?? 'Unknown'] = $field['value'] ?? 'N/A';
+            }
+        } else {
+            Log::warning("survey_responses is not an array for lead ID: {$this->lead->id}");
+        }
+
+        Log::info("SurveyResponsesExport data for lead ID: {$this->lead->id}: " . json_encode($data));
         return new Collection([$data]);
     }
 
@@ -38,10 +46,9 @@ class SurveyResponsesExport implements FromCollection, WithHeadings
     {
         $headings = ['Name', 'Email', 'Country'];
 
-        // Add survey response field labels
-        if ($this->lead->survey_responses) {
+        if (is_array($this->lead->survey_responses)) {
             foreach ($this->lead->survey_responses as $field) {
-                $headings[] = $field['label'];
+                $headings[] = $field['label'] ?? 'Unknown';
             }
         }
 

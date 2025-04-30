@@ -3,27 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Enum\Status;
-use App\Models\JobPost;
-use App\Models\Business;
-use App\Models\Application;
-use App\Models\Applicant;
-use App\Models\Interview;
-use App\Models\User;
-use Illuminate\Http\Request;
+use App\Exports\ApplicationExport;
 use App\Http\RequestResponse;
-use App\Traits\HandleTransactions;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Auth;
 use App\Mail\ApplicationReceived;
 use App\Mail\ApplicationStageUpdated;
 use App\Mail\InterviewScheduled;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use App\Models\Applicant;
+use App\Models\Application;
+use App\Models\Business;
+use App\Models\Interview;
+use App\Models\JobPost;
+use App\Models\Lead;
+use App\Models\LeadActivity;
+use App\Models\User;
+use App\Traits\HandleTransactions;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ApplicationExport;
 
 class ApplicationController extends Controller
 {
@@ -132,6 +131,54 @@ class ApplicationController extends Controller
 
             $application->setStatus(Status::APPLIED);
 
+            $amsol = Business::where('slug', 'amsol')->first();
+            if (!$amsol) {
+                throw new \Exception('Amsol business not found');
+            }
+
+            $applicant = Applicant::findOrFail($request->applicant_id);
+            $user = $applicant->user;
+            if (!$user) {
+                throw new \Exception('Applicant has no associated user');
+            }
+
+            $leadExists = Lead::where('user_id', $user->id)->exists();
+            if ($leadExists) {
+                throw new \Exception('Lead already exists.');
+            } else {
+                $leadData = [
+                    'business_id' => $amsol->id,
+                    'user_id' => $user->id,
+                    'name' => $user->name ?? 'Unknown',
+                    'email' => $user->email ?? 'unknown@example.com',
+                    'phone' => $user->phone,
+                    'source' => 'job_application',
+                    'status' => 'new',
+                    'label' => 'Applicant',
+                ];
+                Log::debug('Lead data prepared', ['lead_data' => $leadData]);
+
+                try {
+                    $lead = Lead::create($leadData);
+                    if (!$lead || !$lead->id) {
+                        Log::error('Failed to create lead or lead ID missing', ['user_id' => $user->id, 'lead_data' => $leadData]);
+                        throw new \Exception('Lead creation failed');
+                    }
+                    Log::debug('Lead created successfully', ['lead_id' => $lead->id, 'user_id' => $user->id]);
+
+                    LeadActivity::create([
+                        'lead_id' => $lead->id,
+                        'user_id' => $user->id,
+                        'activity_type' => 'note',
+                        'description' => 'Lead created from internal job application for job post ID: ' . $job_post->id,
+                    ]);
+                    Log::debug('Lead activity created', ['lead_id' => $lead->id, 'user_id' => $user->id]);
+                } catch (\Exception $e) {
+                    Log::error('Lead creation error', ['user_id' => $user->id, 'error' => $e->getMessage(), 'lead_data' => $leadData]);
+                    throw $e;
+                }
+            }
+
             if ($request->hasFile('attachments')) {
                 foreach ($request->file('attachments') as $file) {
                     $application->addMedia($file)->toMediaCollection('applications');
@@ -151,8 +198,8 @@ class ApplicationController extends Controller
                 'api_token' => 'required|string',
                 'first_name' => 'required|string|max:100',
                 'last_name' => 'required|string|max:100',
-                'email' => 'required|email|unique:users,email|max:255',
-                'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/|unique:users,phone',
+                'email' => 'required|email|max:255',
+                'phone' => 'required|string|regex:/^\+?[1-9]\d{1,14}$/',
                 'job_post_id' => [
                     'required',
                     'exists:job_posts,slug',
@@ -195,7 +242,7 @@ class ApplicationController extends Controller
             }
 
             try {
-                if (!Hash::check($validated['api_token'], $business->api_token)) {
+                if (!password_verify($validated['api_token'], $business->api_token)) {
                     return RequestResponse::unauthorized('Invalid or unauthorized API token.');
                 }
             } catch (\Exception $e) {
@@ -222,7 +269,7 @@ class ApplicationController extends Controller
                     [
                         'name' => trim("{$validated['first_name']} {$validated['last_name']}"),
                         'phone' => $validated['phone'],
-                        'password' => Hash::make(Str::random(12)),
+                        'password' => bcrypt(str_random(12)),
                         'country' => 'Unknown',
                     ]
                 );
@@ -253,6 +300,38 @@ class ApplicationController extends Controller
                     foreach ($request->file('attachments') as $file) {
                         $application->addMedia($file)->toMediaCollection('applications');
                     }
+                }
+
+                if (!Lead::where('user_id', $user->id)->exists()) {
+                    $leadData = [
+                        'business_id' => $business->id,
+                        'user_id' => $user->id,
+                        'name' => $user->name ?? 'Unknown',
+                        'email' => $user->email ?? 'unknown@example.com',
+                        'phone' => $user->phone,
+                        'source' => 'job_application',
+                        'status' => 'new',
+                        'label' => 'Applicant',
+                    ];
+
+                    try {
+                        $lead = Lead::create($leadData);
+                        if (!$lead || !$lead->id) {
+                            throw new \Exception('Lead creation failed');
+                        }
+                        Log::debug('Lead created successfully', ['lead_id' => $lead->id, 'user_id' => $user->id]);
+
+                        LeadActivity::create([
+                            'lead_id' => $lead->id,
+                            'user_id' => $user->id,
+                            'activity_type' => 'note',
+                            'description' => 'Lead created from external job application for job post ID: ' . $jobPost->id,
+                        ]);
+                    } catch (\Exception $e) {
+                        throw $e;
+                    }
+                } else {
+                    Log::info('Skipping lead creation due to existing lead', ['user_id' => $user->id]);
                 }
 
                 Mail::to($user->email)->queue(new ApplicationReceived($application));
@@ -292,7 +371,6 @@ class ApplicationController extends Controller
 
         return view('applications.reports', compact('applications'));
     }
-
 
     public function update(Request $request)
     {
@@ -367,7 +445,7 @@ class ApplicationController extends Controller
 
         return $this->handleTransaction(function () use ($request) {
             $application = Application::findOrFail($request->application_id);
-            $scheduledAt = \Carbon\Carbon::parse("{$request->interview_date} {$request->interview_time}")->toDateTimeString();
+            $scheduledAt = Carbon::parse("{$request->interview_date} {$request->interview_time}")->toDateTimeString();
 
             $interview = Interview::create([
                 'application_id' => $application->id,

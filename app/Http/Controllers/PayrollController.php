@@ -2899,14 +2899,13 @@ class PayrollController extends Controller
                 return RequestResponse::badRequest('Business not found.');
             }
 
-            // Determine the scope: single payslip or all for a payroll
             if ($employeePayrollId) {
                 $employeePayroll = EmployeePayroll::with(['employee.user', 'payroll.business', 'payroll.location'])
                     ->where('id', $employeePayrollId)
                     ->whereHas('payroll', fn($q) => $q->where('business_id', $business->id))
                     ->firstOrFail();
 
-                $employeePayrolls = collect([$employeePayroll]); // Single item collection
+                $employeePayrolls = collect([$employeePayroll]);
                 $payroll = $employeePayroll->payroll;
             } else {
                 $payroll = Payroll::where('business_id', $business->id)
@@ -2917,7 +2916,6 @@ class PayrollController extends Controller
                 $employeePayrolls = $payroll->employeePayrolls;
             }
 
-            // Process each payslip
             $sentCount = 0;
             foreach ($employeePayrolls as $employeePayroll) {
                 $user = $employeePayroll->employee->user;
@@ -2926,7 +2924,6 @@ class PayrollController extends Controller
                     continue;
                 }
 
-                // Determine entity for the payslip view
                 $entity = $business;
                 $entityType = 'business';
                 if ($employeePayroll->payroll->location_id) {
@@ -2939,7 +2936,6 @@ class PayrollController extends Controller
                     }
                 }
 
-                // Generate PDF
                 $pdf = Pdf::loadView('payroll.reports.payslip', compact('employeePayroll', 'business', 'entity', 'entityType'));
                 $fileName = 'payslip_' . $employeePayroll->id . '_' . time() . '.pdf';
                 $filePath = storage_path('app/public/payslips/' . $fileName);
@@ -2949,12 +2945,10 @@ class PayrollController extends Controller
                 }
                 $pdf->save($filePath);
 
-                // Send email
                 Mail::to($user->email)->send(new PayslipMail($employeePayroll, $filePath, $user->name));
                 $sentCount++;
             }
 
-            // Update payroll status if sending all payslips
             if ($payrollId && !$employeePayrollId) {
                 $payroll->update(['emailed' => true]);
             }
@@ -2964,7 +2958,6 @@ class PayrollController extends Controller
                 : "Payslips queued for sending ($sentCount sent).";
             return RequestResponse::ok($message, ['sent_count' => $sentCount]);
         }, function ($e) {
-            Log::error('Failed to send payslips: ' . $e->getMessage());
             return RequestResponse::badRequest('Failed to send payslips: ' . $e->getMessage());
         });
     }

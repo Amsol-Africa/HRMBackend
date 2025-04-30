@@ -51,6 +51,13 @@
                                     </p>
                                     <p class="mb-2"><strong>Has Survey:</strong>
                                         {{ $campaign->has_survey ? 'Yes' : 'No' }}
+                                        @if ($campaign->has_survey)
+                                        <a href="{{ route('business.crm.campaigns.surveys.create', ['business' => $currentBusiness->slug, 'campaign' => $campaign->id]) }}"
+                                            class="btn btn-sm btn-outline-primary ms-2">Manage Survey</a>
+                                        @else
+                                        <a href="{{ route('business.crm.campaigns.surveys.create', ['business' => $currentBusiness->slug, 'campaign' => $campaign->id]) }}"
+                                            class="btn btn-sm btn-outline-primary ms-2">Create Survey</a>
+                                        @endif
                                     </p>
                                 </div>
                             </div>
@@ -121,89 +128,87 @@
 
     @push('styles')
     <style>
-        /* General Styling */
-        .card {
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+    .card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
 
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-        }
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    }
 
-        .form-control {
-            border-color: #e9ecef;
-            transition: border-color 0.2s;
-        }
+    .form-control {
+        border-color: #e9ecef;
+        transition: border-color 0.2s;
+    }
 
-        .form-control:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
 
-        .btn-primary,
-        .btn-outline-primary {
-            transition: background-color 0.2s, transform 0.2s;
-        }
+    .btn-primary,
+    .btn-outline-primary {
+        transition: background-color 0.2s, transform 0.2s;
+    }
 
-        .btn-primary:hover,
-        .btn-outline-primary:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-            transform: translateY(-1px);
-        }
+    .btn-primary:hover,
+    .btn-outline-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+        transform: translateY(-1px);
+    }
 
-        .btn-outline-primary {
-            border-color: #007bff;
-            color: #007bff;
-        }
+    .btn-outline-primary {
+        border-color: #007bff;
+        color: #007bff;
+    }
 
-        .btn-outline-primary:hover {
-            color: #fff;
-        }
+    .btn-outline-primary:hover {
+        color: #fff;
+    }
 
-        .badge {
-            font-weight: 500;
-            padding: 6px 12px;
-        }
+    .badge {
+        font-weight: 500;
+        padding: 6px 12px;
+    }
 
-        h6 {
-            color: #343a40;
-        }
+    h6 {
+        color: #343a40;
+    }
 
-        .breadcrumb {
-            background-color: transparent;
-            padding: 0;
-        }
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+    }
 
-        .breadcrumb-item a {
-            color: #007bff;
-            text-decoration: none;
-        }
+    .breadcrumb-item a {
+        color: #007bff;
+        text-decoration: none;
+    }
 
-        .breadcrumb-item a:hover {
-            text-decoration: underline;
-        }
+    .breadcrumb-item a:hover {
+        text-decoration: underline;
+    }
 
-        /* Table Styling */
-        .table th,
-        .table td {
-            vertical-align: middle;
-        }
+    .table th,
+    .table td {
+        vertical-align: middle;
+    }
 
-        .table th {
-            font-weight: 600;
-            color: #343a40;
-        }
+    .table th {
+        font-weight: 600;
+        color: #343a40;
+    }
 
-        .table-hover tbody tr:hover {
-            background-color: #f8f9fa;
-        }
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
 
-        .table-responsive {
-            border-radius: 8px;
-            overflow-x: auto;
-        }
+    .table-responsive {
+        border-radius: 8px;
+        overflow-x: auto;
+    }
     </style>
     @endpush
 

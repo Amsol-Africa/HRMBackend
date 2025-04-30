@@ -5,62 +5,62 @@
     <meta charset="UTF-8">
     <title>Thank You for Your Feedback</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
 
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
+    .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
 
-        .header {
-            text-align: center;
-            padding: 20px 0;
-        }
+    .header {
+        text-align: center;
+        padding: 20px 0;
+    }
 
-        .header img {
-            max-height: 50px;
-        }
+    .header img {
+        max-height: 50px;
+    }
 
-        .content {
-            padding: 20px;
-            color: #333333;
-            line-height: 1.6;
-        }
+    .content {
+        padding: 20px;
+        color: #333333;
+        line-height: 1.6;
+    }
 
-        .content h2 {
-            color: #004aad;
-        }
+    .content h2 {
+        color: #004aad;
+    }
 
-        .responses {
-            margin-top: 20px;
-            border-top: 1px solid #e0e0e0;
-            padding-top: 10px;
-        }
+    .responses {
+        margin-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 10px;
+    }
 
-        .responses h4 {
-            color: #004aad;
-            margin-bottom: 10px;
-        }
+    .responses h4 {
+        color: #004aad;
+        margin-bottom: 10px;
+    }
 
-        .responses p {
-            margin: 5px 0;
-        }
+    .responses p {
+        margin: 5px 0;
+    }
 
-        .footer {
-            text-align: center;
-            padding: 10px 0;
-            color: #666666;
-            font-size: 12px;
-        }
+    .footer {
+        text-align: center;
+        padding: 10px 0;
+        color: #666666;
+        font-size: 12px;
+    }
     </style>
 </head>
 

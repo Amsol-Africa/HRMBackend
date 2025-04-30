@@ -134,7 +134,7 @@ window.getLeads = async function (page = 1, filter = '') {
             order: [[0, 'desc']],
             columnDefs: [{ targets: '_all', searchable: true }],
             language: {
-                emptyTable: `No leads available. <a href="/business/${document.getElementById('businessSlug')?.value || 'default'}/crm/leads/create">Create a new lead</a>.`,
+                emptyTable: `No leads available.`,
                 loadingRecords: "Loading..."
             }
         });

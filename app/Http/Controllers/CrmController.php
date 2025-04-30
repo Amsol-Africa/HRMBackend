@@ -24,6 +24,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\SurveyConfirmation;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\RateLimiter;
+
 
 use Illuminate\Support\Str;
 
@@ -272,31 +274,49 @@ class CrmController extends Controller
         }
 
         $validated = $request->validate([
-            'fields' => 'required|array',
-            'fields.*.type' => 'required|in:text,textarea,star',
+            'fields' => 'required|array|min:1',
+            'fields.*.id' => 'required|string|distinct',
+            'fields.*.type' => 'required|in:text,textarea,star,multiple_choice',
             'fields.*.label' => 'required|string|max:255',
-            'fields.*.required' => 'boolean',
+            'fields.*.required' => 'nullable|boolean',
+            'fields.*.options' => 'nullable|array|min:2',
+            'fields.*.options.*' => 'nullable|string|max:255',
+        ], [
+            'fields.*.id.distinct' => 'Field IDs must be unique.',
+            'fields.min' => 'At least one field is required.',
         ]);
 
-        return $this->handleTransaction(function () use ($campaign, $validated) {
-            $currentBusiness = Business::findBySlug($business);
-            $fields = array_map(function ($field, $index) {
-                return [
-                    'id' => 'field_' . $index . '_' . Str::random(8),
+        // Check for duplicate labels server-side
+        $labels = array_column($request->fields, 'label');
+        if (count($labels) !== count(array_unique($labels))) {
+            return response()->json([
+                'message' => 'Each field must have a unique label.',
+            ], 422);
+        }
+
+        return $this->handleTransaction(function () use ($campaign, $validated, $currentBusiness) {
+            $fields = array_map(function ($field) {
+                $fieldData = [
+                    'id' => $field['id'],
                     'type' => $field['type'],
                     'label' => $field['label'],
-                    'required' => $field['required'] ?? false,
+                    'required' => isset($field['required']) && $field['required'] == 1,
                 ];
-            }, $validated['fields'], array_keys($validated['fields']));
+                if ($field['type'] === 'multiple_choice' && !empty($field['options'])) {
+                    $fieldData['options'] = array_filter($field['options'], fn($option) => !empty(trim($option)));
+                }
+                return $fieldData;
+            }, $validated['fields']);
+
+            $isUpdate = $campaign->has_survey;
 
             $campaign->update([
                 'has_survey' => true,
                 'survey_config' => ['fields' => $fields],
             ]);
 
-            return response()->json([
-                'message' => 'Survey created successfully.',
-                'redirect_url' => route('business.crm.campaigns.view', ['business' => $currentBusiness->slug, 'campaign' => $campaign->id]),
+            return RequestResponse::ok($isUpdate ? 'Survey updated successfully.' : 'Survey created successfully.', [
+                'redirect_url' => url("/{$currentBusiness->slug}/crm/campaigns/{$campaign->id}"),
             ]);
         });
     }
@@ -310,35 +330,26 @@ class CrmController extends Controller
         $ip = request()->ip();
         $userAgent = request()->userAgent();
 
-        \Log::debug("Processing short link: {$slug}, IP: {$ip}");
-
-        // Check if a visit from this IP already exists for this short link
         $existingVisit = ShortLinkVisit::where('short_link_id', $shortLink->id)
             ->where('ip_address', $ip)
             ->first();
 
-        // Only record if not already visited by this IP
         if (!$existingVisit) {
             $country = null;
 
-            // Skip geolocation for localhost/bogon IPs during local testing
             if ($ip === '127.0.0.1' || filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-                \Log::debug("Skipping geolocation for private/bogon IP: {$ip}");
                 $country = 'Development';
             } else {
                 try {
                     $response = Http::timeout(5)->get("https://ipinfo.io/{$ip}/json?token=a876c4d470b426");
-                    \Log::debug('ipinfo.io Response: ' . json_encode($response->json()));
 
                     if ($response->successful()) {
                         if (isset($response['bogon']) && $response['bogon'] === true) {
-                            \Log::debug("Bogon IP detected: {$ip}");
                             $country = 'Unknown';
                         } else {
                             $country = $response['country'] ?? null;
                         }
                     } else {
-                        \Log::warning("ipinfo.io request failed for IP {$ip}: " . json_encode($response->json()));
                     }
                 } catch (\Exception $e) {
                     \Log::warning("Failed to fetch country for IP {$ip}: {$e->getMessage()}");
@@ -372,7 +383,6 @@ class CrmController extends Controller
         $shortLink = ShortLink::where('slug', $slug)->firstOrFail();
         $ip = request()->ip();
 
-        // Update visit to mark as skipped
         ShortLinkVisit::where('short_link_id', $shortLink->id)
             ->where('ip_address', $ip)
             ->update(['skipped' => true]);
@@ -396,8 +406,8 @@ class CrmController extends Controller
 
             $validationRules = [
                 'name' => ['nullable', 'string', 'max:255'],
-                'email' => ['required', 'email', 'max:255'],
-                'country' => ['required', 'string', 'max:255'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'country' => ['nullable', 'string', 'max:255'],
             ];
             $surveyResponses = [];
 
@@ -413,6 +423,12 @@ class CrmController extends Controller
                     $rules[] = 'integer';
                     $rules[] = 'min:1';
                     $rules[] = 'max:5';
+                } elseif ($field['type'] === 'multiple_choice') {
+                    $rules[] = 'string';
+                    $rules[] = 'max:255';
+                    if (!empty($field['options'])) {
+                        $rules[] = Rule::in($field['options']);
+                    }
                 }
                 $validationRules[$field['id']] = $rules;
 
@@ -424,6 +440,7 @@ class CrmController extends Controller
                     'label' => $field['label'],
                     'type' => $field['type'],
                     'value' => $value,
+                    'options' => $field['options'] ?? null,
                 ];
             }
 
@@ -441,7 +458,7 @@ class CrmController extends Controller
                 ], 409);
             }
 
-            return $this->handleTransaction(function () use ($request, $campaign, $surveyResponses) {
+            return $this->handleTransaction(function () use ($request, $campaign, $surveyResponses, $rateLimitKey) {
                 $lead = Lead::create([
                     'business_id' => $campaign->business_id,
                     'campaign_id' => $campaign->id,
@@ -461,8 +478,9 @@ class CrmController extends Controller
 
                 try {
                     Mail::to($request->email)->send(new SurveyConfirmation($campaign, $lead));
+                    Log::info("Survey confirmation email sent to: {$request->email}");
                 } catch (\Exception $e) {
-                    Log::error("Failed to send survey confirmation email: {$e->getMessage()}");
+                    Log::error("Failed to send survey confirmation email to {$request->email}: {$e->getMessage()}");
                 }
 
                 RateLimiter::increment($rateLimitKey);
@@ -728,7 +746,6 @@ class CrmController extends Controller
             $businessSlug = session('active_business_slug');
             $routeParameters = $request->route()->parameters();
 
-            // Extract type and format from route parameters
             $type = $routeParameters['type'] ?? null;
             $format = $routeParameters['format'] ?? null;
 
@@ -736,10 +753,7 @@ class CrmController extends Controller
                 return response()->json(['error' => 'Missing report type or format'], 400);
             }
 
-            $business = \App\Models\Business::findBySlug($businessSlug);
-
-            log:
-            info($business);
+            $business = Business::findBySlug($businessSlug);
 
             if (!$business) {
                 return response()->json(['error' => 'Business not found'], 404);
@@ -760,10 +774,12 @@ class CrmController extends Controller
                     return response()->json(['error' => 'Invalid report format specified'], 400);
                 }
             } elseif ($type === 'leads') {
-                $leads = Lead::whereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)))
-                    ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id))
-                    ->with('campaign')
-                    ->get();
+                $leads = Lead::where(function ($q) use ($business) {
+                    $q->where('business_id', $business->id)
+                        ->orWhereHas('contactSubmission', fn($q) => $q->where('business_id', $business->id))
+                        ->orWhereHas('campaign', fn($q) => $q->where('business_id', $business->id))
+                        ->orWhereHas('user', fn($q) => $q->whereHas('business', fn($b) => $b->where('id', $business->id)));
+                })->with(['campaign', 'user', 'contactSubmission'])->get();
 
                 if ($format === 'pdf') {
                     $pdf = Pdf::loadView('crm.reports.leads_pdf', ['leads' => $leads, 'business' => $business])
@@ -795,12 +811,6 @@ class CrmController extends Controller
             }
             return response()->json(['error' => 'Invalid report type specified'], 400);
         } catch (\Exception $e) {
-            \Log::error('Export report error: ' . $e->getMessage(), [
-                'type' => $type,
-                'format' => $format,
-                'business_slug' => $businessSlug,
-                'exception' => $e->getTraceAsString()
-            ]);
             return response()->json(['error' => 'An error occurred while exporting the report: ' . $e->getMessage()], 500);
         }
     }

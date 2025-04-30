@@ -3,26 +3,24 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Enum\Status;
-use App\Models\AccessRequest;
-use App\Models\User;
-use App\Models\Client;
-use App\Models\Module;
-use App\Models\Business;
-use Illuminate\View\View;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
 use App\Http\RequestResponse;
-use Illuminate\Validation\Rules;
-use App\Traits\HandleTransactions;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Mail\TeamInvitation;
+use App\Models\AccessRequest;
 use App\Http\Controllers\Controller;
+use App\Models\Business;
+use App\Models\Lead;
+use App\Models\LeadActivity;
+use App\Models\Module;
+use App\Models\User;
+use App\Traits\HandleTransactions;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
@@ -82,6 +80,38 @@ class RegisteredUserController extends Controller
             $user->assignRole('business-admin'); //business_owner
             $user->setStatus(Status::SETUP);
 
+            $amsol = Business::where('slug', 'amsol')->first();
+            if (!$amsol) {
+                throw new \Exception('Amsol business not found');
+            }
+
+            $leadData = [
+                'business_id' => $amsol->id,
+                'user_id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'source' => 'business_account',
+                'status' => 'new',
+                'label' => 'Business Admin',
+            ];
+
+            try {
+                $lead = Lead::create($leadData);
+                if (!$lead || !$lead->id) {
+                    throw new \Exception('Lead creation failed');
+                }
+
+                LeadActivity::create([
+                    'lead_id' => $lead->id,
+                    'user_id' => $user->id,
+                    'activity_type' => 'note',
+                    'description' => 'Lead created from user registration with business-admin role.',
+                ]);
+            } catch (\Exception $e) {
+                throw $e;
+            }
+
             $request->hasFile('image')
                 ? $user->addMediaFromRequest('image')->toMediaCollection('avatars')
                 : $user->addMediaFromBase64(createAvatarImageFromName($request->name))->toMediaCollection('avatars');
@@ -101,14 +131,13 @@ class RegisteredUserController extends Controller
     {
         if ($user->hasRole('business-admin')) {
             session(['active_role' => 'business-admin']);
-            if($user->status === "setup") {
+            if ($user->status === "setup") {
                 return route('setup.business');
-            }elseif($user->status === "module") {
+            } elseif ($user->status === "module") {
                 return route('setup.modules');
-            }else{
+            } else {
                 return route('login');
             }
-
         }
     }
 

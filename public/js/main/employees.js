@@ -245,7 +245,6 @@ window.saveEmployee = async function (btn) {
     } catch (error) {
         console.error('Save Employee Error:', error.response || error);
         const errorMessage = error.response?.data?.message || 'Failed to save employee.';
-        Swal.fire('Error!', errorMessage, 'error');
         if (error.response?.headers['x-toastr-message']) {
             toastr.error(error.response.headers['x-toastr-message']);
         }
@@ -410,7 +409,6 @@ window.previewImage = function (event) {
 
 window.exportEmployees = async function () {
     try {
-        // Show loading indicator
         Swal.fire({
             title: 'Exporting...',
             text: 'Preparing your employee data for download.',
@@ -420,7 +418,6 @@ window.exportEmployees = async function () {
             }
         });
 
-        // Collect current filter values
         const filters = {
             search: $('#search').val(),
             department: $('#filterDepartment').val(),
@@ -428,13 +425,11 @@ window.exportEmployees = async function () {
             job_category: $('#filterJobCategory').val()
         };
 
-        // Create a temporary form to submit the filters
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/employees/export';
         form.style.display = 'none';
 
-        // Add CSRF token
         const csrfToken = $('meta[name="csrf-token"]').attr('content');
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
@@ -442,25 +437,22 @@ window.exportEmployees = async function () {
         csrfInput.value = csrfToken;
         form.appendChild(csrfInput);
 
-        // Add filter inputs
         Object.keys(filters).forEach(key => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = key;
-            input.value = filters[key] || ''; // Ensure empty values are handled
+            input.value = filters[key] || '';
             form.appendChild(input);
         });
 
-        // Append form to body and submit
         document.body.appendChild(form);
         form.submit();
 
-        // Clean up form after submission
         setTimeout(() => {
             document.body.removeChild(form);
             Swal.close();
             toastr.success('Export started successfully. Check your downloads.');
-        }, 100); // Delay cleanup to ensure submission is initiated
+        }, 100);
     } catch (error) {
         console.error('Export Employees Error:', error);
         Swal.fire({

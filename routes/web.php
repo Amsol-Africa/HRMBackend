@@ -20,6 +20,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\CrmController;
+use App\Http\Controllers\SupportController;
 use App\Models\Business;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetchPublic'])->name('jobs.openings');
@@ -165,17 +166,6 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('/roles/{role}', [RoleController::class, 'show'])->name('roles.show');
         Route::get('/roles/{role}/edit', [RoleController::class, 'editView'])->name('roles.edit');
 
-        // surveys
-        Route::prefix('surveys')->name('surveys.')->group(function () {
-            Route::get('/', [SurveyController::class, 'index'])->name('index');
-            Route::get('/create', [SurveyController::class, 'create'])->name('create');
-            Route::get('/{survey}', [SurveyController::class, 'show'])->name('show');
-            Route::get('/{survey}/edit', [SurveyController::class, 'edit'])->name('edit');
-            Route::get('/{survey}/preview', [SurveyController::class, 'preview'])->name('preview');
-            Route::get('/{survey}/responses', [SurveyController::class, 'responses'])->name('responses');
-            Route::get('/{survey}/export', [SurveyController::class, 'export'])->name('export');
-        });
-
         Route::prefix('crm')->name('crm.')->group(function () {
 
             // Move export route to the top to avoid precedence issues
@@ -183,6 +173,8 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
                 ->name('reports.export')
                 ->where(['type' => 'leads|campaigns|contacts', 'format' => 'xlsx|csv|pdf']);
 
+            Route::get('/campaigns/{campaign}/surveys/create', [CrmController::class, 'createSurvey'])->name('campaigns.surveys.create');
+            Route::post('/campaigns/{campaign}/surveys/store', [CrmController::class, 'storeSurvey'])->name('campaigns.surveys.store');
 
             Route::get('/contacts', [CrmController::class, 'contacts'])->name('contacts.index');
             Route::get('/contacts/create', [CrmController::class, 'createContact'])->name('contacts.create');
@@ -193,8 +185,6 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/campaigns/{campaign}', [CrmController::class, 'viewCampaign'])->name('campaigns.view');
             Route::get('/campaigns/{campaign}/analytics', [CrmController::class, 'analytics'])->name('campaigns.analytics');
             Route::get('/campaigns/{campaign}/surveys/export', [CrmController::class, 'exportSurveys'])->name('campaigns.surveys.export');
-            Route::get('/campaigns/{campaign}/surveys/create', [CrmController::class, 'createSurvey'])->name('campaigns.surveys.create');
-            Route::post('/campaigns/{campaign}/surveys/store', [CrmController::class, 'storeSurvey'])->name('campaigns.surveys.store');
 
             Route::get('/leads', [CrmController::class, 'leads'])->name('leads.index');
             Route::get('/leads/create', [CrmController::class, 'createLead'])->name('leads.create');
@@ -256,6 +246,15 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/payroll-template/csv', [PayrollController::class, 'downloadCsvTemplate'])->name('payroll-template.csv');
     Route::get('/payroll-template/xlsx', [PayrollController::class, 'downloadXlsxTemplate'])->name('payroll-template.xlsx');
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance|business-employee'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+        Route::get('/support', [SupportController::class, 'index'])->name('support.index');
+        Route::post('/support/fetch', [SupportController::class, 'fetch'])->name('support.fetch');
+        Route::post('/support/store', [SupportController::class, 'store'])->name('support.store');
+        Route::post('/support/{issueId}/mark-solved', [SupportController::class, 'markSolved'])->name('support.mark-solved');
+    });
 });
 
 Route::get('business/{business:slug}/activate', [BusinessController::class, 'activate'])->name('business.activate');
