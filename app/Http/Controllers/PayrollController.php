@@ -1659,7 +1659,7 @@ class PayrollController extends Controller
         });
     }
 
-    public function emailP9(Request $request, $id)
+public function emailP9(Request $request, $id)
 {
     return $this->handleTransaction(function () use ($id, $request) {
         $business = Business::findBySlug(session('active_business_slug'));
@@ -1841,7 +1841,7 @@ class PayrollController extends Controller
                 'main_name' => $user->name ?? 'N/A',
                 'pin' => $employee->tax_no ?? 'N/A',
                 'nssf' => $employee->nssf_no ?? 'N/A',
-                'shif' => $employee->shif_no ?? 'N/A',
+                'shif' => $employee->shif_no ?? $employee->nhif_no ?? 'N/A',
                 'company_name' => $business->company_name ?? $business->name,
                 'tax_no' => $business->tax_pin_no ?? 'N/A',
             ];

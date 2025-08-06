@@ -364,7 +364,7 @@ th, td {
 
                 $totalCols = array_fill_keys([
                     'basic_salary', 'benefits_non_cash', 'value_of_quarters', 'total_gross_pay',
-                    'retirement_e1', 'retirement_e2', 'retirement_e3', 'housing_levy', 'shif', 'prmf',
+                    'retirement_e1', 'retirement_e2', 'retirement_e3', 'housing_levy', 'shif/NHIF', 'prmf',
                     'owner_occupied_interest', 'total_deductions', 'chargeable_pay', 'tax_charged',
                     'personal_relief', 'insurance_relief', 'paye'
                 ], 0);

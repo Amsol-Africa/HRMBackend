@@ -69,6 +69,15 @@
                         <button class="btn btn-outline-dark btn-sm" onclick="closeMonth()">Close Month</button>
                         <button class="btn btn-outline-primary btn-sm" onclick="emailPayslips()">Email Payslip</button>
                         <button class="btn btn-outline-dark btn-sm" onclick="emailP9()">Email P9</button>
+                <div id="p9-loading-spinner" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(255,255,255,0.7); z-index:9999; text-align:center;">
+    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Sending P9...</span>
+        </div>
+        <div class="mt-2">Sending P9 forms...</div>
+    </div>
+</div>
+
                         <button class="btn btn-outline-dark btn-sm" onclick="downloadPayroll()">Download</button>
                     </div>
                     <h5 class="text-muted">

@@ -85,7 +85,11 @@
                                 <a href="{{  $viewUrl  }}" class="btn btn-primary">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
-                                @if (is_null($request->approved_by) && auth()->user()->hasRole('business-admin'))
+                               @if (is_null($request->approved_by)
+    && (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr'))
+    && session('active_role_type') === 'business')
+
+
                                     <button type="button" onclick="manageLeave(this)" data-action="approve" data-leave="{{ $request->reference_number }}" class="btn btn-success">
                                         <i class="fa-solid fa-check"></i>
                                     </button>

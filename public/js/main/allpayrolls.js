@@ -160,16 +160,46 @@ const emailP9 = async function (id = null) {
     }
 
     const payrollIds = id ? [id] : selectedPayrolls;
+
+    // ✅ Show loading spinner
+    document.getElementById('p9-loading-spinner').style.display = 'block';
+    document.body.style.cursor = 'wait';
+
     try {
         for (const payrollId of payrollIds) {
             await requestClient.post(`/payroll/${payrollId}/email-p9`, {});
         }
+
+        // ✅ Success SweetAlert AFTER spinner hides
         Swal.fire('Success!', 'P9 forms emailed successfully.', 'success');
         filterPayrolls();
     } catch (error) {
         Swal.fire('Error!', error.response?.data?.message || 'Failed to email P9 forms.', 'error');
+    } finally {
+        // ✅ Hide loading spinner
+        document.getElementById('p9-loading-spinner').style.display = 'none';
+        document.body.style.cursor = 'default';
     }
 };
+
+
+// const emailP9 = async function (id = null) {
+//     if (!id && selectedPayrolls.length === 0) {
+//         Swal.fire('Error!', 'Please select at least one payroll to email P9 forms.', 'error');
+//         return;
+//     }
+
+//     const payrollIds = id ? [id] : selectedPayrolls;
+//     try {
+//         for (const payrollId of payrollIds) {
+//             await requestClient.post(`/payroll/${payrollId}/email-p9`, {});
+//         }
+//         Swal.fire('Success!', 'P9 forms emailed successfully.', 'success');
+//         filterPayrolls();
+//     } catch (error) {
+//         Swal.fire('Error!', error.response?.data?.message || 'Failed to email P9 forms.', 'error');
+//     }
+// };
 
 const downloadPayroll = function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {

@@ -217,6 +217,7 @@ const emailPayslips = async function (id = null) {
         Swal.fire('Error!', error.message || 'Failed to send payslips.', 'error');
     }
 };
+
 const emailP9 = async function (id = null) {
     if (!id && selectedPayrolls.length === 0) {
         Swal.fire('Error!', 'Please select at least one payroll to email P9 forms.', 'error');
@@ -224,16 +225,65 @@ const emailP9 = async function (id = null) {
     }
 
     const payrollIds = id ? [id] : selectedPayrolls;
-    try {
-        for (const payrollId of payrollIds) {
-            await requestClient.post(`/payroll/${payrollId}/email-p9`, {});
+    let successCount = 0;
+    let failCount = 0;
+
+    Swal.fire({
+        title: 'Sending P9 Forms...',
+        html: `Please wait while P9 forms are being emailed.`,
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
         }
-        Swal.fire('Success!', 'P9 forms emailed successfully.', 'success');
-        filterPayrolls();
-    } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to email P9 forms.', 'error');
+    });
+
+    for (let i = 0; i < payrollIds.length; i++) {
+        const payrollId = payrollIds[i];
+
+        try {
+            const response = await requestClient.post(`/payroll/${payrollId}/email-p9`, {});
+            const message = response.data?.message || 'Success';
+            console.info(`P9 sent for payroll ${payrollId}:`, message);
+            successCount++;
+        } catch (error) {
+            console.error(`Failed to send P9 for payroll ${payrollId}`, error);
+            failCount++;
+        }
+
+        Swal.update({
+            html: `Processing payroll ${i + 1} of ${payrollIds.length}...<br>
+            <b>Success:</b> ${successCount} &nbsp; | &nbsp; <b>Failed:</b> ${failCount}`
+        });
     }
+
+    Swal.close(); // close loading modal
+
+    if (successCount > 0) {
+        Swal.fire('Done!', `P9 forms sent: ${successCount}<br>Failed: ${failCount}`, 'success');
+    } else {
+        Swal.fire('Error!', 'No P9 forms were emailed. Either all failed or data was missing.', 'error');
+    }
+
+    filterPayrolls();
 };
+
+// const emailP9 = async function (id = null) {
+//     if (!id && selectedPayrolls.length === 0) {
+//         Swal.fire('Error!', 'Please select at least one payroll to email P9 forms.', 'error');
+//         return;
+//     }
+
+//     const payrollIds = id ? [id] : selectedPayrolls;
+//     try {
+//         for (const payrollId of payrollIds) {
+//             await requestClient.post(`/payroll/${payrollId}/email-p9`, {});
+//         }
+//         Swal.fire('Success!', 'P9 forms emailed successfully.', 'success');
+//         filterPayrolls();
+//     } catch (error) {
+//         Swal.fire('Error!', error.response?.data?.message || 'Failed to email P9 forms.', 'error');
+//     }
+// };
 
 const downloadPayroll = function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {
