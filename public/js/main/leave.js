@@ -107,7 +107,8 @@ window.manageLeave = async function (btn) {
             return;
         }
 
-        data.reject_reason = reject_reason;
+        data.rejection_reason = reject_reason;
+
     }
 
     Swal.fire({
@@ -121,7 +122,11 @@ window.manageLeave = async function (btn) {
         if (result.isConfirmed) {
             try {
                 await leaveService.status(data);
-                getLeave(1, status);
+
+getLeave(1, 'pending');
+getLeave(1, 'declined');
+getLeave(1, 'approved');
+
             } finally {
                 btn_loader(btn, false);
             }
