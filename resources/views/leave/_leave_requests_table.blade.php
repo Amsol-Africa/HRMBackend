@@ -48,23 +48,11 @@
                         <td>{{ $request->reference_number }}</td>
                         <td>{{ optional(optional($request->employee)->user)->name ?? 'N/A' }}</td>
 
-                        {{-- <td class="text-white @if ($request->leaveType->name == 'Sick Leave') bg-danger
+                        <td class="text-white @if ($request->leaveType->name == 'Sick Leave') bg-danger
                             @elseif ($request->leaveType->name == 'Annual Leave') bg-primary
                             @else bg-secondary @endif">
                             {{ $request->leaveType->name }}
-                        </td> --}}
-                        @php
-    $leaveType = $request->leaveType;
-    $leaveTypeName = $leaveType->name ?? 'N/A';
-@endphp
-
-<td class="text-white
-    @if ($leaveTypeName === 'Sick Leave') bg-danger
-    @elseif ($leaveTypeName === 'Annual Leave') bg-primary
-    @else bg-secondary @endif">
-    {{ $leaveTypeName }}
-</td>
-
+                        </td>
 
                         <td class="fw-bold text-primary">{{ $request->start_date->format('Y-m-d') }}</td>
                         <td>{{ $request->total_days }}</td>
@@ -78,17 +66,20 @@
                         </td>
 
                         <td>
-    @if ($request->status === 'pending')
-        <span class="badge bg-warning"><i class="fa-solid me-1 fa-clock"></i> Pending</span>
-    @elseif ($request->status === 'approved')
-        <span class="badge bg-success"><i class="fa-solid me-1 fa-check-circle"></i> Approved</span>
-    @elseif ($request->status === 'rejected')
-        <span class="badge bg-danger"><i class="fa-solid me-1 fa-times-circle"></i> Rejected</span>
-    @else
-        <span class="badge bg-secondary">Unknown</span>
-    @endif
-</td>
-
+                            @if (is_null($request->approved_by))
+                                <span class="badge bg-warning">
+                                    <i class="fa-solid me-1 fa-clock"></i> Pending
+                                </span>
+                            @elseif (!is_null($request->approved_by))
+                                <span class="badge bg-success">
+                                    <i class="fa-solid me-1 fa-check-circle"></i> Approved
+                                </span>
+                            @else
+                                <span class="badge bg-danger">
+                                    <i class="fa-solid me-1 fa-times-circle"></i> Rejected
+                                </span>
+                            @endif
+                        </td>
                         <td>
                             <div style="display: flex; gap: 5px;">
                                 <a href="{{  $viewUrl  }}" class="btn btn-primary">
