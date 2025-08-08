@@ -49,7 +49,7 @@ class RegisteredUserController extends Controller
             'code' => 'required|string|max:15',
             'country' => 'required|string',
             'registration_token' => 'nullable|string:exists:access_requests,registration_token',
-            'cf-turnstile-response' => ['required', new Turnstile()],
+            // 'cf-turnstile-response' => ['required', new Turnstile()],
         ]);
 
 
