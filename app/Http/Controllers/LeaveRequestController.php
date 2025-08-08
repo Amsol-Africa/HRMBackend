@@ -14,38 +14,90 @@ use App\Traits\HandleTransactions;
 class LeaveRequestController extends Controller
 {
     use HandleTransactions;
-
     public function fetch(Request $request)
-    {
-        $business = Business::findBySlug(session('active_business_slug'));
-        $leaveRequests = LeaveRequest::where('business_id', $business->id);
-        $status = $request->status;
+{
+    $business = Business::findBySlug(session('active_business_slug'));
+    $leaveRequests = LeaveRequest::where('business_id', $business->id);
+    $status = $request->status;
 
-        if ($request->has('status')) {
-            switch ($status) {
-                case 'pending':
-                    $leaveRequests->currentStatus('pending');
-                    break;
-                case 'approved':
-                    $leaveRequests->currentStatus('approved');
-                    break;
-                case 'declined':
-                    $leaveRequests->currentStatus('declined');
-                    break;
-                case 'active':
-                    $leaveRequests->currentStatus('active');
-                    break;
-                case 'used_up':
-                    $leaveRequests->currentStatus('used_up');
-                    break;
-            }
+    $user = auth()->user();
+    $activeRole = session('active_role'); // or $user->active_role if that's where you store it
+
+    // ✅ If active role is NOT HR or Admin → show only this user's leaves
+    if (!in_array($activeRole, ['business-hr', 'business-admin'])) {
+        if ($user->employee) {
+            $leaveRequests->where('employee_id', $user->employee->id);
+        } else {
+            $leaveRequests->whereRaw('1=0'); // Return no data if not linked to employee
         }
-
-        $leaveRequests = $leaveRequests->with('employee', 'leaveType')->latest()->paginate(10);
-
-        $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
-        return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
     }
+
+    // ✅ Status filtering
+   if ($request->has('status')) {
+    switch ($status) {
+        case 'pending':
+            // Show leaves with no decision yet
+            $leaveRequests->whereDoesntHave('statuses', function ($query) {
+                $query->whereIn('name', ['approved', 'declined']);
+            });
+            break;
+
+        case 'approved':
+            $leaveRequests->whereHas('statuses', function ($query) {
+                $query->where('name', 'approved');
+            });
+            break;
+
+        case 'rejected':
+            $leaveRequests->whereHas('statuses', function ($query) {
+                $query->where('name', 'declined');
+            });
+            break;
+    }
+}
+
+
+    $leaveRequests = $leaveRequests
+        ->with('employee', 'leaveType')
+        ->latest()
+        ->paginate(10);
+
+    $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
+    return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
+}
+
+
+    // public function fetch(Request $request)
+    // {
+    //     $business = Business::findBySlug(session('active_business_slug'));
+    //     $leaveRequests = LeaveRequest::where('business_id', $business->id);
+    //     $status = $request->status;
+
+    //     if ($request->has('status')) {
+    //         switch ($status) {
+    //             case 'pending':
+    //                 $leaveRequests->currentStatus('pending');
+    //                 break;
+    //             case 'approved':
+    //                 $leaveRequests->currentStatus('approved');
+    //                 break;
+    //             case 'declined':
+    //                 $leaveRequests->currentStatus('declined');
+    //                 break;
+    //             case 'active':
+    //                 $leaveRequests->currentStatus('active');
+    //                 break;
+    //             case 'used_up':
+    //                 $leaveRequests->currentStatus('used_up');
+    //                 break;
+    //         }
+    //     }
+
+    //     $leaveRequests = $leaveRequests->with('employee', 'leaveType')->latest()->paginate(10);
+
+    //     $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
+    //     return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
+    // }
 
     public function show(Request $request, $referenceNumber)
     {

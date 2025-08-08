@@ -66,19 +66,28 @@
                         </td>
 
                         <td>
-                            @if (is_null($request->approved_by))
-                                <span class="badge bg-warning">
-                                    <i class="fa-solid me-1 fa-clock"></i> Pending
-                                </span>
-                            @elseif (!is_null($request->approved_by))
-                                <span class="badge bg-success">
-                                    <i class="fa-solid me-1 fa-check-circle"></i> Approved
-                                </span>
-                            @else
-                                <span class="badge bg-danger">
-                                    <i class="fa-solid me-1 fa-times-circle"></i> Rejected
-                                </span>
-                            @endif
+ @if (!is_null($request->approved_by) && is_null($request->rejection_reason))
+    {{-- Approved --}}
+    <span class="badge bg-success">
+        <i class="fa-solid me-1 fa-check-circle"></i> Approved
+    </span>
+
+@elseif (is_null($request->approved_by) && is_null($request->rejection_reason))
+    {{-- Pending --}}
+    <span class="badge bg-warning">
+        <i class="fa-solid me-1 fa-clock"></i> Pending
+    </span>
+
+@elseif (!is_null($request->rejection_reason) && is_null($request->approved_by))
+    {{-- Rejected --}}
+    <span class="badge bg-danger">
+        <i class="fa-solid me-1 fa-times-circle"></i> Rejected
+    </span>
+@endif
+
+
+
+
                         </td>
                         <td>
                             <div style="display: flex; gap: 5px;">
