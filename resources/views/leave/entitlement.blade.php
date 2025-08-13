@@ -131,54 +131,52 @@
                 $('.select2-multiple').select2();
 
 
-                async function triggerFilterEmployees() {
-                    const filtersData = {};
+async function triggerFilterEmployees() {
+    const leavePeriodId = document.getElementById('leave_period_id').value;
+    const checkboxesContainer = document.getElementById('employee-checkboxes');
+    checkboxesContainer.innerHTML = '';
 
-                    filters.forEach(filterName => {
-                        const selectElement = document.getElementById(filterName);
-                        if (selectElement) {
-                            const selectedValues = Array.from(selectElement.selectedOptions).map(option =>
-                                option.value);
-                            filtersData[filterName] = selectedValues;
-                        }
-                    });
+    // Collect filters from selects
+    const filters = {
+        departments: $('#departments').val() || [],
+        job_categories: $('#job_categories').val() || [],
+        employment_terms: $('#employment_terms').val() || [],
+        locations: $('#locations').val() || []
+    };
 
-                    const leavePeriodId = document.getElementById('leave_period_id').value;
-                    filtersData['leave_period_id'] = leavePeriodId;
+    try {
+        // Pass filters to API
+        const allEmployees = await getAllEmployeesList(filters);
 
-                    try {
-                        const allEmployees = await getAllEmployeesList();
-                        const filteredEmployees = await filterEmployees(filtersData);
+        const entitlements = await getLeaveEntitlementsByPeriod(leavePeriodId);
 
-                        const checkboxesContainer = document.getElementById('employee-checkboxes');
-                        checkboxesContainer.innerHTML = '';
+        if (Array.isArray(allEmployees) && allEmployees.length > 0) {
+            allEmployees.forEach(employee => {
+                const entitlement = entitlements.find(e => e.employee_id === employee.id);
 
-
-                        if (allEmployees && Array.isArray(allEmployees)) {
-                            allEmployees.forEach(employee => {
-                                console.log(employee)
-                                const isFiltered = filteredEmployees.some(filteredEmployee =>
-                                    filteredEmployee.id === employee.id);
-
-                                const checkbox = `
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="employee_${employee.id}" name="employees[]" value="${employee.id}" ${isFiltered ? 'checked' : ''}>
-                                        <label class="form-check-label" for="employee_${employee.id}">${employee.user.name} (${employee.department ? employee.department.name : 'N/A'})</label>
-                                    </div>
-                                `;
-                                checkboxesContainer.insertAdjacentHTML('beforeend', checkbox);
-                            });
-                        } else {
-                            checkboxesContainer.innerHTML = "<p>No employees found.</p>";
-                        }
-
-                    } catch (error) {
-                        console.error('Error fetching employees:', error);
-                        const checkboxesContainer = document.getElementById('employee-checkboxes');
-                        checkboxesContainer.innerHTML = "<p>Error fetching employees. Please try again later.</p>";
-                    }
-                }
-
+                const checkbox = `
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input"
+                               id="employee_${employee.id}"
+                               name="employees[]"
+                               value="${employee.id}"
+                               ${entitlement ? 'checked' : ''}>
+                        <label class="form-check-label" for="employee_${employee.id}">${employee.user.name}
+                            (${employee.department ? employee.department.name : 'N/A'})
+                            ${entitlement ? `<span class="badge bg-success ms-2">${entitlement.entitled_days} days</span>` : ''}
+                        </label>
+                    </div>
+                `;
+                checkboxesContainer.insertAdjacentHTML('beforeend', checkbox);
+            });
+        } else {
+            checkboxesContainer.innerHTML = "<p>No employees found.</p>";
+        }
+    } catch (error) {
+        console.error('Error fetching employees or entitlements:', error);
+        checkboxesContainer.innerHTML = "<p>Error fetching employees. Please try again later.</p>";
+    }
+}
 
                 filters.forEach(filterName => {
                     $(`#${filterName}`).on('select2:select', function() {

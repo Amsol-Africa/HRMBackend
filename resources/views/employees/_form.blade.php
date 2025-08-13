@@ -265,6 +265,9 @@
                             <option value="internship"
                                 {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'internship' ? 'selected' : '' }}>
                                 Internship</option>
+                                <option value="internship"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'consultant' ? 'selected' : '' }}>
+                                Consultant</option>
                         </select>
                     </div>
                     <div class="col-md-4 position-relative">

@@ -54,6 +54,10 @@ class Employee extends Model implements HasMedia
     ];
 
     // Relationships
+    public function leaveEntitlements()
+    {
+        return $this->hasMany(LeaveEntitlement::class, 'employee_id');
+    }
     public function user()
     {
         return $this->belongsTo(User::class);

@@ -468,27 +468,42 @@ class DashboardController extends Controller
     }
 
     public function leaveEntitlements(Request $request)
-    {
-        $page = 'Leave Entitlements';
-        $description = '';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $leave_periods = $business->leavePeriods;
-        return view('leave.entitlements', compact('page', 'description', 'leave_periods'));
-    }
+{
+    $page = 'Leave Entitlements';
+    $description = '';
+    $business = Business::findBySlug(session('active_business_slug'));
+    $leave_periods = $business->leavePeriods;
+    $initialLeavePeriodSlug = $leave_periods->first()->slug ?? null; // Default to first period
+    return view('leave.entitlements', compact('page', 'description', 'leave_periods', 'initialLeavePeriodSlug'));
+}
 
     public function setLeaveEntitlements(Request $request)
-    {
-        $page = 'Set Leave Entitlements';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $description = '';
-        $employees = $business->employees;
-        $leaveTypes = $business->leaveTypes;
-        $leavePeriods = $business->leavePeriods;
-        $departments = $business->departments;
-        $jobCategories = $business->job_categories;
-        $locations = $business->locations;
-        return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
-    }
+{
+    $page = 'Set Leave Entitlements';
+    $business = Business::findBySlug(session('active_business_slug'));
+    $description = '';
+    $employees = $business->employees()->with('leaveEntitlements')->get();
+    $leaveTypes = $business->leaveTypes;
+    $leavePeriods = $business->leavePeriods;
+    $departments = $business->departments;
+    $jobCategories = $business->job_categories;
+    $locations = $business->locations;
+    return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
+}
+
+    // public function setLeaveEntitlements(Request $request)
+    // {
+    //     $page = 'Set Leave Entitlements';
+    //     $business = Business::findBySlug(session('active_business_slug'));
+    //     $description = '';
+    //     $employees = $business->employees;
+    //     $leaveTypes = $business->leaveTypes;
+    //     $leavePeriods = $business->leavePeriods;
+    //     $departments = $business->departments;
+    //     $jobCategories = $business->job_categories;
+    //     $locations = $business->locations;
+    //     return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
+    // }
 
     public function leaveSettings(Request $request)
     {

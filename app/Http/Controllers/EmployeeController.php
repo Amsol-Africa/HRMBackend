@@ -116,6 +116,77 @@ class EmployeeController extends Controller
             'count' => $employees->total(),
         ]);
     }
+    //added this for dedicated leave entitlements
+public function fetchForEntitlements(Request $request)
+{
+    $validatedData = $request->validate([
+        'leave_period_id' => 'required|integer|exists:leave_periods,id',
+        'locations' => 'nullable|array',
+        'departments' => 'nullable|array',
+        'job_categories' => 'nullable|array',
+        'employment_terms' => 'nullable|array',
+    ]);
+
+    try {
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        $query = $business->employees()->with([
+            'department',
+            'location',
+            'jobCategory',
+            'employmentTerm'
+        ]);
+
+        // Filter: Locations
+        if ($request->filled('locations') && !in_array('all', $request->locations)) {
+            $query->whereHas('location', function ($q) use ($request) {
+                $q->whereIn('slug', $request->locations)
+                  ->orWhereIn('id', $request->locations);
+            });
+        }
+
+        // Filter: Departments
+        if ($request->filled('departments') && !in_array('all', $request->departments)) {
+            $query->whereHas('department', function ($q) use ($request) {
+                $q->whereIn('slug', $request->departments)
+                  ->orWhereIn('id', $request->departments);
+            });
+        }
+
+        // Filter: Job Categories
+        if ($request->filled('job_categories') && !in_array('all', $request->job_categories)) {
+            $query->whereHas('jobCategory', function ($q) use ($request) {
+                $q->whereIn('slug', $request->job_categories)
+                  ->orWhereIn('id', $request->job_categories);
+            });
+        }
+
+        // Filter: Employment Terms
+        if ($request->filled('employment_terms') && !in_array('all', $request->employment_terms)) {
+            $query->whereHas('employmentTerm', function ($q) use ($request) {
+                $q->whereIn('slug', $request->employment_terms)
+                  ->orWhereIn('id', $request->employment_terms);
+            });
+        }
+
+        $employees = $query->get();
+
+        return response()->json([
+            'success' => true,
+            'employees' => $employees
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error fetching employees: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Error fetching employees. Please try again later.'
+        ], 500);
+    }
+}
+
+
 
     public function store(Request $request)
     {
@@ -801,8 +872,8 @@ public function import(Request $request)
                     'bank_branch_code' => 'nullable|string|max:50',
                     'national_id' => 'nullable|string|unique:employees,national_id|max:255',
                     'tax_no' => 'nullable|string|max:20',
-                    'date_of_birth' => 'required|date|before:today',
-                    'marital_status' => 'required|string|in:single,married,divorced,widowed',
+                    'date_of_birth' => 'nullable|date|before:today',
+                    'marital_status' => 'nullable|string|in:single,married,divorced,widowed',
                     'nhif_no' => 'nullable|string|max:20',
                     'nssf_no' => 'nullable|string|max:20',
                     'passport_no' => 'nullable|string|max:255',
@@ -811,14 +882,14 @@ public function import(Request $request)
                     'place_of_birth' => 'nullable|string|max:255',
                     'place_of_issue' => 'nullable|string|max:255',
                     'address' => 'nullable|string|max:255',
-                    'permanent_address' => 'required|string|max:255',
+                    'permanent_address' => 'nullable|string|max:255',
                     'alternate_phone' => 'nullable|string|max:20',
                     'blood_group' => 'nullable|string|max:255',
                     'is_exempt_from_payroll' => 'nullable|boolean',
                     'resident_status' => 'nullable|string|max:255',
                     'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
                     'employment_date' => 'nullable|date|before_or_equal:today',
-                    'employment_term' => 'required|in:permanent,contract,temporary,internship',
+                    'employment_term' => 'required|in:permanent,contract,temporary,internship,consultant',
                     'probation_end_date' => 'nullable|date|after:employment_date',
                     'contract_end_date' => 'nullable|date|after:employment_date',
                     'retirement_date' => 'nullable|date|after:employment_date',

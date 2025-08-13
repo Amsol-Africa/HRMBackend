@@ -6,15 +6,35 @@ const requestClient = new RequestClient();
 const leaveEntitlementsService = new LeaveEntitlementsService(requestClient);
 
 window.getLeaveEntitlements = async function (page = 1, leave_period = null) {
+    console.log('getLeaveEntitlements called with page:', page, 'leave_period:', leave_period, 'at', new Date().toISOString());
     try {
         let data = { page: page, leave_period_slug: leave_period };
-        const leaveEntitlements = await leaveEntitlementsService.fetch(data);
-        $('#leaveEntitlementsContainer').html(leaveEntitlements);
-        new DataTable('#leaveEntitlementsTable');
+        console.log('Fetching data with:', data, 'Business Slug:', window.businessSlug);
+        const response = await leaveEntitlementsService.fetch(data);
+        console.log('Response received at', new Date().toISOString(), ':', response.substring(0, 200) + '...');
+
+        const container = $('#leaveEntitlementsContainer');
+        if (container.length) {
+            container.html(response); // Directly insert the HTML table
+            console.log('Container updated with HTML at', new Date().toISOString());
+            if ($('#leaveEntitlementsTable').length) {
+                new DataTable('#leaveEntitlementsTable'); // Initialize DataTable on the table
+                console.log('DataTable initialized at', new Date().toISOString());
+            } else {
+                console.warn('Table #leaveEntitlementsTable not found at', new Date().toISOString());
+            }
+            container.find('.loader').hide(); // Hide the loader
+            console.log('Loader hidden at', new Date().toISOString());
+        } else {
+            console.error('Element #leaveEntitlementsContainer not found at', new Date().toISOString());
+        }
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error('Error loading data at', new Date().toISOString(), ':', error.message, error.stack);
+        $('#leaveEntitlementsContainer').html('<p>Error loading data. Please try again.</p>');
     }
 };
+
+
 window.saveLeaveEntitlements = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);

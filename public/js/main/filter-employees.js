@@ -21,3 +21,8 @@ window.getAllEmployeesList = async function () {
         console.error("Error loading user data:", error);
     }
 };
+
+export async function getAllEmployeesList(filters = {}) {
+    const response = await fetch(`/api/employees-for-entitlements?` + new URLSearchParams(filters));
+    return await response.json();
+}
