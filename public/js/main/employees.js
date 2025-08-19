@@ -33,6 +33,8 @@ function initializeDataTable() {
                 d.department = $('#filterDepartment').val();
                 d.location = $('#filterLocation').val();
                 d.job_category = $('#filterJobCategory').val();
+                // Add CSRF token
+                d._token = $('meta[name="csrf-token"]').attr('content');
             },
             beforeSend: function () {
                 $('#loadingRow').show();
@@ -57,6 +59,46 @@ function initializeDataTable() {
         ]
     });
 }
+
+// function initializeDataTable() {
+//     dataTable = $('#employeesTable').DataTable({
+//         responsive: true,
+//         pageLength: 10,
+//         searching: false,
+//         serverSide: true,
+//         processing: true,
+//         ajax: {
+//             url: '/employees/fetch',
+//             type: 'POST',
+//             data: function (d) {
+//                 d.search = $('#search').val();
+//                 d.department = $('#filterDepartment').val();
+//                 d.location = $('#filterLocation').val();
+//                 d.job_category = $('#filterJobCategory').val();
+//             },
+//             beforeSend: function () {
+//                 $('#loadingRow').show();
+//             },
+//             complete: function () {
+//                 $('#loadingRow').hide();
+//             },
+//             error: function (xhr, error, thrown) {
+//                 $('#loadingRow').hide();
+//                 console.error('DataTables error:', xhr.responseText);
+//                 Swal.fire('Error!', 'Failed to load table data.', 'error');
+//             }
+//         },
+//         columns: [
+//             { data: 'name' },
+//             { data: 'employee_code' },
+//             { data: 'department' },
+//             { data: 'job_category' },
+//             { data: 'location' },
+//             { data: 'basic_salary' },
+//             { data: 'actions', orderable: false, searchable: false }
+//         ]
+//     });
+// }
 
 function setupFilters() {
     $('#search, #filterDepartment, #filterLocation, #filterJobCategory').on('change keyup', debounce(() => {

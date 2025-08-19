@@ -1322,126 +1322,306 @@ public function import(Request $request)
         }, 'employees_template.xlsx');
     }
 
-    public function export(Request $request)
-    {
-        try {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
-            }
-
-            $query = Employee::where('business_id', $business->id)
-                ->with(['user', 'department', 'location', 'paymentDetails', 'employmentDetails.jobCategory']);
-
-            if ($search = $request->input('search')) {
-                $query->where(function ($q) use ($search) {
-                    $q->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
-                        ->orWhere('employee_code', 'like', "%{$search}%");
-                });
-            }
-            if ($department = $request->input('department')) {
-                $query->where('department_id', $department);
-            }
-            if ($location = $request->input('location')) {
-                $query->where('location_id', $location);
-            }
-            if ($jobCategory = $request->input('job_category')) {
-                $query->whereHas('employmentDetails', function ($q) use ($jobCategory) {
-                    $q->where('job_category_id', $jobCategory);
-                });
-            }
-
-            $employees = $query->get();
-
-            if ($employees->isEmpty()) {
-                return RequestResponse::badRequest('No employees found with the applied filters.');
-            }
-
-            $headers = [
-                'Name',
-                'Employee Code',
-                'Email',
-                'Phone',
-                'Gender',
-                'National ID',
-                'Date of Birth',
-                'Marital Status',
-                'Department',
-                'Job Category',
-                'Location',
-                'Basic Salary',
-                'Currency',
-                'Payment Mode',
-            ];
-
-            $data = $employees->map(function ($employee) {
-                return [
-                    $employee->user->name ?? 'N/A',
-                    $employee->employee_code ?? 'N/A',
-                    $employee->user->email ?? 'N/A',
-                    $employee->user->phone ?? 'N/A',
-                    $employee->gender ?? 'N/A',
-                    $employee->national_id ?? 'N/A',
-                    $employee->date_of_birth ?? 'N/A',
-                    $employee->marital_status ?? 'N/A',
-                    $employee->department->name ?? 'N/A',
-                    optional($employee->employmentDetails)->jobCategory->name ?? 'N/A',
-                    $employee->location ? $employee->location->name : $employee->business->company_name,
-                    number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2),
-                    optional($employee->paymentDetails)->currency ?? 'N/A',
-                    optional($employee->paymentDetails)->payment_mode ?? 'N/A',
-                ];
-            })->toArray();
-
-            return Excel::download(new class($headers, $data) implements
-                \Maatwebsite\Excel\Concerns\FromArray,
-                \Maatwebsite\Excel\Concerns\WithHeadings,
-                \Maatwebsite\Excel\Concerns\WithEvents
-            {
-                private $headers;
-                private $data;
-
-                public function __construct(array $headers, array $data)
-                {
-                    $this->headers = $headers;
-                    $this->data = $data;
-                }
-
-                public function array(): array
-                {
-                    return $this->data; // Only return data, not headers
-                }
-
-                public function headings(): array
-                {
-                    return $this->headers;
-                }
-
-                public function registerEvents(): array
-                {
-                    return [
-                        AfterSheet::class => function (AfterSheet $event) {
-                            $sheet = $event->sheet->getDelegate();
-                            $sheet->getStyle('A1:N1')->applyFromArray([
-                                'font' => ['bold' => true],
-                                'fill' => [
-                                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                                    'startColor' => ['argb' => 'FFCCCCCC'],
-                                ],
-                            ]);
-
-                            foreach (range('A', 'N') as $col) {
-                                $sheet->getColumnDimension($col)->setAutoSize(true);
-                            }
-                        }
-                    ];
-                }
-            }, 'employees_export_' . now()->format('Ymd_His') . '.xlsx');
-        } catch (\Exception $e) {
-            Log::error('Failed to export employees: ' . $e->getMessage());
-            return RequestResponse::badRequest('Failed to export employees: ' . $e->getMessage());
+public function export(Request $request)
+{
+    try {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
         }
+
+        // Eager-load all necessary relationships
+        $query = Employee::where('business_id', $business->id)
+            ->with(['user', 'department', 'location', 'paymentDetails', 'employmentDetails.jobCategory']);
+
+        // Apply filters
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+        if ($department = $request->input('department')) {
+            $query->where('department_id', $department);
+        }
+        if ($location = $request->input('location')) {
+            $query->where('location_id', $location);
+        }
+        if ($jobCategory = $request->input('job_category')) {
+            $query->whereHas('employmentDetails', function ($q) use ($jobCategory) {
+                $q->where('job_category_id', $jobCategory);
+            });
+        }
+
+        $employees = $query->get();
+
+        if ($employees->isEmpty()) {
+            return RequestResponse::badRequest('No employees found with the applied filters.');
+        }
+
+        // Define headers for all fields from validation rules
+        $headers = [
+            'Name',
+            'Employee Code',
+            'Email',
+            'Phone',
+            'Alternate Phone',
+            'Gender',
+            'National ID',
+            'Tax Number',
+            'NHIF Number',
+            'NSSF Number',
+            'Passport Number',
+            'Passport Issue Date',
+            'Passport Expiry Date',
+            'Place of Birth',
+            'Place of Issue',
+            'Date of Birth',
+            'Marital Status',
+            'Address',
+            'Permanent Address',
+            'Blood Group',
+            'Resident Status',
+            'KRA Employee Status',
+            'Department',
+            'Job Category',
+            'Location',
+            'Basic Salary',
+            'Currency',
+            'Payment Mode',
+            'Account Name',
+            'Account Number',
+            'Bank Name',
+            'Bank Code',
+            'Bank Branch',
+            'Bank Branch Code',
+            'Employment Date',
+            'Employment Term',
+            'Probation End Date',
+            'Contract End Date',
+            'Retirement Date',
+            'Job Description',
+            'Is Exempt from Payroll',
+        ];
+
+        // Map employee data to include all fields
+        $data = $employees->map(function ($employee) {
+            return [
+                $employee->user->name ?? 'N/A',
+                $employee->employee_code ?? 'N/A',
+                $employee->user->email ?? 'N/A',
+                $employee->user->phone ?? 'N/A',
+                $employee->alternate_phone ?? 'N/A',
+                $employee->gender ?? 'N/A',
+                $employee->national_id ?? 'N/A',
+                $employee->tax_no ?? 'N/A',
+                $employee->nhif_no ?? 'N/A',
+                $employee->nssf_no ?? 'N/A',
+                $employee->passport_no ?? 'N/A',
+                $employee->passport_issue_date ?? 'N/A',
+                $employee->passport_expiry_date ?? 'N/A',
+                $employee->place_of_birth ?? 'N/A',
+                $employee->place_of_issue ?? 'N/A',
+                $employee->date_of_birth ?? 'N/A',
+                $employee->marital_status ?? 'N/A',
+                $employee->address ?? 'N/A',
+                $employee->permanent_address ?? 'N/A',
+                $employee->blood_group ?? 'N/A',
+                $employee->resident_status ?? 'N/A',
+                $employee->kra_employee_status ?? 'N/A',
+                $employee->department->name ?? 'N/A',
+                optional($employee->employmentDetails)->jobCategory->name ?? 'N/A',
+                $employee->location ? $employee->location->name : $employee->business->company_name,
+                number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2),
+                optional($employee->paymentDetails)->currency ?? 'N/A',
+                optional($employee->paymentDetails)->payment_mode ?? 'N/A',
+                optional($employee->paymentDetails)->account_name ?? 'N/A',
+                optional($employee->paymentDetails)->account_number ?? 'N/A',
+                optional($employee->paymentDetails)->bank_name ?? 'N/A',
+                optional($employee->paymentDetails)->bank_code ?? 'N/A',
+                optional($employee->paymentDetails)->bank_branch ?? 'N/A',
+                optional($employee->paymentDetails)->bank_branch_code ?? 'N/A',
+                optional($employee->employmentDetails)->employment_date ?? 'N/A',
+                optional($employee->employmentDetails)->employment_term ?? 'N/A',
+                optional($employee->employmentDetails)->probation_end_date ?? 'N/A',
+                optional($employee->employmentDetails)->contract_end_date ?? 'N/A',
+                optional($employee->employmentDetails)->retirement_date ?? 'N/A',
+                optional($employee->employmentDetails)->job_description ?? 'N/A',
+                optional($employee->employmentDetails)->is_exempt_from_payroll ? 'Yes' : 'No',
+            ];
+        })->toArray();
+
+        return Excel::download(new class($headers, $data) implements
+            \Maatwebsite\Excel\Concerns\FromArray,
+            \Maatwebsite\Excel\Concerns\WithHeadings,
+            \Maatwebsite\Excel\Concerns\WithEvents
+        {
+            private $headers;
+            private $data;
+
+            public function __construct(array $headers, array $data)
+            {
+                $this->headers = $headers;
+                $this->data = $data;
+            }
+
+            public function array(): array
+            {
+                return $this->data;
+            }
+
+            public function headings(): array
+            {
+                return $this->headers;
+            }
+
+            public function registerEvents(): array
+            {
+                return [
+                    AfterSheet::class => function (AfterSheet $event) {
+                        $sheet = $event->sheet->getDelegate();
+                        $highestColumn = $event->sheet->getHighestColumn();
+                        $sheet->getStyle("A1:{$highestColumn}1")->applyFromArray([
+                            'font' => ['bold' => true],
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => ['argb' => 'FFCCCCCC'],
+                            ],
+                        ]);
+
+                        foreach (range('A', $highestColumn) as $col) {
+                            $sheet->getColumnDimension($col)->setAutoSize(true);
+                        }
+                    }
+                ];
+            }
+        }, 'employees_export_' . now()->format('Ymd_His') . '.xlsx');
+    } catch (\Exception $e) {
+        \Log::error('Failed to export employees: ' . $e->getMessage());
+        return RequestResponse::badRequest('Failed to export employees: ' . $e->getMessage());
     }
+}
+
+    // public function export(Request $request)
+    // {
+    //     try {
+    //         $business = Business::findBySlug(session('active_business_slug'));
+    //         if (!$business) {
+    //             return RequestResponse::badRequest('Business not found.');
+    //         }
+
+    //         $query = Employee::where('business_id', $business->id)
+    //             ->with(['user', 'department', 'location', 'paymentDetails', 'employmentDetails.jobCategory']);
+
+    //         if ($search = $request->input('search')) {
+    //             $query->where(function ($q) use ($search) {
+    //                 $q->whereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"))
+    //                     ->orWhere('employee_code', 'like', "%{$search}%");
+    //             });
+    //         }
+    //         if ($department = $request->input('department')) {
+    //             $query->where('department_id', $department);
+    //         }
+    //         if ($location = $request->input('location')) {
+    //             $query->where('location_id', $location);
+    //         }
+    //         if ($jobCategory = $request->input('job_category')) {
+    //             $query->whereHas('employmentDetails', function ($q) use ($jobCategory) {
+    //                 $q->where('job_category_id', $jobCategory);
+    //             });
+    //         }
+
+    //         $employees = $query->get();
+
+    //         if ($employees->isEmpty()) {
+    //             return RequestResponse::badRequest('No employees found with the applied filters.');
+    //         }
+
+    //         $headers = [
+    //             'Name',
+    //             'Employee Code',
+    //             'Email',
+    //             'Phone',
+    //             'Gender',
+    //             'National ID',
+    //             'Date of Birth',
+    //             'Marital Status',
+    //             'Department',
+    //             'Job Category',
+    //             'Location',
+    //             'Basic Salary',
+    //             'Currency',
+    //             'Payment Mode',
+    //         ];
+
+    //         $data = $employees->map(function ($employee) {
+    //             return [
+    //                 $employee->user->name ?? 'N/A',
+    //                 $employee->employee_code ?? 'N/A',
+    //                 $employee->user->email ?? 'N/A',
+    //                 $employee->user->phone ?? 'N/A',
+    //                 $employee->gender ?? 'N/A',
+    //                 $employee->national_id ?? 'N/A',
+    //                 $employee->date_of_birth ?? 'N/A',
+    //                 $employee->marital_status ?? 'N/A',
+    //                 $employee->department->name ?? 'N/A',
+    //                 optional($employee->employmentDetails)->jobCategory->name ?? 'N/A',
+    //                 $employee->location ? $employee->location->name : $employee->business->company_name,
+    //                 number_format((float) (optional($employee->paymentDetails)->basic_salary ?? 0), 2),
+    //                 optional($employee->paymentDetails)->currency ?? 'N/A',
+    //                 optional($employee->paymentDetails)->payment_mode ?? 'N/A',
+    //             ];
+    //         })->toArray();
+
+    //         return Excel::download(new class($headers, $data) implements
+    //             \Maatwebsite\Excel\Concerns\FromArray,
+    //             \Maatwebsite\Excel\Concerns\WithHeadings,
+    //             \Maatwebsite\Excel\Concerns\WithEvents
+    //         {
+    //             private $headers;
+    //             private $data;
+
+    //             public function __construct(array $headers, array $data)
+    //             {
+    //                 $this->headers = $headers;
+    //                 $this->data = $data;
+    //             }
+
+    //             public function array(): array
+    //             {
+    //                 return $this->data; // Only return data, not headers
+    //             }
+
+    //             public function headings(): array
+    //             {
+    //                 return $this->headers;
+    //             }
+
+    //             public function registerEvents(): array
+    //             {
+    //                 return [
+    //                     AfterSheet::class => function (AfterSheet $event) {
+    //                         $sheet = $event->sheet->getDelegate();
+    //                         $sheet->getStyle('A1:N1')->applyFromArray([
+    //                             'font' => ['bold' => true],
+    //                             'fill' => [
+    //                                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+    //                                 'startColor' => ['argb' => 'FFCCCCCC'],
+    //                             ],
+    //                         ]);
+
+    //                         foreach (range('A', 'N') as $col) {
+    //                             $sheet->getColumnDimension($col)->setAutoSize(true);
+    //                         }
+    //                     }
+    //                 ];
+    //             }
+    //         }, 'employees_export_' . now()->format('Ymd_His') . '.xlsx');
+    //     } catch (\Exception $e) {
+    //         Log::error('Failed to export employees: ' . $e->getMessage());
+    //         return RequestResponse::badRequest('Failed to export employees: ' . $e->getMessage());
+    //     }
+    // }
 
     public function contracts(Request $request)
     {

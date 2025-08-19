@@ -1183,43 +1183,67 @@ class PayrollController extends Controller
         return $totalContribution;
     }
 
-    protected function fallbackStatutoryDeduction($slug, $grossPay, $taxablePay)
-    {
-        switch ($slug) {
-            case 'nssf':
-                if ($grossPay <= 7000) {
-                    return 840; // Tier 1
-                } else {
-                    $tier1 = 840;
-                    $tier2 = min($grossPay - 7000, 29000) * 0.06;
-                    return min($tier1 + $tier2, 4320);
-                }
-            case 'shif':
-                return max(300, min($grossPay * 0.0275, 5000));
-            case 'housing-levy':
-                return $grossPay * 0.015;
-            case 'nhif':
-                return 0;
-            case 'paye':
-                $tax = 0;
-                if ($taxablePay <= 24000) {
-                    $tax = $taxablePay * 0.10;
-                } elseif ($taxablePay <= 32333) {
-                    $tax = 2400 + (($taxablePay - 24000) * 0.25);
-                } elseif ($taxablePay <= 500000) {
-                    $tax = 4483.25 + (($taxablePay - 32333) * 0.30);
-                } elseif ($taxablePay <= 800000) {
-                    $tax = 149149.85 + (($taxablePay - 500000) * 0.325);
-                } else {
-                    $tax = 246649.85 + (($taxablePay - 800000) * 0.35);
-                }
-                return round($tax, 2);
-            case 'helb':
-                return 0;
-            default:
-                return 0;
-        }
+   protected function fallbackStatutoryDeduction($slug, $grossPay, $taxablePay)
+{
+    error_log("fallbackStatutoryDeduction: slug = $slug, grossPay = $grossPay, taxablePay = $taxablePay");
+
+    // Calculate SHIF and Housing Levy first, as they affect taxable pay for PAYE
+    $shifDeduction = 0;
+    $housingLevyDeduction = 0;
+
+    if ($slug === 'shif') {
+        $grossPay = (float) $grossPay;
+        $shifDeduction = max(300, $grossPay * 0.0275);
+        error_log("SHIF: grossPay = $grossPay, calculated = " . ($grossPay * 0.0275) . ", final = $shifDeduction");
+        return $shifDeduction;
     }
+
+    if ($slug === 'housing-levy') {
+        $housingLevyDeduction = $grossPay * 0.015;
+        error_log("Housing Levy: grossPay = $grossPay, final = $housingLevyDeduction");
+        return $housingLevyDeduction;
+    }
+
+    // Adjust taxable pay for PAYE by subtracting SHIF and Housing Levy (December 2024 policy)
+    if ($slug === 'paye') {
+        $shifDeduction = max(300, $grossPay * 0.0275);
+        $housingLevyDeduction = $grossPay * 0.015;
+        $adjustedTaxablePay = $taxablePay - $shifDeduction - $housingLevyDeduction;
+        error_log("PAYE: taxablePay = $taxablePay, shifDeduction = $shifDeduction, housingLevyDeduction = $housingLevyDeduction, adjustedTaxablePay = $adjustedTaxablePay");
+
+        $tax = 0;
+        if ($adjustedTaxablePay <= 24000) {
+            $tax = $adjustedTaxablePay * 0.10;
+        } elseif ($adjustedTaxablePay <= 32333) {
+            $tax = 2400 + (($adjustedTaxablePay - 24000) * 0.25);
+        } elseif ($adjustedTaxablePay <= 500000) {
+            $tax = 4483.25 + (($adjustedTaxablePay - 32333) * 0.30);
+        } elseif ($adjustedTaxablePay <= 800000) {
+            $tax = 149149.85 + (($adjustedTaxablePay - 500000) * 0.325);
+        } else {
+            $tax = 246649.85 + (($adjustedTaxablePay - 800000) * 0.35);
+        }
+        return round($tax, 2);
+    }
+
+    switch ($slug) {
+        case 'nssf':
+            if ($grossPay <= 7000) {
+                return 840; // Tier 1
+            } else {
+                $tier1 = 840;
+                $tier2 = min($grossPay - 7000, 29000) * 0.06;
+                return min($tier1 + $tier2, 4320);
+            }
+        case 'nhif':
+            error_log("NHIF deduction called but returning 0 as per SHIF replacement");
+            return 0;
+        case 'helb':
+            return 0;
+        default:
+            return 0;
+    }
+}
 
     protected function calculateOvertime($employeeId, $year, $month, $settings, $options, $basicSalary)
     {

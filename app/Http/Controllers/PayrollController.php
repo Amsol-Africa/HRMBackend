@@ -1195,7 +1195,7 @@ class PayrollController extends Controller
                     return min($tier1 + $tier2, 4320);
                 }
             case 'shif':
-                return max(300, min($grossPay * 0.0275, 5000));
+    return max(300, $grossPay * 0.0275);
             case 'housing-levy':
                 return $grossPay * 0.015;
             case 'nhif':

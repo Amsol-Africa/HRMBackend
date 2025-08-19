@@ -250,7 +250,7 @@
                 <ul class="dropdown-menu" aria-labelledby="exportP9Dropdown">
                     <li><a class="dropdown-item download-p9" href="#" data-format="xlsx">Export as XLSX</a></li>
                     <li><a class="dropdown-item download-p9" href="#" data-format="csv">Export as CSV</a></li>
-                    <li><a class="dropdown-item download-p9" href="#" data-format="pdf">Export as PDF</a></li>
+                    {{-- <li><a class="dropdown-item download-p9" href="#" data-format="pdf">Export as PDF</a></li> --}}
                 </ul>
             </div>
         </div>
