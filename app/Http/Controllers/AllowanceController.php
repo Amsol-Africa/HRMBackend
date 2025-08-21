@@ -57,7 +57,7 @@ class AllowanceController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|in:fixed,rate',
-            'calculation_basis' => 'required|in:basic_pay,gross_pay',
+            'calculation_basis' => 'required|in:basic_pay,gross_pay,custom',
             'amount' => 'required_if:type,fixed|nullable|numeric|min:0',
             'rate' => 'required_if:type,rate|nullable|numeric|min:0|max:100',
             'is_taxable' => 'nullable|boolean',
@@ -121,7 +121,7 @@ class AllowanceController extends Controller
             'allowance_id' => 'required|exists:allowances,id',
             'name' => 'required|string|max:255',
             'type' => 'required|in:fixed,rate',
-            'calculation_basis' => 'required|in:basic_pay,gross_pay',
+            'calculation_basis' => 'required|in:basic_pay,gross_pay,custom',
             'amount' => 'required_if:type,fixed|nullable|numeric|min:0',
             'rate' => 'required_if:type,rate|nullable|numeric|min:0|max:100',
             'is_taxable' => 'nullable|boolean',

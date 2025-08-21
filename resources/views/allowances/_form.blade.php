@@ -15,10 +15,8 @@
             <label for="type" class="form-label fw-medium text-dark">Type</label>
             <select name="type" id="type" class="form-select" required>
                 <option value="" disabled {{ !isset($allowance) ? 'selected' : '' }}>Select Type</option>
-                <option value="fixed" {{ isset($allowance) && $allowance->type == 'fixed' ? 'selected' : '' }}>Fixed
-                    Amount</option>
-                <option value="rate" {{ isset($allowance) && $allowance->type == 'rate' ? 'selected' : '' }}>Rate (%)
-                </option>
+                <option value="fixed" {{ isset($allowance) && $allowance->type == 'fixed' ? 'selected' : '' }}>Fixed Amount</option>
+                <option value="rate" {{ isset($allowance) && $allowance->type == 'rate' ? 'selected' : '' }}>Rate (%)</option>
             </select>
             @error('type')
             <div class="invalid-feedback">{{ $message }}</div>
@@ -28,39 +26,31 @@
             <label for="calculation_basis" class="form-label fw-medium text-dark">Calculation Basis</label>
             <select name="calculation_basis" id="calculation_basis" class="form-select" required>
                 <option value="" disabled {{ !isset($allowance) ? 'selected' : '' }}>Select Basis</option>
-                <option value="basic_pay"
-                    {{ isset($allowance) && $allowance->calculation_basis == 'basic_pay' ? 'selected' : '' }}>Basic Pay
-                </option>
-                <option value="gross_pay"
-                    {{ isset($allowance) && $allowance->calculation_basis == 'gross_pay' ? 'selected' : '' }}>Gross Pay
-                </option>
+                <option value="basic_pay" {{ isset($allowance) && $allowance->calculation_basis == 'basic_pay' ? 'selected' : '' }}>Basic Pay</option>
+                <option value="gross_pay" {{ isset($allowance) && $allowance->calculation_basis == 'gross_pay' ? 'selected' : '' }}>Gross Pay</option>
+                <option value="custom" {{ isset($allowance) && $allowance->calculation_basis == 'custom' ? 'selected' : '' }}>Custom</option>
             </select>
             @error('calculation_basis')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="col-12" id="amount_field"
-            style="display: {{ isset($allowance) && $allowance->type == 'fixed' ? 'block' : 'none' }};">
+        <div class="col-12" id="amount_field" style="display: {{ isset($allowance) && $allowance->type == 'fixed' ? 'block' : 'none' }};">
             <label for="amount" class="form-label fw-medium text-dark">Amount</label>
-            <input type="number" name="amount" id="amount" class="form-control" value="{{ $allowance->amount ?? '' }}"
-                step="0.01" min="0" {{ isset($allowance) && $allowance->type == 'fixed' ? 'required' : '' }}>
+            <input type="number" name="amount" id="amount" class="form-control" value="{{ $allowance->amount ?? '' }}" step="0.01" min="0" {{ isset($allowance) && $allowance->type == 'fixed' ? 'required' : '' }}>
             @error('amount')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
-        <div class="col-12" id="rate_field"
-            style="display: {{ isset($allowance) && $allowance->type == 'rate' ? 'block' : 'none' }};">
+        <div class="col-12" id="rate_field" style="display: {{ isset($allowance) && $allowance->type == 'rate' ? 'block' : 'none' }};">
             <label for="rate" class="form-label fw-medium text-dark">Rate (%)</label>
-            <input type="number" name="rate" id="rate" class="form-control" value="{{ $allowance->rate ?? '' }}"
-                step="0.01" min="0" max="100" {{ isset($allowance) && $allowance->type == 'rate' ? 'required' : '' }}>
+            <input type="number" name="rate" id="rate" class="form-control" value="{{ $allowance->rate ?? '' }}" step="0.01" min="0" max="100" {{ isset($allowance) && $allowance->type == 'rate' ? 'required' : '' }}>
             @error('rate')
             <div class="invalid-feedback">{{ $message }}</div>
             @enderror
         </div>
         <div class="col-12">
             <div class="form-check">
-                <input type="checkbox" name="is_taxable" id="is_taxable" class="form-check-input" value="1"
-                    {{ isset($allowance) && $allowance->is_taxable ? 'checked' : '' }}>
+                <input type="checkbox" name="is_taxable" id="is_taxable" class="form-check-input" value="1" {{ isset($allowance) && $allowance->is_taxable ? 'checked' : '' }}>
                 <label for="is_taxable" class="form-check-label fw-medium text-dark">Taxable</label>
             </div>
         </div>
@@ -68,11 +58,8 @@
             <label for="applies_to" class="form-label fw-medium text-dark">Applies To</label>
             <select name="applies_to" id="applies_to" class="form-select" required>
                 <option value="" disabled {{ !isset($allowance) ? 'selected' : '' }}>Select Applicability</option>
-                <option value="all" {{ isset($allowance) && $allowance->applies_to == 'all' ? 'selected' : '' }}>All
-                    Employees</option>
-                <option value="specific"
-                    {{ isset($allowance) && $allowance->applies_to == 'specific' ? 'selected' : '' }}>Specific Employees
-                </option>
+                <option value="all" {{ isset($allowance) && $allowance->applies_to == 'all' ? 'selected' : '' }}>All Employees</option>
+                <option value="specific" {{ isset($allowance) && $allowance->applies_to == 'specific' ? 'selected' : '' }}>Specific Employees</option>
             </select>
             @error('applies_to')
             <div class="invalid-feedback">{{ $message }}</div>

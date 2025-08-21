@@ -49,39 +49,39 @@ class DeductionController extends Controller
         }
     }
 
-    public function store(Request $request)
-    {
-        $validatedData = $this->validateDeduction($request);
+public function store(Request $request)
+{
+    $validatedData = $this->validateDeduction($request);
 
-        return $this->handleTransaction(function () use ($validatedData) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
-            }
+    return $this->handleTransaction(function () use ($validatedData) {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
 
-            $deduction = Deduction::create([
-                'name' => $validatedData['name'],
-                'slug' => \Str::slug($validatedData['name']),
-                'description' => $validatedData['description'],
-                'calculation_basis' => $validatedData['calculation_basis'],
-                'computation_method' => $validatedData['computation_method'],
-                'amount' => $validatedData['computation_method'] === 'fixed' ? $validatedData['amount'] : null,
-                'rate' => $validatedData['computation_method'] === 'rate' ? $validatedData['rate'] : null,
-                'formula' => $validatedData['computation_method'] === 'formula' ? $validatedData['formula'] : null,
-                'actual_amount' => $validatedData['actual_amount'] ?? false,
-                'fraction_to_consider' => $validatedData['fraction_to_consider'],
-                'limit' => $validatedData['limit'] ?? null,
-                'round_off' => $validatedData['round_off'],
-                'decimal_places' => $validatedData['decimal_places'],
-                'is_statutory' => false, // Non-statutory by default
-                'is_optional' => true,
-                'business_id' => $business->id,
-                'created_by' => auth()->id(),
-            ]);
+        $deduction = Deduction::create([
+            'name' => $validatedData['name'],
+            'slug' => \Str::slug($validatedData['name']),
+            'description' => $validatedData['description'],
+            'calculation_basis' => $validatedData['calculation_basis'],
+            'computation_method' => $validatedData['computation_method'],
+            'amount' => $validatedData['computation_method'] === 'fixed' ? $validatedData['amount'] : null,
+            'rate' => $validatedData['computation_method'] === 'rate' ? $validatedData['rate'] : null,
+            'formula' => $validatedData['computation_method'] === 'formula' ? $validatedData['formula'] : null,
+            'actual_amount' => $validatedData['actual_amount'] ?? false,
+            'fraction_to_consider' => $validatedData['fraction_to_consider'],
+            'limit' => $validatedData['limit'] ?? 0, // Default to 0 if limit is not nullable
+            'round_off' => $validatedData['round_off'],
+            'decimal_places' => $validatedData['decimal_places'],
+            'is_statutory' => false,
+            'is_optional' => true,
+            'business_id' => $business->id,
+            'created_by' => auth()->id(),
+        ]);
 
-            return RequestResponse::created('Deduction created successfully.', $deduction->id);
-        });
-    }
+        return RequestResponse::created('Deduction created successfully.', $deduction->id);
+    });
+}
 
     public function edit(Request $request)
     {
@@ -118,44 +118,43 @@ class DeductionController extends Controller
         return RequestResponse::ok('Deduction details loaded successfully.', $modal);
     }
 
-    public function update(Request $request, $id)
-    {
-        $validatedData = $this->validateDeduction($request, true);
+public function update(Request $request, $id)
+{
+    $validatedData = $this->validateDeduction($request, true);
 
-        return $this->handleTransaction(function () use ($validatedData, $id) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
-            }
+    return $this->handleTransaction(function () use ($validatedData, $id) {
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
 
-            $deduction = Deduction::where('business_id', $business->id)
-                ->where('id', $id)
-                ->firstOrFail();
+        $deduction = Deduction::where('business_id', $business->id)
+            ->where('id', $id)
+            ->firstOrFail();
 
-            if ($deduction->id != $validatedData['deduction_id']) {
-                return RequestResponse::badRequest('Deduction ID mismatch.');
-            }
+        if ($deduction->id != $validatedData['deduction_id']) {
+            return RequestResponse::badRequest('Deduction ID mismatch.');
+        }
 
-            $deduction->update([
-                'name' => $validatedData['name'],
-                'slug' => \Str::slug($validatedData['name']),
-                'description' => $validatedData['description'],
-                'calculation_basis' => $validatedData['calculation_basis'],
-                'computation_method' => $validatedData['computation_method'],
-                'amount' => $validatedData['computation_method'] === 'fixed' ? $validatedData['amount'] : null,
-                'rate' => $validatedData['computation_method'] === 'rate' ? $validatedData['rate'] : null,
-                'formula' => $validatedData['computation_method'] === 'formula' ? $validatedData['formula'] : null,
-                'actual_amount' => $validatedData['actual_amount'] ?? false,
-                'fraction_to_consider' => $validatedData['fraction_to_consider'],
-                'limit' => $validatedData['limit'] ?? null,
-                'round_off' => $validatedData['round_off'],
-                'decimal_places' => $validatedData['decimal_places'],
-            ]);
+        $deduction->update([
+            'name' => $validatedData['name'],
+            'slug' => \Str::slug($validatedData['name']),
+            'description' => $validatedData['description'],
+            'calculation_basis' => $validatedData['calculation_basis'],
+            'computation_method' => $validatedData['computation_method'],
+            'amount' => $validatedData['computation_method'] === 'fixed' ? $validatedData['amount'] : null,
+            'rate' => $validatedData['computation_method'] === 'rate' ? $validatedData['rate'] : null,
+            'formula' => $validatedData['computation_method'] === 'formula' ? $validatedData['formula'] : null,
+            'actual_amount' => $validatedData['actual_amount'] ?? false,
+            'fraction_to_consider' => $validatedData['fraction_to_consider'],
+            'limit' => $validatedData['limit'] ?? 0, // Default to 0 if limit is not nullable
+            'round_off' => $validatedData['round_off'],
+            'decimal_places' => $validatedData['decimal_places'],
+        ]);
 
-            return RequestResponse::ok('Deduction updated successfully.');
-        });
-    }
-
+        return RequestResponse::ok('Deduction updated successfully.');
+    });
+}
     public function destroy(Request $request, $id)
     {
         $validatedData = $request->validate(['deduction_id' => 'required|exists:deductions,id']);
@@ -179,27 +178,27 @@ class DeductionController extends Controller
         });
     }
 
-    private function validateDeduction(Request $request, $isUpdate = false)
-    {
-        $rules = [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'calculation_basis' => 'required|in:basic_pay,gross_pay,cash_pay,taxable_pay',
-            'computation_method' => 'required|in:' . implode(',', $this->computationMethods),
-            'amount' => 'nullable|numeric|min:0|required_if:computation_method,fixed',
-            'rate' => 'nullable|numeric|min:0|max:100|required_if:computation_method,rate',
-            'formula' => 'nullable|string|max:255|required_if:computation_method,formula',
-            'actual_amount' => 'nullable|boolean',
-            'fraction_to_consider' => 'required|in:employee_only,employee_and_employer',
-            'limit' => 'nullable|numeric|min:0',
-            'round_off' => 'required|in:round_off_up,round_off_down',
-            'decimal_places' => 'required|integer|min:0|max:5',
-        ];
+   private function validateDeduction(Request $request, $isUpdate = false)
+{
+    $rules = [
+        'name' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'calculation_basis' => 'required|in:basic_pay,gross_pay,cash_pay,taxable_pay,custom',
+        'computation_method' => 'required|in:' . implode(',', $this->computationMethods),
+        'amount' => 'nullable|numeric|min:0|required_if:computation_method,fixed',
+        'rate' => 'nullable|numeric|min:0|max:100|required_if:computation_method,rate',
+        'formula' => 'nullable|string|max:255|required_if:computation_method,formula',
+        'actual_amount' => 'nullable|boolean',
+        'fraction_to_consider' => 'required|in:employee_only,employee_and_employer',
+        'limit' => 'nullable|numeric|min:0',
+        'round_off' => 'required|in:round_off_up,round_off_down',
+        'decimal_places' => 'required|integer|min:0|max:5',
+    ];
 
-        if ($isUpdate) {
-            $rules['deduction_id'] = 'required|exists:deductions,id';
-        }
-
-        return $request->validate($rules);
+    if ($isUpdate) {
+        $rules['deduction_id'] = 'required|exists:deductions,id';
     }
+
+    return $request->validate($rules);
+}
 }
