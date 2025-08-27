@@ -2975,30 +2975,11 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
     $payrunMonth = $payroll->payrun_month;
 
     $validColumns = [
-        'basic_salary',
-        'gross_pay',
-        'net_pay',
-        'meal_allowance',
-        'tax_no',
-        'overtime',
-        'shif',
-        'nssf',
-        'paye',
-        'paye_before_reliefs',
-        'housing_levy',
-        'helb',
-        'taxable_income',
-        'personal_relief',
-        'insurance_relief',
-        'pay_after_tax',
-        'loan_repayment',
-        'advance_recovery',
-        'deductions_after_tax',
-        'attendance_present',
-        'attendance_absent',
-        'days_in_month',
-        'bank_name',
-        'account_number'
+        'basic_salary', 'gross_pay', 'net_pay', 'meal_allowance', 'tax_no', 'overtime', 'shif',
+        'nssf', 'paye', 'paye_before_reliefs', 'housing_levy', 'helb', 'taxable_income',
+        'personal_relief', 'insurance_relief', 'pay_after_tax', 'loan_repayment',
+        'advance_recovery', 'deductions_after_tax', 'attendance_present', 'attendance_absent',
+        'days_in_month', 'bank_name', 'account_number'
     ];
 
     $column = strtolower(trim($column));
@@ -3027,54 +3008,43 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
             return isset($reliefs[$key]['amount']) ? floatval($reliefs[$key]['amount']) : floatval($ep->$key ?? 0);
         };
 
-        // Base row with common fields for all columns
-        $row = [
-            'employee_name' => $user->name ?? 'N/A',
-            'employee_code' => $employee->employee_code ?? 'N/A',
-            'tax_no' => $employee->tax_no ?? 'N/A',
-            'basic_salary' => number_format($ep->basic_salary ?? 0, 2),
-            'gross_pay' => number_format($ep->gross_pay ?? 0, 2),
-            'net_pay' => number_format($ep->net_pay ?? 0, 2),
-        ];
-
         if ($column === 'paye') {
-            $payeValue = floatval($ep->paye ?? 0); // Self Assessed PAYE
-            $payeBeforeReliefs = floatval($ep->paye_before_reliefs ?? 0);
+            $payeValue = floatval($ep->paye ?? 0);
             $personalRelief = $getRelief('personal-relief');
             $insuranceRelief = $getRelief('insurance-relief');
-            $taxableIncome = floatval($ep->taxable_income ?? 0);
-            $calculatedPaye = max(0, $payeBeforeReliefs - $personalRelief - $insuranceRelief);
 
             $payeRow = [
-                $employee->tax_no ?? 'N/A', // PIN of Employee
-                $user->name ?? 'N/A', // Name of Employee
-                in_array($employee->resident_status, ['Resident', 'Non-Resident']) ? $employee->resident_status : 'Resident', // Resident Status
-                $employee->kra_employee_status ?? 'Primary Employee', // Type of Employee
-                $employee->disability_status ?? 'No', // Payee With Disability PWD (validate Yes/No)
-                '', // Exemption Certificate Number
-                number_format($ep->gross_pay ?? 0, 2), // Total Cash Pay (A)
-                number_format($getAllowance('Car Allowance'), 2), // Value of Car Benefit (B)
-                number_format($getAllowance('Meal Allowance'), 2), // Value of Meals (C)
-                number_format(0, 2), // Other Non Cash Benefits (D) - set to 0 if blank
-                'Benefit Not Given', // Type of Housing
-                number_format($getAllowance('Housing Allowance'), 2), // Housing Benefit (F)
-                number_format(max(0, ($ep->gross_pay ?? 0) - ($ep->basic_salary ?? 0) - $getAllowance('Housing Allowance') - $getAllowance('Transport Allowance') - $overtime), 2), // Other Benefits (G)
-                '', // Total Gross Pay (Ksh) (A+B+C+D+F+G) - leave blank
-                number_format($ep->shif ?? 0, 2), // Social Health Contribution (J)
-                number_format($ep->nssf ?? 0, 2), // NSSF Contributions (K)
-                number_format(0, 2), // Post Retirement Medical Fund/SHIP (L) - assume 0 if no data
-                number_format($getRelief('mortgage-interest-relief'), 2), // Mortgage Interest (M)
-                number_format($ep->housing_levy ?? 0, 2), // Affordable Housing Levy (N)
-                '', // Taxable Pay (Ksh) - leave blank
-                number_format($personalRelief, 2), // Monthly Personal Relief (P)
-                number_format($insuranceRelief, 2), // Amount of Insurance Relief
-                '', // Relief (Total of F Computation) - leave blank
-                '', // PAYE Tax (Ksh) (O - P - Q) - leave blank
-                number_format($payeValue, 2) // Self Assessed PAYE Tax (Ksh)
+                $employee->tax_no ?? '', // PIN of Employee (A)
+                $user->name ?? '', // Name of Employee (B)
+                in_array($employee->resident_status, ['Resident', 'Non-Resident']) ? $employee->resident_status : 'Resident', // Resident Status (C)
+                $employee->kra_employee_status ?? 'Primary Employee', // Type of Employee (D)
+                $employee->disability_status ?? 'No', // Payee With Disability PWD (E)
+                '', // Exemption Certificate Number (F)
+                floatval($ep->gross_pay ?? 0), // Total Cash Pay (A) (G)
+                floatval($getAllowance('Car Allowance')), // Value of Car Benefit (B) (H)
+                floatval($getAllowance('Meal Allowance')), // Value of Meals (C) (I)
+                floatval(0), // Other Non Cash Benefits (D) (J)
+                'Benefit Not Given', // Type of Housing (K)
+                '', // Housing Benefit (F) (L)
+                floatval(max(0, ($ep->gross_pay ?? 0) - ($ep->basic_salary ?? 0) - $getAllowance('Housing Allowance') - $getAllowance('Transport Allowance') - $overtime)), // Other Benefits (G) (M)
+                '', // Total Gross Pay (Ksh) (N)
+                floatval($ep->shif ?? 0), // Social Health Contribution (J) (O)
+                floatval($ep->nssf ?? 0), // NSSF Contributions (K) (P)
+                floatval($ep->other_pension_contribution ?? 0), // Other Pension Contribution (K) (Q)
+                floatval(0), // Post Retirement Medical Fund/SHIP (L) (R)
+                floatval($getRelief('mortgage-interest-relief')), // Mortgage Interest (M) (S)
+                floatval($ep->housing_levy ?? 0), // Affordable Housing Levy (N) (T)
+                '', // Taxable Pay (Ksh) (U)
+                $personalRelief, // Monthly Personal Relief (P) (V)
+                $insuranceRelief, // Amount of Insurance Relief (W)
+                '', // PAYE Tax (Ksh) (X)
+                $payeValue // Self Assessed PAYE Tax (Ksh) (Y)
             ];
 
             return $payeRow;
         } else {
+            // Other column logic remains unchanged
+            $row = ['employee_name' => $user->name ?? 'N/A', 'employee_code' => $employee->employee_code ?? 'N/A'];
             switch ($column) {
                 case 'shif':
                     $fullName = $user->name ?? 'N/A';
@@ -3082,43 +3052,40 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
                     $firstName = $nameParts[0] ?? 'N/A';
                     $lastName = $nameParts[1] ?? '';
                     $row = [
-                        $employee->employee_code ?? 'N/A', // PAYROLL NUMBER
-                        $firstName, // FIRSTNAME
-                        $lastName, // LASTNAME
-                        $employee->national_id ?? 'N/A', // ID NO
-                        $employee->tax_no ?? 'N/A', // KRA PIN
-                        $employee->nhif_no ?? 'N/A', // SHIF NO
-                        number_format($ep->shif ?? 0, 2), // CONTRIBUTION AMOUNT
-                        $user->phone ?? 'N/A', // PHONE
+                        $employee->employee_code ?? 'N/A',
+                        $firstName,
+                        $lastName,
+                        $employee->national_id ?? 'N/A',
+                        $employee->tax_no ?? 'N/A',
+                        $employee->nhif_no ?? 'N/A',
+                        floatval($ep->shif ?? 0),
+                        $user->phone ?? 'N/A',
                     ];
                     break;
-
                 case 'nssf':
                     $fullName = $user->name ?? 'N/A';
                     $nameParts = explode(' ', $fullName, 2);
                     $surname = $nameParts[1] ?? '';
                     $otherNames = $nameParts[0] ?? $fullName;
                     $row = [
-                        $employee->employee_code ?? 'N/A', // PAYROLL NUMBER
-                        $surname, // SURNAME
-                        $otherNames, // OTHER NAMES
-                        $employee->national_id ?? 'N/A', // ID NO
-                        $employee->tax_no ?? 'N/A', // KRA PIN
-                        $employee->nssf_no ?? 'N/A', // NSSF NO
-                        number_format($ep->gross_pay ?? 0, 2), // GROSS PAY
-                        '', // VOLUNTARY
+                        $employee->employee_code ?? 'N/A',
+                        $surname,
+                        $otherNames,
+                        $employee->national_id ?? 'N/A',
+                        $employee->tax_no ?? 'N/A',
+                        $employee->nssf_no ?? 'N/A',
+                        floatval($ep->gross_pay ?? 0),
+                        '',
                     ];
                     break;
-
                 case 'housing_levy':
                     $row = [
-                        $employee->employee_code ?? 'N/A', // EMP NO
-                        $user->name ?? 'N/A', // FULL NAME
-                        $employee->tax_no ?? 'N/A', // TAX_NO
-                        number_format($ep->housing_levy ?? 0, 2), // HOUSE_LEVY AMOUNT
+                        $employee->employee_code ?? 'N/A',
+                        $user->name ?? 'N/A',
+                        $employee->tax_no ?? 'N/A',
+                        floatval($ep->housing_levy ?? 0),
                     ];
                     break;
-
                 default:
                     $value = match ($column) {
                         'basic_salary' => $ep->basic_salary ?? 0,
@@ -3142,7 +3109,7 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
                         'paye_before_reliefs' => $ep->paye_before_reliefs ?? 0,
                         default => 0,
                     };
-                    $row[$column] = is_numeric($value) ? number_format($value, 2) : $value;
+                    $row[$column] = is_numeric($value) ? floatval($value) : $value;
                     break;
             }
             return array_values($row);
@@ -3165,31 +3132,15 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
                     'data' => $data,
                     'currency' => $currency,
                     'headers' => ($column === 'paye') ? [
-                        'PIN of Employee',
-                        'Name of Employee',
-                        'Resident Status',
-                        'Type of Employee',
-                        'Payee With Disability PWD',
-                        'Exemption Certificate Number',
-                        'Total Cash Pay (A)',
-                        'Value of Car Benefit (B)',
-                        'Value of Meals (C)',
-                        'Non Cash Benefits (D)',
-                        'Type of Housing',
-                        'Housing Benefit (F)',
-                        'Other Benefits (G)',
-                        'Total Gross Pay (Ksh) (A+B+C+D+F+G)',
-                        'Social Health Contribution (J)',
-                        'NSSF Contributions (K)',
-                        'Post Retirement Medical Fund/SHIP (L)',
-                        'Mortgage Interest (M)',
-                        'Affordable Housing Levy (N)',
-                        'Taxable Pay (Ksh)',
-                        'Monthly Personal Relief (P)',
-                        'Amount of Insurance Relief',
-                        'Relief (Total of F Computation)',
-                        'PAYE Tax (Ksh) (O - P - Q)',
-                        'Self Assessed PAYE Tax (Ksh)'
+                        'PIN of Employee', 'Name of Employee', 'Resident Status', 'Type of Employee',
+                        'Payee With Disability PWD', 'Exemption Certificate Number', 'Total Cash Pay (A)',
+                        'Value of Car Benefit (B)', 'Value of Meals (C)', 'Other Non Cash Benefits (D)',
+                        'Type of Housing', 'Housing Benefit (F)', 'Other Benefits (G)',
+                        'Total Gross Pay (Ksh)', 'Social Health Contribution (J)', 'NSSF Contributions (K)',
+                        'Other Pension Contribution (K)', 'Post Retirement Medical Fund/SHIP (L)',
+                        'Mortgage Interest (M)', 'Affordable Housing Levy (N)', 'Taxable Pay (Ksh)',
+                        'Monthly Personal Relief (P)', 'Amount of Insurance Relief',
+                        'PAYE Tax (Ksh)', 'Self Assessed PAYE Tax (Ksh)'
                     ] : [],
                 ]);
                 return $pdf->download($fileName);
@@ -3202,61 +3153,22 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
             $headers = [];
             if ($column === 'paye') {
                 $headers = [
-                    'PIN of Employee',
-                    'Name of Employee',
-                    'Resident Status',
-                    'Type of Employee',
-                    'Payee With Disability PWD',
-                    'Exemption Certificate Number',
-                    'Total Cash Pay (A)',
-                    'Value of Car Benefit (B)',
-                    'Value of Meals (C)',
-                    'Non Cash Benefits (D)',
-                    'Type of Housing',
-                    'Housing Benefit (F)',
-                    'Other Benefits (G)',
-                    'Total Gross Pay (Ksh) (A+B+C+D+F+G)',
-                    'Social Health Contribution (J)',
-                    'NSSF Contributions (K)',
-                    'Post Retirement Medical Fund/SHIP (L)',
-                    'Mortgage Interest (M)',
-                    'Affordable Housing Levy (N)',
-                    'Taxable Pay (Ksh)',
-                    'Monthly Personal Relief (P)',
-                    'Amount of Insurance Relief',
-                    'Relief (Total of F Computation)',
-                    'PAYE Tax (Ksh) (O - P - Q)',
-                    'Self Assessed PAYE Tax (Ksh)'
+                    'PIN of Employee', 'Name of Employee', 'Resident Status', 'Type of Employee',
+                    'Payee With Disability PWD', 'Exemption Certificate Number', 'Total Cash Pay (A)',
+                    'Value of Car Benefit (B)', 'Value of Meals (C)', 'Other Non Cash Benefits (D)',
+                    'Type of Housing', 'Housing Benefit (F)', 'Other Benefits (G)',
+                    'Total Gross Pay (Ksh)', 'Social Health Contribution (J)', 'NSSF Contributions (K)',
+                    'Other Pension Contribution (K)', 'Post Retirement Medical Fund/SHIP (L)',
+                    'Mortgage Interest (M)', 'Affordable Housing Levy (N)', 'Taxable Pay (Ksh)',
+                    'Monthly Personal Relief (P)', 'Amount of Insurance Relief',
+                    'PAYE Tax (Ksh)', 'Self Assessed PAYE Tax (Ksh)'
                 ];
             } elseif ($column === 'shif') {
-                $headers = [
-                    'PAYROLL NUMBER',
-                    'FIRSTNAME',
-                    'LASTNAME',
-                    'ID NO',
-                    'KRA PIN',
-                    'SHIF NO',
-                    'CONTRIBUTION AMOUNT',
-                    'PHONE',
-                ];
+                $headers = ['PAYROLL NUMBER', 'FIRSTNAME', 'LASTNAME', 'ID NO', 'KRA PIN', 'SHIF NO', 'CONTRIBUTION AMOUNT', 'PHONE'];
             } elseif ($column === 'nssf') {
-                $headers = [
-                    'PAYROLL NUMBER',
-                    'SURNAME',
-                    'OTHER NAMES',
-                    'ID NO',
-                    'KRA PIN',
-                    'NSSF NO',
-                    'GROSS PAY',
-                    'VOLUNTARY',
-                ];
+                $headers = ['PAYROLL NUMBER', 'SURNAME', 'OTHER NAMES', 'ID NO', 'KRA PIN', 'NSSF NO', 'GROSS PAY', 'VOLUNTARY'];
             } elseif ($column === 'housing_levy') {
-                $headers = [
-                    'EMP NO',
-                    'FULL NAME',
-                    'TAX_NO',
-                    'HOUSE_LEVY AMOUNT',
-                ];
+                $headers = ['EMP NO', 'FULL NAME', 'TAX_NO', 'HOUSE_LEVY AMOUNT'];
             }
 
             $csvData = '';
@@ -3268,12 +3180,12 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
 
             foreach ($data as $row) {
                 $csvData .= implode(',', array_map(function ($value) {
-                    return is_numeric($value) ? $value : '"' . str_replace('"', '""', $value) . '"';
+                    return is_numeric($value) ? strval($value) : '"' . str_replace('"', '""', $value) . '"';
                 }, $row)) . "\n";
             }
 
             return Response::make($csvData, 200, [
-                'Content-Type' => 'text/csv',
+                'Content-Type' => 'text/csv; charset=UTF-8',
                 'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
             ]);
 
@@ -3300,61 +3212,22 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
                     {
                         if ($this->column === 'paye') {
                             return [
-                                'PIN of Employee',
-                                'Name of Employee',
-                                'Resident Status',
-                                'Type of Employee',
-                                'Payee With Disability PWD',
-                                'Exemption Certificate Number',
-                                'Total Cash Pay (A)',
-                                'Value of Car Benefit (B)',
-                                'Value of Meals (C)',
-                                'Non Cash Benefits (D)',
-                                'Type of Housing',
-                                'Housing Benefit (F)',
-                                'Other Benefits (G)',
-                                'Total Gross Pay (Ksh) (A+B+C+D+F+G)',
-                                'Social Health Contribution (J)',
-                                'NSSF Contributions (K)',
-                                'Post Retirement Medical Fund/SHIP (L)',
-                                'Mortgage Interest (M)',
-                                'Affordable Housing Levy (N)',
-                                'Taxable Pay (Ksh)',
-                                'Monthly Personal Relief (P)',
-                                'Amount of Insurance Relief',
-                                'Relief (Total of F Computation)',
-                                'PAYE Tax (Ksh) (O - P - Q)',
-                                'Self Assessed PAYE Tax (Ksh)'
+                                'PIN of Employee', 'Name of Employee', 'Resident Status', 'Type of Employee',
+                                'Payee With Disability PWD', 'Exemption Certificate Number', 'Total Cash Pay (A)',
+                                'Value of Car Benefit (B)', 'Value of Meals (C)', 'Other Non Cash Benefits (D)',
+                                'Type of Housing', 'Housing Benefit (F)', 'Other Benefits (G)',
+                                'Total Gross Pay (Ksh)', 'Social Health Contribution (J)', 'NSSF Contributions (K)',
+                                'Other Pension Contribution (K)', 'Post Retirement Medical Fund/SHIP (L)',
+                                'Mortgage Interest (M)', 'Affordable Housing Levy (N)', 'Taxable Pay (Ksh)',
+                                'Monthly Personal Relief (P)', 'Amount of Insurance Relief',
+                                'PAYE Tax (Ksh)', 'Self Assessed PAYE Tax (Ksh)'
                             ];
                         } elseif ($this->column === 'shif') {
-                            return [
-                                'PAYROLL NUMBER',
-                                'FIRSTNAME',
-                                'LASTNAME',
-                                'ID NO',
-                                'KRA PIN',
-                                'SHIF NO',
-                                'CONTRIBUTION AMOUNT',
-                                'PHONE',
-                            ];
-                        } elseif ($this->column === 'nssf') {
-                            return [
-                                'PAYROLL NUMBER',
-                                'SURNAME',
-                                'OTHER NAMES',
-                                'ID NO',
-                                'KRA PIN',
-                                'NSSF NO',
-                                'GROSS PAY',
-                                'VOLUNTARY',
-                            ];
+                            return ['PAYROLL NUMBER', 'FIRSTNAME', 'LASTNAME', 'ID NO', 'KRA PIN', 'SHIF NO', 'CONTRIBUTION AMOUNT', 'PHONE'];
+                        } elseif ($column === 'nssf') {
+                            return ['PAYROLL NUMBER', 'SURNAME', 'OTHER NAMES', 'ID NO', 'KRA PIN', 'NSSF NO', 'GROSS PAY', 'VOLUNTARY'];
                         } elseif ($column === 'housing_levy') {
-                            return [
-                                'EMP NO',
-                                'FULL NAME',
-                                'TAX_NO',
-                                'HOUSE_LEVY AMOUNT',
-                            ];
+                            return ['EMP NO', 'FULL NAME', 'TAX_NO', 'HOUSE_LEVY AMOUNT'];
                         }
                         return array_map('ucwords', array_keys($this->data[0] ?? []));
                     }
