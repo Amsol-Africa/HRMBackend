@@ -18,6 +18,7 @@ class LeaveRequest extends Model
         'start_date',
         'end_date',
         'total_days',
+        'attachment',
         'half_day',
         'half_day_type',
         'reason',

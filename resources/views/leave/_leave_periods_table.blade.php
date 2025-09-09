@@ -13,7 +13,7 @@
                         <th>Accept <br> Applications</th>
                         <th>Restrict <br> Applications <br> Within Dates</th>
                         <th>Can Accrue</th>
-                        <th>Status</th>
+                        <th>Status</th> 
                         <th>Actions</th>
                     </tr>
                 </thead>
