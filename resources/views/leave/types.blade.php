@@ -56,12 +56,13 @@
                             <div class="col-md-6">
                                 <label for="max_continuous_days">Max continuous days</label>
                                 <input type="number" name="max_continuous_days" id="max_continuous_days"
-                                    class="form-control">
+                                    class="form-control" min="0" oninput="validity.valid||(value='');">
                             </div>
 
                             <div class="col-md-12">
                                 <label for="min_notice_days">Min notice days</label>
-                                <input type="number" name="min_notice_days" id="min_notice_days" class="form-control">
+                                <input type="number" name="min_notice_days" id="min_notice_days" 
+                                class="form-control" min="0" oninput="validity.valid||(value='');">
                             </div>
                         </div>
 
@@ -106,7 +107,8 @@
 
                             <div class="col-md-4">
                                 <label for="default_days">Default days</label>
-                                <input type="number" name="default_days" id="default_days" class="form-control">
+                                <input type="number" name="default_days" id="default_days" 
+                                class="form-control" min="0" oninput="validity.valid||(value='');">
                             </div>
 
                             <div class="col-md-4">
@@ -127,24 +129,25 @@
                             <div class="col-md-6">
                                 <label for="max_carryover_days">Max carryover days</label>
                                 <input type="number" name="max_carryover_days" id="max_carryover_days"
-                                    class="form-control">
+                                    class="form-control" min="0" oninput="validity.valid||(value='');">
                             </div>
 
                             <div class="col-md-6">
                                 <label for="minimum_service_days_required">minimum service days required</label>
                                 <input type="number" name="minimum_service_days_required"
-                                    id="minimum_service_days_required" class="form-control">
+                                    id="minimum_service_days_required" class="form-control" min="0" oninput="validity.valid||(value='');">
                             </div>
 
                             <div class="col-md-6">
                                 <label for="effective_date">Effective date</label>
-                                <input type="text" class="form-control datepicker" id="effective_date"
-                                    name="effective_date" required placeholder="Effective date">
+                                <input type="date" class="form-control datepicker" id="effective_date"
+                                    name="effective_date" required min="{{ date('Y-m-d') }}">
                             </div>
-                            <div class="col-md-6">
+
+                                <div class="col-md-6">
                                 <label for="end_date">End date</label>
-                                <input type="text" class="form-control datepicker" id="end_date" name="end_date"
-                                    required placeholder="End date">
+                                <input type="date" class="form-control datepicker" id="end_date" name="end_date"
+                                    required min="{{ date('Y-m-d') }}">
                             </div>
                         </div>
 

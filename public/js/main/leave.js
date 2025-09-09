@@ -15,6 +15,7 @@ window.getLeave = async function (page = 1, status = 'pending') {
         console.error("Error loading user data:", error);
     }
 };
+
 window.saveLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -30,6 +31,7 @@ window.saveLeave = async function (btn) {
         btn_loader(btn, false);
     }
 };
+
 window.editLeave = async function (btn) {
     btn = $(btn);
 
@@ -42,6 +44,7 @@ window.editLeave = async function (btn) {
     } finally {
     }
 };
+
 window.deleteLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -70,6 +73,7 @@ window.deleteLeave = async function (btn) {
         }
     });
 };
+
 window.manageLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -108,7 +112,6 @@ window.manageLeave = async function (btn) {
         }
 
         data.rejection_reason = reject_reason;
-
     }
 
     Swal.fire({
@@ -123,10 +126,9 @@ window.manageLeave = async function (btn) {
             try {
                 await leaveService.status(data);
 
-getLeave(1, 'pending');
-getLeave(1, 'declined');
-getLeave(1, 'approved');
-
+                getLeave(1, 'pending');
+                getLeave(1, 'declined');
+                getLeave(1, 'approved');
             } finally {
                 btn_loader(btn, false);
             }
@@ -136,3 +138,42 @@ getLeave(1, 'approved');
     });
 };
 
+/* ---------------------------------------------------
+   Attachment field toggle based on leave type
+--------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", function () {
+    const leaveTypeSelect = document.getElementById("leave_type");
+    const attachmentDiv = document.getElementById("attachmentField");
+    const attachmentInput = document.getElementById("attachment");
+
+    if (leaveTypeSelect && attachmentDiv && attachmentInput) {
+        leaveTypeSelect.addEventListener("change", function () {
+            const selected = leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
+            const requiresAttachment = selected.getAttribute("data-requires-attachment");
+
+            if (requiresAttachment === "1") {
+                attachmentDiv.classList.remove("d-none");
+                attachmentInput.setAttribute("required", "required");
+            } else {
+                attachmentDiv.classList.add("d-none");
+                attachmentInput.removeAttribute("required");
+                attachmentInput.value = "";
+            }
+        });
+    }
+});
+
+
+/* ---------------------------------------------------
+   Date validation: ensure end_date >= start_date
+--------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", function () {
+    const startDate = document.getElementById("start_date");
+    const endDate = document.getElementById("end_date");
+
+    if (startDate && endDate) {
+        startDate.addEventListener("change", function () {
+            endDate.min = startDate.value; // end date cannot be before start date
+        });
+    }
+});

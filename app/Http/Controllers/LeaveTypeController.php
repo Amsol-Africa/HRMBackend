@@ -187,4 +187,31 @@ class LeaveTypeController extends Controller
             return RequestResponse::ok('Leave type and policies deleted successfully.');
         });
     }
+
+
+    public function requests(Request $request, $slug = null)
+    {
+        // accept slug either from route param or request payload (keep it flexible)
+        $slug = $slug ?? $request->leave_type_slug;
+
+        // ensure slug exists
+        if (!$slug) {
+            return abort(404, 'Leave type slug missing.');
+        }
+
+        // load leave type + safe relationships
+        $leaveType = LeaveType::where('slug', $slug)
+            ->with([
+                'leavePolicies',
+                'leaveRequests' => function ($q) {
+                    // load employee -> user to show name/email
+                    $q->with(['employee.user']);
+                }
+            ])->firstOrFail();
+
+        // return a normal view (full page)
+        return view('leave.leave_type_requests', compact('leaveType'));
+    }
+
+
 }

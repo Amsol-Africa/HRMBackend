@@ -9,27 +9,50 @@ window.getLeave = async function (page = 1, status = 'pending') {
     try {
         let data = { page: page, status: status };
         const leaveTable = await leaveService.fetch(data);
+
+        // Destroy DataTable before replacing HTML
+        if ($.fn.DataTable.isDataTable(`#${status}LeaveRequestsTable`)) {
+            $(`#${status}LeaveRequestsTable`).DataTable().clear().destroy();
+        }
+
+        // Replace content
         $(`#${status}Container`).html(leaveTable);
-        new DataTable(`#${status}LeaveRequestsTable`);
+
+        // Initialize DataTable only once
+        $(`#${status}LeaveRequestsTable`).DataTable({
+            responsive: true,
+            autoWidth: false
+        });
+
     } catch (error) {
         console.error("Error loading user data:", error);
     }
 };
+
+
 window.saveLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
     let formData = new FormData(document.getElementById("leaveForm"));
     try {
+        let response;
         if (formData.has('leave_slug')) {
-            await leaveService.update(formData);
+            response = await leaveService.update(formData);
         } else {
-            await leaveService.save(formData);
+            response = await leaveService.save(formData);
         }
-        getLeave();
+
+        // ✅ Redirect if backend sent a redirect URL
+        if (response.data && response.data.redirect_url) {
+            window.location.href = response.data.redirect_url;
+        } else {
+            getLeave();
+        }
     } finally {
         btn_loader(btn, false);
     }
 };
+
 window.editLeave = async function (btn) {
     btn = $(btn);
 

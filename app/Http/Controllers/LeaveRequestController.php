@@ -10,130 +10,112 @@ use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
+use Carbon\Carbon;
 
 class LeaveRequestController extends Controller
 {
     use HandleTransactions;
+
     public function fetch(Request $request)
-{
-    $business = Business::findBySlug(session('active_business_slug'));
-    $leaveRequests = LeaveRequest::where('business_id', $business->id);
-    $status = $request->status;
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        $leaveRequests = LeaveRequest::where('business_id', $business->id);
+        $status = $request->status;
 
-    $user = auth()->user();
-    $activeRole = session('active_role'); // or $user->active_role if that's where you store it
+        $user = auth()->user();
+        $activeRole = session('active_role');
 
-    // ✅ If active role is NOT HR or Admin → show only this user's leaves
-    if (!in_array($activeRole, ['business-hr', 'business-admin'])) {
-        if ($user->employee) {
-            $leaveRequests->where('employee_id', $user->employee->id);
-        } else {
-            $leaveRequests->whereRaw('1=0'); // Return no data if not linked to employee
+        // ✅ Restrict non-HR/admin users to their own leaves
+        if (!in_array($activeRole, ['business-hr', 'business-admin'])) {
+            if ($user->employee) {
+                $leaveRequests->where('employee_id', $user->employee->id);
+            } else {
+                $leaveRequests->whereRaw('1=0'); // no results
+            }
         }
+
+        // ✅ Status filtering based on Blade logic
+        if ($request->has('status')) {
+            switch ($status) {
+                case 'pending':
+                    $leaveRequests->whereNull('approved_by')
+                                ->whereNull('rejection_reason');
+                    break;
+
+                case 'approved':
+                    $leaveRequests->whereNotNull('approved_by')
+                                ->whereNull('rejection_reason');
+                    break;
+
+                case 'rejected':
+                    $leaveRequests->whereNotNull('rejection_reason')
+                                ->whereNull('approved_by');
+                    break;
+            }
+        }
+
+        $leaveRequests = $leaveRequests
+            ->with('employee', 'leaveType')
+            ->latest()
+            ->paginate(10);
+
+        $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
+        return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
     }
-
-    // ✅ Status filtering
-   if ($request->has('status')) {
-    switch ($status) {
-        case 'pending':
-            // Show leaves with no decision yet
-            $leaveRequests->whereDoesntHave('statuses', function ($query) {
-                $query->whereIn('name', ['approved', 'declined']);
-            });
-            break;
-
-        case 'approved':
-            $leaveRequests->whereHas('statuses', function ($query) {
-                $query->where('name', 'approved');
-            });
-            break;
-
-        case 'rejected':
-            $leaveRequests->whereHas('statuses', function ($query) {
-                $query->where('name', 'declined');
-            });
-            break;
-    }
-}
-
-
-    $leaveRequests = $leaveRequests
-        ->with('employee', 'leaveType')
-        ->latest()
-        ->paginate(10);
-
-    $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
-    return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
-}
-
-
-    // public function fetch(Request $request)
-    // {
-    //     $business = Business::findBySlug(session('active_business_slug'));
-    //     $leaveRequests = LeaveRequest::where('business_id', $business->id);
-    //     $status = $request->status;
-
-    //     if ($request->has('status')) {
-    //         switch ($status) {
-    //             case 'pending':
-    //                 $leaveRequests->currentStatus('pending');
-    //                 break;
-    //             case 'approved':
-    //                 $leaveRequests->currentStatus('approved');
-    //                 break;
-    //             case 'declined':
-    //                 $leaveRequests->currentStatus('declined');
-    //                 break;
-    //             case 'active':
-    //                 $leaveRequests->currentStatus('active');
-    //                 break;
-    //             case 'used_up':
-    //                 $leaveRequests->currentStatus('used_up');
-    //                 break;
-    //         }
-    //     }
-
-    //     $leaveRequests = $leaveRequests->with('employee', 'leaveType')->latest()->paginate(10);
-
-    //     $leaveRequestsTable = view('leave._leave_requests_table', compact('leaveRequests', 'status'))->render();
-    //     return RequestResponse::ok('Leave requests fetched successfully.', $leaveRequestsTable);
-    // }
 
     public function show(Request $request, $referenceNumber)
     {
-        $leaveRequest = LeaveRequest::where('reference_number', $referenceNumber)->with('employee', 'leaveType')->firstOrFail();
+        $leaveRequest = LeaveRequest::where('reference_number', $referenceNumber)
+            ->with('employee', 'leaveType')
+            ->firstOrFail();
+
         $leaveRequestDetails = view('leave._leave_request_table', compact('leaveRequest'))->render();
         return RequestResponse::ok('Leave request fetched successfully.', $leaveRequestDetails);
     }
 
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'employee_id' => 'nullable|exists:employees,id',
+        $leaveType = LeaveType::findOrFail($request->leave_type_id);
+
+        // ✅ Validation rules
+        $rules = [
+            'employee_id'   => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date' => 'required|date',
-            'reason' => 'nullable|string',
-        ]);
+            'start_date'    => 'required|date',
+            'end_date'      => 'required|date|after_or_equal:start_date',
+            'reason'        => 'nullable|string',
+        ];
 
-        return $this->handleTransaction(function () use ($validatedData) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            $leave_type = LeaveType::findOrFail($validatedData['leave_type_id']);
-            $duration = $leave_type->max_continuous_days;
+        if ($leaveType->requires_attachment) {
+            $rules['attachment'] = 'required|file|mimes:pdf,jpg,png,doc,docx|max:2048';
+        }
 
+        $validatedData = $request->validate($rules);
+
+        return $this->handleTransaction(function () use ($validatedData, $leaveType, $request) {
+            $business   = Business::findBySlug(session('active_business_slug'));
             $employeeId = auth()->user()->employee->id;
-            $startDate = $validatedData['start_date'];
-            $endDate = date('Y-m-d', strtotime("$startDate +$duration days"));
 
+            $startDate  = Carbon::parse($validatedData['start_date']);
+            $endDate    = Carbon::parse($validatedData['end_date']);
+            $totalDays  = $endDate->diffInDays($startDate) + 1;
+
+            // ✅ Check max continuous days limit
+            if ($leaveType->max_continuous_days && $totalDays > $leaveType->max_continuous_days) {
+                return RequestResponse::badRequest("You cannot take more than {$leaveType->max_continuous_days} days for this leave type.");
+            }
+
+            // ✅ Prevent overlapping leave requests
             $existingLeave = LeaveRequest::where('employee_id', $employeeId)
                 ->whereHas('statuses', function ($query) {
                     $query->whereNotIn('name', ['rejected', 'used_up']);
                 })
                 ->where(function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('start_date', [$startDate, $endDate]) // Existing leave starts within the new leave period
-                        ->orWhereBetween('end_date', [$startDate, $endDate]) // Existing leave ends within the new leave period
+                    $query->whereBetween('start_date', [$startDate, $endDate])
+                        ->orWhereBetween('end_date', [$startDate, $endDate])
                         ->orWhere(function ($query) use ($startDate, $endDate) {
                             $query->where('start_date', '<=', $startDate)
-                                ->where('end_date', '>=', $endDate); // New leave is fully within an existing leave
+                                ->where('end_date', '>=', $endDate);
                         });
                 })
                 ->exists();
@@ -142,31 +124,51 @@ class LeaveRequestController extends Controller
                 return RequestResponse::badRequest('You already have a leave request that overlaps with these dates.');
             }
 
-            // Create new leave request
+            // ✅ Create leave request
             $leaveRequest = new LeaveRequest();
             $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
-            $leaveRequest->employee_id = $employeeId;
-            $leaveRequest->business_id = $business->id;
-            $leaveRequest->leave_type_id = $validatedData['leave_type_id'];
-            $leaveRequest->start_date = $startDate;
-            $leaveRequest->total_days = $duration;
-            $leaveRequest->reason = $validatedData['reason'];
-            $leaveRequest->end_date = $endDate;
-            $leaveRequest->save();
+            $leaveRequest->employee_id      = $employeeId;
+            $leaveRequest->business_id      = $business->id;
+            $leaveRequest->leave_type_id    = $validatedData['leave_type_id'];
+            $leaveRequest->start_date       = $startDate;
+            $leaveRequest->end_date         = $endDate;
+            $leaveRequest->total_days       = $totalDays;
+            $leaveRequest->reason           = $validatedData['reason'] ?? null;
 
+            // ✅ Handle attachment
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $path = $file->store('attachments', 'public');
+                $leaveRequest->attachment = $path;
+            }
+
+            $leaveRequest->save();
             $leaveRequest->setStatus(Status::PENDING);
+
+            //Queue notification to HR/admin for approval (if required)
+            if ($leaveType->requires_approval) {
+                // Notification logic here (e.g., dispatch a job)
+            } else {
+                // Auto-approve logic if no approval is required
+                $leaveRequest->approved_by = auth()->id();
+                $leaveRequest->approved_at = now();
+                $leaveRequest->setStatus(Status::APPROVED);
+                $leaveRequest->save();
+            }           
+
+            //Queue email to HR/admin for approval (if required)
+            Mail::to($business->hr_email)->queue(new LeaveRequestSubmitted($leaveRequest));
 
             return RequestResponse::created('Leave request created successfully.');
         });
     }
 
-
     public function status(Request $request)
     {
         $validatedData = $request->validate([
-            'reference_number' => 'required|exists:leave_requests,reference_number',
-            'status' => 'required|in:approved,rejected',
-            'rejection_reason' => 'nullable|required_if:action,reject|string',
+            'reference_number'  => 'required|exists:leave_requests,reference_number',
+            'status'            => 'required|in:approved,rejected',
+            'rejection_reason'  => 'nullable|required_if:status,rejected|string',
         ]);
 
         return $this->handleTransaction(function () use ($validatedData) {
@@ -175,25 +177,33 @@ class LeaveRequestController extends Controller
             if ($validatedData['status'] === 'approved') {
                 $leaveRequest->approved_by = auth()->id();
                 $leaveRequest->approved_at = now();
+                $leaveRequest->rejection_reason = null;
+
+                // Set only APPROVED status (remove redundant ACTIVE)
                 $leaveRequest->setStatus(Status::APPROVED);
-                $leaveRequest->setStatus(Status::ACTIVE);
             } else {
-                $rejection_reason = $validatedData['rejection_reason'];
-                $leaveRequest->setStatus(Status::DECLINED, $rejection_reason);
+                $leaveRequest->approved_by = null;
+                $leaveRequest->approved_at = null;
+                $leaveRequest->rejection_reason = $validatedData['rejection_reason'];
+
+                $leaveRequest->setStatus(Status::DECLINED);
             }
 
             $leaveRequest->save();
+            // Notify employee about status change
+            $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
+            
 
             return RequestResponse::ok("Leave request {$validatedData['status']} successfully.");
         });
     }
-
 
     public function destroy(Request $request)
     {
         $validatedData = $request->validate([
             'reference_number' => 'required|exists:leave_requests,reference_number',
         ]);
+
         return $this->handleTransaction(function () use ($validatedData) {
             $leaveRequest = LeaveRequest::where('reference_number', $validatedData['reference_number'])->firstOrFail();
             $leaveRequest->delete();
@@ -207,7 +217,6 @@ class LeaveRequestController extends Controller
         if ($halfDay) {
             $days -= 0.5;
         }
-
         return $days;
     }
 }

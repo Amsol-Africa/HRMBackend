@@ -28,6 +28,7 @@ class Business extends Model implements HasMedia
         'registration_no',
         'tax_pin_no',
         'business_license_no',
+        'hr_email',
         'physical_address',
         'currency',
         'verified',

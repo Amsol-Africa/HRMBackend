@@ -33,9 +33,9 @@
                                 <button class="btn btn-sm btn-info" data-leave-type="{{ $leaveType->slug }}" onclick="viewLeaveType(this)">
                                     <i class="bi bi-view-list"></i> Details
                                 </button>
-                                <a href="" class="btn btn-sm btn-primary"><i class="bi bi-question-circle"></i> Requests</a>
+                                <a href=" " class="btn btn-sm btn-primary"><i class="bi bi-question-circle"></i> Requests</a>
                             </td>
-                        </tr>
+                            </tr>
                     @endforeach
                 </tbody>
             </table>

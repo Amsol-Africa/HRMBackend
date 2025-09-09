@@ -1,8 +1,6 @@
 <div class="card">
-
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Leave Requests</h5>
-
 
         @if (auth()->user()->hasRole('business-admin'))
             <a href="{{ route('business.leave.create', $currentBusiness->slug) }}" class="btn btn-primary btn-sm">
@@ -13,7 +11,6 @@
                 <i class="fa-solid fa-plus"></i> Request Leave
             </a>
         @endif
-
     </div>
 
     <div class="card-body">
@@ -28,27 +25,36 @@
                     <th>End Date</th>
                     <th>Remaining</th>
                     <th>Status</th>
+                    {{-- ✅ NEW COLUMN --}}
+                    <th>Attachment</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($leaveRequests as $request)
 
-                @if (auth()->user()->hasRole('business-admin'))
-                    @php
-                        $viewUrl = route('business.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number])
-                    @endphp
-                @else
-                    @php
-                        $viewUrl = route('myaccount.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number])
-                    @endphp
-                @endif
+                    @if (auth()->user()->hasRole('business-admin'))
+                        @php
+                            $viewUrl = route('business.leave.show', [
+                                'business' => $currentBusiness->slug,
+                                'leave' => $request->reference_number,
+                            ])
+                        @endphp
+                    @else
+                        @php
+                            $viewUrl = route('myaccount.leave.show', [
+                                'business' => $currentBusiness->slug,
+                                'leave' => $request->reference_number,
+                            ])
+                        @endphp
+                    @endif
 
                     <tr>
                         <td>{{ $request->reference_number }}</td>
                         <td>{{ optional(optional($request->employee)->user)->name ?? 'N/A' }}</td>
 
-                        <td class="text-white @if ($request->leaveType->name == 'Sick Leave') bg-danger
+                        <td class="text-white 
+                            @if ($request->leaveType->name == 'Sick Leave') bg-danger
                             @elseif ($request->leaveType->name == 'Annual Leave') bg-primary
                             @else bg-secondary @endif">
                             {{ $request->leaveType->name }}
@@ -66,46 +72,56 @@
                         </td>
 
                         <td>
- @if (!is_null($request->approved_by) && is_null($request->rejection_reason))
-    {{-- Approved --}}
-    <span class="badge bg-success">
-        <i class="fa-solid me-1 fa-check-circle"></i> Approved
-    </span>
-
-@elseif (is_null($request->approved_by) && is_null($request->rejection_reason))
-    {{-- Pending --}}
-    <span class="badge bg-warning">
-        <i class="fa-solid me-1 fa-clock"></i> Pending
-    </span>
-
-@elseif (!is_null($request->rejection_reason) && is_null($request->approved_by))
-    {{-- Rejected --}}
-    <span class="badge bg-danger">
-        <i class="fa-solid me-1 fa-times-circle"></i> Rejected
-    </span>
-@endif
-
+                            @if (!is_null($request->approved_by) && is_null($request->rejection_reason))
+                                {{-- Approved --}}
+                                <span class="badge bg-success">
+                                    <i class="fa-solid me-1 fa-check-circle"></i> Approved
+                                </span>
+                            @elseif (is_null($request->approved_by) && is_null($request->rejection_reason))
+                                {{-- Pending --}}
+                                <span class="badge bg-warning">
+                                    <i class="fa-solid me-1 fa-clock"></i> Pending
+                                </span>
+                            @elseif (!is_null($request->rejection_reason) && is_null($request->approved_by))
+                                {{-- Rejected --}}
+                                <span class="badge bg-danger">
+                                    <i class="fa-solid me-1 fa-times-circle"></i> Rejected
+                                </span>
+                            @endif
                         </td>
+
+                        {{-- ✅ NEW CELL: Display download button if attachment exists --}}
+                        <td>
+                            @if($request->attachment)
+                                <a href="{{ asset('storage/' . $request->attachment) }}" 
+                                   class="btn btn-info btn-sm" target="_blank" download>
+                                    <i class="fa-solid fa-download"></i> Download
+                                </a>
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </td>
+
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <a href="{{  $viewUrl  }}" class="btn btn-primary">
+                                <a href="{{ $viewUrl }}" class="btn btn-primary">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
+
                                 @if (
-    is_null($request->approved_by) &&
-    (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr')) &&
-    in_array(session('active_role'), ['business-admin', 'business-hr'])
-)
-                               {{-- @if (
-    is_null($request->approved_by) &&
-    (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr')) &&
-    session('active_role_type') === 'business'
-) --}}
-                                    <button type="button" onclick="manageLeave(this)" data-action="approve" data-leave="{{ $request->reference_number }}" class="btn btn-success">
+                                    is_null($request->approved_by) &&
+                                    (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr')) &&
+                                    in_array(session('active_role'), ['business-admin', 'business-hr'])
+                                )
+                                    <button type="button" onclick="manageLeave(this)" 
+                                            data-action="approve" data-leave="{{ $request->reference_number }}" 
+                                            class="btn btn-success">
                                         <i class="fa-solid fa-check"></i>
                                     </button>
 
-                                    <button type="button" onclick="manageLeave(this)" data-action="reject" data-leave="{{ $request->reference_number }}" class="btn btn-danger">
+                                    <button type="button" onclick="manageLeave(this)" 
+                                            data-action="reject" data-leave="{{ $request->reference_number }}" 
+                                            class="btn btn-danger">
                                         <i class="fa-solid fa-ban"></i>
                                     </button>
                                 @endif
@@ -115,7 +131,16 @@
                 @endforeach
             </tbody>
         </table>
-
-        {{-- {{ $leaveRequests->links() }} --}}
     </div>
 </div>
+////
+<script>
+  /**  $(document).ready(function() {
+        $('#{{ $status }}LeaveRequestsTable').DataTable({
+            responsive: true,
+            columnDefs: [
+                { orderable: false, targets: -1 } // Disable ordering on the last column (Actions)
+            ]
+        });
+    }); */
+</script>

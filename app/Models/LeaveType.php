@@ -58,4 +58,10 @@ class LeaveType extends Model
     {
         return $this->hasMany(LeavePolicy::class);
     }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(\App\Models\LeaveRequest::class, 'leave_type_id');
+    }
+
 }

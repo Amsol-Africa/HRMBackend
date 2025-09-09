@@ -30,14 +30,28 @@
         <select class="form-select" id="leave_type" name="leave_type_id" required>
             <option value="" disabled selected>Select Leave Type</option>
             @foreach ($leaveTypes as $leaveType)
-                <option value="{{ $leaveType->id }}">{{ $leaveType->name }}</option>
+                <option value="{{ $leaveType->id }}" data-requires-attachment="{{ $leaveType->requires_attachment ? '1' : '0' }}">
+                    {{ $leaveType->name }}
+                </option>
             @endforeach
         </select>
     </div>
 
-    <div class="mb-3">
-        <label for="start_date" class="form-label">Start Date</label>
-        <input type="date" class="form-control datepicker" id="start_date" placeholder="Start Date" name="start_date" required min="{{ date('Y-m-d') }}">
+    {{-- Attachment field (hidden by default) --}}
+    <div class="mb-3 d-none" id="attachmentField">
+        <label for="attachment" class="form-label">Attachment (Required for this leave type)</label>
+        <input type="file" class="form-control" id="attachment" name="attachment" accept=".pdf,.jpg,.png,.doc,.docx">
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="start_date" class="form-label">Start Date</label>
+            <input type="date" class="form-control datepicker" id="start_date" name="start_date" required min="{{ date('Y-m-d') }}">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="end_date" class="form-label">End Date</label>
+            <input type="date" class="form-control datepicker" id="end_date" name="end_date" required min="{{ date('Y-m-d') }}">
+        </div>
     </div>
 
     <div class="mb-3">
@@ -46,7 +60,8 @@
     </div>
 
     <div class="text-center">
-        <button type="button" onclick="saveLeave(this)" class="btn btn-primary w-100"> <i
-                class="bi bi-check-circle"></i> Submit Leave Request</button>
+        <button type="button" onclick="saveLeave(this)" class="btn btn-primary w-100"> 
+            <i class="bi bi-check-circle"></i> Submit Leave Request
+        </button>
     </div>
 </form>

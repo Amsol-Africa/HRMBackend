@@ -21,6 +21,7 @@ return new class extends Migration
             $table->date('end_date');
             $table->decimal('total_days', 5, 2);
             $table->boolean('half_day')->default(false);
+            $table->string('attachment')->nullable();
             $table->enum('half_day_type', ['first_half', 'second_half'])->nullable();
             $table->text('reason')->nullable();
             $table->foreignId('approved_by')->nullable()->constrained('users');
