@@ -522,7 +522,6 @@
             const { jsPDF } = window.jspdf;
              const doc = new jsPDF({ orientation: 'landscape' });
 
-            // Add company header
             doc.setFontSize(16);
             doc.text('Payroll Totals', 14, 20);
             doc.setFontSize(12);
@@ -530,7 +529,7 @@
             doc.text(`Payroll Period: {{ $payroll->payrun_month }}/{{ $payroll->payrun_year }}`, 14, 40);
             doc.text(`Date: {{ now()->format('F d, Y') }}`, 14, 50);
 
-            // Define table headers and data
+            // table headers and data
             const headers = [
                 'Basic Salary', 'Allowances', 'Overtime', 'Gross Pay', 'SHIF', 'NSSF', 'Housing Levy',
                 'HELB', 'Taxable Income', 'PAYE (Before Reliefs)', 'Reliefs', 'PAYE', 'Deductions',
@@ -557,7 +556,7 @@
                 ]
             ];
 
-            // Add table to PDF
+            // table to PDF
             doc.autoTable({
                 head: [headers],
                 body: data,
@@ -575,17 +574,17 @@
                         7: { cellWidth: 16 },
                         8: { cellWidth: 16 },
                         9: { cellWidth: 16 },
-                        10: { cellWidth: 16 },
-                        11: { cellWidth: 16 },
-                        12: { cellWidth: 16 },
-                        13: { cellWidth: 16 },
-                        14: { cellWidth: 16 },
-                        15: { cellWidth: 16 }
+                        10:{ cellWidth: 16 },
+                        11:{ cellWidth: 16 },
+                        12:{ cellWidth: 16 },
+                        13:{ cellWidth: 16 },
+                        14:{ cellWidth: 16 },
+                        15:{ cellWidth: 16 }
                     },
                     theme: 'grid'
             });
 
-            // Save the PDF
+
             doc.save(`Payroll_Totals_${payrollTotals.payrollId || 'ID'}.pdf`);
         });
 
