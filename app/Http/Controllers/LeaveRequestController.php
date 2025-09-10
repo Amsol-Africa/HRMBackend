@@ -63,14 +63,18 @@ class LeaveRequestController extends Controller
     {
         $leaveType = LeaveType::findOrFail($request->leave_type_id);
 
+        // Validation rules
         $rules = [
             'employee_id'   => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
             'start_date'    => 'required|date',
             'end_date'      => 'required|date|after_or_equal:start_date',
             'reason'        => 'nullable|string',
+            'half_day'      => 'nullable|boolean',
+            'half_day_type' => 'nullable|string|in:morning,afternoon',
         ];
 
+        // Attachment required only for leave types that require it
         if ($leaveType->requires_attachment) {
             $rules['attachment'] = 'required|file|mimes:pdf,jpg,png,doc,docx|max:2048';
         }
@@ -83,59 +87,75 @@ class LeaveRequestController extends Controller
 
             $startDate  = Carbon::parse($validatedData['start_date']);
             $endDate    = Carbon::parse($validatedData['end_date']);
-            $totalDays  = $endDate->diffInDays($startDate) + 1;
 
+            // Calculate total days (inclusive + half-day support)
+            $totalDays  = LeaveRequest::calculateTotalDays(
+                $startDate,
+                $endDate,
+                $validatedData['half_day'] ?? false
+            );
+
+            // Check past dates
             if ($startDate->lt(today()) || $endDate->lt(today())) {
                 return RequestResponse::badRequest('You cannot apply for leave in the past.');
             }
 
+            // Check max continuous days
             if ($leaveType->max_continuous_days && $totalDays > $leaveType->max_continuous_days) {
                 return RequestResponse::badRequest("You cannot take more than {$leaveType->max_continuous_days} days for this leave type.");
             }
 
-            // ✅ Unified overlap check (pending + approved, not rejected)
+            // Handle attachment before overlap check
+            $attachmentPath = null;
+            if ($request->hasFile('attachment')) {
+                try {
+                    $attachmentPath = $request->file('attachment')->store('attachments', 'public');
+                    \Log::info("Attachment uploaded successfully for employee {$employeeId}: {$attachmentPath}");
+                } catch (\Exception $e) {
+                    \Log::error("Failed to upload attachment: " . $e->getMessage());
+                    return RequestResponse::badRequest('Failed to upload attachment. Please try again.');
+                }
+            }
+
+            // Check for overlapping leaves (only approved + pending)
             if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate)) {
                 return RequestResponse::badRequest('You already have a leave request that overlaps with these dates.');
             }
 
-            // Create leave request
-            $leaveRequest = new LeaveRequest();
-            $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
-            $leaveRequest->employee_id      = $employeeId;
-            $leaveRequest->business_id      = $business->id;
-            $leaveRequest->leave_type_id    = $validatedData['leave_type_id'];
-            $leaveRequest->start_date       = $startDate;
-            $leaveRequest->end_date         = $endDate;
-            $leaveRequest->total_days       = $totalDays;
-            $leaveRequest->reason           = $validatedData['reason'] ?? null;
+            // Create leave request (total_days will be recalculated on saving too)
+            $leaveRequest = LeaveRequest::create([
+                'reference_number' => LeaveRequest::generateUniqueReferenceNumber($business->id),
+                'employee_id'      => $employeeId,
+                'business_id'      => $business->id,
+                'leave_type_id'    => $validatedData['leave_type_id'],
+                'start_date'       => $startDate,
+                'end_date'         => $endDate,
+                'half_day'         => $validatedData['half_day'] ?? false,
+                'half_day_type'    => $validatedData['half_day_type'] ?? null,
+                'reason'           => $validatedData['reason'] ?? null,
+                'attachment'       => $attachmentPath,
+            ]);
 
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $path = $file->store('attachments', 'public');
-                $leaveRequest->attachment = $path;
-            }
-            $leaveRequest->save();
-
-            // Auto-approval if not requiring approval
+            // Auto-approval for leaves not requiring approval
             if (!$leaveType->requires_approval) {
                 $leaveRequest->approved_by = auth()->id();
                 $leaveRequest->approved_at = now();
                 $leaveRequest->save();
             }
 
-            // Check if HR email exists before sending
-            $recipient = $business->hr_email ?? null;
-
-            if ($recipient) {
-                \Log::info('Sending leave request email to: ' . $recipient);
-                Mail::to($recipient)->queue(new LeaveRequestSubmitted($leaveRequest));
+            // Send email to HR if available
+            if ($business->hr_email) {
+                \Log::info('Sending leave request email to HR: ' . $business->hr_email);
+                Mail::to($business->hr_email)->queue(new LeaveRequestSubmitted($leaveRequest));
             } else {
                 \Log::warning("Leave request {$leaveRequest->id} submitted but no HR email found for business ID {$business->id}");
             }
 
             return RequestResponse::ok('Leave request created successfully.');
         });
-    }   
+    }
+
+  
 
     public function status(Request $request)
     {

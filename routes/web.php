@@ -95,11 +95,12 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/types', [DashboardController::class, 'leaveTypes'])->name('types');
             Route::get('/periods', [DashboardController::class, 'leavePeriods'])->name('periods');
             Route::get('/entitlements', [DashboardController::class, 'leaveEntitlements'])->name('entitlements.index');
-            Route::post('/leave/entitlements/fetch', [LeaveEntitlementController::class, 'fetch'])->name('leave.entitlements.fetch');
+            //Route::post('/leave/entitlements/fetch', [LeaveEntitlementController::class, 'fetch'])->name('leave.entitlements.fetch');
             Route::get('/entitlements/set', [DashboardController::class, 'setLeaveEntitlements'])->name('entitlements.create');
             Route::get('/settings', [DashboardController::class, 'leaveSettings'])->name('settings');
 
             Route::get('/leave-types/{slug}/edit', [\App\Http\Controllers\LeaveTypeController::class, 'edit'])->name('leave-types.edit');
+            Route::delete('/leave-types/delete', [\App\Http\Controllers\LeaveTypeController::class, 'destroy'])->name('leave-types.delete');
         });
 
 

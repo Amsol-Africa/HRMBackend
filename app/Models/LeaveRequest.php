@@ -31,7 +31,7 @@ class LeaveRequest extends Model
         'half_day' => 'boolean',
         'start_date' => 'date',
         'end_date' => 'date',
-        'total_days' => 'integer',
+        'total_days' => 'float', // allow decimals for half-days
         'approved_by' => 'integer',
         'approved_at' => 'datetime',
     ];
@@ -58,7 +58,6 @@ class LeaveRequest extends Model
 
     /**
      * Scope for leave `status` based on approved_by / rejection_reason.
-     * Usage: LeaveRequest::status('pending') ...
      */
     public function scopeStatus($query, $statusName)
     {
@@ -80,7 +79,6 @@ class LeaveRequest extends Model
         return $this->scopeStatus($query, $statusName);
     }
 
-
     public static function generateUniqueReferenceNumber($businessId)
     {
         do {
@@ -98,12 +96,12 @@ class LeaveRequest extends Model
                 $q->where(function ($q1) {
                     // Approved
                     $q1->whereNotNull('approved_by')
-                    ->whereNull('rejection_reason');
+                        ->whereNull('rejection_reason');
                 })
                 ->orWhere(function ($q2) {
                     // Pending
                     $q2->whereNull('approved_by')
-                    ->whereNull('rejection_reason');
+                        ->whereNull('rejection_reason');
                 });
             })
             // Overlap condition
@@ -112,14 +110,39 @@ class LeaveRequest extends Model
             ->exists();
     }
 
-
-
-    private function calculateTotalDays($startDate, $endDate, $halfDay)
+    /**
+     * Calculate leave days, inclusive of start and end date.
+     * Supports half-day adjustment.
+     */
+    public static function calculateTotalDays($startDate, $endDate, $halfDay = false)
     {
-        $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end   = Carbon::parse($endDate)->endOfDay();
+
+        // Inclusive difference
+        $days = $start->diffInDays($end);
+
         if ($halfDay) {
             $days -= 0.5;
         }
+
         return $days;
     }
+
+    /**
+     * Boot method to always calculate days before saving.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($leaveRequest) {
+            $leaveRequest->total_days = self::calculateTotalDays(
+                $leaveRequest->start_date,
+                $leaveRequest->end_date,
+                $leaveRequest->half_day
+            );
+        });
+    }
 }
+            

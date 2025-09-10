@@ -59,9 +59,9 @@
                                     <button class="btn btn-warning edit-leave-period" data-id="{{ $leavePeriod->id }}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn btn-danger delete-leave-period" data-id="{{ $leavePeriod->id }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <button class="btn btn-danger btn-delete-leave-period" data-leave-period-slug="{{ $leavePeriod->slug }}">
+    Delete
+</button>
                                 </div>
                             </td>
                         </tr>
