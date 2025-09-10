@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Spatie\ModelStatus\HasStatuses;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 
 class LeaveRequest extends Model
 {
-    use HasFactory, HasStatuses;
+    use HasFactory;
 
     protected $fillable = [
         'reference_number',
@@ -36,7 +36,6 @@ class LeaveRequest extends Model
         'approved_at' => 'datetime',
     ];
 
-
     public function employee()
     {
         return $this->belongsTo(Employee::class);
@@ -57,14 +56,30 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /**
+     * Scope for leave `status` based on approved_by / rejection_reason.
+     * Usage: LeaveRequest::status('pending') ...
+     */
+    public function scopeStatus($query, $statusName)
+    {
+        switch (strtolower($statusName)) {
+            case 'pending':
+                return $query->whereNull('approved_by')->whereNull('rejection_reason');
+            case 'approved':
+                return $query->whereNotNull('approved_by')->whereNull('rejection_reason');
+            case 'rejected':
+            case 'declined':
+                return $query->whereNotNull('rejection_reason');
+            default:
+                return $query;
+        }
+    }
+
     public function scopeCurrentStatus($query, $statusName)
     {
-        return $query->whereHas('statuses', function ($statusQuery) use ($statusName) {
-            $statusQuery->where('name', $statusName)
-                ->orderByDesc('created_at')
-                ->limit(1);
-        });
+        return $this->scopeStatus($query, $statusName);
     }
+
 
     public static function generateUniqueReferenceNumber($businessId)
     {
@@ -73,5 +88,38 @@ class LeaveRequest extends Model
         } while (self::where('business_id', $businessId)->where('reference_number', $referenceNumber)->exists());
 
         return $referenceNumber;
+    }
+
+    public static function hasOverlap($employeeId, $startDate, $endDate)
+    {
+        return self::where('employee_id', $employeeId)
+            // Only consider approved or pending (exclude rejected)
+            ->where(function ($q) {
+                $q->where(function ($q1) {
+                    // Approved
+                    $q1->whereNotNull('approved_by')
+                    ->whereNull('rejection_reason');
+                })
+                ->orWhere(function ($q2) {
+                    // Pending
+                    $q2->whereNull('approved_by')
+                    ->whereNull('rejection_reason');
+                });
+            })
+            // Overlap condition
+            ->where('start_date', '<=', $endDate)
+            ->where('end_date', '>=', $startDate)
+            ->exists();
+    }
+
+
+
+    private function calculateTotalDays($startDate, $endDate, $halfDay)
+    {
+        $days = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+        if ($halfDay) {
+            $days -= 0.5;
+        }
+        return $days;
     }
 }

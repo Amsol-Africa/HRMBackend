@@ -96,14 +96,21 @@ class LeaveTypeController extends Controller
         });
     }
 
-    public function edit(Request $request, $slug)
+
+    public function edit(Request $request, Business $business, $slug)
     {
-        $validatedData = $request->validate([
-            'leave_type_slug' => 'required|string|exists:leave_types,slug',
+        $leaveType = LeaveType::where('slug', $slug)
+            ->where('business_id', $business->id)
+            ->with('leavePolicies')
+            ->firstOrFail();
+
+        // If you render the table here, pass businessSlug
+        return view('leave.edit', [
+            'leaveType' => $leaveType,
+            'businessSlug' => $business->slug,
         ]);
-        $leaveType = LeaveType::where('slug', $validatedData['leave_type_slug'])->with('leavePolicies')->firstOrFail();
-        return RequestResponse::ok('Leave type fetched successfully.', compact('leaveType'));
     }
+
 
     public function show(Request $request)
     {

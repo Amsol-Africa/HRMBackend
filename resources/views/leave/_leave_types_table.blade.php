@@ -31,9 +31,14 @@
                             <td>{{ $leaveType->max_continuous_days.' Days' ?? 'N/A' }}</td>
                             <td>
                                 <button class="btn btn-sm btn-info" data-leave-type="{{ $leaveType->slug }}" onclick="viewLeaveType(this)">
-                                    <i class="bi bi-view-list"></i> Details
+                                    <i class="bi bi-eye"></i>
+                                </button>                                
+                                <button class="btn btn-sm btn-info" data-leave-type="{{ $leaveType->slug }}" onclick="editLeaveType(this)">
+                                    <i class="bi bi-pencil-square"></i>
                                 </button>
-                                <a href=" " class="btn btn-sm btn-primary"><i class="bi bi-question-circle"></i> Requests</a>
+                                <button class="btn btn-sm btn-danger" data-leave-type="{{ $leaveType->slug }}" onclick="deleteLeaveType(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </td>
                             </tr>
                     @endforeach

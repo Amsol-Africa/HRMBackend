@@ -11,7 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('business', function (Blueprint $table) {
+        Schema::table('businesses', function (Blueprint $table) {
+            if (!Schema::hasColumn('businesses', 'email')) {
+                $table->string('email')->nullable()->after('company_name'); // adjust 'name' to whichever column fits best
+            }
             $table->string('hr_email')->nullable()->after('email');
         });
     }
@@ -21,8 +24,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('business', function (Blueprint $table) {
-            $table->dropColumn('hr_email');
+        Schema::table('businesses', function (Blueprint $table) {
+            if (Schema::hasColumn('businesses', 'hr_email')) {
+                $table->dropColumn('hr_email');
+            }
+            if (Schema::hasColumn('businesses', 'email')) {
+                $table->dropColumn('email');
+            }
         });
     }
 };
