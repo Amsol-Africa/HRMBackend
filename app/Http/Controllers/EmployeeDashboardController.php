@@ -136,21 +136,25 @@ class EmployeeDashboardController extends Controller
         }
 
         $payslips = EmployeePayroll::where('employee_id', $employee->id)
-            ->with(['payroll'])
-            ->get()
-            ->map(function ($ep) {
-                return [
-                    'payroll_id' => $ep->payroll_id,
-                    'year' => $ep->payroll->payrun_year,
-                    'month' => $ep->payroll->payrun_month,
-                    'month_name' => Carbon::create($ep->payroll->payrun_year, $ep->payroll->payrun_month, 1)->monthName,
-                    'status' => $ep->payroll->status,
-                ];
-            })
-            ->sortByDesc('year')
-            ->sortByDesc('month')
-            ->values();
-
+    ->with(['payroll'])
+    ->get()
+    ->map(function ($ep) {
+        if (!$ep->payroll) {
+            \Log::warning('Payroll record missing for EmployeePayroll', ['employee_payroll_id' => $ep->id, 'payroll_id' => $ep->payroll_id]);
+            return null; // Skip records with missing payroll
+        }
+        return [
+            'payroll_id' => $ep->payroll_id,
+            'year' => $ep->payroll->payrun_year,
+            'month' => $ep->payroll->payrun_month,
+            'month_name' => Carbon::create($ep->payroll->payrun_year, $ep->payroll->payrun_month, 1)->monthName,
+            'status' => $ep->payroll->status,
+        ];
+    })
+    ->filter() // Remove null entries
+    ->sortByDesc('year')
+    ->sortByDesc('month')
+    ->values();
         log::info($payslips);
 
         $page = "My Payslips";
