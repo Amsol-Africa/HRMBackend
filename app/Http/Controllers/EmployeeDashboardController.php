@@ -121,27 +121,78 @@ class EmployeeDashboardController extends Controller
         return $pdf->download("P9_{$year}_{$employee->employee_code}.pdf");
     }
 
+    // public function viewPayslips(Request $request, $business)
+    // {
+    //     $business = Business::findBySlug($business);
+    //     if (!$business || session('active_business_slug') !== $business->slug) {
+    //         return redirect()->back()->with('error', 'Business not found or mismatched.');
+    //     }
+
+    //     $employee = Employee::where('business_id', $business->id)
+    //         ->where('user_id', Auth::id())
+    //         ->first();
+    //     if (!$employee) {
+    //         return redirect()->back()->with('error', 'Employee record not found.');
+    //     }
+
+    //   $payslips = EmployeePayroll::where('employee_id', $employee->id)
+    // ->with(['payroll'])
+    // ->get()
+    // ->map(function ($ep) {
+    //     if (!$ep->payroll) {
+    //         \Log::warning('Payroll record missing for EmployeePayroll', ['employee_payroll_id' => $ep->id, 'payroll_id' => $ep->payroll_id]);
+    //         return null; // Skip records with missing payroll
+    //     }
+    //     return [
+    //         'payroll_id' => $ep->payroll_id,
+    //         'year' => $ep->payroll->payrun_year,
+    //         'month' => $ep->payroll->payrun_month,
+    //         'month_name' => Carbon::create($ep->payroll->payrun_year, $ep->payroll->payrun_month, 1)->monthName,
+    //         'status' => $ep->payroll->status,
+    //     ];
+    // })
+    // ->filter() // Remove null entries
+    // ->sortByDesc('year')
+    // ->sortByDesc('month')
+    // ->values();
+
+    //     log::info($payslips);
+
+    //     $page = "My Payslips";
+    //     return view('employee.payslips', compact('page', 'payslips', 'employee', 'business'));
+    // }
     public function viewPayslips(Request $request, $business)
-    {
-        $business = Business::findBySlug($business);
-        if (!$business || session('active_business_slug') !== $business->slug) {
-            return redirect()->back()->with('error', 'Business not found or mismatched.');
-        }
+{
+    $business = Business::findBySlug($business);
+    if (!$business || session('active_business_slug') !== $business->slug) {
+        return redirect()->back()->with('error', 'Business not found or mismatched.');
+    }
 
-        $employee = Employee::where('business_id', $business->id)
-            ->where('user_id', Auth::id())
-            ->first();
-        if (!$employee) {
-            return redirect()->back()->with('error', 'Employee record not found.');
-        }
+    $employee = Employee::where('business_id', $business->id)
+        ->where('user_id', Auth::id())
+        ->first();
+    if (!$employee) {
+        return redirect()->back()->with('error', 'Employee record not found.');
+    }
 
-        $payslips = EmployeePayroll::where('employee_id', $employee->id)
-    ->with(['payroll'])
-    ->get()
-    ->map(function ($ep) {
+    $payslips = EmployeePayroll::where('employee_id', $employee->id)
+        ->with(['payroll'])
+        ->get();
+
+    \Log::info('EmployeePayroll records for user', [
+        'user_id' => Auth::id(),
+        'employee_id' => $employee->id,
+        'count' => $payslips->count(),
+        'data' => $payslips->toArray()
+    ]);
+
+    $payslips = $payslips->map(function ($ep) {
         if (!$ep->payroll) {
-            \Log::warning('Payroll record missing for EmployeePayroll', ['employee_payroll_id' => $ep->id, 'payroll_id' => $ep->payroll_id]);
-            return null; // Skip records with missing payroll
+            \Log::warning('Payroll record missing for EmployeePayroll', [
+                'employee_payroll_id' => $ep->id,
+                'payroll_id' => $ep->payroll_id
+            ]);
+            return null;
         }
         return [
             'payroll_id' => $ep->payroll_id,
@@ -150,16 +201,24 @@ class EmployeeDashboardController extends Controller
             'month_name' => Carbon::create($ep->payroll->payrun_year, $ep->payroll->payrun_month, 1)->monthName,
             'status' => $ep->payroll->status,
         ];
-    })
-    ->filter() // Remove null entries
-    ->sortByDesc('year')
-    ->sortByDesc('month')
-    ->values();
-        log::info($payslips);
+    })->filter()->sortByDesc('year')->sortByDesc('month')->values();
 
-        $page = "My Payslips";
-        return view('employee.payslips', compact('page', 'payslips', 'employee', 'business'));
+    if ($payslips->isEmpty()) {
+        \Log::info('No valid payslips found for user', ['user_id' => Auth::id(), 'employee_id' => $employee->id]);
+        return view('employee.payslips', [
+            'page' => 'My Payslips',
+            'payslips' => [],
+            'employee' => $employee,
+            'business' => $business,
+            'message' => 'No payslips found for this employee.'
+        ]);
     }
+
+    \Log::info('Mapped payslips', ['payslips' => $payslips->toArray()]);
+
+    $page = "My Payslips";
+    return view('employee.payslips', compact('page', 'payslips', 'employee', 'business'));
+}
 
     public function downloadPayslip($payrollId)
     {
