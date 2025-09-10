@@ -21,6 +21,7 @@ use App\Http\Controllers\SurveyController;
 use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\CrmController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\LeavePeriodController;
 use App\Models\Business;
 
 Route::get('api/jobs/openings', [JobPostController::class, 'fetchPublic'])->name('jobs.openings');
@@ -97,7 +98,20 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::post('/leave/entitlements/fetch', [LeaveEntitlementController::class, 'fetch'])->name('leave.entitlements.fetch');
             Route::get('/entitlements/set', [DashboardController::class, 'setLeaveEntitlements'])->name('entitlements.create');
             Route::get('/settings', [DashboardController::class, 'leaveSettings'])->name('settings');
+
+            Route::get('/leave-types/{slug}/edit', [\App\Http\Controllers\LeaveTypeController::class, 'edit'])->name('leave-types.edit');
         });
+
+
+
+        Route::prefix('leave-periods')->name('leave-periods.')->group(function () {
+            Route::get('/fetch', [LeavePeriodController::class, 'fetch'])->name('fetch');
+            Route::post('/store', [LeavePeriodController::class, 'store'])->name('store');
+            Route::get('/{leavePeriod}/details', [LeavePeriodController::class, 'showDetails'])->name('details');
+            Route::post('/update', [LeavePeriodController::class, 'update'])->name('update');
+            Route::delete('/delete', [LeavePeriodController::class, 'destroy'])->name('delete');
+        });
+
 
 
         Route::prefix('recruitment')->name('recruitment.')->group(function () {
@@ -291,3 +305,9 @@ Route::prefix('surveys')->name('surveys.public.')->group(function () {
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/requests.php';
+
+
+// Temporary route for testing leave type edit page
+Route::get('/test-leave-types/{slug}/edit', function($slug) {
+    return "Edit page for $slug";
+});

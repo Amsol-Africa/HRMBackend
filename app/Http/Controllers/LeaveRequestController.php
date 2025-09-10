@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enum\Status;
 use App\Models\Business;
-use App\Models\Employee;
 use App\Models\LeaveType;
 use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\LeaveRequestSubmitted;
+use App\Notifications\LeaveStatusNotification;
 
 class LeaveRequestController extends Controller
 {
@@ -25,7 +26,7 @@ class LeaveRequestController extends Controller
         $user = auth()->user();
         $activeRole = session('active_role');
 
-        // ✅ Restrict non-HR/admin users to their own leaves
+        // Restrict non-HR/admin users to their own leaves
         if (!in_array($activeRole, ['business-hr', 'business-admin'])) {
             if ($user->employee) {
                 $leaveRequests->where('employee_id', $user->employee->id);
@@ -34,24 +35,9 @@ class LeaveRequestController extends Controller
             }
         }
 
-        // ✅ Status filtering based on Blade logic
-        if ($request->has('status')) {
-            switch ($status) {
-                case 'pending':
-                    $leaveRequests->whereNull('approved_by')
-                                ->whereNull('rejection_reason');
-                    break;
-
-                case 'approved':
-                    $leaveRequests->whereNotNull('approved_by')
-                                ->whereNull('rejection_reason');
-                    break;
-
-                case 'rejected':
-                    $leaveRequests->whereNotNull('rejection_reason')
-                                ->whereNull('approved_by');
-                    break;
-            }
+        // Status filtering
+        if ($status) {
+            $leaveRequests->status($status);
         }
 
         $leaveRequests = $leaveRequests
@@ -77,7 +63,6 @@ class LeaveRequestController extends Controller
     {
         $leaveType = LeaveType::findOrFail($request->leave_type_id);
 
-        // ✅ Validation rules
         $rules = [
             'employee_id'   => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
@@ -100,31 +85,20 @@ class LeaveRequestController extends Controller
             $endDate    = Carbon::parse($validatedData['end_date']);
             $totalDays  = $endDate->diffInDays($startDate) + 1;
 
-            // ✅ Check max continuous days limit
+            if ($startDate->lt(today()) || $endDate->lt(today())) {
+                return RequestResponse::badRequest('You cannot apply for leave in the past.');
+            }
+
             if ($leaveType->max_continuous_days && $totalDays > $leaveType->max_continuous_days) {
                 return RequestResponse::badRequest("You cannot take more than {$leaveType->max_continuous_days} days for this leave type.");
             }
 
-            // ✅ Prevent overlapping leave requests
-            $existingLeave = LeaveRequest::where('employee_id', $employeeId)
-                ->whereHas('statuses', function ($query) {
-                    $query->whereNotIn('name', ['rejected', 'used_up']);
-                })
-                ->where(function ($query) use ($startDate, $endDate) {
-                    $query->whereBetween('start_date', [$startDate, $endDate])
-                        ->orWhereBetween('end_date', [$startDate, $endDate])
-                        ->orWhere(function ($query) use ($startDate, $endDate) {
-                            $query->where('start_date', '<=', $startDate)
-                                ->where('end_date', '>=', $endDate);
-                        });
-                })
-                ->exists();
-
-            if ($existingLeave) {
+            // ✅ Unified overlap check (pending + approved, not rejected)
+            if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate)) {
                 return RequestResponse::badRequest('You already have a leave request that overlaps with these dates.');
             }
 
-            // ✅ Create leave request
+            // Create leave request
             $leaveRequest = new LeaveRequest();
             $leaveRequest->reference_number = LeaveRequest::generateUniqueReferenceNumber($business->id);
             $leaveRequest->employee_id      = $employeeId;
@@ -135,33 +109,33 @@ class LeaveRequestController extends Controller
             $leaveRequest->total_days       = $totalDays;
             $leaveRequest->reason           = $validatedData['reason'] ?? null;
 
-            // ✅ Handle attachment
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
                 $path = $file->store('attachments', 'public');
                 $leaveRequest->attachment = $path;
             }
-
             $leaveRequest->save();
-            $leaveRequest->setStatus(Status::PENDING);
 
-            //Queue notification to HR/admin for approval (if required)
-            if ($leaveType->requires_approval) {
-                // Notification logic here (e.g., dispatch a job)
-            } else {
-                // Auto-approve logic if no approval is required
+            // Auto-approval if not requiring approval
+            if (!$leaveType->requires_approval) {
                 $leaveRequest->approved_by = auth()->id();
                 $leaveRequest->approved_at = now();
-                $leaveRequest->setStatus(Status::APPROVED);
                 $leaveRequest->save();
-            }           
+            }
 
-            //Queue email to HR/admin for approval (if required)
-            Mail::to($business->hr_email)->queue(new LeaveRequestSubmitted($leaveRequest));
+            // Check if HR email exists before sending
+            $recipient = $business->hr_email ?? null;
 
-            return RequestResponse::created('Leave request created successfully.');
+            if ($recipient) {
+                \Log::info('Sending leave request email to: ' . $recipient);
+                Mail::to($recipient)->queue(new LeaveRequestSubmitted($leaveRequest));
+            } else {
+                \Log::warning("Leave request {$leaveRequest->id} submitted but no HR email found for business ID {$business->id}");
+            }
+
+            return RequestResponse::ok('Leave request created successfully.');
         });
-    }
+    }   
 
     public function status(Request $request)
     {
@@ -178,21 +152,15 @@ class LeaveRequestController extends Controller
                 $leaveRequest->approved_by = auth()->id();
                 $leaveRequest->approved_at = now();
                 $leaveRequest->rejection_reason = null;
-
-                // Set only APPROVED status (remove redundant ACTIVE)
-                $leaveRequest->setStatus(Status::APPROVED);
             } else {
                 $leaveRequest->approved_by = null;
                 $leaveRequest->approved_at = null;
                 $leaveRequest->rejection_reason = $validatedData['rejection_reason'];
-
-                $leaveRequest->setStatus(Status::DECLINED);
             }
 
             $leaveRequest->save();
-            // Notify employee about status change
+
             $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
-            
 
             return RequestResponse::ok("Leave request {$validatedData['status']} successfully.");
         });
@@ -209,14 +177,5 @@ class LeaveRequestController extends Controller
             $leaveRequest->delete();
             return RequestResponse::ok('Leave request deleted successfully.');
         });
-    }
-
-    private function calculateTotalDays($startDate, $endDate, $halfDay)
-    {
-        $days = $endDate->diffInDays($startDate) + 1;
-        if ($halfDay) {
-            $days -= 0.5;
-        }
-        return $days;
     }
 }
