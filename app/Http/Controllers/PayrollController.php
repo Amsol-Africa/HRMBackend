@@ -46,6 +46,8 @@ use App\Models\EmployeePaymentDetail;
 use Illuminate\Support\Facades\Http;
 use App\Exports\P9Export;
 use App\Exports\BankAdviceExport;
+use setasign\Fpdi\Fpdi;
+use setasign\Fpdi\PdfReader\PdfReaderException;
 use Illuminate\Support\Facades\File;
 
 use function Illuminate\Log\log;
@@ -3718,7 +3720,7 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
     // }
 
 
-
+/**
     public function sendPayslips(Request $request)
     {
         try {
@@ -3823,6 +3825,136 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
             return response()->json(['error' => 'Server error occurred.'], 500);
         }
     }
+*/
+
+
+
+public function sendPayslips(Request $request)
+{
+    try {
+        // Validate input
+        $request->validate([
+            'payroll_id' => 'required_without:employee_payroll_id|exists:payrolls,id',
+            'employee_payroll_id' => 'required_without:payroll_id|exists:employee_payrolls,id',
+        ]);
+
+        $payrollId = $request->input('payroll_id');
+        $employeePayrollId = $request->input('employee_payroll_id');
+        $business = Business::findBySlug(session('active_business_slug'));
+
+        if (!$business) {
+            return response()->json(['error' => 'Business not found.'], 400);
+        }
+
+        if ($employeePayrollId) {
+            $employeePayroll = EmployeePayroll::with(['employee.user', 'payroll.business', 'payroll.location'])
+                ->where('id', $employeePayrollId)
+                ->whereHas('payroll', fn($q) => $q->where('business_id', $business->id))
+                ->first();
+
+            if (!$employeePayroll) {
+                return response()->json(['error' => 'Employee payroll not found.'], 404);
+            }
+
+            $employeePayrolls = collect([$employeePayroll]);
+            $payroll = $employeePayroll->payroll;
+        } else {
+            $payroll = Payroll::where('business_id', $business->id)
+                ->where('id', $payrollId)
+                ->with(['employeePayrolls.employee.user'])
+                ->first();
+
+            if (!$payroll) {
+                return response()->json(['error' => 'Payroll not found.'], 404);
+            }
+
+            $employeePayrolls = $payroll->employeePayrolls;
+        }
+
+        $sentCount = 0;
+        foreach ($employeePayrolls as $employeePayroll) {
+            $user = $employeePayroll->employee->user;
+            if (!$user || !$user->email) {
+                Log::warning("No email found for employee ID: {$employeePayroll->employee_id}, skipping payslip.");
+                continue;
+            }
+
+            $entity = $business;
+            $entityType = 'business';
+            if ($employeePayroll->payroll->location_id) {
+                $location = Location::where('id', $employeePayroll->payroll->location_id)
+                    ->where('business_id', $business->id)
+                    ->first();
+                if ($location) {
+                    $entity = $location;
+                    $entityType = 'location';
+                }
+            }
+
+            // Generate initial (unencrypted) PDF
+            try {
+                $pdf = Pdf::loadView('payroll.reports.payslip', compact('employeePayroll', 'business', 'entity', 'entityType'));
+                $tempFile = storage_path('app/temp_payslip_' . $employeePayroll->id . '.pdf');
+                $pdf->save($tempFile);
+
+                // Encrypt with FPDI
+                $fileName = 'payslip_' . $employeePayroll->id . '_' . time() . '.pdf';
+                $filePath = storage_path('app/public/payslips/' . $fileName);
+
+                if (!file_exists(storage_path('app/public/payslips'))) {
+                    mkdir(storage_path('app/public/payslips'), 0755, true);
+                }
+
+                $fpdi = new Fpdi();
+                $pageCount = $fpdi->setSourceFile($tempFile);
+
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $tplId = $fpdi->importPage($pageNo);
+                    $size = $fpdi->getTemplateSize($tplId);
+                    $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                    $fpdi->useTemplate($tplId);
+                }
+
+                // 🔑 Protect using employee's national_id
+                $fpdi->SetProtection(
+                    ['print', 'copy'], 
+                    $employeePayroll->employee->national_id, 
+                    null
+                );
+
+                $fpdi->Output($filePath, 'F');
+            } catch (\Exception $e) {
+                Log::error("Failed to generate/save encrypted PDF for employee payroll ID {$employeePayroll->id}: {$e->getMessage()}");
+                continue;
+            }
+
+            // Send email
+            try {
+                Mail::to($user->email)->send(new PayslipMail($employeePayroll, $filePath, $user->name));
+                $sentCount++;
+            } catch (\Exception $e) {
+                Log::error("Failed to send email for employee ID {$employeePayroll->employee_id}: {$e->getMessage()}");
+                continue;
+            }
+        }
+
+        if ($payrollId && !$employeePayrollId && $sentCount > 0) {
+            $payroll->update(['emailed' => true]);
+        }
+
+        $message = $employeePayrollId
+            ? 'Payslip queued for sending.'
+            : "Payslips queued for sending ($sentCount sent).";
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => ['sent_count' => $sentCount]
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('Unexpected error in sendPayslips: ' . $e->getMessage(), ['exception' => $e]);
+        return response()->json(['error' => 'Server error occurred.'], 500);
+    }
+}
 
 
     public function close(Request $request)
