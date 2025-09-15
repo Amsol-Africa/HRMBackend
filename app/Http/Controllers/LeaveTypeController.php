@@ -221,4 +221,23 @@ class LeaveTypeController extends Controller
     }
 
 
+    // app/Http/Controllers/LeaveTypeController.php
+    public function getRemainingDays(Request $request)
+    {
+        $employeeId = $request->input('employee_id', auth()->user()->employee->id ?? null);
+        $leaveTypeId = $request->input('leave_type_id');
+
+        $entitlement = \App\Models\LeaveEntitlement::where('employee_id', $employeeId)
+            ->where('leave_type_id', $leaveTypeId)
+            ->first();
+
+        $remaining = $entitlement ? $entitlement->getRemainingDays() : 0;
+
+        return response()->json([
+            'remaining_days' => $remaining,
+        ]);
+    }
+
+
+
 }

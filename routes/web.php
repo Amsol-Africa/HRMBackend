@@ -101,6 +101,11 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
 
             Route::get('/leave-types/{slug}/edit', [\App\Http\Controllers\LeaveTypeController::class, 'edit'])->name('leave-types.edit');
             Route::delete('/leave-types/delete', [\App\Http\Controllers\LeaveTypeController::class, 'destroy'])->name('leave-types.delete');
+            Route::post('/leave-types/remaining-days', [LeaveTypeController::class, 'getRemainingDays'])->name('leave-types.remaining-days');
+            Route::post('/upload-document', [LeaveRequestController::class, 'uploadDocument'])->name('leave.upload_document');
+            Route::post('/status', [LeaveRequestController::class, 'status'])->name('leave.status'); // existing endpoint name kept or adjusted
+
+       
         });
 
 
@@ -111,6 +116,7 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/{leavePeriod}/details', [LeavePeriodController::class, 'showDetails'])->name('details');
             Route::post('/update', [LeavePeriodController::class, 'update'])->name('update');
             Route::delete('/delete', [LeavePeriodController::class, 'destroy'])->name('delete');
+               
         });
 
 

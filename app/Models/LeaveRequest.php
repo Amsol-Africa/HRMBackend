@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+use App\Models\LeaveType;
 
 class LeaveRequest extends Model
 {
@@ -19,6 +21,10 @@ class LeaveRequest extends Model
         'end_date',
         'total_days',
         'attachment',
+        'requires_documentation', // new
+        'is_tentative',          // new
+        'current_approval_level', // new
+        'approval_history',       // new (json)
         'half_day',
         'half_day_type',
         'reason',
@@ -31,9 +37,13 @@ class LeaveRequest extends Model
         'half_day' => 'boolean',
         'start_date' => 'date',
         'end_date' => 'date',
-        'total_days' => 'float', // allow decimals for half-days
+        'total_days' => 'float',
         'approved_by' => 'integer',
         'approved_at' => 'datetime',
+        'requires_documentation' => 'boolean',
+        'is_tentative' => 'boolean',
+        'current_approval_level' => 'integer',
+        'approval_history' => 'array',
     ];
 
     public function employee()
@@ -56,9 +66,6 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /**
-     * Scope for leave `status` based on approved_by / rejection_reason.
-     */
     public function scopeStatus($query, $statusName)
     {
         switch (strtolower($statusName)) {
@@ -88,40 +95,60 @@ class LeaveRequest extends Model
         return $referenceNumber;
     }
 
-    public static function hasOverlap($employeeId, $startDate, $endDate)
+    /**
+     * existing overlap check — unchanged (considers pending + approved; not rejected)
+     */
+    public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null)
     {
-        return self::where('employee_id', $employeeId)
-            // Only consider approved or pending (exclude rejected)
-            ->where(function ($q) {
-                $q->where(function ($q1) {
-                    // Approved
-                    $q1->whereNotNull('approved_by')
-                        ->whereNull('rejection_reason');
-                })
-                ->orWhere(function ($q2) {
-                    // Pending
-                    $q2->whereNull('approved_by')
-                        ->whereNull('rejection_reason');
-                });
-            })
-            // Overlap condition
-            ->where('start_date', '<=', $endDate)
-            ->where('end_date', '>=', $startDate)
-            ->exists();
+        $start = $startDate instanceof Carbon ? $startDate->toDateString() : Carbon::parse($startDate)->toDateString();
+        $end   = $endDate instanceof Carbon ? $endDate->toDateString() : Carbon::parse($endDate)->toDateString();
+
+        $query = self::where('employee_id', $employeeId)
+            ->whereNull('rejection_reason')
+            ->where(function ($q) use ($start, $end) {
+                $q->whereBetween('start_date', [$start, $end])
+                  ->orWhereBetween('end_date', [$start, $end])
+                  ->orWhere(function ($q2) use ($start, $end) {
+                      $q2->where('start_date', '<=', $start)
+                         ->where('end_date', '>=', $end);
+                  });
+            });
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
     }
 
     /**
-     * Calculate leave days, inclusive of start and end date.
-     * Supports half-day adjustment.
+     * Calculate inclusive total days taking into account excluded_days from leaveType (weekdays)
+     * $leaveType may be either LeaveType instance or null.
      */
-    public static function calculateTotalDays($startDate, $endDate, $halfDay = false)
+    public static function calculateTotalDays($startDate, $endDate, $halfDay = false, $leaveType = null)
     {
         $start = Carbon::parse($startDate)->startOfDay();
-        $end   = Carbon::parse($endDate)->endOfDay();
+        $end   = Carbon::parse($endDate)->startOfDay();
 
-        // Inclusive difference
-        $days = $start->diffInDays($end);
+        // Get excluded weekdays from leaveType
+        $excluded = [];
+        if ($leaveType instanceof LeaveType) {
+            $excluded = $leaveType->excluded_days ?? [];
+            // normalize to lowercase
+            $excluded = array_map('strtolower', (array)$excluded);
+        }
 
+        $period = CarbonPeriod::create($start->toDateString(), $end->toDateString());
+
+        $days = 0;
+        foreach ($period as $date) {
+            $weekday = strtolower($date->format('l')); // monday, tuesday, ...
+            if (!in_array($weekday, $excluded)) {
+                $days++;
+            }
+        }
+
+        // inclusive counting already via CarbonPeriod (start..end)
         if ($halfDay) {
             $days -= 0.5;
         }
@@ -130,19 +157,32 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Boot method to always calculate days before saving.
+     * Auto-calc total_days before saving; respect leave type excluded days.
      */
     protected static function boot()
     {
         parent::boot();
 
         static::saving(function ($leaveRequest) {
+            // Load leaveType if possible (use relation or query)
+            $leaveType = null;
+            if ($leaveRequest->leaveType) {
+                $leaveType = $leaveRequest->leaveType;
+            } else if ($leaveRequest->leave_type_id) {
+                $leaveType = LeaveType::find($leaveRequest->leave_type_id);
+            }
+
             $leaveRequest->total_days = self::calculateTotalDays(
                 $leaveRequest->start_date,
                 $leaveRequest->end_date,
-                $leaveRequest->half_day
+                $leaveRequest->half_day ?? false,
+                $leaveType
             );
+
+            // ensure numeric minimum
+            if ($leaveRequest->total_days < 0) {
+                $leaveRequest->total_days = 0;
+            }
         });
     }
 }
-            

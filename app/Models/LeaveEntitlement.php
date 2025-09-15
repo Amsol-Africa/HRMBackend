@@ -44,4 +44,17 @@ class LeaveEntitlement extends Model
         $this->days_remaining = $this->entitled_days - $this->days_taken;
         $this->save();
     }
+
+        // app/Models/LeaveEntitlement.php
+    public function getRemainingDays()
+    {
+        $usedDays = LeaveRequest::where('employee_id', $this->employee_id)
+            ->where('leave_type_id', $this->leave_type_id)
+            ->whereNotNull('approved_by') // only count approved
+            ->whereNull('rejection_reason')
+            ->sum('total_days');
+
+        return max(0, $this->days - $usedDays);
+    }
+
 }

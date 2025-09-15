@@ -149,6 +149,46 @@
                                 <input type="date" class="form-control datepicker" id="end_date" name="end_date"
                                     required min="{{ date('Y-m-d') }}">
                             </div>
+
+                            <div class="form-group">
+                                <label>Allows Backdating</label>
+                                <select name="allows_backdating" class="form-control">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Approval Levels</label>
+                                <input type="number" name="approval_levels" class="form-control" value="1" min="1">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Excluded Days</label><br>
+                                @php
+                                    $days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+                                @endphp
+                                @foreach($days as $day)
+                                    <label>
+                                        <input type="checkbox" name="excluded_days[]" value="{{ $day }}">
+                                        {{ ucfirst($day) }}
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            <div class="form-group">
+                                <label>Stepwise Leave</label>
+                                <select name="is_stepwise" class="form-control">
+                                    <option value="0">No</option>
+                                    <option value="1">Yes</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Stepwise Rules (JSON)</label>
+                                <textarea name="stepwise_rules" class="form-control" placeholder='["phase1","phase2"]'></textarea>
+                            </div>
+
                         </div>
 
                         <div class="row">

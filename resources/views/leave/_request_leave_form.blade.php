@@ -35,6 +35,7 @@
                 </option>
             @endforeach
         </select>
+        <small id="remainingDays" class="text-muted"></small>
     </div>
 
     {{-- Attachment field (hidden by default) --}}
@@ -65,3 +66,34 @@
         </button>
     </div>
 </form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    let leaveTypeSelect = document.getElementById('leave_type');
+    let employeeSelect = document.getElementById('employee');
+
+    leaveTypeSelect.addEventListener('change', function() {
+        let leaveTypeId = this.value;
+        let employeeId = employeeSelect ? employeeSelect.value : null;
+
+        if (leaveTypeId) {
+            fetch("{{ route('leave-types.remaining-days') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    leave_type_id: leaveTypeId,
+                    employee_id: employeeId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('remainingDays').innerText = 
+                    "Remaining Days: " + data.remaining_days;
+            });
+        }
+    });
+});
+</script>
