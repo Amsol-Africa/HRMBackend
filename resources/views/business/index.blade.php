@@ -1,26 +1,35 @@
+@php
+    use App\Models\Business;
+    use Illuminate\Support\Facades\Auth;
+    $business = Business::findBySlug(session('active_business_slug'));
+    $hidePayrollMenus = Auth::check() && Auth::user()->hasRole('business-hr') && $business && $business->slug === '3rd-park-hospital-ltd';
+@endphp
 <x-app-layout title="{{ $page }}">
     <!-- Hidden input for active business slug -->
     <input type="hidden" id="active_business_slug" value="{{ session('active_business_slug') }}">
 
     <div class="row g-20">
-        @foreach ($cards as $card)
-        <div class="col-xxl-3 col-xl-6 col-lg-6 col-md-6 col-sm-6">
-            <div class="card__wrapper border">
-                <div class="d-flex align-items-center gap-sm">
-                    <div class="card__icon">
-                        <span><i class="{{ $card['trend_class'] }} {{ $card['icon'] }}"></i></span>
-                    </div>
-                    <div class="card__title-wrap">
-                        <h6 class="card__sub-title mb-10">{{ $card['title'] }}</h6>
-                        <div class="d-flex flex-wrap align-items-end gap-10">
-                            <h3 class="card__title">{{ $card['value'] }}</h3>
-                        </div>
+       @foreach ($cards as $card)
+    @if (!$hidePayrollMenus || !in_array(strtolower($card['title']), ['payroll', 'Total Clients', 'payroll trends', 'loan trends', 'active loans', 'active advances']))
+    <div class="col-xxl-3 col-xl-6 col-lg-6 col-md-6 col-sm-6">
+        <div class="card__wrapper border">
+            <div class="d-flex align-items-center gap-sm">
+                <div class="card__icon">
+                    <span><i class="{{ $card['trend_class'] }} {{ $card['icon'] }}"></i></span>
+                </div>
+                <div class="card__title-wrap">
+                    <h6 class="card__sub-title mb-10">{{ $card['title'] }}</h6>
+                    <div class="d-flex flex-wrap align-items-end gap-10">
+                        <h3 class="card__title">{{ $card['value'] }}</h3>
                     </div>
                 </div>
             </div>
         </div>
-        @endforeach
+    </div>
+    @endif
+@endforeach
 
+        @if (!$hidePayrollMenus)
         <div class="col-xxl-12 col-xl-6 col-lg-12">
             <div class="card__wrapper height-equal" style="min-height: 459px;">
                 <div class="card-header border-0">
@@ -40,9 +49,10 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <div class="col-xxl-4 col-xl-6 col-lg-12">
-            <div class="card__wrapper height-equal" style="min-height: 459px;">
+            <div class="card__wrapper height-equal" style="min pasteurizing-height: 459px;">
                 <div class="card__title-wrap d-flex align-items-center justify-content-between mb-20">
                     <h5 class="card__heading-title">User Activities</h5>
                 </div>
@@ -75,6 +85,7 @@
             </div>
         </div>
 
+        @if (!$hidePayrollMenus)
         <div class="col-md-4">
             <div class="card__wrapper height-equal" style="min-height: 459px;">
                 <div class="card-header border-0">
@@ -85,6 +96,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     @push('scripts')
@@ -95,7 +107,9 @@
 
     <script>
     $(document).ready(() => {
+        @if (!$hidePayrollMenus)
         payrollTrends();
+        @endif
         logActivities();
         loadTrends(new Date().getFullYear());
     });

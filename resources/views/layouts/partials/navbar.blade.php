@@ -19,14 +19,15 @@
 
                 @include('layouts.partials.switch-role')
 
-                <!-- Dashboard -->
-                <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                    <a href="{{ route('business.index', $currentBusiness->slug) }}"
-                        class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
-                        <div class="side-menu__icon"><i class="fa-solid fa-home"></i></div>
-                        <span class="sidebar__menu-label">Dashboard</span>
-                    </a>
-                </li>
+                    <!-- Dashboard -->
+                    <li class="slide {{ request()->routeIs('business.index') ? 'active' : '' }}">
+                        <a href="{{ route('business.index', $currentBusiness->slug) }}"
+                            class="sidebar__menu-item {{ request()->routeIs('business.index') ? 'active' : '' }}">
+                            <div class="side-menu__icon"><i class="fa-solid fa-home"></i></div>
+                            <span class="sidebar__menu-label">Dashboard</span>
+                        </a>
+                    </li>
+
 
                 <!-- Clients -->
                 <li class="slide {{ request()->routeIs('business.clients.*') ? 'active' : '' }}">
