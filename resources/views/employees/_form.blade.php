@@ -306,6 +306,27 @@
                             value="{{ isset($employee) && optional($employee->employmentDetails)->retirement_date ? \Carbon\Carbon::parse($employee->employmentDetails->retirement_date)->format('Y-m-d') : '' }}"
                             placeholder="Retirement Date">
                     </div>
+                    <!-- New License Fields -->
+            <div class="col-md-4 position-relative">
+                <label for="license_reg_number" class="form-label position-absolute text-muted"
+                    style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">License Registration Number</label>
+                <input type="text" name="license_reg_number" id="license_reg_number"
+                    class="form-control border-primary"
+                    value="{{ isset($employee) && optional($employee->employmentDetails)->license_reg_number ? $employee->employmentDetails->license_reg_number : '' }}"
+                    placeholder="License Registration Number">
+            </div>
+            <div class="col-md-4 position-relative">
+                <label for="license_expiry_date" class="form-label position-absolute text-muted"
+                    style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">License Expiry Date</label>
+                <input type="date" name="license_expiry_date" id="license_expiry_date"
+                    class="form-control border-primary"
+                    value="{{ isset($employee) && optional($employee->employmentDetails)->license_expiry_date ? \Carbon\Carbon::parse($employee->employmentDetails->license_expiry_date)->format('Y-m-d') : '' }}"
+                    placeholder="License Expiry Date">
+                @if (isset($employee) && optional($employee->employmentDetails)->license_expiry_date && \Carbon\Carbon::parse($employee->employmentDetails->license_expiry_date)->diffInDays(\Carbon\Carbon::now()) <= 30)
+                    <small class="text-danger">License nearing expiry (within 30 days).</small>
+                @endif
+            </div>
+
                     <div class="col-12">
                         <textarea name="job_description" id="job_description" class="form-control border-primary"
                             rows="3"

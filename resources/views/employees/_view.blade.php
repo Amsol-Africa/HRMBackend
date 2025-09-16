@@ -240,6 +240,14 @@
                                 <dd class="col-7">
                                     {{ optional($employee->employmentDetails)->probation_end_date ? date('d M Y', strtotime($employee->employmentDetails->probation_end_date)) : 'N/A' }}
                                 </dd>
+                                <dt class="col-5 fw-medium text-muted">License_reg_number</dt>
+                                 <dd class="col-7">
+                                    {{ ucfirst(optional($employee->employmentDetails)->license_reg_number ?? 'N/A') }}
+                                </dd>
+                                <dt class="col-5 fw-medium text-muted">License_expiry_date</dt>
+                                <dd class="col-7">
+                                    {{ optional($employee->employmentDetails)->license_expiry_date ? date('d M Y', strtotime($employee->employmentDetails->license_expiry_date)) : 'N/A' }}
+                                </dd>
                                 <dt class="col-5 fw-medium text-muted">Contract End</dt>
                                 <dd class="col-7">
                                     {{ optional($employee->employmentDetails)->contract_end_date ? date('d M Y', strtotime($employee->employmentDetails->contract_end_date)) : 'N/A' }}

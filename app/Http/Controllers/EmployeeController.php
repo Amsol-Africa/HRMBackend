@@ -233,6 +233,8 @@ public function fetchForEntitlements(Request $request)
             'probation_end_date' => 'nullable|date|after:employment_date',
             'contract_end_date' => 'nullable|date|after:employment_date',
             'retirement_date' => 'nullable|date|after:employment_date',
+            'license_reg_number' => 'nullable|string|max:255',
+            'license_expiry_date' => 'nullable|date',
             'job_description' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
             'document_types.*' => 'nullable|string|max:255',
@@ -291,6 +293,7 @@ public function fetchForEntitlements(Request $request)
                 'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
                 'resident_status' => $validated['resident_status'] ?? null,
                 'kra_employee_status' => $validated['kra_employee_status'] ?? null,
+
             ]);
 
             $employee->employmentDetails()->create([
@@ -302,6 +305,8 @@ public function fetchForEntitlements(Request $request)
                 'contract_end_date' => $validated['contract_end_date'] ?? null,
                 'retirement_date' => $validated['retirement_date'] ?? null,
                 'job_description' => $validated['job_description'] ?? null,
+                'license_reg_number' => $validated['license_reg_number'] ?? null,
+            'license_expiry_date' => $validated['license_expiry_date'] ?? null,
             ]);
 
             $employee->paymentDetails()->create([
@@ -427,6 +432,8 @@ public function fetchForEntitlements(Request $request)
             'probation_end_date' => 'nullable|date|after:employment_date',
             'contract_end_date' => 'nullable|date|after:employment_date',
             'retirement_date' => 'nullable|date|after:employment_date',
+            'license_reg_number' => 'nullable|string|max:255',
+            'license_expiry_date' => 'nullable|date',
             'job_description' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
             'document_types.*' => 'nullable|string|max:255',
@@ -465,6 +472,8 @@ public function fetchForEntitlements(Request $request)
                 'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
                 'resident_status' => $validated['resident_status'] ?? null,
                 'kra_employee_status' => $validated['kra_employee_status'] ?? null,
+                  'license_reg_number' => $validated['license_reg_number'],
+            'license_expiry_date' => $validated['license_expiry_date'],
             ]);
 
             $employee->user->update([
