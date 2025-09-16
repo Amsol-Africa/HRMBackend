@@ -11,15 +11,22 @@
             'rejected' => ['icon' => 'fa fa-times-circle',  'color' => '#dc3545', 'label' => 'Rejected'],
         ];
 
-        $isOwner   = optional(auth()->user()->employee)->id === (int) $leave->employee_id;
-        $isAdminHr = (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr'))
-                     && in_array(session('active_role'), ['business-admin', 'business-hr']);
+        $isOwner    = optional(auth()->user()->employee)->id === (int) $leave->employee_id;
+
+        // Active role awareness (employee should never see approver buttons)
+        $activeRole     = session('active_role');
+        $isApproverRole = in_array($activeRole, ['head-of-department','business-hr','business-admin','business-head'], true);
+
+        // Ask the model; it already encodes the approver logic
+        $canApprove = $isApproverRole && method_exists($leave, 'canUserApprove')
+            ? $leave->canUserApprove(auth()->user())
+            : false;
 
         $levelsTotal   = (int) optional($leave->leaveType)->approval_levels ?: 0;
         $levelsCurrent = (int) ($leave->current_approval_level ?? 0);
         $progressPct   = $levelsTotal > 0 ? min(100, round(($levelsCurrent / $levelsTotal) * 100)) : ($statusName === 'approved' ? 100 : 0);
 
-        // Build timeline items
+        // Timeline
         $timeline = [];
         $timeline[] = [
             'name'       => 'submitted',
@@ -30,7 +37,6 @@
             'colorClass' => 'text-primary',
         ];
 
-        // Approval history steps (array of {level, approver_id, approved_at})
         foreach ((array) ($leave->approval_history ?? []) as $hist) {
             $timeline[] = [
                 'name'       => 'approval_level_' . ($hist['level'] ?? '?'),
@@ -65,8 +71,8 @@
     @endphp
 
     <div class="row g-3">
-        {{-- Actions column (Approve / Reject) for Admin/HR while pending --}}
-        @if($isAdminHr && $statusName === 'pending')
+        {{-- Approve / Reject only for approver roles AND when model says you can approve --}}
+        @if($isApproverRole && $canApprove && $statusName === 'pending')
             <div class="col-md-4">
                 <div class="card shadow-sm">
                     <div class="card-body">
@@ -89,14 +95,13 @@
                             </button>
                         </div>
 
-                        {{-- Approval progress --}}
                         @if($levelsTotal > 0)
                             <div class="mt-4">
                                 <small class="text-muted">Approval Progress</small>
                                 <div class="progress" style="height:10px;">
                                     <div class="progress-bar" role="progressbar"
-                                        style="width: {{ $progressPct }}%;"
-                                        aria-valuenow="{{ $progressPct }}" aria-valuemin="0" aria-valuemax="100">
+                                         style="width: {{ $progressPct }}%;"
+                                         aria-valuenow="{{ $progressPct }}" aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-1">
@@ -111,7 +116,7 @@
         @endif
 
         {{-- Main details --}}
-        <div class="{{ $isAdminHr && $statusName === 'pending' ? 'col-md-8' : 'col-md-12' }}">
+        <div class="{{ ($isApproverRole && $canApprove && $statusName === 'pending') ? 'col-md-8' : 'col-md-12' }}">
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start flex-wrap">
@@ -190,9 +195,9 @@
                                     <p class="text-muted mb-2">No attachment uploaded.</p>
                                 @endif
 
-                                {{-- Upload later flow: show form only to owner while doc is required and missing --}}
+                                {{-- Upload later (owner only) --}}
                                 @if($isOwner && $leave->requires_documentation && !$leave->attachment && $statusName !== 'rejected')
-                                    <form action="{{ route('business.leave.upload_document', $business->slug) }}"
+                                    <form action="{{ route('leave.upload-document') }}"
                                           method="post" enctype="multipart/form-data" class="mt-3">
                                         @csrf
                                         <input type="hidden" name="reference_number" value="{{ $leave->reference_number }}">
@@ -207,7 +212,6 @@
                                     </form>
                                 @endif
 
-                                {{-- Final approver info (if any) --}}
                                 @if($leave->approved_by && $leave->approved_at)
                                     <hr>
                                     <div>
@@ -216,7 +220,6 @@
                                     </div>
                                 @endif
 
-                                {{-- Rejection reason --}}
                                 @if($statusName === 'rejected' && $leave->rejection_reason)
                                     <hr>
                                     <div>
@@ -228,7 +231,6 @@
                         </div>
                     </div>
 
-                    {{-- Progress (if multi-level) --}}
                     @if($levelsTotal > 0)
                         <div class="mt-3">
                             <small class="text-muted d-block mb-1">
@@ -236,8 +238,8 @@
                             </small>
                             <div class="progress" style="height:10px;">
                                 <div class="progress-bar" role="progressbar"
-                                    style="width: {{ $progressPct }}%;"
-                                    aria-valuenow="{{ $progressPct }}" aria-valuemin="0" aria-valuemax="100">
+                                     style="width: {{ $progressPct }}%;"
+                                     aria-valuenow="{{ $progressPct }}" aria-valuemin="0" aria-valuemax="100">
                                 </div>
                             </div>
                         </div>
@@ -245,7 +247,6 @@
                 </div>
             </div>
 
-            {{-- Timeline --}}
             <div class="card shadow-sm">
                 <div class="card-header">
                     <h6 class="mb-0">Timeline</h6>

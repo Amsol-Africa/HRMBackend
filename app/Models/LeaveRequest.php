@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use App\Models\LeaveType;
 
 class LeaveRequest extends Model
 {
@@ -46,6 +45,9 @@ class LeaveRequest extends Model
         'approval_history'       => 'array',
     ];
 
+    /* ----------------
+       Relationships
+    -----------------*/
     public function employee()
     {
         return $this->belongsTo(Employee::class);
@@ -66,6 +68,78 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /* ----------------
+       Computed status
+    -----------------*/
+    public function getStatusAttribute(): string
+    {
+        if (!is_null($this->rejection_reason)) return 'rejected';
+        if (!is_null($this->approved_by))      return 'approved';
+        return 'pending';
+    }
+
+    /* -----------------------------------
+       Multi-level approval helper methods
+    ------------------------------------*/
+    public function needsMoreApprovals(): bool
+    {
+        $required = (int) (optional($this->leaveType)->approval_levels ?? 1);
+        $current  = (int) ($this->current_approval_level ?? 0);
+        return $current < $required;
+    }
+
+    public function getNextApprovalLevel(): int
+    {
+        return (int) ($this->current_approval_level ?? 0) + 1;
+    }
+
+    // Who can approve (based on ACTIVE role, not just assigned roles)
+    public function canUserApprove(User $user)
+    {
+        if ($this->status !== 'pending') return false;
+
+        $userEmployee = $user->employee;
+        if (!$userEmployee || (int)$userEmployee->business_id !== (int)$this->business_id) {
+            return false;
+        }
+
+        $activeRole = session('active_role');
+
+        // Approver roles at ANY level: HOD, HR, Admin, Head
+        $approverRoles = ['head-of-department', 'business-hr', 'business-admin', 'business-head'];
+
+        return in_array($activeRole, $approverRoles, true)
+            && ($user->hasRole('head-of-department') || $user->hasRole('business-hr')
+                || $user->hasRole('business-admin') || $user->hasRole('business-head'));
+    }
+
+    // Filter by ACTIVE role
+    public function scopeForRole($query, User $user, $businessId)
+    {
+        $userEmployee = $user->employee;
+        $activeRole   = session('active_role');
+
+        switch ($activeRole) {
+            case 'business-employee':
+                if ($userEmployee) {
+                    return $query->where('business_id', $businessId)
+                                ->where('employee_id', $userEmployee->id);
+                }
+                return $query->whereRaw('1=0');
+
+            // HOD sees ALL requests in the business (not tied to a department)
+            case 'head-of-department':
+            case 'business-hr':
+            case 'business-admin':
+            case 'business-head':
+                return $query->where('business_id', $businessId);
+
+            default:
+                return $query->whereRaw('1=0');
+        }
+    }
+
+    // Keep both for legacy code
     public function scopeStatus($query, $statusName)
     {
         switch (strtolower($statusName)) {
@@ -86,33 +160,38 @@ class LeaveRequest extends Model
         return $this->scopeStatus($query, $statusName);
     }
 
+
+
+    /* ----------------
+       Utilities
+    -----------------*/
     public static function generateUniqueReferenceNumber($businessId)
     {
         do {
-            $referenceNumber = 'LR' . strtoupper(substr(uniqid(), -6));
-        } while (self::where('business_id', $businessId)->where('reference_number', $referenceNumber)->exists());
+            $referenceNumber = 'LR' . strtoupper(substr(uniqid('', true), -6));
+        } while (
+            self::where('business_id', $businessId)
+                ->where('reference_number', $referenceNumber)
+                ->exists()
+        );
 
         return $referenceNumber;
     }
 
     /**
-     * Existing overlap check — considers pending + approved; excludes rejected.
+     * Overlap check: only pending/approved (rejected ignored).
+     * Overlaps when: start_date <= requested_end AND end_date >= requested_start
      */
-    public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null)
+    public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null, $businessId = null): bool
     {
         $start = $startDate instanceof Carbon ? $startDate->toDateString() : Carbon::parse($startDate)->toDateString();
-        $end   = $endDate instanceof Carbon ? $endDate->toDateString() : Carbon::parse($endDate)->toDateString();
+        $end   = $endDate   instanceof Carbon ? $endDate->toDateString()   : Carbon::parse($endDate)->toDateString();
 
         $query = self::where('employee_id', $employeeId)
+            ->when($businessId, fn ($q) => $q->where('business_id', $businessId))
             ->whereNull('rejection_reason')
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('start_date', [$start, $end])
-                  ->orWhereBetween('end_date', [$start, $end])
-                  ->orWhere(function ($q2) use ($start, $end) {
-                      $q2->where('start_date', '<=', $start)
-                         ->where('end_date', '>=', $end);
-                  });
-            });
+            ->where('start_date', '<=', $end)
+            ->where('end_date',   '>=', $start);
 
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
@@ -122,26 +201,24 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Calculate inclusive total days taking into account excluded_days from leaveType (weekdays).
+     * Inclusive days minus excluded weekdays and half-day adjustment.
      */
-    public static function calculateTotalDays($startDate, $endDate, $halfDay = false, $leaveType = null)
+    public static function calculateTotalDays($startDate, $endDate, $halfDay = false, $leaveType = null): float
     {
         $start = Carbon::parse($startDate)->startOfDay();
         $end   = Carbon::parse($endDate)->startOfDay();
 
-        // Get excluded weekdays from leaveType
         $excluded = [];
         if ($leaveType instanceof LeaveType) {
-            $excluded = $leaveType->excluded_days ?? [];
-            $excluded = array_map('strtolower', (array)$excluded);
+            $excluded = array_map('strtolower', (array) ($leaveType->excluded_days ?? []));
         }
 
         $period = CarbonPeriod::create($start->toDateString(), $end->toDateString());
 
         $days = 0;
         foreach ($period as $date) {
-            $weekday = strtolower($date->format('l')); // monday, tuesday, ...
-            if (!in_array($weekday, $excluded)) {
+            $weekday = strtolower($date->format('l'));
+            if (!in_array($weekday, $excluded, true)) {
                 $days++;
             }
         }
@@ -150,29 +227,24 @@ class LeaveRequest extends Model
             $days -= 0.5;
         }
 
-        return max(0, (float)$days);
+        return max(0, (float) $days);
     }
 
-    /**
-     * Auto-calc total_days before saving; respect leave type excluded days.
-     */
+    /* ----------------
+       Auto-calc total_days
+    -----------------*/
     protected static function boot()
     {
         parent::boot();
 
         static::saving(function ($leaveRequest) {
-            // Load leaveType if possible (use relation or query)
-            $leaveType = null;
-            if ($leaveRequest->leaveType) {
-                $leaveType = $leaveRequest->leaveType;
-            } elseif ($leaveRequest->leave_type_id) {
-                $leaveType = LeaveType::find($leaveRequest->leave_type_id);
-            }
+            $leaveType = $leaveRequest->leaveType
+                ?: ($leaveRequest->leave_type_id ? LeaveType::find($leaveRequest->leave_type_id) : null);
 
             $leaveRequest->total_days = self::calculateTotalDays(
                 $leaveRequest->start_date,
                 $leaveRequest->end_date,
-                $leaveRequest->half_day ?? false,
+                (bool) ($leaveRequest->half_day ?? false),
                 $leaveType
             );
 

@@ -22,21 +22,21 @@ window.getLeave = async function (arg1 = 'pending', arg2 = 1) {
         status = typeof arg2 === 'string' ? arg2 : 'pending';
     }
 
+    // Normalize UI/API status naming
+    const normalizedStatus = (status === 'declined') ? 'rejected' : status;
+
     try {
-        const data = { page, status };
+        const data = { page, status: normalizedStatus };
         const leaveTable = await leaveService.fetch(data);
 
-        // Expect a container per status: #pendingContainer, #approvedContainer, #declinedContainer
-        const containerId = `#${status}Container`;
+        const containerId = `#${normalizedStatus}Container`;
         if (document.querySelector(containerId)) {
             $(containerId).html(leaveTable);
         }
 
-        // Initialize DataTable if present
-        const tableId = `#${status}LeaveRequestsTable`;
+        const tableId = `#${normalizedStatus}LeaveRequestsTable`;
         if ($(tableId).length > 0) {
             try {
-                // Guard re-init
                 if ($.fn.dataTable.isDataTable(tableId)) {
                     $(tableId).DataTable().destroy();
                 }
@@ -50,6 +50,7 @@ window.getLeave = async function (arg1 = 'pending', arg2 = 1) {
         Swal.fire('Error', 'Failed to load leave requests. Please try again.', 'error');
     }
 };
+
 
 /**
  * Create or update a leave request

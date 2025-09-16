@@ -251,6 +251,7 @@ Route::middleware(['ensure_role', 'role:business-employee'])
             Route::get('/requests', [EmployeeDashboardController::class, 'viewLeaves'])->name('requests.index');
             Route::get('/requests/create', [EmployeeDashboardController::class, 'requestLeave'])->name('requests.create');
             Route::get('/view/{leave}', [EmployeeDashboardController::class, 'leaveApplication'])->name('show');
+        
         });
 
         Route::prefix('attendances')->name('attendances.')->group(function () {
