@@ -149,47 +149,60 @@
                                 <input type="date" class="form-control datepicker" id="end_date" name="end_date"
                                     required min="{{ date('Y-m-d') }}">
                             </div>
+                        
 
-                            <div class="form-group">
-                                <label>Allows Backdating</label>
-                                <select name="allows_backdating" class="form-control">
-                                    <option value="0">No</option>
-                                    <option value="1">Yes</option>
-                                </select>
-                            </div>
 
-                            <div class="form-group">
-                                <label>Approval Levels</label>
-                                <input type="number" name="approval_levels" class="form-control" value="1" min="1">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Excluded Days</label><br>
+                        <div class="col-md-12 mb-3">
+                            <label for="excluded_days">Excluded (Non-working) Days</label>
+                            <div class="d-flex flex-wrap">
                                 @php
-                                    $days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+                                    $daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                                 @endphp
-                                @foreach($days as $day)
-                                    <label>
-                                        <input type="checkbox" name="excluded_days[]" value="{{ $day }}">
-                                        {{ ucfirst($day) }}
-                                    </label>
+                                @foreach ($daysOfWeek as $day)
+                                    <div class="form-check me-3">
+                                        <input class="form-check-input" type="checkbox" 
+                                            name="excluded_days[]" 
+                                            id="day_{{ $day }}" 
+                                            value="{{ $day }}">
+                                        <label class="form-check-label" for="day_{{ $day }}">
+                                            {{ ucfirst($day) }}
+                                        </label>
+                                    </div>
                                 @endforeach
                             </div>
-
-                            <div class="form-group">
-                                <label>Stepwise Leave</label>
-                                <select name="is_stepwise" class="form-control">
-                                    <option value="0">No</option>
-                                    <option value="1">Yes</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Stepwise Rules (JSON)</label>
-                                <textarea name="stepwise_rules" class="form-control" placeholder='["phase1","phase2"]'></textarea>
-                            </div>
-
                         </div>
+                        <div class="col-md-4">
+                            <label for="approval_levels">Approval Levels</label>
+                            <select name="approval_levels" id="approval_levels" class="form-select">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <option value="{{ $i }}">{{ $i }}</option>
+                                @endfor
+                            </select>
+                        </div>  
+
+                        <div class="col-md-4">
+                            <label for="allows_backdating">Allows Backdating</label>
+                            <select name="allows_backdating" id="allows_backdating" class="form-select">
+                                <option value="1">Yes</option>
+                                <option value="0" selected>No</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="is_stepwise">Is Stepwise</label>
+                            <select name="is_stepwise" id="is_stepwise" class="form-select">
+                                <option value="1">Yes</option>
+                                <option value="0" selected>No</option>
+                            </select>
+                        </div>  
+
+                        <div class="col-md-12 mb-3">
+                            <label for="stepwise_rules">Stepwise Rules</label>
+                            <textarea name="stepwise_rules" id="stepwise_rules" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+
+                        
 
                         <div class="row">
                             <div class="col-md-12">

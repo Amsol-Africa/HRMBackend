@@ -7,19 +7,30 @@ const leaveEntitlementsService = new LeaveEntitlementsService(requestClient);
 
 window.getLeaveEntitlements = async function (page = 1, leave_period = null) {
     try {
-        let data = { page: page, leave_period_slug: leave_period };
+        const data = { page, leave_period_slug: leave_period };
         const leaveEntitlements = await leaveEntitlementsService.fetch(data);
+
         $('#leaveEntitlementsContainer').html(leaveEntitlements);
-        new DataTable('#leaveEntitlementsTable');
+
+        if ($.fn.dataTable) {
+            if ($.fn.dataTable.isDataTable('#leaveEntitlementsTable')) {
+                $('#leaveEntitlementsTable').DataTable().destroy();
+            }
+            new DataTable('#leaveEntitlementsTable');
+        }
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error("Error loading leave entitlements:", error);
+        Swal.fire('Error', 'Failed to load entitlements. Please try again.', 'error');
     }
 };
+
 window.saveLeaveEntitlements = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
 
-    let formData = new FormData(document.getElementById("leaveEntitlementsForm"));
+    const formId = "leaveEntitlementsForm";
+    const formEl = document.getElementById(formId);
+    const formData = new FormData(formEl);
 
     try {
         if (formData.has('leave_period_slug')) {
@@ -27,11 +38,16 @@ window.saveLeaveEntitlements = async function (btn) {
         } else {
             await leaveEntitlementsService.save(formData);
         }
-        getLeaveEntitlements();
+        await getLeaveEntitlements(1, formEl.querySelector('#leave_period_id')?.value || null);
+        Swal.fire('Success', 'Leave entitlements saved successfully.', 'success');
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', err?.message || 'Failed to save leave entitlements.', 'error');
     } finally {
         btn_loader(btn, false);
     }
 };
+
 window.editLeaveEntitlements = async function (btn) {
     btn = $(btn);
 
@@ -40,10 +56,13 @@ window.editLeaveEntitlements = async function (btn) {
 
     try {
         const form = await leaveEntitlementsService.edit(data);
-        $('#leaveEntitlementsFormContainer').html(form)
-    } finally {
+        $('#leaveEntitlementsFormContainer').html(form);
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Failed to load entitlement for editing.', 'error');
     }
 };
+
 window.viewLeaveEntitlements = async function (btn) {
     btn = $(btn);
 
@@ -54,9 +73,12 @@ window.viewLeaveEntitlements = async function (btn) {
         const details = await leaveEntitlementsService.show(data);
         $('#leaveEntitlementsDetailsContent').html(details);
         $('#leaveEntitlementsDetailsModal').modal('show');
-    } finally {
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Failed to load entitlements details.', 'error');
     }
 };
+
 window.deleteLeaveEntitlements = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -76,7 +98,11 @@ window.deleteLeaveEntitlements = async function (btn) {
         if (result.isConfirmed) {
             try {
                 await leaveEntitlementsService.delete(data);
-                getLeaveEntitlements();
+                await getLeaveEntitlements();
+                Swal.fire('Deleted!', 'Leave entitlements deleted.', 'success');
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Failed to delete leave entitlements.', 'error');
             } finally {
                 btn_loader(btn, false);
             }

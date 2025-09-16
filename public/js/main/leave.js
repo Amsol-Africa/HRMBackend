@@ -5,28 +5,96 @@ import LeaveService from "/js/client/LeaveService.js";
 const requestClient = new RequestClient();
 const leaveService = new LeaveService(requestClient);
 
-window.getLeave = async function (page = 1, status = 'pending') {
+/**
+ * Robust getter that supports BOTH calling styles:
+ *  - getLeave('pending')            // status first
+ *  - getLeave(1, 'pending')         // page, status
+ *  - getLeave()                     // defaults to pending, page 1
+ */
+window.getLeave = async function (arg1 = 'pending', arg2 = 1) {
+    let status, page;
+
+    if (typeof arg1 === 'string') {
+        status = arg1 || 'pending';
+        page = typeof arg2 === 'number' ? arg2 : 1;
+    } else {
+        page = typeof arg1 === 'number' ? arg1 : 1;
+        status = typeof arg2 === 'string' ? arg2 : 'pending';
+    }
+
     try {
-        let data = { page: page, status: status };
+        const data = { page, status };
         const leaveTable = await leaveService.fetch(data);
-        $(`#${status}Container`).html(leaveTable);
-        new DataTable(`#${status}LeaveRequestsTable`);
+
+        // Expect a container per status: #pendingContainer, #approvedContainer, #declinedContainer
+        const containerId = `#${status}Container`;
+        if (document.querySelector(containerId)) {
+            $(containerId).html(leaveTable);
+        }
+
+        // Initialize DataTable if present
+        const tableId = `#${status}LeaveRequestsTable`;
+        if ($(tableId).length > 0) {
+            try {
+                // Guard re-init
+                if ($.fn.dataTable.isDataTable(tableId)) {
+                    $(tableId).DataTable().destroy();
+                }
+                new DataTable(tableId);
+            } catch (e) {
+                console.warn('DataTable init skipped:', e?.message || e);
+            }
+        }
     } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error("Error loading leave data:", error);
+        Swal.fire('Error', 'Failed to load leave requests. Please try again.', 'error');
     }
 };
 
+/**
+ * Create or update a leave request
+ */
 window.saveLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
-    let formData = new FormData(document.getElementById("leaveForm"));
+
+    const formEl = document.getElementById("leaveForm");
+    const formData = new FormData(formEl);
+
+    // If "attach later" is checked, do NOT force an attachment on the client side
+    const attachLaterEl = formEl.querySelector('#attach_later');
+    const requiresAttachmentNow =
+        (formEl.querySelector('#leave_type')?.selectedOptions[0]?.getAttribute('data-requires-attachment') === '1') &&
+        !(attachLaterEl && attachLaterEl.checked);
+
+    const attachmentInput = formEl.querySelector('#attachment');
+    if (attachmentInput) {
+        if (requiresAttachmentNow) {
+            attachmentInput.setAttribute('required', 'required');
+        } else {
+            attachmentInput.removeAttribute('required');
+        }
+    }
+
     try {
         if (formData.has('leave_slug')) {
             await leaveService.update(formData);
         } else {
             await leaveService.save(formData);
         }
-        getLeave();
+
+        // Refresh typical tabs
+        getLeave('pending');
+        getLeave('approved');
+        getLeave('declined');
+
+        Swal.fire('Success', 'Leave request saved successfully.', 'success');
+        // Optional: reset form
+        // formEl.reset();
+    } catch (err) {
+        console.error(err);
+        const msg = err?.message || 'Failed to save the leave request.';
+        Swal.fire('Error', msg, 'error');
     } finally {
         btn_loader(btn, false);
     }
@@ -40,8 +108,10 @@ window.editLeave = async function (btn) {
 
     try {
         const form = await leaveService.edit(data);
-        $('#leaveFormContainer').html(form)
-    } finally {
+        $('#leaveFormContainer').html(form);
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'Failed to load the edit form.', 'error');
     }
 };
 
@@ -64,7 +134,13 @@ window.deleteLeave = async function (btn) {
         if (result.isConfirmed) {
             try {
                 await leaveService.delete(data);
-                getLeave();
+                getLeave('pending');
+                getLeave('approved');
+                getLeave('declined');
+                Swal.fire('Deleted!', 'Leave request deleted.', 'success');
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', 'Failed to delete leave request.', 'error');
             } finally {
                 btn_loader(btn, false);
             }
@@ -74,6 +150,9 @@ window.deleteLeave = async function (btn) {
     });
 };
 
+/**
+ * Approve / Reject
+ */
 window.manageLeave = async function (btn) {
     btn = $(btn);
     btn_loader(btn, true);
@@ -100,9 +179,7 @@ window.manageLeave = async function (btn) {
             confirmButtonText: "Reject Leave",
             cancelButtonText: "Cancel",
             inputValidator: (value) => {
-                if (!value) {
-                    return "Rejection reason is required!";
-                }
+                if (!value) return "Rejection reason is required!";
             },
         });
 
@@ -126,9 +203,15 @@ window.manageLeave = async function (btn) {
             try {
                 await leaveService.status(data);
 
-                getLeave(1, 'pending');
-                getLeave(1, 'declined');
-                getLeave(1, 'approved');
+                // Refresh known tabs; "declined" maps to backend 'rejected'
+                getLeave('pending');
+                getLeave('approved');
+                getLeave('declined');
+
+                Swal.fire('Done', `Leave ${action}d successfully.`, 'success');
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Error', `Failed to ${action} the leave.`, 'error');
             } finally {
                 btn_loader(btn, false);
             }
@@ -139,41 +222,113 @@ window.manageLeave = async function (btn) {
 };
 
 /* ---------------------------------------------------
-   Attachment field toggle based on leave type
+   Attachment field toggle + "attach later" handling
 --------------------------------------------------- */
 document.addEventListener("DOMContentLoaded", function () {
     const leaveTypeSelect = document.getElementById("leave_type");
-    const attachmentDiv = document.getElementById("attachmentField");
+    const attachmentDiv   = document.getElementById("attachmentField");
     const attachmentInput = document.getElementById("attachment");
+    const attachLater     = document.getElementById("attach_later");
+
+    const halfDayRow      = document.getElementById('halfDayRow');
+    const halfDayCheckbox = document.getElementById('half_day');
+    const halfDayTypeCol  = document.getElementById('halfDayTypeCol');
+
+    const startDate = document.getElementById("start_date");
+    const endDate   = document.getElementById("end_date");
+
+    function todayStr() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function applyBackdatingRule(allowsBackdating) {
+        if (!startDate || !endDate) return;
+        if (allowsBackdating) {
+            startDate.removeAttribute('min');
+            endDate.removeAttribute('min');
+        } else {
+            const t = todayStr();
+            startDate.setAttribute('min', t);
+            endDate.setAttribute('min', t);
+        }
+    }
+
+    function toggleHalfDayUI(allowsHalfDay) {
+        if (!halfDayRow || !halfDayCheckbox || !halfDayTypeCol) return;
+        if (allowsHalfDay) {
+            halfDayRow.classList.remove('d-none');
+        } else {
+            halfDayRow.classList.add('d-none');
+            halfDayCheckbox.checked = false;
+            halfDayTypeCol.classList.add('d-none');
+        }
+    }
+
+    halfDayCheckbox?.addEventListener('change', () => {
+        if (halfDayCheckbox.checked) {
+            halfDayTypeCol.classList.remove('d-none');
+        } else {
+            halfDayTypeCol.classList.add('d-none');
+        }
+    });
+
+    if (attachLater && attachmentInput) {
+        attachLater.addEventListener('change', () => {
+            if (attachLater.checked) {
+                attachmentInput.removeAttribute('required');
+            } else {
+                // Only require if the type truly requires an attachment
+                const requires = leaveTypeSelect?.selectedOptions[0]?.getAttribute('data-requires-attachment') === '1';
+                if (requires) {
+                    attachmentInput.setAttribute('required', 'required');
+                }
+            }
+        });
+    }
 
     if (leaveTypeSelect && attachmentDiv && attachmentInput) {
         leaveTypeSelect.addEventListener("change", function () {
             const selected = leaveTypeSelect.options[leaveTypeSelect.selectedIndex];
-            const requiresAttachment = selected.getAttribute("data-requires-attachment");
+            const requiresAttachment = selected.getAttribute("data-requires-attachment") === "1";
+            const allowsBackdating   = selected.getAttribute("data-allows-backdating") === "1";
+            const allowsHalfDay      = selected.getAttribute("data-allows-half-day") === "1";
 
-            if (requiresAttachment === "1") {
+            // Attachment UI
+            if (requiresAttachment) {
                 attachmentDiv.classList.remove("d-none");
-                attachmentInput.setAttribute("required", "required");
+                if (!(attachLater && attachLater.checked)) {
+                    attachmentInput.setAttribute("required", "required");
+                }
             } else {
                 attachmentDiv.classList.add("d-none");
                 attachmentInput.removeAttribute("required");
                 attachmentInput.value = "";
+                if (attachLater) attachLater.checked = false;
             }
+
+            // Backdating
+            applyBackdatingRule(allowsBackdating);
+
+            // Half-day
+            toggleHalfDayUI(allowsHalfDay);
         });
     }
-});
 
-
-/* ---------------------------------------------------
-   Date validation: ensure end_date >= start_date
---------------------------------------------------- */
-document.addEventListener("DOMContentLoaded", function () {
-    const startDate = document.getElementById("start_date");
-    const endDate = document.getElementById("end_date");
-
+    /* ---------------------------------------------------
+       Date validation: ensure end_date >= start_date
+    --------------------------------------------------- */
     if (startDate && endDate) {
         startDate.addEventListener("change", function () {
-            endDate.min = startDate.value; // end date cannot be before start date
+            endDate.min = startDate.value || endDate.min || '';
         });
+    }
+
+    // Initialize min dates to today by default; changed again after leave type chosen
+    if (startDate && endDate) {
+        const t = todayStr();
+        if (!startDate.min) startDate.min = t;
+        if (!endDate.min) endDate.min = t;
     }
 });

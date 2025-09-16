@@ -21,10 +21,10 @@ class LeaveRequest extends Model
         'end_date',
         'total_days',
         'attachment',
-        'requires_documentation', // new
-        'is_tentative',          // new
-        'current_approval_level', // new
-        'approval_history',       // new (json)
+        'requires_documentation',
+        'is_tentative',
+        'current_approval_level',
+        'approval_history', // json
         'half_day',
         'half_day_type',
         'reason',
@@ -34,16 +34,16 @@ class LeaveRequest extends Model
     ];
 
     protected $casts = [
-        'half_day' => 'boolean',
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'total_days' => 'float',
-        'approved_by' => 'integer',
-        'approved_at' => 'datetime',
+        'half_day'               => 'boolean',
+        'start_date'             => 'date',
+        'end_date'               => 'date',
+        'total_days'             => 'float',
+        'approved_by'            => 'integer',
+        'approved_at'            => 'datetime',
         'requires_documentation' => 'boolean',
-        'is_tentative' => 'boolean',
+        'is_tentative'           => 'boolean',
         'current_approval_level' => 'integer',
-        'approval_history' => 'array',
+        'approval_history'       => 'array',
     ];
 
     public function employee()
@@ -96,7 +96,7 @@ class LeaveRequest extends Model
     }
 
     /**
-     * existing overlap check — unchanged (considers pending + approved; not rejected)
+     * Existing overlap check — considers pending + approved; excludes rejected.
      */
     public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null)
     {
@@ -122,8 +122,7 @@ class LeaveRequest extends Model
     }
 
     /**
-     * Calculate inclusive total days taking into account excluded_days from leaveType (weekdays)
-     * $leaveType may be either LeaveType instance or null.
+     * Calculate inclusive total days taking into account excluded_days from leaveType (weekdays).
      */
     public static function calculateTotalDays($startDate, $endDate, $halfDay = false, $leaveType = null)
     {
@@ -134,7 +133,6 @@ class LeaveRequest extends Model
         $excluded = [];
         if ($leaveType instanceof LeaveType) {
             $excluded = $leaveType->excluded_days ?? [];
-            // normalize to lowercase
             $excluded = array_map('strtolower', (array)$excluded);
         }
 
@@ -148,12 +146,11 @@ class LeaveRequest extends Model
             }
         }
 
-        // inclusive counting already via CarbonPeriod (start..end)
         if ($halfDay) {
             $days -= 0.5;
         }
 
-        return $days;
+        return max(0, (float)$days);
     }
 
     /**
@@ -168,7 +165,7 @@ class LeaveRequest extends Model
             $leaveType = null;
             if ($leaveRequest->leaveType) {
                 $leaveType = $leaveRequest->leaveType;
-            } else if ($leaveRequest->leave_type_id) {
+            } elseif ($leaveRequest->leave_type_id) {
                 $leaveType = LeaveType::find($leaveRequest->leave_type_id);
             }
 
@@ -179,7 +176,6 @@ class LeaveRequest extends Model
                 $leaveType
             );
 
-            // ensure numeric minimum
             if ($leaveRequest->total_days < 0) {
                 $leaveRequest->total_days = 0;
             }

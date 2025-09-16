@@ -53,18 +53,15 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <button class="btn btn-info view-leave-period" data-slug="{{ $leavePeriod->slug }}">
+                                    <button class="btn btn-info view-leave-period" data-id="{{ $leavePeriod->id }}" data-bs-toggle="modal" data-bs-target="#leavePeriodDetailsModal">
                                         <i class="fas fa-eye"></i>
                                     </button>
-
-                                    <button class="btn btn-warning edit-leave-period" data-slug="{{ $leavePeriod->slug }}">
+                                    <button class="btn btn-warning edit-leave-period" data-id="{{ $leavePeriod->id }}">
                                         <i class="fas fa-edit"></i>
                                     </button>
-
-                                    <button class="btn btn-danger delete-leave-period" data-slug="{{ $leavePeriod->slug }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-
+                                    <button class="btn btn-danger btn-delete-leave-period" data-leave-period-slug="{{ $leavePeriod->slug }}">
+    Delete
+</button>
                                 </div>
                             </td>
                         </tr>

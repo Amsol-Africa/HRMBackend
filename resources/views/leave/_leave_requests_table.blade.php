@@ -25,14 +25,12 @@
                     <th>End Date</th>
                     <th>Remaining</th>
                     <th>Status</th>
-                    {{-- ✅ NEW COLUMN --}}
                     <th>Attachment</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach ($leaveRequests as $request)
-
                     @if (auth()->user()->hasRole('business-admin'))
                         @php
                             $viewUrl = route('business.leave.show', [
@@ -53,47 +51,51 @@
                         <td>{{ $request->reference_number }}</td>
                         <td>{{ optional(optional($request->employee)->user)->name ?? 'N/A' }}</td>
 
-                        <td class="text-white 
-                            @if ($request->leaveType->name == 'Sick Leave') bg-danger
-                            @elseif ($request->leaveType->name == 'Annual Leave') bg-primary
+                        <td class="text-white
+                            @if (optional($request->leaveType)->name === 'Sick Leave') bg-danger
+                            @elseif (optional($request->leaveType)->name === 'Annual Leave') bg-primary
                             @else bg-secondary @endif">
-                            {{ $request->leaveType->name }}
+                            {{ optional($request->leaveType)->name ?? '—' }}
                         </td>
 
-                        <td class="fw-bold text-primary">{{ $request->start_date->format('Y-m-d') }}</td>
-                        <td>{{ $request->total_days }}</td>
-                        <td class="fw-bold text-danger">{{ $request->end_date->format('Y-m-d') }}</td>
+                        <td class="fw-bold text-primary">{{ optional($request->start_date)->format('Y-m-d') }}</td>
+                        <td>{{ number_format((float) $request->total_days, 2) }}</td>
+                        <td class="fw-bold text-danger">{{ optional($request->end_date)->format('Y-m-d') }}</td>
+
+                        {{-- "Remaining" here is days until end date (UI legacy). Keep behavior but guard nulls. --}}
+                        @php
+                            $remainingDisplay = 0;
+                            if ($request->end_date) {
+                                $remainingDisplay = max($request->end_date->diffInDays(today()), 0);
+                            }
+                        @endphp
                         <td class="fw-bold
-                            @if ($request->end_date->isPast()) text-danger
-                            @elseif ($request->end_date->diffInDays(today()) <= 2) text-warning
+                            @if ($request->end_date && $request->end_date->isPast()) text-danger
+                            @elseif ($request->end_date && $request->end_date->diffInDays(today()) <= 2) text-warning
                             @else text-success
                             @endif">
-                            {{ max($request->end_date->diffInDays(today()), 0) }}
+                            {{ $remainingDisplay }}
                         </td>
 
                         <td>
                             @if (!is_null($request->approved_by) && is_null($request->rejection_reason))
-                                {{-- Approved --}}
                                 <span class="badge bg-success">
                                     <i class="fa-solid me-1 fa-check-circle"></i> Approved
                                 </span>
                             @elseif (is_null($request->approved_by) && is_null($request->rejection_reason))
-                                {{-- Pending --}}
                                 <span class="badge bg-warning">
                                     <i class="fa-solid me-1 fa-clock"></i> Pending
                                 </span>
                             @elseif (!is_null($request->rejection_reason) && is_null($request->approved_by))
-                                {{-- Rejected --}}
                                 <span class="badge bg-danger">
                                     <i class="fa-solid me-1 fa-times-circle"></i> Rejected
                                 </span>
                             @endif
                         </td>
 
-                        {{-- ✅ NEW CELL: Display download button if attachment exists --}}
                         <td>
                             @if($request->attachment)
-                                <a href="{{ asset('storage/' . $request->attachment) }}" 
+                                <a href="{{ asset('storage/' . $request->attachment) }}"
                                    class="btn btn-info btn-sm" target="_blank" download>
                                     <i class="fa-solid fa-download"></i> Download
                                 </a>
@@ -104,7 +106,7 @@
 
                         <td>
                             <div style="display: flex; gap: 5px;">
-                                <a href="{{ $viewUrl }}" class="btn btn-primary">
+                                <a href="{{ $viewUrl }}" class="btn btn-primary" title="View">
                                     <i class="fa-solid fa-eye"></i>
                                 </a>
 
@@ -113,15 +115,15 @@
                                     (auth()->user()->hasRole('business-admin') || auth()->user()->hasRole('business-hr')) &&
                                     in_array(session('active_role'), ['business-admin', 'business-hr'])
                                 )
-                                    <button type="button" onclick="manageLeave(this)" 
-                                            data-action="approve" data-leave="{{ $request->reference_number }}" 
-                                            class="btn btn-success">
+                                    <button type="button" onclick="manageLeave(this)"
+                                            data-action="approve" data-leave="{{ $request->reference_number }}"
+                                            class="btn btn-success" title="Approve">
                                         <i class="fa-solid fa-check"></i>
                                     </button>
 
-                                    <button type="button" onclick="manageLeave(this)" 
-                                            data-action="reject" data-leave="{{ $request->reference_number }}" 
-                                            class="btn btn-danger">
+                                    <button type="button" onclick="manageLeave(this)"
+                                            data-action="reject" data-leave="{{ $request->reference_number }}"
+                                            class="btn btn-danger" title="Reject">
                                         <i class="fa-solid fa-ban"></i>
                                     </button>
                                 @endif
@@ -133,14 +135,16 @@
         </table>
     </div>
 </div>
-////
+
 <script>
-  /**  $(document).ready(function() {
-        $('#{{ $status }}LeaveRequestsTable').DataTable({
-            responsive: true,
-            columnDefs: [
-                { orderable: false, targets: -1 } // Disable ordering on the last column (Actions)
-            ]
-        });
-    }); */
+/* If/when using DataTables, initialize here. Left commented intentionally.
+$(document).ready(function() {
+    $('#{{ $status }}LeaveRequestsTable').DataTable({
+        responsive: true,
+        columnDefs: [
+            { orderable: false, targets: -1 } // Actions column
+        ]
+    });
+});
+*/
 </script>

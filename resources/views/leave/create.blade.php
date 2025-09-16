@@ -13,15 +13,21 @@
         <script src="{{ asset('js/main/leave.js') }}" type="module"></script>
         <script>
             $(document).ready(() => {
-                getLeave('pending');
+                // Initial load for "pending" (adjust according to your leave.js)
+                if (typeof getLeave === 'function') {
+                    getLeave('pending');
+                }
+
+                // Example for tab handling if you have nav tabs with IDs
                 $('#myTab button').on('click', function (event) {
                     event.preventDefault();
                     $(this).tab('show');
-                    const status = $(this).attr('aria-controls');
-                    getLeave(1, status)
+                    const status = $(this).attr('aria-controls'); // e.g., 'pending'|'approved'|'rejected'
+                    if (typeof getLeave === 'function') {
+                        getLeave(status);
+                    }
                 });
             });
         </script>
     @endpush
-
 </x-app-layout>

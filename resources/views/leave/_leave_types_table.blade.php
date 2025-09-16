@@ -32,10 +32,14 @@
                             <td>
                                 <button class="btn btn-sm btn-info" data-leave-type="{{ $leaveType->slug }}" onclick="viewLeaveType(this)">
                                     <i class="bi bi-eye"></i>
-                                </button>                                
-                                <button class="btn btn-sm btn-info" data-leave-type="{{ $leaveType->slug }}" onclick="editLeaveType(this)">
-                                    <i class="bi bi-pencil-square"></i>
+                                </button> 
+                                <button type="button"
+                                        class="btn btn-sm btn-primary"
+                                        data-slug="{{ $leaveType->slug }}"
+                                        onclick="editLeaveType(this)">
+                                Edit
                                 </button>
+
                                 <button class="btn btn-sm btn-danger" data-leave-type="{{ $leaveType->slug }}" onclick="deleteLeaveType(this)">
                                     <i class="bi bi-trash"></i>
                                 </button>
