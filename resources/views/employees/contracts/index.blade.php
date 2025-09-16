@@ -1,3 +1,4 @@
+
 <x-app-layout title="{{ $page }}">
     <div class="container py-5">
         <div class="row justify-content-center">
@@ -10,27 +11,41 @@
                         Actions</span>
                 </div>
 
-                <!-- Expiring Contracts Section -->
+                <!-- Expiring Contracts and Licenses Section -->
                 <div class="card shadow-sm mb-5 border-0 rounded-3">
                     <div class="card-body p-4">
-                        <h4 class="fw-semibold text-dark mb-4">Contracts Nearing Expiry (Within 30 Days)</h4>
+                        <h4 class="fw-semibold text-dark mb-4">Contracts and Licenses Nearing Expiry (Within 30 Days)</h4>
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th>Employee</th>
                                         <th>Contract End Date</th>
+                                        <th>License Expiry Date</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($employees as $employee)
+                                    @if($employee->employmentDetails && ($employee->employmentDetails->contract_end_date && \Carbon\Carbon::parse($employee->employmentDetails->contract_end_date)->diffInDays(\Carbon\Carbon::now()) <= 30) || ($employee->employmentDetails->license_expiry_date && \Carbon\Carbon::parse($employee->employmentDetails->license_expiry_date)->diffInDays(\Carbon\Carbon::now()) <= 30))
                                     <tr>
                                         <td>{{ $employee->user->name }}</td>
                                         <td>
-                                            @if($employee->employmentDetails &&
-                                            $employee->employmentDetails->contract_end_date)
-                                            {{ $employee->employmentDetails->contract_end_date->format('M d, Y') }}
+                                            @if($employee->employmentDetails && $employee->employmentDetails->contract_end_date)
+                                            {{ \Carbon\Carbon::parse($employee->employmentDetails->contract_end_date)->format('M d, Y') }}
+                                            @if(\Carbon\Carbon::parse($employee->employmentDetails->contract_end_date)->diffInDays(\Carbon\Carbon::now()) <= 30)
+                                            <br><small class="text-danger">Nearing expiry</small>
+                                            @endif
+                                            @else
+                                            N/A
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($employee->employmentDetails && $employee->employmentDetails->license_expiry_date)
+                                            {{ \Carbon\Carbon::parse($employee->employmentDetails->license_expiry_date)->format('M d, Y') }}
+                                            @if(\Carbon\Carbon::parse($employee->employmentDetails->license_expiry_date)->diffInDays(\Carbon\Carbon::now()) <= 30)
+                                            <br><small class="text-danger">Nearing expiry</small>
+                                            @endif
                                             @else
                                             N/A
                                             @endif
@@ -42,9 +57,10 @@
                                             </button>
                                         </td>
                                     </tr>
+                                    @endif
                                     @empty
                                     <tr>
-                                        <td colspan="3" class="text-center">No contracts nearing expiry.</td>
+                                        <td colspan="4" class="text-center">No contracts or licenses nearing expiry.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>

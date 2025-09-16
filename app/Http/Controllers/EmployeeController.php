@@ -1632,44 +1632,54 @@ public function export(Request $request)
     //     }
     // }
 
-    public function contracts(Request $request)
-    {
-        $page = 'Contract Management';
-        $business = Business::findBySlug(session('active_business_slug'));
-        if (!$business) {
-            return redirect()->back()->with('error', 'Business not found.');
-        }
-
-        // Employees nearing contract expiry (unchanged)
-        $employees = Employee::where('business_id', $business->id)
-            ->whereHas('employmentDetails', function ($query) {
-                $query->where('employment_term', 'contract')
-                    ->whereNotNull('contract_end_date')
-                    ->where('contract_end_date', '<=', now()->addDays(30))
-                    ->where('contract_end_date', '>=', now())
-                    ->where('status', '!=', 'terminated');
-            })
-            ->with(['user:id,name', 'employmentDetails:employee_id,contract_end_date'])
-            ->get();
-
-        // Paginated employees for termination section
-        $terminationEmployees = Employee::where('business_id', $business->id)
-            ->whereHas('employmentDetails', function ($query) {
-                $query->where('status', '!=', 'terminated'); // Exclude already terminated
-            })
-            ->with([
-                'user:id,name',
-                'employmentDetails:employee_id,status,employment_term'
-            ])
-            ->select('id', 'user_id')
-            ->paginate(25);
-
-        $contractActions = EmployeeContractAction::where('business_id', $business->id)
-            ->with(['employee.user', 'issuedBy'])
-            ->get();
-
-        return view('employees.contracts.index', compact('employees', 'terminationEmployees', 'contractActions', 'business', 'page'));
+   public function contracts(Request $request)
+{
+    $page = 'Information Management';
+    $business = Business::findBySlug(session('active_business_slug'));
+    if (!$business) {
+        return redirect()->back()->with('error', 'Business not found.');
     }
+
+    // Employees nearing contract or license expiry (within 30 days)
+    $employees = Employee::where('business_id', $business->id)
+        ->whereHas('employmentDetails', function ($query) {
+            $query->where(function ($q) {
+                $q->where('employment_term', 'contract')
+                  ->whereNotNull('contract_end_date')
+                  ->where('contract_end_date', '<=', now()->addDays(30))
+                  ->where('contract_end_date', '>=', now())
+                  ->where('status', '!=', 'terminated');
+            })->orWhere(function ($q) {
+                $q->whereNotNull('license_expiry_date')
+                  ->where('license_expiry_date', '<=', now()->addDays(30))
+                  ->where('license_expiry_date', '>=', now())
+                  ->where('status', '!=', 'terminated');
+            });
+        })
+        ->with([
+            'user:id,name',
+            'employmentDetails:employee_id,contract_end_date,license_expiry_date,license_reg_number'
+        ])
+        ->get();
+
+    // Paginated employees for termination section
+    $terminationEmployees = Employee::where('business_id', $business->id)
+        ->whereHas('employmentDetails', function ($query) {
+            $query->where('status', '!=', 'terminated'); // Exclude already terminated
+        })
+        ->with([
+            'user:id,name',
+            'employmentDetails:employee_id,status,employment_term'
+        ])
+        ->select('id', 'user_id')
+        ->paginate(25);
+
+    $contractActions = EmployeeContractAction::where('business_id', $business->id)
+        ->with(['employee.user', 'issuedBy'])
+        ->get();
+
+    return view('employees.contracts.index', compact('employees', 'terminationEmployees', 'contractActions', 'business', 'page'));
+}
 
     public function fetchContracts(Request $request)
     {
@@ -1707,9 +1717,9 @@ public function export(Request $request)
                         'employee_id' => $action->employee_id,
                         'issued_by_id' => $action->issued_by_id,
                     ]);
-                    return null; // Skip problematic records
+                    return null;
                 }
-            })->filter(); // Remove null entries
+            })->filter();
 
             $html = view('employees.contracts._cards', ['contractActions' => $contractActions->items()])->render();
 
@@ -1739,6 +1749,7 @@ public function export(Request $request)
             'reason' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'action_date' => 'required|date',
+            'reminder_type' => 'required|in:contract,license',
         ]);
 
         return $this->handleTransaction(function () use ($validated) {

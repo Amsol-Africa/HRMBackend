@@ -143,7 +143,7 @@
                         <li class="slide {{ request()->routeIs('business.employees.contracts') ? 'active' : '' }}">
                             <a class="sidebar__menu-item {{ request()->routeIs('business.employees.contracts') ? 'active' : '' }}"
                                 href="{{ route('business.employees.contracts', $currentBusiness->slug) }}">
-                                Contract Management
+                                Info Management
                             </a>
                         </li>
                     </ul>
