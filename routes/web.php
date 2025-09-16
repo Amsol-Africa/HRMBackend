@@ -38,7 +38,7 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('/payroll/{id}/download-column/{column}/{format}', [PayrollController::class, 'downloadColumn'])->name('payroll.download_column');
     });
 
-    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance|head-of-department'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::get('/clients/{clientBusiness:slug}', [ClientController::class, 'view'])->name('clients.view');

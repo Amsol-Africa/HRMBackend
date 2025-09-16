@@ -27,7 +27,7 @@ class LeaveRequestController extends Controller
         $activeRole = session('active_role');
 
         // Restrict non-HR/admin users to their own leaves
-        if (!in_array($activeRole, ['business-hr', 'business-admin'])) {
+        if (!in_array($activeRole, ['business-hr', 'business-admin','head-of-department'])) {
             if ($user->employee) {
                 $leaveRequests->where('employee_id', $user->employee->id);
             } else {
@@ -135,7 +135,7 @@ class LeaveRequestController extends Controller
 
             return RequestResponse::ok('Leave request created successfully.');
         });
-    }   
+    }
 
     public function status(Request $request)
     {
