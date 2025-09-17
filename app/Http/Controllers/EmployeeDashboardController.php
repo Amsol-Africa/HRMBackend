@@ -28,14 +28,21 @@ class EmployeeDashboardController extends Controller
         $pending_leaves = LeaveRequest::where('employee_id', $employee->id)->where('approved_by', 'pending')->count();
         return view('employee.index', compact('page', 'leave_count', 'pending_leaves'));
     }
+
     // Leave Requests
     public function requestLeave()
     {
-        $page = "Request Leave";
+        $page        = "Request Leave";
         $description = "";
-        $business = Business::findBySlug(session('active_business_slug'));
-        $leaveTypes = $business->leaveTypes;
-        $leaveRequests = LeaveRequest::where('employee_id', Auth::id())->latest()->get();
+        $business    = Business::findBySlug(session('active_business_slug'));
+        $leaveTypes  = $business->leaveTypes;
+
+        $employeeId = optional(Auth::user()->employee)->id;
+        $leaveRequests = LeaveRequest::with(['leaveType', 'employee.user'])
+            ->where('business_id', $business->id)
+            ->where('employee_id', $employeeId) // ⚠️ employee_id, not user id
+            ->latest()
+            ->get();
 
         return view('leave.request-leave', compact('page', 'description', 'leaveTypes', 'leaveRequests'));
     }
@@ -43,41 +50,41 @@ class EmployeeDashboardController extends Controller
     public function viewLeaves()
     {
         $page = "My Leaves";
-        $leaves = LeaveRequest::where('employee_id', Auth::id())->latest()->get();
+
+        $business   = Business::findBySlug(session('active_business_slug'));
+        $employeeId = optional(Auth::user()->employee)->id;
+
+        $leaves = LeaveRequest::with(['leaveType', 'employee.user'])
+            ->where('business_id', $business->id)
+            ->where('employee_id', $employeeId) // ⚠️ employee_id, not user id
+            ->latest()
+            ->get();
+
         return view('leave.index', compact('page', 'leaves'));
     }
 
-    public function leaveApplication(Request $request, String $business_slug, String $reference_number)
+    public function leaveApplication(Request $request, string $business_slug, string $reference_number)
     {
         $business = Business::findBySlug($business_slug);
-        $leaveRequest = LeaveRequest::where('reference_number', $reference_number)->where('business_id', $business->id)->first();
-        $page = 'Leave - #' . $reference_number;
-        $description = '';
 
-        $statusHistory = $leaveRequest->statuses()->orderBy('created_at')->get();
+        $leave = LeaveRequest::with(['employee.user', 'leaveType', 'approvedBy'])
+            ->where('reference_number', $reference_number)
+            ->where('business_id', $business->id)
+            ->firstOrFail();
 
-        $timelineItem = [
-            'reference_number' => $leaveRequest->reference_number,
-            'employee_name' => $leaveRequest->employee->user->name,
-            'leave_type' => $leaveRequest->leaveType->name,
-            'approved_by' => $leaveRequest->approved_by,
-            'start_date' => $leaveRequest->start_date->format('Y-m-d'),
-            'end_date' => $leaveRequest->end_date->format('Y-m-d'),
-            'statuses' => [],
-        ];
-
-        foreach ($statusHistory as $status) {
-            $timelineItem['statuses'][] = [
-                'name' => $status->name,
-                'created_at' => $status->created_at->format('Y-m-d H:i:s'),
-                'reason' => $status->reason,
-            ];
+        // Security: employees can only view their own requests here
+        $employeeId = optional(Auth::user()->employee)->id;
+        if ((int)$leave->employee_id !== (int)$employeeId) {
+            abort(403, 'You are not allowed to view this request.');
         }
 
-        $timelineData = [(object) $timelineItem];
+        $page        = 'Leave - #' . $reference_number;
+        $description = '';
 
-        return view('leave.show', compact('page', 'description', 'timelineData'));
+        // No call to $leave->statuses(); show.blade builds the timeline from the model fields
+        return view('leave.show', ['page' => $page, 'description' => $description, 'leave' => $leave, 'business' => $business]);
     }
+
     public function clockInOut(Request $request)
     {
         $page = 'Clock In';
