@@ -95,6 +95,29 @@
                     <th>Effective Date</th>
                     <td>{{ $policy->effective_date->format('Y-m-d') }}</td>
                 </tr>
+
+                <tr>
+                    <th>Stepwise Leave</th>
+                    <td>
+                        <span class="badge {{ $leaveType->is_stepwise ? 'bg-info' : 'bg-secondary' }}">
+                            {!! $leaveType->is_stepwise ? '<i class="bi bi-check-circle"></i> Enabled' : '<i class="bi bi-x-circle"></i> Disabled' !!}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Stepwise Rules</th>
+                    <td>
+                        @if(!empty($leaveType->stepwise_rules))
+                            <ul>
+                                @foreach($leaveType->stepwise_rules as $rule)
+                                    <li>User ID: {{ $rule['id'] }}, Level: {{ $rule['level'] }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            N/A
+                        @endif
+                    </td>
+                </tr>
                 <tr>
                     <th>End Date</th>
                     <td>{{ $policy->end_date ? $policy->end_date->format('Y-m-d') : 'N/A' }}</td>

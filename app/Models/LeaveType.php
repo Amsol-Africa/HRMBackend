@@ -25,6 +25,13 @@ class LeaveType extends Model
         'max_continuous_days',
         'min_notice_days',
         'is_active',
+
+                // New fields
+        'allows_backdating',
+        'approval_levels',
+        'excluded_days',
+        'is_stepwise',
+        'stepwise_rules',
     ];
 
     protected $casts = [
@@ -36,6 +43,11 @@ class LeaveType extends Model
         'max_continuous_days' => 'integer',
         'min_notice_days' => 'integer',
         'is_active' => 'boolean',
+        'allows_backdating' => 'boolean',
+        'approval_levels' => 'integer',
+        'excluded_days' => 'array',
+        'is_stepwise' => 'boolean',
+        'stepwise_rules' => 'array',
     ];
 
     public function getSlugOptions(): SlugOptions

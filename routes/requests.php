@@ -46,6 +46,7 @@ Route::post('/business/{businessSlug}/generate-token', [BusinessController::clas
     ->name('api.business.generate-token');
 
 Route::middleware(['auth'])->group(function () {
+
     Route::name('businesses.')->prefix('businesses')->group(function () {
         Route::post('store', [BusinessController::class, 'store'])->name('store');
         Route::post('fetch', [BusinessController::class, 'fetch'])->name('fetch');
@@ -94,7 +95,6 @@ Route::middleware(['auth'])->group(function () {
         Route::post('fetch', [RosterController::class, 'fetch'])->name('fetch');
         Route::post('delete', [RosterController::class, 'destroy'])->name('delete');
         Route::post('update', [RosterController::class, 'update'])->name('update');
-
         Route::post('notify', [RosterController::class, 'notify'])->name('notify');
         Route::post('reports', [RosterController::class, 'reports'])->name('reports');
         Route::post('export', [RosterController::class, 'export'])->name('export');
@@ -151,16 +151,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
 
+
+        // Leave Types (AJAX)
     Route::name('leave-types.')->prefix('leave-types')->group(function () {
-        Route::post('edit', [LeaveTypeController::class, 'edit'])->name('edit');
-        Route::post('store', [LeaveTypeController::class, 'store'])->name('store');
-        Route::post('fetch', [LeaveTypeController::class, 'fetch'])->name('fetch');
-        Route::post('show', [LeaveTypeController::class, 'show'])->name('show');
-        Route::post('destroy', [LeaveTypeController::class, 'destroy'])->name('delete');
+        Route::post('edit',   [LeaveTypeController::class, 'edit'])->name('edit');   // single edit route
+        Route::post('store',  [LeaveTypeController::class, 'store'])->name('store');
+        Route::post('fetch',  [LeaveTypeController::class, 'fetch'])->name('fetch');
+        Route::post('show',   [LeaveTypeController::class, 'show'])->name('show');
+        Route::post('destroy',[LeaveTypeController::class, 'destroy'])->name('delete');
         Route::post('update', [LeaveTypeController::class, 'update'])->name('update');
         Route::post('suggestions', [LeaveTypeListController::class, 'suggestions'])->name('suggestions');
+
+        Route::post('remaining-days', [LeaveTypeController::class, 'getRemainingDays'])->name('remaining-days');
     });
 
+
+    // Leave Requests (AJAX)
     Route::name('leave.')->prefix('leave')->group(function () {
         Route::post('edit', [LeaveRequestController::class, 'edit'])->name('edit');
         Route::post('store', [LeaveRequestController::class, 'store'])->name('store');
@@ -168,8 +174,12 @@ Route::middleware(['auth'])->group(function () {
         Route::post('delete', [LeaveRequestController::class, 'destroy'])->name('delete');
         Route::post('update', [LeaveRequestController::class, 'update'])->name('update');
         Route::post('status', [LeaveRequestController::class, 'status'])->name('status');
+
+        //  Allow employees to upload required docs later
+        Route::post('upload-document', [LeaveRequestController::class, 'uploadDocument'])->name('upload-document');
     });
 
+    // Leave Periods (AJAX)
     Route::name('leave-periods.')->prefix('leave-periods')->group(function () {
         Route::post('edit', [LeavePeriodController::class, 'edit'])->name('edit');
         Route::post('store', [LeavePeriodController::class, 'store'])->name('store');
@@ -179,6 +189,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('update', [LeavePeriodController::class, 'update'])->name('update');
     });
 
+    // Leave Entitlements (AJAX)
     Route::name('leave-entitlements.')->prefix('leave-entitlements')->group(function () {
         Route::post('edit', [LeaveEntitlementController::class, 'edit'])->name('edit');
         Route::post('store', [LeaveEntitlementController::class, 'store'])->name('store');
@@ -221,8 +232,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/employee-adjustments', [PayrollController::class, 'getEmployeeAdjustments'])->name('employee.adjustments');
         Route::post('/preview', [PayrollController::class, 'preview'])->name('preview');
         Route::post('/store', [PayrollController::class, 'store'])->name('store');
-        Route::post('/close', [PayrollController::class, 'close'])->name('close');
 
+        Route::post('/close', [PayrollController::class, 'close'])->name('close'); // (global close)
         Route::post('/fetch-employees-for-settings', [PayrollController::class, 'fetchEmployeesForSettings'])->name('fetch-employees-for-settings');
         Route::post('/save-settings', [PayrollController::class, 'saveSettings'])->name('save-settings');
         Route::get('/available-items', [PayrollController::class, 'availableItems'])->name('available-items');
@@ -230,7 +241,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('/{id}/process', [PayrollController::class, 'processPayroll'])->name('process');
         Route::post('/{id}/email-p9', [PayrollController::class, 'emailP9'])->name('email_p9');
-        Route::post('/{id}/close', [PayrollController::class, 'closeMonth'])->name('close');
+        Route::post('/{id}/close', [PayrollController::class, 'closeMonth'])->name('close'); // (per-id close)
         Route::post('/{id}/delete', [PayrollController::class, 'deletePayroll'])->name('delete');
     });
 
@@ -405,7 +416,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/{survey}/destroy', [SurveyController::class, 'destroy'])->name('destroy');
     });
 
-    // CRM
+    // CRM (AJAX)
     Route::name('crm.')->prefix('crm')->group(function () {
         Route::post('/contacts/fetch', [CrmController::class, 'fetchContacts'])->name('contacts.fetch');
         Route::post('/contacts/store', [CrmController::class, 'storeContact'])->name('contacts.store');

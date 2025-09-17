@@ -1,5 +1,4 @@
 <x-app-layout>
-
     <form method="POST" id="leaveEntitlementsForm">
         @csrf
         <div class="row g-20">
@@ -20,23 +19,22 @@
                             </div>
 
                             <div class="col-md-6">
-                                <label for="departments" class="form-label">Location</label>
+                                <label for="locations" class="form-label">Location</label>
                                 <select name="locations[]" id="locations" class="form-select select2-multiple" multiple>
                                     <option selected value="{{ $currentBusiness->slug }}">
-                                        {{ $currentBusiness->company_name }}</option>
+                                        {{ $currentBusiness->company_name }}
+                                    </option>
                                     @foreach ($locations as $location)
                                         <option value="{{ $location->slug }}">{{ $location->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="departments" class="form-label">Departments</label>
-                                <select name="departments[]" id="departments" class="form-select select2-multiple"
-                                    multiple>
+                                <select name="departments[]" id="departments" class="form-select select2-multiple" multiple>
                                     <option value="all" selected>All Departments</option>
                                     @foreach ($departments as $department)
                                         <option value="{{ $department->slug }}">{{ $department->name }}</option>
@@ -46,8 +44,7 @@
 
                             <div class="col-md-4">
                                 <label for="job_categories" class="form-label">Job Categories</label>
-                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple"
-                                    multiple>
+                                <select name="job_categories[]" id="job_categories" class="form-select select2-multiple" multiple>
                                     <option value="all" selected>All Job Categories</option>
                                     @foreach ($jobCategories as $jobCategory)
                                         <option value="{{ $jobCategory->slug }}">{{ $jobCategory->name }}</option>
@@ -57,8 +54,7 @@
 
                             <div class="col-md-4">
                                 <label for="employment_terms" class="form-label">Employment Terms</label>
-                                <select name="employment_terms[]" id="employment_terms"
-                                    class="form-select select2-multiple" multiple>
+                                <select name="employment_terms[]" id="employment_terms" class="form-select select2-multiple" multiple>
                                     <option value="all" selected>All Terms</option>
                                     <option value="permanent">Permanent</option>
                                     <option value="contract">Contract</option>
@@ -107,8 +103,7 @@
 
                         <div class="row mt-4">
                             <div class="col-md-12">
-                                <button type="button" onclick="saveLeaveEntitlements(this)"
-                                    class="btn btn-primary w-100">
+                                <button type="button" onclick="saveLeaveEntitlements(this)" class="btn btn-primary w-100">
                                     <i class="bi bi-check-circle"></i> Save Entitlement
                                 </button>
                             </div>
@@ -125,87 +120,74 @@
         <script src="{{ asset('js/main/filter-employees.js') }}" type="module"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const filters = ['departments', 'job_categories', 'employment_terms', 'locations']; // Add locations
+                const filterIds = ['departments', 'job_categories', 'employment_terms', 'locations'];
 
                 // Initialize Select2 for multiple select fields
                 $('.select2-multiple').select2();
 
+                async function triggerFilterEmployees() {
+                    const leavePeriodId = document.getElementById('leave_period_id').value;
+                    const checkboxesContainer = document.getElementById('employee-checkboxes');
+                    checkboxesContainer.innerHTML = '';
 
-async function triggerFilterEmployees() {
-    const leavePeriodId = document.getElementById('leave_period_id').value;
-    const checkboxesContainer = document.getElementById('employee-checkboxes');
-    checkboxesContainer.innerHTML = '';
+                    // Collect filters from selects
+                    const filters = {
+                        departments: $('#departments').val() || [],
+                        job_categories: $('#job_categories').val() || [],
+                        employment_terms: $('#employment_terms').val() || [],
+                        locations: $('#locations').val() || []
+                    };
 
-    // Collect filters from selects
-    const filters = {
-        departments: $('#departments').val() || [],
-        job_categories: $('#job_categories').val() || [],
-        employment_terms: $('#employment_terms').val() || [],
-        locations: $('#locations').val() || []
-    };
+                    try {
+                        // These functions are assumed to be provided by your imported JS modules
+                        const allEmployees = await getAllEmployeesList(filters);
+                        const entitlements = await getLeaveEntitlementsByPeriod(leavePeriodId);
 
-    try {
-        // Pass filters to API
-        const allEmployees = await getAllEmployeesList(filters);
+                        if (Array.isArray(allEmployees) && allEmployees.length > 0) {
+                            allEmployees.forEach(employee => {
+                                const entitlement = Array.isArray(entitlements)
+                                    ? entitlements.find(e => e.employee_id === employee.id)
+                                    : null;
 
-        const entitlements = await getLeaveEntitlementsByPeriod(leavePeriodId);
-
-        if (Array.isArray(allEmployees) && allEmployees.length > 0) {
-            allEmployees.forEach(employee => {
-                const entitlement = entitlements.find(e => e.employee_id === employee.id);
-
-                const checkbox = `
-                    <div class="form-check">
-                        <input type="checkbox" class="form-check-input"
-                               id="employee_${employee.id}"
-                               name="employees[]"
-                               value="${employee.id}"
-                               ${entitlement ? 'checked' : ''}>
-                        <label class="form-check-label" for="employee_${employee.id}">${employee.user.name}
-                            (${employee.department ? employee.department.name : 'N/A'})
-                            ${entitlement ? `<span class="badge bg-success ms-2">${entitlement.entitled_days} days</span>` : ''}
-                        </label>
-                    </div>
-                `;
-                checkboxesContainer.insertAdjacentHTML('beforeend', checkbox);
-            });
-        } else {
-            checkboxesContainer.innerHTML = "<p>No employees found.</p>";
-        }
-    } catch (error) {
-        console.error('Error fetching employees or entitlements:', error);
-        checkboxesContainer.innerHTML = "<p>Error fetching employees. Please try again later.</p>";
-    }
-}
-
-                filters.forEach(filterName => {
-                    $(`#${filterName}`).on('select2:select', function() {
-                        triggerFilterEmployees();
-                    });
-                    $(`#${filterName}`).on('select2:unselect', function() {
-                        triggerFilterEmployees();
-                    });
-                });
-
-                $('#leave_period_id').on('change', function() {
-                    triggerFilterEmployees();
-                });
-
-                // Initial employee load when the page loads
-                triggerFilterEmployees();
-
-                // Helper function (if not already defined)
-                function getSelectedValues(selector) {
-                    const elements = document.querySelectorAll(`#${selector} input[type="checkbox"]:checked`);
-                    return Array.from(elements).map(el => el.value);
+                                const checkbox = `
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input"
+                                               id="employee_${employee.id}"
+                                               name="employees[]"
+                                               value="${employee.id}"
+                                               ${entitlement ? 'checked' : ''}>
+                                        <label class="form-check-label" for="employee_${employee.id}">
+                                            ${employee.user ? employee.user.name : 'Unknown'}
+                                            (${employee.department ? employee.department.name : 'N/A'})
+                                            ${entitlement ? `<span class="badge bg-success ms-2">${entitlement.entitled_days} days</span>` : ''}
+                                        </label>
+                                    </div>
+                                `;
+                                checkboxesContainer.insertAdjacentHTML('beforeend', checkbox);
+                            });
+                        } else {
+                            checkboxesContainer.innerHTML = "<p class=\"text-muted\">No employees found.</p>";
+                        }
+                    } catch (error) {
+                        console.error('Error fetching employees or entitlements:', error);
+                        checkboxesContainer.innerHTML = "<p class=\"text-danger\">Error fetching employees. Please try again later.</p>";
+                    }
                 }
 
+                // Bind filters
+                filterIds.forEach(id => {
+                    $(`#${id}`).on('select2:select select2:unselect', triggerFilterEmployees);
+                });
+
+                $('#leave_period_id').on('change', triggerFilterEmployees);
+
+                // Dynamic rows (Leave Type + Entitled Days)
                 function addRow() {
                     const dynamicRows = document.getElementById('dynamicRows');
                     const newRow = document.createElement('tr');
                     newRow.innerHTML = `
                         <td>
-                            <select name="leave_type_ids[]" class="form-select">
+                            <select name="leave_type_ids[]" class="form-select" required>
                                 <option value="" disabled selected>Select Leave Type</option>
                                 @foreach ($leaveTypes as $leaveType)
                                     <option value="{{ $leaveType->id }}">{{ $leaveType->name }}</option>
@@ -213,10 +195,10 @@ async function triggerFilterEmployees() {
                             </select>
                         </td>
                         <td>
-                            <input type="number" name="entitled_days[]" class="form-control" step="1" placeholder="e.g., 20">
+                            <input type="number" name="entitled_days[]" class="form-control" step="1" min="0" placeholder="e.g., 20" required>
                         </td>
-                        <td>
-                            <button type="button" class="btn btn-danger removeRowButton">
+                        <td class="text-nowrap">
+                            <button type="button" class="btn btn-danger removeRowButton" title="Remove">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -233,10 +215,10 @@ async function triggerFilterEmployees() {
                     }
                 });
 
+                // Initial bootstrap
+                triggerFilterEmployees();
                 addRow();
-
             });
         </script>
     @endpush
-
 </x-app-layout>

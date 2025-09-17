@@ -398,58 +398,41 @@ class DashboardController extends Controller
 
     public function requestLeave(Request $request)
     {
-        $page = 'Leave Applications';
+        $page        = 'Leave Applications';
         $description = '';
-        $business = Business::findBySlug(session('active_business_slug'));
-        $locations = $business->locations;
+        $business    = Business::findBySlug(session('active_business_slug'));
+
+        $locations  = $business->locations;
         $leaveTypes = $business->leaveTypes;
-        $employees = $business->employees;
+        $employees  = $business->employees;
+
         return view('leave.create', compact('page', 'description', 'leaveTypes', 'employees', 'locations'));
     }
 
-    public function leaveApplication(Request $request, String $business_slug, String $reference_number)
+    public function leaveApplication(Request $request, string $business_slug, string $reference_number)
     {
         $business = Business::findBySlug($business_slug);
-        $leaveRequest = LeaveRequest::with(['employee.user'])
+
+        $leave = LeaveRequest::with(['employee.user', 'leaveType', 'approvedBy'])
             ->where('reference_number', $reference_number)
             ->where('business_id', $business->id)
-            ->first();
-        $page = 'Leave - #' . $reference_number;
+            ->firstOrFail();
+
+        $page        = 'Leave - #' . $reference_number;
         $description = '';
 
-        $statusHistory = $leaveRequest->statuses()->orderBy('created_at')->get();
-
-        Log::debug($statusHistory);
-
-        $timelineItem = [
-            'reference_number' => $leaveRequest->reference_number,
-            'employee_name' => $leaveRequest->employee->user->name,
-            'leave_type' => $leaveRequest->leaveType->name,
-            'approved_by' => $leaveRequest->approved_by,
-            'start_date' => $leaveRequest->start_date->format('Y-m-d'),
-            'end_date' => $leaveRequest->end_date->format('Y-m-d'),
-            'statuses' => [],
-        ];
-
-        foreach ($statusHistory as $status) {
-            $timelineItem['statuses'][] = [
-                'name' => $status->name,
-                'created_at' => $status->created_at->format('Y-m-d H:i:s'),
-                'reason' => $status->reason,
-            ];
-        }
-
-        $timelineData = [(object) $timelineItem];
-
-        return view('leave.show', compact('page', 'description', 'timelineData'));
+        // Remove: $leave->statuses()->...
+        // The show view renders status timeline from approval_history / approved_* / rejection_reason
+        return view('leave.show', ['page' => $page, 'description' => $description, 'leave' => $leave, 'business' => $business]);
     }
 
     public function leaveApplications(Request $request)
     {
-        $page = 'Leave Applications';
+        $page        = 'Leave Applications';
         $description = '';
         return view('leave.index', compact('page', 'description'));
     }
+
 
     public function leaveTypes(Request $request)
     {
@@ -468,17 +451,20 @@ class DashboardController extends Controller
     }
 
     public function leaveEntitlements(Request $request)
-{
+    {
     $page = 'Leave Entitlements';
     $description = '';
+    $currentBusiness = $request->route('business');
     $business = Business::findBySlug(session('active_business_slug'));
     $leave_periods = $business->leavePeriods;
     $initialLeavePeriodSlug = $leave_periods->first()->slug ?? null; // Default to first period
     return view('leave.entitlements', compact('page', 'description', 'leave_periods', 'initialLeavePeriodSlug'));
-}
+    }
 
+
+    
     public function setLeaveEntitlements(Request $request)
-{
+    {
     $page = 'Set Leave Entitlements';
     $business = Business::findBySlug(session('active_business_slug'));
     $description = '';
@@ -489,7 +475,7 @@ class DashboardController extends Controller
     $jobCategories = $business->job_categories;
     $locations = $business->locations;
     return view('leave.entitlement', compact('page', 'description', 'employees', 'leaveTypes', 'leavePeriods', 'departments', 'jobCategories', 'locations'));
-}
+    }
 
     // public function setLeaveEntitlements(Request $request)
     // {
