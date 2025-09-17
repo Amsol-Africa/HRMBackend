@@ -35,11 +35,7 @@ class LeaveRequestController extends Controller
         }
 
         $status = strtolower($request->get('status', 'pending'));
-      ////////////////////////////////////////////////////*** 
-      Merging conflict
 
-  */////////////////////////////////////////
-//// t-branch
         $query = LeaveRequest::with(['employee.user', 'leaveType'])
             ->where('business_id', $business->id);
 
@@ -48,15 +44,6 @@ class LeaveRequestController extends Controller
         $emp  = $user->employee;
         if ($user->hasRole('business-employee') && $emp) {
             $query->where('employee_id', $emp->id);
-/////clean-branch
-        // Restrict non-HR/admin users to their own leaves
-        if (!in_array($activeRole, ['business-hr', 'business-admin','head-of-department'])) {
-            if ($user->employee) {
-                $leaveRequests->where('employee_id', $user->employee->id);
-            } else {
-                $leaveRequests->whereRaw('1=0'); // no results
-            }
-/////////////////end of conflict
         }
 
         // Filter by tab status
@@ -427,7 +414,7 @@ class LeaveRequestController extends Controller
      * View permission:
      * - Employee: own only
      * - Others (HOD/HR/Admin/Head): any request in same business
-     
+
     protected function canUserViewLeaveRequest(User $user, LeaveRequest $leaveRequest)
     {
         $userEmployee = $user->employee;
