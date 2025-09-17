@@ -93,11 +93,22 @@ class LeaveRequestController extends Controller
     /**
      * Store (create) a leave request.
      */
+
+/**
+ * Store a new leave request (simplified policy: only business membership, dates, entitlement, docs).
+ */
     public function store(Request $request)
     {
-        $leaveType = LeaveType::findOrFail($request->input('leave_type_id'));
+        // 1) Minimal validation to safely fetch LeaveType first
+        $base = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+        ]);
 
-        $rules = [
+        /** @var \App\Models\LeaveType $leaveType */
+        $leaveType = LeaveType::findOrFail($base['leave_type_id']);
+
+        // 2) Full validation (attachment rules are permissive; business rules enforced in code below)
+        $validated = $request->validate([
             'employee_id'   => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
             'start_date'    => 'required|date',
@@ -105,48 +116,41 @@ class LeaveRequestController extends Controller
             'reason'        => 'nullable|string',
             'half_day'      => 'nullable|boolean',
             'half_day_type' => 'nullable|string|in:morning,afternoon|required_if:half_day,1',
-        ];
 
-        // Attachment rules
-        $rules['attachment']   = 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:2048';
-        if ($leaveType->requires_attachment) {
-            $rules['attach_later'] = 'nullable|boolean';
-        }
-
-        $validated = $request->validate($rules);
+            // Files
+            'attachment'    => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:2048',
+            'attach_later'  => 'nullable|boolean',
+        ]);
 
         return $this->handleTransaction(function () use ($validated, $leaveType, $request) {
+            // --- Business context ---
             $business = Business::findBySlug(session('active_business_slug'));
             if (!$business) {
                 return RequestResponse::badRequest('Active business not found in session.');
             }
 
-            // Resolve employee id (explicit or from auth)
+            // --- Resolve employee (explicit or current user) ---
             $employeeId = $validated['employee_id'] ?? (auth()->user()->employee->id ?? null);
             if (!$employeeId) {
                 return RequestResponse::badRequest('No employee selected for this leave request.');
             }
 
-            /** @var Employee $employee */
+            /** @var \App\Models\Employee $employee */
             $employee = Employee::with('user')->findOrFail($employeeId);
 
-            // Policy scope: department + job_category + gender (supports 'all')
-            $empGender = $this->normalizeGender($employee->gender ?? $employee->user->gender ?? null);
-
-            $policyExists = LeavePolicy::where('leave_type_id', $leaveType->id)
-                ->where('department_id', $employee->department_id)
-                ->where('job_category_id', $employee->job_category_id)
-                ->where(function ($q) use ($empGender) {
-                    $q->where('gender_applicable', 'all')
-                      ->orWhere('gender_applicable', $empGender);
-                })
-                ->exists();
-
-            if (!$policyExists) {
-                return RequestResponse::badRequest('This leave type is not available for your department/job category and gender.');
+            // Ensure employee belongs to this business
+            if ((int)$employee->business_id !== (int)$business->id) {
+                return RequestResponse::badRequest('Selected employee does not belong to the current business.');
             }
 
-            // Dates & guards
+            // (Optional) If LeaveType is business-scoped, enforce it (safe even if column doesn’t exist/null)
+            if (property_exists($leaveType, 'business_id') && !is_null($leaveType->business_id)) {
+                if ((int)$leaveType->business_id !== (int)$business->id) {
+                    return RequestResponse::badRequest('This leave type is not available in the current business.');
+                }
+            }
+
+            // --- Dates & guards ---
             $startDate = Carbon::parse($validated['start_date']);
             $endDate   = Carbon::parse($validated['end_date']);
 
@@ -160,25 +164,26 @@ class LeaveRequestController extends Controller
 
             if (is_numeric($leaveType->min_notice_days ?? null)) {
                 $diff = now()->startOfDay()->diffInDays($startDate->copy()->startOfDay(), false);
-                if ($diff < $leaveType->min_notice_days) {
+                if ($diff < (int)$leaveType->min_notice_days) {
                     return RequestResponse::badRequest("Minimum notice is {$leaveType->min_notice_days} day(s) before the start date.");
                 }
             }
 
             $totalDays = LeaveRequest::calculateTotalDays(
-                $startDate, $endDate, $validated['half_day'] ?? false, $leaveType
+                $startDate, $endDate, (bool)($validated['half_day'] ?? false), $leaveType
             );
 
-            if (!empty($leaveType->max_continuous_days) && $totalDays > $leaveType->max_continuous_days) {
+            if (!empty($leaveType->max_continuous_days) && $totalDays > (float)$leaveType->max_continuous_days) {
                 return RequestResponse::badRequest("You cannot take more than {$leaveType->max_continuous_days} day(s) for this leave type at once.");
             }
 
-            // Overlap (only same employee; rejected ignored)
-            if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
-                return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
-            }
+            // --- OVERLAP GUARD (comment this block to disable overlap checking) ---
+            //if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
+              //  return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
+            //}
+            // --- END OVERLAP GUARD ---
 
-            // Attachment handling
+            // --- Attachment handling ---
             $attachmentPath        = null;
             $requiresDocumentation = false;
             $isTentative           = false;
@@ -195,8 +200,8 @@ class LeaveRequestController extends Controller
                     }
                 } elseif ($attachLater) {
                     $requiresDocumentation = true;
-                    if ($leaveType->is_stepwise) {
-                        $isTentative = true; // UI shows "Upload to complete"
+                    if (!empty($leaveType->is_stepwise)) {
+                        $isTentative = true; // UI may show "Upload to complete"
                     }
                 } else {
                     return RequestResponse::badRequest('Attachment is required for this leave type. You may choose to upload later.');
@@ -212,7 +217,7 @@ class LeaveRequestController extends Controller
                 }
             }
 
-            // Entitlement
+            // --- Entitlement check ---
             $remaining = LeaveEntitlement::where('employee_id', $employeeId)
                 ->where('leave_type_id', $leaveType->id)
                 ->first()?->getRemainingDays() ?? 0;
@@ -221,7 +226,7 @@ class LeaveRequestController extends Controller
                 return RequestResponse::badRequest("You have {$remaining} remaining day(s) for this leave type, but you requested {$totalDays}.");
             }
 
-            // Create
+            // --- Create request ---
             $leaveRequest = LeaveRequest::create([
                 'reference_number'       => LeaveRequest::generateUniqueReferenceNumber($business->id),
                 'employee_id'            => $employeeId,
@@ -229,7 +234,7 @@ class LeaveRequestController extends Controller
                 'leave_type_id'          => $validated['leave_type_id'],
                 'start_date'             => $startDate,
                 'end_date'               => $endDate,
-                'half_day'               => $validated['half_day'] ?? false,
+                'half_day'               => (bool)($validated['half_day'] ?? false),
                 'half_day_type'          => $validated['half_day_type'] ?? null,
                 'reason'                 => $validated['reason'] ?? null,
                 'attachment'             => $attachmentPath,
@@ -238,12 +243,13 @@ class LeaveRequestController extends Controller
                 'current_approval_level' => 0,
             ]);
 
-            // Notify according to approvals
+            // --- Notifications / kick off approvals ---
             $this->sendApplicationNotifications($leaveRequest);
 
             return RequestResponse::ok('Leave request created successfully.');
         });
     }
+
 
     /**
      * Approve/Reject with level checks.
@@ -590,5 +596,110 @@ class LeaveRequestController extends Controller
 
         return false;
     }
+
+
+
+
+// Add this temporary debugging method to your LeaveRequestController.php
+// Call this method in a test route to debug the issues
+
+    public function debugLeaveIssues($employeeId, $leaveTypeId, $startDate, $endDate)
+    {
+        $business = Business::findBySlug(session('active_business_slug'));
+        $employee = Employee::with('user')->find($employeeId);
+        $leaveType = LeaveType::find($leaveTypeId);
+
+        $debugInfo = [
+            'employee_info' => [
+                'id' => $employee->id ?? 'NOT_FOUND',
+                'name' => $employee->user->name ?? 'NOT_FOUND',
+                'business_id' => $employee->business_id ?? 'NOT_FOUND',
+                'department_id' => $employee->department_id ?? 'NULL',
+                'job_category_id' => $employee->job_category_id ?? 'NULL',
+                'gender' => $employee->gender ?? $employee->user->gender ?? 'NULL',
+            ],
+            'business_info' => [
+                'id' => $business->id ?? 'NOT_FOUND',
+                'slug' => $business->slug ?? 'NOT_FOUND',
+            ],
+            'leave_type_info' => [
+                'id' => $leaveType->id ?? 'NOT_FOUND',
+                'name' => $leaveType->name ?? 'NOT_FOUND',
+            ],
+            'date_info' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'parsed_start' => Carbon::parse($startDate)->toDateString(),
+                'parsed_end' => Carbon::parse($endDate)->toDateString(),
+            ]
+        ];
+
+        // Check existing leave requests for this employee
+        $existingRequests = LeaveRequest::where('employee_id', $employeeId)
+            ->where('business_id', $business->id)
+            ->get(['id', 'reference_number', 'start_date', 'end_date', 'approved_by', 'rejection_reason', 'current_approval_level']);
+
+        $debugInfo['existing_requests'] = $existingRequests->toArray();
+
+        // Check for overlaps with detailed query
+        $overlapQuery = LeaveRequest::where('employee_id', $employeeId)
+            ->where('business_id', $business->id)
+            ->whereNull('rejection_reason') // Only non-rejected
+            ->where('start_date', '<=', Carbon::parse($endDate)->toDateString())
+            ->where('end_date', '>=', Carbon::parse($startDate)->toDateString());
+
+        $overlappingRequests = $overlapQuery->get(['id', 'reference_number', 'start_date', 'end_date', 'approved_by', 'rejection_reason']);
+        $debugInfo['overlapping_requests'] = $overlappingRequests->toArray();
+        $debugInfo['has_overlap'] = $overlappingRequests->count() > 0;
+
+        // Check leave policies
+        $empGender = $this->normalizeGender($employee->gender ?? $employee->user->gender ?? null);
+
+        $allPolicies = LeavePolicy::where('leave_type_id', $leaveTypeId)->get();
+        $debugInfo['all_policies'] = $allPolicies->toArray();
+
+        // Check policy match step by step
+        $policyQuery = LeavePolicy::where('leave_type_id', $leaveTypeId);
+
+        if ($employee->department_id) {
+            $policyQuery->where(function ($q) use ($employee) {
+                $q->where('department_id', $employee->department_id)
+                ->orWhereNull('department_id');
+            });
+        } else {
+            $policyQuery->whereNull('department_id');
+        }
+
+        if ($employee->job_category_id) {
+            $policyQuery->where(function ($q) use ($employee) {
+                $q->where('job_category_id', $employee->job_category_id)
+                ->orWhereNull('job_category_id');
+            });
+        } else {
+            $policyQuery->whereNull('job_category_id');
+        }
+
+        $policyQuery->where(function ($q) use ($empGender) {
+            $q->where('gender_applicable', 'all')
+            ->orWhere('gender_applicable', $empGender)
+            ->orWhereNull('gender_applicable');
+        });
+
+        $matchingPolicies = $policyQuery->get();
+        $debugInfo['matching_policies'] = $matchingPolicies->toArray();
+        $debugInfo['policy_exists'] = $matchingPolicies->count() > 0;
+        $debugInfo['normalized_gender'] = $empGender;
+
+        return response()->json($debugInfo, 200, [], JSON_PRETTY_PRINT);
+    }
+
+    // Create a test route in your web.php:
+    /*
+    Route::get('/debug-leave/{employee}/{leaveType}/{startDate}/{endDate}', function($employee, $leaveType, $startDate, $endDate) {
+        $controller = new App\Http\Controllers\LeaveRequestController();
+        return $controller->debugLeaveIssues($employee, $leaveType, $startDate, $endDate);
+    })->middleware(['auth']);
+    */
+
 
 }

@@ -1,23 +1,37 @@
-<x-mail::message>
-# New Leave Request Submitted
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>New Leave Request</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height:1.5; color:#222;">
+    <h2 style="margin-bottom:8px;">New Leave Request Submitted</h2>
 
-A new leave request has been submitted. Here are the details:
+    <p>A new leave request has been submitted. Here are the details:</p>
 
-- **Employee:** {{ $leaveRequest->employee->user->name }} ({{ $leaveRequest->employee->user->email }})
-- **Leave Type:** {{ $leaveRequest->leaveType->name }}
-- **Start Date:** {{ $leaveRequest->start_date->format('d M Y') }}
-- **End Date:** {{ $leaveRequest->end_date->format('d M Y') }}
-- **Total Days:** {{ $leaveRequest->total_days }}
-- **Reason:** {{ $leaveRequest->reason ?? 'N/A' }}
+    <ul>
+        <li><strong>Employee:</strong> {{ $leaveRequest->employee->user->name }} ({{ $leaveRequest->employee->user->email }})</li>
+        <li><strong>Leave Type:</strong> {{ $leaveRequest->leaveType->name }}</li>
+        <li><strong>Start Date:</strong> {{ optional($leaveRequest->start_date)->format('d M Y') }}</li>
+        <li><strong>End Date:</strong> {{ optional($leaveRequest->end_date)->format('d M Y') }}</li>
+        <li><strong>Total Days:</strong> {{ $leaveRequest->total_days }}</li>
+        <li><strong>Reason:</strong> {{ $leaveRequest->reason ?? 'N/A' }}</li>
+        @if($leaveRequest->attachment)
+            <li><strong>Attachment:</strong>
+                <a href="{{ asset('storage/' . $leaveRequest->attachment) }}" target="_blank">Download</a>
+            </li>
+        @endif
+    </ul>
 
-@if($leaveRequest->attachment)
-- **Attachment:** [Download Attachment]({{ asset('storage/' . $leaveRequest->attachment) }})
-@endif
+    @isset($showUrl)
+        <p style="margin:24px 0;">
+            <a href="{{ $showUrl }}"
+               style="display:inline-block;padding:10px 16px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:6px;">
+                View Request
+            </a>
+        </p>
+    @endisset
 
-<x-mail::button :url="url('/leave-requests/' . $leaveRequest->reference_number)">
-View Request
-</x-mail::button>
-
-Thanks,  
-{{ config('app.name') }}
-</x-mail::message>
+    <p style="color:#666;">Thanks,<br>{{ config('app.name') }}</p>
+</body>
+</html>

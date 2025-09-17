@@ -12,78 +12,28 @@ class LeaveRequestSubmitted extends Mailable
     use Queueable, SerializesModels;
 
     public $leaveRequest;
-    public $recipientRole;
+    public $showUrl;
 
-    public function __construct(LeaveRequest $leaveRequest, $recipientRole = 'general')
+    public function __construct(LeaveRequest $leaveRequest)
     {
-        $this->leaveRequest = $leaveRequest;
-        $this->recipientRole = $recipientRole;
+        $this->leaveRequest = $leaveRequest->loadMissing(['employee.user','leaveType','business']);
+
+        $this->subject('New Leave Request: '.$leaveRequest->reference_number);
+
+        // Build a URL to view the request inside the app
+        $this->showUrl = route('business.leave.show', [
+            'business' => $this->leaveRequest->business->slug,
+            'leave'    => $this->leaveRequest->reference_number,
+        ]);
     }
 
     public function build()
     {
-        $subject = $this->getEmailSubject();
-        
-        return $this->subject($subject)
-                    ->view('emails.leave.request_submitted')
-                    ->with([
-                        'leave' => $this->leaveRequest,
-                        'role' => $this->recipientRole,
-                        'employee' => $this->leaveRequest->employee,
-                        'business' => $this->leaveRequest->business,
-                        'leaveType' => $this->leaveRequest->leaveType,
-                        'actionUrl' => $this->getActionUrl(),
-                        'currentLevel' => $this->leaveRequest->current_approval_level ?? 0,
-                        'requiredLevels' => optional($this->leaveRequest->leaveType)->approval_levels ?? 1,
-                    ]);
-    }
-
-    protected function getEmailSubject()
-    {
-        $employeeName = optional(optional($this->leaveRequest->employee)->user)->name ?? 'Employee';
-        $status = $this->leaveRequest->status;
-
-        switch ($this->recipientRole) {
-            case 'employee':
-                switch ($status) {
-                    case 'approved':
-                        return "Leave Request Approved - {$this->leaveRequest->reference_number}";
-                    case 'rejected':
-                        return "Leave Request Rejected - {$this->leaveRequest->reference_number}";
-                    default:
-                        return "Leave Request Submitted - {$this->leaveRequest->reference_number}";
-                }
-            case 'hod':
-                return "Leave Approval Required - {$employeeName} ({$this->leaveRequest->reference_number})";
-            case 'hr':
-                $currentLevel = $this->leaveRequest->current_approval_level ?? 0;
-                if ($currentLevel > 0) {
-                    return "Final Approval Required - {$employeeName} ({$this->leaveRequest->reference_number})";
-                }
-                return "Leave Request for Review - {$employeeName} ({$this->leaveRequest->reference_number})";
-            case 'admin':
-            case 'head':
-                return "Leave Request Approved - {$employeeName} ({$this->leaveRequest->reference_number})";
-            default:
-                return "Leave Request Notification - {$this->leaveRequest->reference_number}";
-        }
-    }
-
-    protected function getActionUrl()
-    {
-        $businessSlug = $this->leaveRequest->business->slug ?? 'default';
-        $reference = $this->leaveRequest->reference_number;
-
-        switch ($this->recipientRole) {
-            case 'employee':
-                return route('myaccount.leave.show', ['business' => $businessSlug, 'leave' => $reference]);
-            case 'hod':
-            case 'hr':
-            case 'admin':
-            case 'head':
-                return route('business.leave.show', ['business' => $businessSlug, 'leave' => $reference]);
-            default:
-                return url('/');
-        }
+        return $this
+            ->view('emails.leave.request_submitted')
+            ->with([
+                'leaveRequest' => $this->leaveRequest,
+                'showUrl'      => $this->showUrl,
+            ]);
     }
 }

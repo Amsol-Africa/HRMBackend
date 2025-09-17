@@ -178,26 +178,21 @@ class LeaveRequest extends Model
         return $referenceNumber;
     }
 
-    /**
-     * Overlap check: only pending/approved (rejected ignored).
-     * Overlaps when: start_date <= requested_end AND end_date >= requested_start
-     */
     public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null, $businessId = null): bool
     {
-        $start = $startDate instanceof Carbon ? $startDate->toDateString() : Carbon::parse($startDate)->toDateString();
-        $end   = $endDate   instanceof Carbon ? $endDate->toDateString()   : Carbon::parse($endDate)->toDateString();
+        $start = ($startDate instanceof \Carbon\Carbon ? $startDate : \Carbon\Carbon::parse($startDate))->toDateString();
+        $end   = ($endDate   instanceof \Carbon\Carbon ? $endDate   : \Carbon\Carbon::parse($endDate))->toDateString();
 
-        $query = self::where('employee_id', $employeeId)
-            ->when($businessId, fn ($q) => $q->where('business_id', $businessId))
+        return self::query()
+            ->where('employee_id', $employeeId)
+            ->when($businessId, fn($q) => $q->where('business_id', $businessId))
+            // We only block overlap against non-rejected requests
             ->whereNull('rejection_reason')
-            ->where('start_date', '<=', $end)
-            ->where('end_date',   '>=', $start);
-
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        return $query->exists();
+            // overlap: start1 <= end2 AND end1 >= start2
+            ->whereDate('start_date', '<=', $end)
+            ->whereDate('end_date', '>=', $start)
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->exists();
     }
 
     /**
