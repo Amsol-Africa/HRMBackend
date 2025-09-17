@@ -227,6 +227,11 @@
                 <i class="bi bi-file-earmark-excel me-1"></i> Company Payslip XLSX
             </a>
 
+             <!-- Download Table Footer as PDF Button -->
+            <button class="btn btn-outline-secondary modern-btn flex-shrink-0" id="downloadTableFooterPdf">
+                <i class="bi bi-file-earmark-pdf me-1"></i> Download Totals PDF
+            </button>
+
             <!-- Download Bank Advice Dropdown -->
             <div class="dropdown">
                 <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
@@ -354,6 +359,10 @@
     @push('scripts')
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+     <!-- jsPDF autoTable Plugin CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <script>
     const payrollTotals = @json($totals);
@@ -507,6 +516,78 @@
                 window.location.href = url;
             });
         });
+
+         // Download Table Footer as PDF
+        document.getElementById('downloadTableFooterPdf').addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+             const doc = new jsPDF({ orientation: 'landscape' });
+
+            doc.setFontSize(16);
+            doc.text('Payroll Totals', 14, 20);
+            doc.setFontSize(12);
+            doc.text(`Company: {{ $entity->company_name ?? $entity->name ?? 'Default Company Name' }}`, 14, 30);
+            doc.text(`Payroll Period: {{ $payroll->payrun_month }}/{{ $payroll->payrun_year }}`, 14, 40);
+            doc.text(`Date: {{ now()->format('F d, Y') }}`, 14, 50);
+
+            // table headers and data
+            const headers = [
+                'Basic Salary', 'Allowances', 'Overtime', 'Gross Pay', 'SHIF', 'NSSF', 'Housing Levy',
+                'HELB', 'Taxable Income', 'PAYE (Before Reliefs)', 'Reliefs', 'PAYE', 'Deductions',
+                'Advances', 'Loans', 'Net Pay'
+            ];
+            const data = [
+                [
+                    payrollTotals.totalBasicSalary.toFixed(2),
+                    payrollTotals.totalAllowances.toFixed(2),
+                    payrollTotals.totalOvertime.toFixed(2),
+                    payrollTotals.totalGrossPay.toFixed(2),
+                    payrollTotals.totalShif.toFixed(2),
+                    payrollTotals.totalNssf.toFixed(2),
+                    payrollTotals.totalHousingLevy.toFixed(2),
+                    payrollTotals.totalHelb.toFixed(2),
+                    payrollTotals.totalTaxableIncome.toFixed(2),
+                    payrollTotals.totalPayeBeforeReliefs.toFixed(2),
+                    payrollTotals.totalReliefs.toFixed(2),
+                    payrollTotals.totalPaye.toFixed(2),
+                    payrollTotals.totalCustomDeductions.toFixed(2),
+                    payrollTotals.totalAdvances.toFixed(2),
+                    payrollTotals.totalLoans.toFixed(2),
+                    payrollTotals.totalNetPay.toFixed(2)
+                ]
+            ];
+
+            // table to PDF
+            doc.autoTable({
+                head: [headers],
+                body: data,
+                startY: 60,
+                styles: { fontSize: 10, cellPadding: 2 },
+                headStyles: { fillColor: [100, 100, 100], textColor: [255, 255, 255] },
+                columnStyles: {
+                        0: { cellWidth: 16 },
+                        1: { cellWidth: 16 },
+                        2: { cellWidth: 16 },
+                        3: { cellWidth: 16 },
+                        4: { cellWidth: 16 },
+                        5: { cellWidth: 16 },
+                        6: { cellWidth: 16 },
+                        7: { cellWidth: 16 },
+                        8: { cellWidth: 16 },
+                        9: { cellWidth: 16 },
+                        10:{ cellWidth: 16 },
+                        11:{ cellWidth: 16 },
+                        12:{ cellWidth: 16 },
+                        13:{ cellWidth: 16 },
+                        14:{ cellWidth: 16 },
+                        15:{ cellWidth: 16 }
+                    },
+                    theme: 'grid'
+            });
+
+
+            doc.save(`Payroll_Totals_${payrollTotals.payrollId || 'ID'}.pdf`);
+        });
+
         // Chart.js Initialization
         const pieCtx = document.getElementById('payrollPieChart').getContext('2d');
         const barCtx = document.getElementById('payrollBarChart').getContext('2d');

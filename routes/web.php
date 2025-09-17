@@ -37,7 +37,54 @@ Route::get('/business/{businessSlug}/api-token', [BusinessController::class, 'sh
 
 Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http\Middleware\EnsureTwoFactorAuthenticated::class])->group(function () {
 
-    Route::post('/switch-role', [RoleSwitchController::class, 'switchRole'])->name('switch.role');
+//     Route::post('/switch-role', [RoleSwitchController::class, 'switchRole'])->name('switch.role');
+  Route::post('/switch-role', [RoleSwitchController::class, 'switchRole'])->name('switch.role');
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance'])->name('location.')->prefix('location/{location:slug}')->group(function () {
+        Route::get('/payroll/{id}/download-column/{column}/{format}', [PayrollController::class, 'downloadColumn'])->name('payroll.download_column');
+    });
+
+    Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance|head-of-department'])->name('business.')->prefix('business/{business:slug}')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+        Route::get('/clients/{clientBusiness:slug}', [ClientController::class, 'view'])->name('clients.view');
+        Route::get('/locations', [DashboardController::class, 'locations'])->name('locations.index');
+        Route::get('/organization-setup', [BusinessController::class, 'setup'])->name('organization-setup');
+        Route::get('/pay-schedule', [DashboardController::class, 'paySchedule'])->name('pay-schedule');
+
+        Route::get('/departments', [DashboardController::class, 'departments'])->name('departments.index');
+        Route::get('/employees', [DashboardController::class, 'employees'])->name('employees.index');
+        Route::get('/employees/import', [DashboardController::class, 'importEmployees'])->name('employees.import');
+        Route::get('/employees/warning', [DashboardController::class, 'warning'])->name('employees.warning');
+        Route::get('/employees/contracts', [DashboardController::class, 'contracts'])->name('employees.contracts');
+
+        Route::get('/employees/download-csv-template', [EmployeeController::class, 'downloadCsvTemplate'])->name('employees.downloadCsvTemplate');
+        Route::get('/employees/download-xlsx-template', [EmployeeController::class, 'downloadXlsxTemplate'])->name('employees.downloadXlsxTemplate');
+
+        Route::get('/job-categories', [DashboardController::class, 'jobCategories'])->name('job-categories.index');
+        Route::get('/shifts', [DashboardController::class, 'shifts'])->name('shifts.index');
+        Route::get('/roster', [DashboardController::class, 'roster'])->name('roster.index');
+
+        Route::get('/payroll-formulas', [DashboardController::class, 'payrollFormulas'])->name('payroll-formulas.index');
+        Route::get('/payroll-formulas/bracket-template', [PayrollFormulaController::class, 'bracketTemplate'])->name('payroll-formulas.bracket-template');
+
+        Route::get('/deductions', [DashboardController::class, 'deductions'])->name('deductions');
+
+        Route::get('/payroll', [DashboardController::class, 'payroll'])->name('payroll.index');
+        Route::get('/payroll/all', [DashboardController::class, 'payrollAll'])->name('payroll.all');
+        Route::get('/payroll/{id}', [DashboardController::class, 'viewPayroll'])->name('payroll.view');
+        Route::get('/payroll/{id}/download/{format}', [DashboardController::class, 'downloadPayroll'])->name('payroll.reports');
+        Route::get('/payroll/{id}/download-column/{column}/{format}', [DashboardController::class, 'downloadColumn'])->name('payroll.download_column');
+        Route::get('/payroll/{id}/print-all-payslips', [DashboardController::class, 'printAllPayslips'])->name('payroll.print_all_payslips');
+
+        Route::get('/payslips', [PayrollController::class, 'viewPayslips'])->name('payslips');
+        Route::get('/payroll/payslip/{employee_id}', [PayrollController::class, 'viewPayslip'])->name('payroll.payslip');
+
+        Route::get('/payroll/download-p9/{year}/{format}', [PayrollController::class, 'downloadP9'])->name('payroll.download_p9');
+        Route::get('/payroll/download-bank-advice/{year}/{month}/{format}', [PayrollController::class, 'downloadBankAdvice'])->name('payroll.download_bank_advice');
+        Route::get('/payroll/p9/{employeeId}/{year}/{format}', [PayrollController::class, 'downloadSingleP9'])->name('payroll.download_single_p9');
+
+        Route::post('/payroll/send-payslips', [PayrollController::class, 'sendPayslips'])->name('payroll.send_payslips');
+
 
     Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance'])
         ->name('location.')

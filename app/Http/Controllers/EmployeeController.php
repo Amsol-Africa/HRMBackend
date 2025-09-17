@@ -229,10 +229,13 @@ class EmployeeController extends Controller
             'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
             'profile_picture' => 'nullable|file|image|max:2048',
             'employment_date' => 'nullable|date|before_or_equal:today',
-            'employment_term' => 'required|in:permanent,contract,temporary,internship',
+            'employment_term' => 'required|in:permanent,contract,temporary,internship,consultant,locum',
             'probation_end_date' => 'nullable|date|after:employment_date',
             'contract_end_date' => 'nullable|date|after:employment_date',
             'retirement_date' => 'nullable|date|after:employment_date',
+            'license_reg_number' => 'nullable|string|max:255',
+            'license_expiry_date' => 'nullable|date',
+            'second_probation_end_date' => 'nullable|date|after_or_equal:probation_end_date',
             'job_description' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
             'document_types.*' => 'nullable|string|max:255',
@@ -291,6 +294,7 @@ class EmployeeController extends Controller
                 'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
                 'resident_status' => $validated['resident_status'] ?? null,
                 'kra_employee_status' => $validated['kra_employee_status'] ?? null,
+
             ]);
 
             $employee->employmentDetails()->create([
@@ -302,6 +306,9 @@ class EmployeeController extends Controller
                 'contract_end_date' => $validated['contract_end_date'] ?? null,
                 'retirement_date' => $validated['retirement_date'] ?? null,
                 'job_description' => $validated['job_description'] ?? null,
+                'license_reg_number' => $validated['license_reg_number'] ?? null,
+            'license_expiry_date' => $validated['license_expiry_date'] ?? null,
+            'second_probation_end_date' => $request->second_probation_end_date,
             ]);
 
             $employee->paymentDetails()->create([
@@ -427,6 +434,8 @@ class EmployeeController extends Controller
             'probation_end_date' => 'nullable|date|after:employment_date',
             'contract_end_date' => 'nullable|date|after:employment_date',
             'retirement_date' => 'nullable|date|after:employment_date',
+            'license_reg_number' => 'nullable|string|max:255',
+            'license_expiry_date' => 'nullable|date',
             'job_description' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
             'document_types.*' => 'nullable|string|max:255',
@@ -465,6 +474,8 @@ class EmployeeController extends Controller
                 'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
                 'resident_status' => $validated['resident_status'] ?? null,
                 'kra_employee_status' => $validated['kra_employee_status'] ?? null,
+                  'license_reg_number' => $validated['license_reg_number'],
+            'license_expiry_date' => $validated['license_expiry_date'],
             ]);
 
             $employee->user->update([
@@ -1623,44 +1634,54 @@ public function export(Request $request)
     //     }
     // }
 
-    public function contracts(Request $request)
-    {
-        $page = 'Contract Management';
-        $business = Business::findBySlug(session('active_business_slug'));
-        if (!$business) {
-            return redirect()->back()->with('error', 'Business not found.');
-        }
-
-        // Employees nearing contract expiry (unchanged)
-        $employees = Employee::where('business_id', $business->id)
-            ->whereHas('employmentDetails', function ($query) {
-                $query->where('employment_term', 'contract')
-                    ->whereNotNull('contract_end_date')
-                    ->where('contract_end_date', '<=', now()->addDays(30))
-                    ->where('contract_end_date', '>=', now())
-                    ->where('status', '!=', 'terminated');
-            })
-            ->with(['user:id,name', 'employmentDetails:employee_id,contract_end_date'])
-            ->get();
-
-        // Paginated employees for termination section
-        $terminationEmployees = Employee::where('business_id', $business->id)
-            ->whereHas('employmentDetails', function ($query) {
-                $query->where('status', '!=', 'terminated'); // Exclude already terminated
-            })
-            ->with([
-                'user:id,name',
-                'employmentDetails:employee_id,status,employment_term'
-            ])
-            ->select('id', 'user_id')
-            ->paginate(25);
-
-        $contractActions = EmployeeContractAction::where('business_id', $business->id)
-            ->with(['employee.user', 'issuedBy'])
-            ->get();
-
-        return view('employees.contracts.index', compact('employees', 'terminationEmployees', 'contractActions', 'business', 'page'));
+   public function contracts(Request $request)
+{
+    $page = 'Information Management';
+    $business = Business::findBySlug(session('active_business_slug'));
+    if (!$business) {
+        return redirect()->back()->with('error', 'Business not found.');
     }
+
+    // Employees nearing contract or license expiry (within 30 days)
+    $employees = Employee::where('business_id', $business->id)
+        ->whereHas('employmentDetails', function ($query) {
+            $query->where(function ($q) {
+                $q->where('employment_term', 'contract')
+                  ->whereNotNull('contract_end_date')
+                  ->where('contract_end_date', '<=', now()->addDays(30))
+                  ->where('contract_end_date', '>=', now())
+                  ->where('status', '!=', 'terminated');
+            })->orWhere(function ($q) {
+                $q->whereNotNull('license_expiry_date')
+                  ->where('license_expiry_date', '<=', now()->addDays(30))
+                  ->where('license_expiry_date', '>=', now())
+                  ->where('status', '!=', 'terminated');
+            });
+        })
+        ->with([
+            'user:id,name',
+            'employmentDetails:employee_id,contract_end_date,license_expiry_date,license_reg_number'
+        ])
+        ->get();
+
+    // Paginated employees for termination section
+    $terminationEmployees = Employee::where('business_id', $business->id)
+        ->whereHas('employmentDetails', function ($query) {
+            $query->where('status', '!=', 'terminated'); // Exclude already terminated
+        })
+        ->with([
+            'user:id,name',
+            'employmentDetails:employee_id,status,employment_term'
+        ])
+        ->select('id', 'user_id')
+        ->paginate(25);
+
+    $contractActions = EmployeeContractAction::where('business_id', $business->id)
+        ->with(['employee.user', 'issuedBy'])
+        ->get();
+
+    return view('employees.contracts.index', compact('employees', 'terminationEmployees', 'contractActions', 'business', 'page'));
+}
 
     public function fetchContracts(Request $request)
     {
@@ -1698,9 +1719,9 @@ public function export(Request $request)
                         'employee_id' => $action->employee_id,
                         'issued_by_id' => $action->issued_by_id,
                     ]);
-                    return null; // Skip problematic records
+                    return null;
                 }
-            })->filter(); // Remove null entries
+            })->filter();
 
             $html = view('employees.contracts._cards', ['contractActions' => $contractActions->items()])->render();
 
@@ -1730,6 +1751,7 @@ public function export(Request $request)
             'reason' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'action_date' => 'required|date',
+            'reminder_type' => 'required|in:contract,license',
         ]);
 
         return $this->handleTransaction(function () use ($validated) {

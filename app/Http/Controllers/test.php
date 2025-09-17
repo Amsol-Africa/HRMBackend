@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 
 namespace App\Http\Controllers;
 
@@ -38,20 +38,8 @@ class RoleSwitchController extends Controller
 
         // Check if user has the role
         if ($user->hasRole($newRole)) {
-            $redirectRoute = $this->getRedirectRoute($newRole);
-            $requiredPermission = $this->getRequiredPermissionForRoute($redirectRoute);
-
-            if ($requiredPermission && !$user->hasPermissionTo($requiredPermission, 'web')) {
-                Log::warning('User lacks permission for redirect route', [
-                    'user_id' => $user->id,
-                    'role' => $newRole,
-                    'permission' => $requiredPermission,
-                ]);
-                return response()->json(['error' => 'You do not have permission to access this route'], 403);
-            }
-
             session(['active_role' => $newRole]);
-            $redirect = route($redirectRoute, $business->slug);
+            $redirect = route($this->getRedirectRoute($newRole), $business->slug);
             Log::info('Role switched successfully to: ' . $newRole, ['redirect' => $redirect]);
 
             if ($request->ajax()) {
@@ -69,27 +57,61 @@ class RoleSwitchController extends Controller
     {
         return match ($role) {
             'business-admin' => 'business.index',
-            'business-hr' => 'business.employees.index',
-            'business-finance' => 'business.index',
+            'business-hr', 'business-finance' => 'business.index',
             'business-employee' => 'myaccount.index',
-            'general-hr' => 'business.index',
-            'restricted-hr' => 'business.employees.index',
-            'head-of-department' => 'business.leave.index', // Redirect to leave requests
-            'business-head' => 'business.index', // Full access, including dashboard
             default => 'dashboard',
         };
     }
+} -->
 
-    private function getRequiredPermissionForRoute($route)
+
+// ensure role
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
+
+class EnsureCorrectRole
+{
+    public function handle(Request $request, Closure $next): Response
     {
-        $permissionMap = [
-            'business.index' => 'access.dashboard',
-            'business.employees.index' => 'access.employees',
-            'business.payroll.index' => 'access.payroll',
-            'business.leave.index' => 'access.leave',
-            'business.roles.index' => 'access.roles',
-        ];
+        $user = Auth::user();
+        $activeRole = session('active_role');
 
-        return $permissionMap[$route] ?? null;
+        // Log for debugging
+        Log::info('EnsureCorrectRole Middleware', [
+            'user_id' => $user?->id,
+            'active_role' => $activeRole,
+            'active_role_type' => gettype($activeRole),
+            'route' => $request->path(),
+            'user_roles' => $user ? $user->getRoleNames() : null,
+        ]);
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized: No authenticated user'], 403);
+        }
+
+        // Set default role if none exists and user has business-admin
+        if (!$activeRole && $user->hasRole('business-admin')) {
+            $activeRole = 'business-admin';
+            session(['active_role' => $activeRole]);
+            Log::info('Set default active_role to business-admin', ['user_id' => $user->id]);
+        }
+
+        if (!$activeRole || !is_string($activeRole)) {
+            return response()->json(['message' => 'Unauthorized: Invalid or missing role'], 403);
+        }
+
+        if (!$user->hasRole($activeRole)) {
+            return response()->json(['message' => 'Unauthorized: User does not have the required role'], 403);
+        }
+
+        return $next($request);
     }
 }

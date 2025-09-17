@@ -18,7 +18,11 @@ class EmploymentDetail extends Model
         'contract_end_date',
         'retirement_date',
         'employment_term',
-        'job_description'
+        'job_description',
+        'license_reg_number',
+        'license_expiry_date',
+        'second_probation_end_date',
+
     ];
 
     protected $casts = [
@@ -27,6 +31,8 @@ class EmploymentDetail extends Model
         'status' => 'string',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'license_expiry_date' => 'date',
+        'second_probation_end_date' => 'date',
     ];
 
     public function employee()

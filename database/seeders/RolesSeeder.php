@@ -24,7 +24,10 @@ class RolesSeeder extends Seeder
             'business-finance',
             'business-it',
             'business-employee',
-            'business-marketing'
+            'business-marketing',
+            'general-hr',
+            'restricted-hr',
+            "head-of-department"
         ];
 
         foreach ($roles as $role) {

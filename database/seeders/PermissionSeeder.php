@@ -36,8 +36,7 @@ class PermissionSeeder extends Seeder
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        // Assign permissions to roles
-        $adminItPermissions = $permissions; // Full access for business-admin and business-it
+        $adminItPermissions = $permissions; // Full access for business-admin, business-it, general-hr
         $financePermissions = array_diff($permissions, ['access.roles']); // All except roles
         $marketingPermissions = [
             'access.dashboard',
@@ -46,15 +45,27 @@ class PermissionSeeder extends Seeder
             'access.profile',
             'access.support',
         ];
+        $restrictedHrPermissions = array_diff($permissions, [
+            'access.dashboard',
+            'access.payroll',
+            'access.payroll-settings',
+        ]); // All except dashboard and payroll-related
 
+        // Assign permissions to roles
         $businessAdmin = Role::findByName('business-admin', 'web');
         $businessIt = Role::findByName('business-it', 'web');
         $businessFinance = Role::findByName('business-finance', 'web');
         $businessMarketing = Role::findByName('business-marketing', 'web');
+        $generalHr = Role::findByName('general-hr', 'web');
+        $restrictedHr = Role::findByName('restricted-hr', 'web');
+        $businessHr = Role::findByName('business-hr', 'web'); // For consistency with existing roles
 
         $businessAdmin->syncPermissions($adminItPermissions);
         $businessIt->syncPermissions($adminItPermissions);
         $businessFinance->syncPermissions($financePermissions);
         $businessMarketing->syncPermissions($marketingPermissions);
+        $generalHr->syncPermissions($adminItPermissions); // Full access
+        $restrictedHr->syncPermissions($restrictedHrPermissions); // Restricted access
+        $businessHr->syncPermissions($restrictedHrPermissions); // Align business-hr with restricted-hr
     }
 }

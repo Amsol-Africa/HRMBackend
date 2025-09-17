@@ -1643,23 +1643,67 @@ class PayrollController extends Controller
         });
     }
 
-    public function closeMonth(Request $request, $id)
-    {
-        return $this->handleTransaction(function () use ($id) {
-            $business = Business::findBySlug(session('active_business_slug'));
-            if (!$business) {
-                return RequestResponse::badRequest('Business not found.');
+    // public function closeMonth(Request $request, $id)
+    // {
+    //     return $this->handleTransaction(function () use ($id) {
+    //         $business = Business::findBySlug(session('active_business_slug'));
+    //         if (!$business) {
+    //             return RequestResponse::badRequest('Business not found.');
+    //         }
+
+    //         $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
+    //         $newStatus = $payroll->status === 'closed' ? 'open' : 'closed';
+    //         $payroll->update(['status' => $newStatus]);
+
+    //         return RequestResponse::ok("Payroll month " . ($newStatus === 'closed' ? 'closed' : 'opened') . " successfully.", [
+    //             'status' => $newStatus,
+    //         ]);
+    //     });
+    // }
+
+    public function closeMonth(Request $request, $slug)
+{
+    return $this->handleTransaction(function () use ($request, $slug) {
+        // Validate inputs
+        $validated = $request->validate([
+            'month' => 'required|integer|between:1,12',
+            'year' => 'required|integer|min:2000|max:' . now()->year,
+        ]);
+
+        // Find business by slug
+        $business = Business::findBySlug($slug);
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.');
+        }
+
+        // Find payrolls for the given month and year
+        $payrolls = Payroll::where('business_id', $business->id)
+            ->where('month', $validated['month'])
+            ->where('year', $validated['year'])
+            ->get();
+
+        if ($payrolls->isEmpty()) {
+            return RequestResponse::badRequest('No payrolls found for this period.');
+        }
+
+        // Update status to 'closed' for all matching payrolls
+        $updatedCount = 0;
+        foreach ($payrolls as $payroll) {
+            if ($payroll->status !== 'closed') {
+                $payroll->update(['status' => 'closed']);
+                $updatedCount++;
             }
+        }
 
-            $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
-            $newStatus = $payroll->status === 'closed' ? 'open' : 'closed';
-            $payroll->update(['status' => $newStatus]);
+        // Render updated payroll list
+        $html = view('payroll._past', compact('payrolls'))->render();
 
-            return RequestResponse::ok("Payroll month " . ($newStatus === 'closed' ? 'closed' : 'opened') . " successfully.", [
-                'status' => $newStatus,
-            ]);
-        });
-    }
+        return RequestResponse::ok(
+            "Closed $updatedCount payroll(s) successfully.",
+            ['status' => 'closed', 'html' => $html]
+        );
+    });
+}
 
 public function emailP9(Request $request, $id)
 {
