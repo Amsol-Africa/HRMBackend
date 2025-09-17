@@ -268,6 +268,9 @@
                                 <option value="internship"
                                 {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'consultant' ? 'selected' : '' }}>
                                 Consultant</option>
+                                 <option value="internship"
+                                {{ isset($employee) && optional($employee->employmentDetails)->employment_term === 'locum' ? 'selected' : '' }}>
+                                Locum</option>
                         </select>
                     </div>
                     <div class="col-md-4 position-relative">
@@ -281,13 +284,22 @@
                     </div>
                     <div class="col-md-4 position-relative">
                         <label for="probation_end_date" class="form-label position-absolute text-muted"
-                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Probation End
+                            style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">First Probation End
                             Date</label>
                         <input type="date" name="probation_end_date" id="probation_end_date"
                             class="form-control border-primary"
                             value="{{ isset($employee) && optional($employee->employmentDetails)->probation_end_date ? \Carbon\Carbon::parse($employee->employmentDetails->probation_end_date)->format('Y-m-d') : '' }}"
                             placeholder="Probation End Date">
                     </div>
+                    <div class="col-md-4 position-relative">
+    <label for="second_probation_end_date" class="form-label position-absolute text-muted"
+           style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Second Probation End
+        Date</label>
+    <input type="date" name="second_probation_end_date" id="second_probation_end_date"
+           class="form-control border-primary"
+           value="{{ isset($employee) && optional($employee->employmentDetails)->second_probation_end_date ? \Carbon\Carbon::parse($employee->employmentDetails->second_probation_end_date)->format('Y-m-d') : '' }}"
+           placeholder="Second Probation End Date">
+</div>
                     <div class="col-md-4 position-relative">
                         <label for="contract_end_date" class="form-label position-absolute text-muted"
                             style="top: -10px; left: 10px; background: #f0f4f9; padding: 0 5px;">Contract End

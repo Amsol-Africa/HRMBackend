@@ -229,12 +229,13 @@ public function fetchForEntitlements(Request $request)
             'kra_employee_status' => 'nullable|in:Primary Employee,Secondary Employee',
             'profile_picture' => 'nullable|file|image|max:2048',
             'employment_date' => 'nullable|date|before_or_equal:today',
-            'employment_term' => 'required|in:permanent,contract,temporary,internship',
+            'employment_term' => 'required|in:permanent,contract,temporary,internship,consultant,locum',
             'probation_end_date' => 'nullable|date|after:employment_date',
             'contract_end_date' => 'nullable|date|after:employment_date',
             'retirement_date' => 'nullable|date|after:employment_date',
             'license_reg_number' => 'nullable|string|max:255',
             'license_expiry_date' => 'nullable|date',
+            'second_probation_end_date' => 'nullable|date|after_or_equal:probation_end_date',
             'job_description' => 'nullable|string|max:1000',
             'documents.*' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:2048',
             'document_types.*' => 'nullable|string|max:255',
@@ -307,6 +308,7 @@ public function fetchForEntitlements(Request $request)
                 'job_description' => $validated['job_description'] ?? null,
                 'license_reg_number' => $validated['license_reg_number'] ?? null,
             'license_expiry_date' => $validated['license_expiry_date'] ?? null,
+            'second_probation_end_date' => $request->second_probation_end_date,
             ]);
 
             $employee->paymentDetails()->create([

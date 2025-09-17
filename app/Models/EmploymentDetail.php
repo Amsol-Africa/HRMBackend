@@ -21,6 +21,7 @@ class EmploymentDetail extends Model
         'job_description',
         'license_reg_number',
         'license_expiry_date',
+        'second_probation_end_date',
 
     ];
 
@@ -31,6 +32,7 @@ class EmploymentDetail extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'license_expiry_date' => 'date',
+        'second_probation_end_date' => 'date',
     ];
 
     public function employee()
