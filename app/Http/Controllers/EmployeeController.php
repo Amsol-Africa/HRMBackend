@@ -473,8 +473,8 @@ class EmployeeController extends Controller
                 'is_exempt_from_payroll' => $validated['is_exempt_from_payroll'] ?? false,
                 'resident_status' => $validated['resident_status'] ?? null,
                 'kra_employee_status' => $validated['kra_employee_status'] ?? null,
-                  'license_reg_number' => $validated['license_reg_number'],
-            'license_expiry_date' => $validated['license_expiry_date'],
+                'license_reg_number' => $validated['license_reg_number'] ?? null,
+                'license_expiry_date' => $validated['license_expiry_date'] ?? null,
             ]);
 
             $employee->user->update([
