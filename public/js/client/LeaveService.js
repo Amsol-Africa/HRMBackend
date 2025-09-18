@@ -8,7 +8,8 @@ class LeaveService {
             const response = await this.requestClient.post('/leave/fetch', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Fetch error:', error);
+            this.handleError(error, 'Failed to fetch leave requests');
             throw error;
         }
     }
@@ -16,10 +17,11 @@ class LeaveService {
     async update(data) {
         try {
             const response = await this.requestClient.post('/leave/update', data);
-            toastr.info(response.message, "Success");
+            toastr.success(response.message, "Success");
             this.handleRedirect(response.data.redirect_url);
         } catch (error) {
-            console.log(error)
+            console.error('Update error:', error);
+            this.handleError(error, 'Failed to update leave request');
             throw error;
         }
     }
@@ -29,7 +31,8 @@ class LeaveService {
             const response = await this.requestClient.post('/leave/edit', data);
             return response.data;
         } catch (error) {
-            console.log(error)
+            console.error('Edit error:', error);
+            this.handleError(error, 'Failed to load edit form');
             throw error;
         }
     }
@@ -39,12 +42,8 @@ class LeaveService {
             const response = await this.requestClient.post('/leave/store', data);
             toastr.success(response.message, "Success");
         } catch (error) {
-            if (error.response && error.response.data) {
-                toastr.error(error.response.data.message, "Error");
-            } else {
-                toastr.error("You already have a leave request that overlaps with these dates.", "Error");
-            }
-            console.log(error);
+            console.error('Save error:', error);
+            this.handleError(error, 'Failed to save leave request');
             throw error;
         }
     }
@@ -54,7 +53,8 @@ class LeaveService {
             const response = await this.requestClient.post('/leave/status', data);
             toastr.success(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            console.error('Status error:', error);
+            this.handleError(error, 'Failed to update leave status');
             throw error;
         }
     }
@@ -62,11 +62,29 @@ class LeaveService {
     async delete(data) {
         try {
             const response = await this.requestClient.post('/leave/delete', data);
-            toastr.info(response.message, "Success");
+            toastr.success(response.message, "Success");
         } catch (error) {
-            console.log(error)
+            console.error('Delete error:', error);
+            this.handleError(error, 'Failed to delete leave request');
             throw error;
         }
+    }
+
+    handleError(error, defaultMessage) {
+        let errorMessage = defaultMessage;
+        
+        if (error.response && error.response.data) {
+            if (error.response.data.message) {
+                errorMessage = error.response.data.message;
+            } else if (typeof error.response.data === 'string') {
+                errorMessage = error.response.data;
+            }
+        } else if (error.message) {
+            errorMessage = error.message;
+        }
+
+        // Show user-friendly error messages
+        toastr.error(errorMessage, "Error");
     }
 
     handleRedirect(route) {
