@@ -38,6 +38,11 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
         Route::get('/payroll/{id}/download-column/{column}/{format}', [PayrollController::class, 'downloadColumn'])->name('payroll.download_column');
     });
 
+      Route::name('setup.')->prefix('setup')->group(function () {
+        Route::get('business', [BusinessController::class, 'create'])->name('business');
+        Route::get('modules', [ModuleController::class, 'create'])->name('modules');
+    });
+
     Route::middleware(['ensure_role', 'role:business-admin|business-hr|business-finance|head-of-department'])->name('business.')->prefix('business/{business:slug}')->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('index');
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
