@@ -24,7 +24,7 @@ class LeaveRequestController extends Controller
 
     /**
      * Fetch leave requests for tabs.
-     * - Employees: only their own
+     * - Employees: only their own (by ACTIVE role)
      * - Others (HOD/HR/Admin/Head): all in current business
      */
     public function fetch(Request $request)
@@ -39,10 +39,12 @@ class LeaveRequestController extends Controller
         $query = LeaveRequest::with(['employee.user', 'leaveType'])
             ->where('business_id', $business->id);
 
-        // Employees see only their own requests
-        $user = auth()->user();
-        $emp  = $user->employee;
-        if ($user->hasRole('business-employee') && $emp) {
+        // Scope by ACTIVE role (not just hasRole)
+        $user       = auth()->user();
+        $emp        = $user->employee;
+        $activeRole = session('active_role');
+
+        if ($activeRole === 'business-employee' && $emp) {
             $query->where('employee_id', $emp->id);
         }
 
@@ -89,10 +91,6 @@ class LeaveRequestController extends Controller
 
         return view('leave.show', ['leave' => $leave, 'business' => $business]);
     }
-
-    /**
-     * Store (create) a leave request.
-     */
 
     /**
      * Store a new leave request (simplified policy: only business membership, dates, entitlement, docs).
@@ -177,8 +175,8 @@ class LeaveRequestController extends Controller
                 return RequestResponse::badRequest("You cannot take more than {$leaveType->max_continuous_days} day(s) for this leave type at once.");
             }
 
-            // --- OVERLAP GUARD (comment this block to disable overlap checking) ---
-            if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
+            // --- OVERLAP GUARD ---
+            if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate)) {
                 return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
             }
             // --- END OVERLAP GUARD ---
@@ -321,7 +319,7 @@ class LeaveRequestController extends Controller
                 'approved_at' => now()->toDateTimeString(),
                 'comments' => $comments,
             ];
-
+            
             $leaveRequest->approval_history = $history;
             $leaveRequest->rejection_reason = null;
             $leaveRequest->save();
@@ -521,7 +519,7 @@ class LeaveRequestController extends Controller
 
     /**
      * Replace the old finalizeApproval method with this call
-     */           
+     */
     protected function finalizeApproval(LeaveRequest $leaveRequest): void
     {
         $this->finalizeApprovalSafely($leaveRequest);
