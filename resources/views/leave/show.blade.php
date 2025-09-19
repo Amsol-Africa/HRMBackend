@@ -283,3 +283,4 @@
         <script src="{{ asset('js/main/leave.js') }}" type="module"></script>
     @endpush
 </x-app-layout>
+    

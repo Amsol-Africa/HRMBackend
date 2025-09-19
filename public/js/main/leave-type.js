@@ -1,3 +1,4 @@
+// public/js/Leave-Type.js
 import { btn_loader } from "/js/client/config.js";
 import RequestClient from "/js/client/RequestClient.js";
 import LeaveTypeService from "/js/client/LeaveTypeService.js";
@@ -51,17 +52,41 @@ window.saveLeaveType = async function (btn) {
   btn = $(btn);
   btn_loader(btn, true);
 
-  const formEl = document.getElementById("leaveTypeForm");
+  // IMPORTANT: pick the form near the clicked button (avoids grabbing the wrong form when multiple exist)
+  const formEl = btn.closest("form")[0] ?? document.getElementById("leaveTypeForm");
+  if (!formEl) {
+    btn_loader(btn, false);
+    return Swal.fire('Error', 'Edit form not found on the page.', 'error');
+  }
+
   const formData = new FormData(formEl);
 
+  // Ensure slug is present for updates (hidden input may be missing in some partials)
+  if (!formData.has('leave_type_slug')) {
+    const slugInput = formEl.querySelector('[name="leave_type_slug"]');
+    const slugAttr = btn.data("slug") ?? btn.data("leave") ?? btn.data("leaveType") ?? btn.data("id");
+    if (slugInput?.value) formData.append('leave_type_slug', slugInput.value);
+    else if (slugAttr) formData.append('leave_type_slug', slugAttr);
+  }
+
   try {
-    if (formData.has('leave_type_slug')) {
+    const isUpdate = formData.has('leave_type_slug') && String(formData.get('leave_type_slug')).trim().length > 0;
+
+    if (isUpdate) {
+      // normalize boolean-y selects to 0/1 strings (Laravel expects these as strings or ints)
+      [
+        'requires_approval','is_paid','allowance_accruable','allows_half_day',
+        'requires_attachment','prorated_for_new_employees','allows_backdating','is_stepwise'
+      ].forEach(k => { if (formData.has(k)) formData.set(k, String(formData.get(k))); });
+
       await leaveTypeService.update(formData);
     } else {
       await leaveTypeService.save(formData);
     }
+
     await getLeaveType('pending', 1);
     Swal.fire('Success', 'Leave type saved successfully.', 'success');
+
     // Close modal if we used it
     $('#leaveTypeEditModal').modal('hide');
   } catch (err) {

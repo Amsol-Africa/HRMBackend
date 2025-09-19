@@ -1,6 +1,7 @@
 class LeaveTypeService {
   constructor(requestClient) {
     this.requestClient = requestClient;
+    this.updateUrl = '/leave-types/update';
   }
 
   async fetch(data) {
@@ -34,7 +35,16 @@ class LeaveTypeService {
   }
 
   async update(data) {
-    const res = await this.requestClient.post('/leave-types/update', data);
+    // Guard: ensure we do NOT accidentally hit store when editing
+    if (data instanceof FormData) {
+      const slug = data.get('leave_type_slug') || data.get('slug') || data.get('leave');
+      if (!slug || String(slug).trim().length === 0) {
+        throw new Error('Missing leave_type_slug for update');
+      }
+      // ensure we sync policies by default so details reflect latest
+      if (!data.has('sync_policies')) data.append('sync_policies', '1');
+    }
+    const res = await this.requestClient.post(this.updateUrl, data);
     toastr.info(res.message || 'Updated', 'Success');
   }
 

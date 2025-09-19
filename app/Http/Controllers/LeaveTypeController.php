@@ -6,10 +6,14 @@ use App\Models\Business;
 use App\Models\LeaveType;
 use App\Models\Department;
 use App\Models\JobCategory;
+use App\Models\LeavePolicy;
 use Illuminate\Http\Request;
 use App\Http\RequestResponse;
 use App\Traits\HandleTransactions;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class LeaveTypeController extends Controller
 {
@@ -29,28 +33,35 @@ class LeaveTypeController extends Controller
     {
         Log::debug('LeaveType store payload', $request->all());
 
+        $business = Business::findBySlug(session('active_business_slug'));
+
         $validated = $request->validate([
-            'name'                              => 'required|string|max:255',
+            'name'                              => [
+                'required','string','max:255',
+                Rule::unique('leave_types','name')->where(fn($q)=>$q->where('business_id', optional($business)->id))
+            ],
             'description'                       => 'nullable|string',
             'requires_approval'                 => 'required|boolean',
             'is_paid'                           => 'required|boolean',
             'allowance_accruable'               => 'required|boolean',
             'allows_half_day'                   => 'required|boolean',
             'requires_attachment'               => 'required|boolean',
-            'max_continuous_days'               => 'nullable|integer',
-            'min_notice_days'                   => 'required|integer',
+            'max_continuous_days'               => 'nullable|integer|min:0',
+            'min_notice_days'                   => 'required|integer|min:0',
+
             'department'                        => 'required|string',
             'job_category'                      => 'required|string',
             'gender_applicable'                 => 'required|string|in:all,male,female',
             'prorated_for_new_employees'        => 'required|boolean',
-            'default_days'                      => 'required|integer',
+            'default_days'                      => 'required|integer|min:0',
             'accrual_frequency'                 => 'required|string|in:monthly,quarterly,yearly',
             'accrual_amount'                    => 'required|numeric|min:0',
-            'max_carryover_days'                => 'required|integer',
-            'minimum_service_days_required'     => 'required|integer',
+            'max_carryover_days'                => 'required|integer|min:0',
+            'minimum_service_days_required'     => 'required|integer|min:0',
             'effective_date'                    => 'required|date',
-            'end_date'                          => 'nullable|date',
-            // governance/flow fields
+            'end_date'                          => 'nullable|date|after_or_equal:effective_date',
+
+            // governance/flow
             'allows_backdating'                 => 'required|boolean',
             'approval_levels'                   => 'required|integer|min:0',
             'excluded_days'                     => 'nullable|array',
@@ -59,9 +70,7 @@ class LeaveTypeController extends Controller
             'stepwise_rules'                    => 'nullable|array',
         ]);
 
-        return $this->handleTransaction(function () use ($validated) {
-            $business = Business::findBySlug(session('active_business_slug'));
-
+        return $this->handleTransaction(function () use ($validated, $business) {
             $leaveType = $business->leaveTypes()->create([
                 'name'                => $validated['name'],
                 'description'         => $validated['description'] ?? null,
@@ -73,7 +82,6 @@ class LeaveTypeController extends Controller
                 'max_continuous_days' => $validated['max_continuous_days'] ?? null,
                 'min_notice_days'     => $validated['min_notice_days'],
                 'is_active'           => true,
-                // governance/flow fields
                 'allows_backdating'   => $validated['allows_backdating'],
                 'approval_levels'     => $validated['approval_levels'],
                 'excluded_days'       => $validated['excluded_days'] ?? [],
@@ -81,33 +89,38 @@ class LeaveTypeController extends Controller
                 'stepwise_rules'      => $validated['stepwise_rules'] ?? [],
             ]);
 
+            $businessId = $business->id;
+
             $departmentIds = ($validated['department'] === 'all')
-                ? $business->departments()->pluck('id')->toArray()
-                : [Department::findBySlug($validated['department'])->id];
+                ? Department::where('business_id', $businessId)->pluck('id')->toArray()
+                : [Department::where('business_id', $businessId)->where('slug', $validated['department'])->firstOrFail()->id];
 
             $jobCategoryIds = ($validated['job_category'] === 'all')
-                ? $business->jobCategories()->pluck('id')->toArray()
-                : [JobCategory::findBySlug($validated['job_category'])->id];
+                ? JobCategory::where('business_id', $businessId)->pluck('id')->toArray()
+                : [JobCategory::where('business_id', $businessId)->where('slug', $validated['job_category'])->firstOrFail()->id];
 
-            $gender = $validated['gender_applicable'] === 'all'
-                ? 'all'
-                : $validated['gender_applicable'];
+            $gender = $validated['gender_applicable'];
 
             foreach ($departmentIds as $departmentId) {
                 foreach ($jobCategoryIds as $jobCategoryId) {
-                    $leaveType->leavePolicies()->create([
-                        'department_id'                 => $departmentId,
-                        'job_category_id'               => $jobCategoryId,
-                        'gender_applicable'             => $gender,
-                        'prorated_for_new_employees'    => $validated['prorated_for_new_employees'],
-                        'default_days'                  => $validated['default_days'],
-                        'accrual_frequency'             => $validated['accrual_frequency'],
-                        'accrual_amount'                => $validated['accrual_amount'],
-                        'max_carryover_days'            => $validated['max_carryover_days'],
-                        'minimum_service_days_required' => $validated['minimum_service_days_required'],
-                        'effective_date'                => $validated['effective_date'],
-                        'end_date'                      => $validated['end_date'] ?? null,
-                    ]);
+                    LeavePolicy::firstOrCreate(
+                        [
+                            'leave_type_id'     => $leaveType->id,
+                            'department_id'     => $departmentId,
+                            'job_category_id'   => $jobCategoryId,
+                            'gender_applicable' => $gender,
+                        ],
+                        [
+                            'prorated_for_new_employees'    => $validated['prorated_for_new_employees'],
+                            'default_days'                  => $validated['default_days'],
+                            'accrual_frequency'             => $validated['accrual_frequency'],
+                            'accrual_amount'                => $validated['accrual_amount'],
+                            'max_carryover_days'            => $validated['max_carryover_days'],
+                            'minimum_service_days_required' => $validated['minimum_service_days_required'],
+                            'effective_date'                => $validated['effective_date'],
+                            'end_date'                      => $validated['end_date'] ?? null,
+                        ]
+                    );
                 }
             }
 
@@ -117,14 +130,13 @@ class LeaveTypeController extends Controller
 
     /**
      * Unified edit:
-     * - POST /leave-types/edit (AJAX) -> returns fragment wrapped in JSON
+     * - POST /leave-types/edit (AJAX) -> returns HTML fragment wrapped in JSON
      * - GET  /business/{business}/leave-types/{slug}/edit -> full page
      */
     public function edit(Request $request, Business $business = null, $slug = null)
     {
         // AJAX branch
         if ($request->isMethod('post')) {
-            // Accept any of these param names to be tolerant with existing JS/HTML
             $slugFromRequest = $request->input('slug')
                 ?? $request->input('leave')
                 ?? $request->input('leave_type_slug');
@@ -139,9 +151,9 @@ class LeaveTypeController extends Controller
                 ->where('slug', $slugFromRequest)
                 ->firstOrFail();
 
-            $biz          = $leaveType->business;
-            $departments  = $biz ? $biz->departments : Department::where('business_id', $leaveType->business_id)->get();
-            $jobCategories= $biz ? $biz->jobCategories : JobCategory::where('business_id', $leaveType->business_id)->get();
+            $biz           = $leaveType->business;
+            $departments   = $biz ? $biz->departments : Department::where('business_id', $leaveType->business_id)->get();
+            $jobCategories = $biz ? $biz->jobCategories : JobCategory::where('business_id', $leaveType->business_id)->get();
 
             $html = view('leave.edit', [
                 'leaveType'     => $leaveType,
@@ -185,101 +197,205 @@ class LeaveTypeController extends Controller
 
     public function update(Request $request)
     {
-        $validated = $request->validate([
-            'leave_type_slug'                   => 'required|string|exists:leave_types,slug',
-            'name'                              => 'required|string|max:255',
-            'description'                       => 'nullable|string',
-            'requires_approval'                 => 'required|boolean',
-            'is_paid'                           => 'required|boolean',
-            'allowance_accruable'               => 'required|boolean',
-            'allows_half_day'                   => 'required|boolean',
-            'requires_attachment'               => 'required|boolean',
-            'max_continuous_days'               => 'nullable|integer',
-            'min_notice_days'                   => 'required|integer',
-            'department'                        => 'required|string',
-            'job_category'                      => 'required|string',
-            'gender_applicable'                 => 'required|string|in:all,male,female',
-            'prorated_for_new_employees'        => 'required|boolean',
-            'default_days'                      => 'required|integer',
-            'accrual_frequency'                 => 'required|string|in:monthly,quarterly,yearly',
-            'accrual_amount'                    => 'required|numeric|min:0',
-            'max_carryover_days'                => 'required|integer',
-            'minimum_service_days_required'     => 'required|integer',
-            'effective_date'                    => 'required|date',
-            'end_date'                          => 'nullable|date',
-            // governance/flow fields
-            'allows_backdating'                 => 'required|boolean',
-            'approval_levels'                   => 'required|integer|min:0',
-            'excluded_days'                     => 'nullable|array',
-            'excluded_days.*'                   => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-            'is_stepwise'                       => 'required|boolean',
-            'stepwise_rules'                    => 'nullable|array',
-        ]);
+        $slug = $request->input('leave_type_slug')
+            ?? $request->input('slug')
+            ?? $request->input('leave');
 
-        return $this->handleTransaction(function () use ($validated) {
-            $leaveType = LeaveType::where('slug', $validated['leave_type_slug'])->firstOrFail();
+        if (!$slug) {
+            return RequestResponse::badRequest('Missing leave type identifier.');
+        }
 
-            $leaveType->update([
-                'name'                => $validated['name'],
-                'description'         => $validated['description'] ?? null,
-                'requires_approval'   => $validated['requires_approval'],
-                'is_paid'             => $validated['is_paid'],
-                'allowance_accruable' => $validated['allowance_accruable'],
-                'allows_half_day'     => $validated['allows_half_day'],
-                'requires_attachment' => $validated['requires_attachment'],
-                'max_continuous_days' => $validated['max_continuous_days'] ?? null,
-                'min_notice_days'     => $validated['min_notice_days'],
-                'allows_backdating'   => $validated['allows_backdating'],
-                'approval_levels'     => $validated['approval_levels'],
-                'excluded_days'       => $validated['excluded_days'] ?? [],
-                'is_stepwise'         => $validated['is_stepwise'],
-                'stepwise_rules'      => $validated['stepwise_rules'] ?? [],
-            ]);
+        $leaveType = LeaveType::where('slug', $slug)->first();
+        if (!$leaveType) {
+            return RequestResponse::badRequest('Leave type not found.');
+        }
 
-            $business = $leaveType->business;
+        $businessId = $leaveType->business_id;
 
-            $departmentIds = ($validated['department'] === 'all')
-                ? $business->departments()->pluck('id')->toArray()
-                : [Department::findBySlug($validated['department'])->id];
+        // PATCH semantics: only validate provided fields
+        $rules = [
+            'name'   => [
+                'sometimes','filled','string','max:190',
+                Rule::unique('leave_types','name')
+                    ->where(fn($q)=>$q->where('business_id',$businessId))
+                    ->ignore($leaveType->id),
+            ],
+            'description' => ['sometimes','nullable','string'],
+            'requires_approval' => ['sometimes','in:0,1'],
+            'is_paid' => ['sometimes','in:0,1'],
+            'allowance_accruable' => ['sometimes','in:0,1'],
+            'allows_half_day' => ['sometimes','in:0,1'],
+            'requires_attachment' => ['sometimes','in:0,1'],
+            'max_continuous_days' => ['sometimes','nullable','numeric','min:0'],
+            'min_notice_days'     => ['sometimes','nullable','integer','min:0'],
+            'allows_backdating'   => ['sometimes','in:0,1'],
+            'approval_levels'     => ['sometimes','nullable','integer','min:0'],
+            'is_stepwise'         => ['sometimes','in:0,1'],
+            'excluded_days'       => ['sometimes','array'],
+            'excluded_days.*'     => ['in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
 
-            $jobCategoryIds = ($validated['job_category'] === 'all')
-                ? $business->jobCategories()->pluck('id')->toArray()
-                : [JobCategory::findBySlug($validated['job_category'])->id];
+            // Policy bits
+            'department'     => ['sometimes','filled','string'],
+            'job_category'   => ['sometimes','filled','string'],
+            'gender_applicable' => ['sometimes','in:all,male,female'],
+            'prorated_for_new_employees' => ['sometimes','in:0,1'],
+            'default_days'   => ['sometimes','nullable','numeric','min:0'],
+            'accrual_frequency' => ['sometimes','in:monthly,quarterly,yearly'],
+            'accrual_amount' => ['sometimes','nullable','numeric','min:0'],
+            'max_carryover_days' => ['sometimes','nullable','numeric','min:0'],
+            'minimum_service_days_required' => ['sometimes','nullable','integer','min:0'],
+            'effective_date' => ['sometimes','nullable','date'],
+            'end_date'       => ['sometimes','nullable','date','after_or_equal:effective_date'],
 
-            $gender = $validated['gender_applicable'] === 'all'
-                ? 'all'
-                : $validated['gender_applicable'];
+            // Optional flag to control pruning
+            'sync_policies'  => ['sometimes','in:0,1,true,false'],
+        ];
 
-            $policyPayloadBase = [
-                'gender_applicable'             => $gender,
-                'prorated_for_new_employees'    => $validated['prorated_for_new_employees'],
-                'default_days'                  => $validated['default_days'],
-                'accrual_frequency'             => $validated['accrual_frequency'],
-                'accrual_amount'                => $validated['accrual_amount'],
-                'max_carryover_days'            => $validated['max_carryover_days'],
-                'minimum_service_days_required' => $validated['minimum_service_days_required'],
-                'effective_date'                => $validated['effective_date'],
-                'end_date'                      => $validated['end_date'] ?? null,
-            ];
+        $data = $request->validate($rules);
 
-            foreach ($departmentIds as $departmentId) {
-                foreach ($jobCategoryIds as $jobCategoryId) {
-                    $payload = array_merge($policyPayloadBase, [
-                        'department_id'   => $departmentId,
-                        'job_category_id' => $jobCategoryId,
-                    ]);
+        // If name changed, optionally update slug (unique per business)
+        if (array_key_exists('name', $data) && $data['name'] !== $leaveType->name) {
+            $newSlug = Str::slug($data['name']);
+            $exists = LeaveType::where('business_id',$businessId)
+                ->where('slug',$newSlug)
+                ->where('id','!=',$leaveType->id)
+                ->exists();
+            if ($exists) {
+                return RequestResponse::badRequest('Another leave type with a similar name already exists.');
+            }
+            $data['slug'] = $newSlug;
+        }
 
-                    $policy = $leaveType->leavePolicies()
-                        ->where('department_id', $departmentId)
-                        ->where('job_category_id', $jobCategoryId)
-                        ->first();
+        // normalize boolean-ish strings
+        foreach ([
+            'requires_approval','is_paid','allowance_accruable','allows_half_day',
+            'requires_attachment','prorated_for_new_employees','allows_backdating','is_stepwise'
+        ] as $boolField) {
+            if (array_key_exists($boolField, $data)) {
+                $data[$boolField] = (int) (string) $data[$boolField] === '1';
+            }
+        }
 
-                    $policy ? $policy->update($payload) : $leaveType->leavePolicies()->create($payload);
+        DB::beginTransaction();
+        try {
+            // Save LeaveType
+            $leaveType->fill($data);
+            if (array_key_exists('excluded_days', $data)) {
+                $leaveType->excluded_days = array_values(array_unique(array_map('strtolower', $data['excluded_days'] ?? [])));
+            }
+            $leaveType->save();
+
+            // Policy upsert/sync only if relevant keys appeared
+            $policyKeysPresent = collect([
+                'department','job_category','gender_applicable',
+                'prorated_for_new_employees','default_days','accrual_frequency','accrual_amount',
+                'max_carryover_days','minimum_service_days_required','effective_date','end_date',
+                'sync_policies',
+            ])->some(fn($k) => $request->has($k));
+
+            if ($policyKeysPresent) {
+                $deptParam = $request->input('department', 'all');
+                $jobcParam = $request->input('job_category', 'all');
+                $gender    = $request->input('gender_applicable', 'all');
+                if (!in_array($gender, ['all','male','female'], true)) {
+                    DB::rollBack();
+                    return RequestResponse::badRequest('Invalid gender_applicable value.');
+                }
+
+                $deptIds = $deptParam === 'all'
+                    ? Department::where('business_id', $businessId)->pluck('id')->toArray()
+                    : (function() use ($businessId,$deptParam) {
+                        $d = Department::where('business_id',$businessId)->where('slug',$deptParam)->first();
+                        if (!$d) throw new \RuntimeException('Selected department not found for this business.');
+                        return [$d->id];
+                    })();
+
+                $jobcIds = $jobcParam === 'all'
+                    ? JobCategory::where('business_id', $businessId)->pluck('id')->toArray()
+                    : (function() use ($businessId,$jobcParam) {
+                        $j = JobCategory::where('business_id',$businessId)->where('slug',$jobcParam)->first();
+                        if (!$j) throw new \RuntimeException('Selected job category not found for this business.');
+                        return [$j->id];
+                    })();
+
+                // Fields that may be provided (we override baseline with these)
+                $policyFill = [];
+                foreach ([
+                    'prorated_for_new_employees','default_days','accrual_frequency','accrual_amount',
+                    'max_carryover_days','minimum_service_days_required','effective_date','end_date'
+                ] as $f) {
+                    if ($request->has($f)) {
+                        $policyFill[$f] = $request->input($f);
+                    }
+                }
+                if (array_key_exists('prorated_for_new_employees',$policyFill)) {
+                    $policyFill['prorated_for_new_employees'] = (int)(string)$policyFill['prorated_for_new_employees'] === '1';
+                }
+
+                // Build a baseline/template from any existing policy for this leave type
+                $template = LeavePolicy::where('leave_type_id', $leaveType->id)->first();
+
+                $baseline = [
+                    'prorated_for_new_employees'    => $template->prorated_for_new_employees ?? false,
+                    'default_days'                  => $template->default_days ?? 0,
+                    'accrual_frequency'             => $template->accrual_frequency ?? 'monthly',
+                    'accrual_amount'                => $template->accrual_amount ?? 0,
+                    'max_carryover_days'            => $template->max_carryover_days ?? 0,
+                    'minimum_service_days_required' => $template->minimum_service_days_required ?? 0,
+                    'effective_date'                => $template->effective_date ?? now()->toDateString(),
+                    'end_date'                      => $template->end_date ?? null,
+                ];
+
+                // === UPSERT + SYNC ===
+                $targetKeys = [];
+                foreach ($deptIds as $dId) {
+                    foreach ($jobcIds as $jId) {
+                        $key = [
+                            'leave_type_id'     => $leaveType->id,
+                            'department_id'     => $dId,
+                            'job_category_id'   => $jId,
+                            'gender_applicable' => $gender,
+                        ];
+                        $targetKeys[] = $key;
+
+                        // If row exists, update only changed fields; if not, insert baseline merged with changes
+                        $attrs = array_merge($baseline, $policyFill);
+                        LeavePolicy::updateOrCreate($key, $attrs);
+                    }
+                }
+
+                // default: sync (prune out-of-scope rows)
+                $doSync = filter_var($request->input('sync_policies', '1'), FILTER_VALIDATE_BOOLEAN);
+                if ($doSync) {
+                    $tuples = collect($targetKeys)->map(fn($k) => implode(':', [
+                        $k['department_id'] ?? 'null',
+                        $k['job_category_id'] ?? 'null',
+                        $k['gender_applicable'],
+                    ]))->toArray();
+
+                    LeavePolicy::where('leave_type_id', $leaveType->id)
+                        ->get()
+                        ->each(function($p) use ($tuples) {
+                            $t = implode(':', [
+                                $p->department_id ?? 'null',
+                                $p->job_category_id ?? 'null',
+                                $p->gender_applicable,
+                            ]);
+                            if (!in_array($t, $tuples, true)) {
+                                $p->delete(); // hard delete keeps things clean with unique indexes
+                            }
+                        });
                 }
             }
 
-            return RequestResponse::ok('Leave type and policy updated successfully.');
-        });
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('LeaveType update failed: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return RequestResponse::badRequest('Failed to update leave type. Please try again.');
+        }
+
+        return RequestResponse::ok('Leave type updated successfully.');
     }
 
     public function destroy(Request $request)

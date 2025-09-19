@@ -178,9 +178,9 @@ class LeaveRequestController extends Controller
             }
 
             // --- OVERLAP GUARD (comment this block to disable overlap checking) ---
-            //if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
-            //    return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
-            //}
+            if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
+                return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
+            }
             // --- END OVERLAP GUARD ---
 
             // --- Attachment handling ---
@@ -521,7 +521,7 @@ class LeaveRequestController extends Controller
 
     /**
      * Replace the old finalizeApproval method with this call
-     */
+     */           
     protected function finalizeApproval(LeaveRequest $leaveRequest): void
     {
         $this->finalizeApprovalSafely($leaveRequest);

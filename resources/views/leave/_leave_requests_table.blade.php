@@ -157,7 +157,7 @@
                             <a href="{{ $viewUrl }}" class="btn btn-outline-primary btn-sm" title="View Details">
                                 <i class="fa-solid fa-eye"></i>
                             </a>
-
+       
                             {{-- Approvers (HOD/HR at correct level) --}}
                             @if ($canApprove)
                                 <button type="button" onclick="manageLeave(this)"
