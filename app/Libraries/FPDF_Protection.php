@@ -1,7 +1,9 @@
 <?php
-require_once base_path('vendor/codedge/laravel-fpdf/src/Fpdf/Fpdf.php');
+namespace App\Libraries;
 
-class FPDF_Protection extends \Codedge\Fpdf\Fpdf\Fpdf
+require_once __DIR__ . '/Fpdf/fpdf.php';   // load your local fpdf.php
+
+class FPDF_Protection extends \FPDF
 {
     protected $encrypted = false;  // whether document is protected
     protected $Uvalue;             // user password (hashed)
@@ -9,7 +11,7 @@ class FPDF_Protection extends \Codedge\Fpdf\Fpdf\Fpdf
     protected $Pvalue;             // permissions as integer
     protected $enc_obj_id;         // encryption object id
 
-    function SetProtection($permissions = [], $user_pass = '', $owner_pass = null)
+    public function SetProtection($permissions = [], $user_pass = '', $owner_pass = null)
     {
         $options = ['print' => 4, 'modify' => 8, 'copy' => 16, 'annot-forms' => 32];
         $protection = 192;
