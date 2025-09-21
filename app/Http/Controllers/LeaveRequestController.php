@@ -94,9 +94,9 @@ class LeaveRequestController extends Controller
      * Store (create) a leave request.
      */
 
-/**
- * Store a new leave request (simplified policy: only business membership, dates, entitlement, docs).
- */
+    /**
+     * Store a new leave request (simplified policy: only business membership, dates, entitlement, docs).
+     */
     public function store(Request $request)
     {
         // 1) Minimal validation to safely fetch LeaveType first
@@ -179,7 +179,7 @@ class LeaveRequestController extends Controller
 
             // --- OVERLAP GUARD (comment this block to disable overlap checking) ---
             //if (LeaveRequest::hasOverlap($employeeId, $startDate, $endDate, null, $business->id)) {
-              //  return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
+            //    return RequestResponse::badRequest('You already have a pending/approved leave that overlaps with these dates.');
             //}
             // --- END OVERLAP GUARD ---
 
@@ -250,7 +250,6 @@ class LeaveRequestController extends Controller
         });
     }
 
-
     /**
      * Approve/Reject with level checks.
      */
@@ -258,70 +257,96 @@ class LeaveRequestController extends Controller
     {
         $validated = $request->validate([
             'reference_number' => 'required|exists:leave_requests,reference_number',
-            'status'           => 'required|in:approved,rejected',
+            'status' => 'required|in:approved,rejected',
             'rejection_reason' => 'nullable|required_if:status,rejected|string',
-            'comments'         => 'nullable|string|max:500',
+            'comments' => 'nullable|string|max:500',
         ]);
 
         return $this->handleTransaction(function () use ($validated) {
-            /** @var LeaveRequest $leaveRequest */
-            $leaveRequest = LeaveRequest::where('reference_number', $validated['reference_number'])->firstOrFail();
+            try {
+                /** @var LeaveRequest $leaveRequest */
+                $leaveRequest = LeaveRequest::where('reference_number', $validated['reference_number'])->firstOrFail();
 
-            if (!$leaveRequest->canUserApprove(auth()->user())) {
-                return RequestResponse::badRequest('You do not have permission to approve this leave request at this level.');
+                if (!$leaveRequest->canUserApprove(auth()->user())) {
+                    return RequestResponse::badRequest('You do not have permission to approve this leave request at this level.');
+                }
+
+                if ($leaveRequest->status !== 'pending') {
+                    return RequestResponse::badRequest('This leave request has already been processed.');
+                }
+
+                if ($validated['status'] === 'approved') {
+                    return $this->processApproval($leaveRequest, $validated['comments'] ?? null);
+                }
+
+                return $this->processRejection($leaveRequest, $validated['rejection_reason'], $validated['comments'] ?? null);
+
+            } catch (\Exception $e) {
+                Log::error("Error in leave status method: " . $e->getMessage());
+                return RequestResponse::badRequest('Failed to process leave request. Please try again.');
             }
-
-            if ($validated['status'] === 'approved') {
-                return $this->processApproval($leaveRequest, $validated['comments'] ?? null);
-            }
-
-            return $this->processRejection($leaveRequest, $validated['rejection_reason'], $validated['comments'] ?? null);
         });
     }
 
+    /**
+     * Enhanced processApproval with better error handling
+     */
     protected function processApproval(LeaveRequest $leaveRequest, $comments = null)
     {
-        $nextLevel      = $leaveRequest->getNextApprovalLevel();
-        $requiredLevels = (int) (optional($leaveRequest->leaveType)->approval_levels ?? 1);
+        try {
+            $nextLevel = $leaveRequest->getNextApprovalLevel();
+            $requiredLevels = (int) (optional($leaveRequest->leaveType)->approval_levels ?? 1);
 
-        // Require docs before finalizing
-        if ($nextLevel >= $requiredLevels) {
-            if ($leaveRequest->requires_documentation && !$leaveRequest->attachment) {
-                return RequestResponse::badRequest('Cannot finalize approval: documentation is required.');
+            // Validate approver
+            $approverId = auth()->id();
+            if (!$approverId) {
+                return RequestResponse::badRequest('Invalid approver session.');
             }
-        }
 
-        // Update level + history (partial approval)
-        $leaveRequest->current_approval_level = $nextLevel;
+            // Require docs before finalizing
+            if ($nextLevel >= $requiredLevels) {
+                if ($leaveRequest->requires_documentation && !$leaveRequest->attachment) {
+                    return RequestResponse::badRequest('Cannot finalize approval: documentation is required.');
+                }
+            }
 
-        $history   = $leaveRequest->approval_history ?? [];
-        $history[] = [
-            'level'         => $nextLevel,
-            'approver_id'   => auth()->id(),
-            'approver_name' => auth()->user()->name,
-            'approved_at'   => now()->toDateTimeString(),
-            'comments'      => $comments,
-        ];
-        $leaveRequest->approval_history = $history;
-        $leaveRequest->rejection_reason = null;
-        $leaveRequest->save();
+            // Update level + history (partial approval)
+            $leaveRequest->current_approval_level = $nextLevel;
 
-        // More approvals needed?
-        if ($leaveRequest->needsMoreApprovals()) {
-            $this->sendNextLevelNotifications($leaveRequest);
+            $history = $leaveRequest->approval_history ?? [];
+            $history[] = [
+                'level' => $nextLevel,
+                'approver_id' => $approverId,
+                'approver_name' => auth()->user()->name,
+                'approved_at' => now()->toDateTimeString(),
+                'comments' => $comments,
+            ];
 
-            return RequestResponse::ok("Leave advanced to approval level {$nextLevel}. Waiting for final approval.", [
-                'new_status' => 'pending',
+            $leaveRequest->approval_history = $history;
+            $leaveRequest->rejection_reason = null;
+            $leaveRequest->save();
+
+            // More approvals needed?
+            if ($leaveRequest->needsMoreApprovals()) {
+                $this->sendNextLevelNotificationsWithDelay($leaveRequest);
+
+                return RequestResponse::ok("Leave advanced to approval level {$nextLevel}. Waiting for final approval.", [
+                    'new_status' => 'pending',
+                ]);
+            }
+
+            // Final approval
+            $this->finalizeApprovalSafely($leaveRequest);
+            $this->sendFinalApprovalNotificationsWithDelay($leaveRequest);
+
+            return RequestResponse::ok('Leave request approved successfully.', [
+                'new_status' => 'approved',
             ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error processing leave approval for {$leaveRequest->reference_number}: " . $e->getMessage());
+            return RequestResponse::badRequest('Failed to process approval. Please try again.');
         }
-
-        // Final approval
-        $this->finalizeApproval($leaveRequest);
-        $this->sendFinalApprovalNotifications($leaveRequest);
-
-        return RequestResponse::ok('Leave request approved successfully.', [
-            'new_status' => 'approved',
-        ]);
     }
 
     protected function processRejection(LeaveRequest $leaveRequest, $rejectionReason, $comments = null)
@@ -342,100 +367,204 @@ class LeaveRequestController extends Controller
         ]);
     }
 
+    /**
+     * Send application notifications with delays to prevent rate limiting
+     */
     protected function sendApplicationNotifications(LeaveRequest $leaveRequest)
     {
-        $business  = $leaveRequest->business;
-        $employee  = $leaveRequest->employee;
-        $leaveType = $leaveRequest->leaveType;
+        try {
+            $business  = $leaveRequest->business;
+            $employee  = $leaveRequest->employee;
+            $leaveType = $leaveRequest->leaveType;
 
-        // Always notify employee of submission
-        Mail::to($employee->user->email)->queue(new LeaveRequestSubmitted($leaveRequest));
+            // Always notify employee of submission (immediate)
+            Mail::to($employee->user->email)->queue(new LeaveRequestSubmitted($leaveRequest));
 
-        $approvalLevels = (int)($leaveType->approval_levels ?? 0);
-        if (!$leaveType->requires_approval || $approvalLevels <= 0) {
-            if (!$leaveRequest->requires_documentation || $leaveRequest->attachment) {
-                $this->finalizeApproval($leaveRequest);
-                $this->sendFinalApprovalNotifications($leaveRequest);
+            $approvalLevels = (int)($leaveType->approval_levels ?? 0);
+            if (!$leaveType->requires_approval || $approvalLevels <= 0) {
+                if (!$leaveRequest->requires_documentation || $leaveRequest->attachment) {
+                    $this->finalizeApprovalSafely($leaveRequest);
+                    $this->sendFinalApprovalNotificationsWithDelay($leaveRequest);
+                }
+                return;
             }
-            return;
-        }
 
-        // Notify ALL HODs in the business
-        foreach ($this->findHODApprovers($business) as $hod) {
-            Mail::to($hod->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
+            // Collect all recipients and send with delays
+            $recipients = collect();
+            $recipients = $recipients->merge($this->findHODApprovers($business)->pluck('email'));
+            $recipients = $recipients->merge($this->findBusinessHR($business)->pluck('email'));
 
-        // Also notify HR on submission (so they get all emails)
-        foreach ($this->findBusinessHR($business) as $hr) {
-            Mail::to($hr->email)->queue(new LeaveRequestSubmitted($leaveRequest));
+            // Send emails with 5-second delays
+            foreach ($recipients->unique() as $index => $email) {
+                $delay = now()->addSeconds(($index + 1) * 5);
+                Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error sending application notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
         }
     }
 
+    /**
+     * Send next level notifications with delays
+     */
+    protected function sendNextLevelNotificationsWithDelay(LeaveRequest $leaveRequest)
+    {
+        try {
+            $business = $leaveRequest->business;
+
+            // Collect all recipients
+            $recipients = collect();
+            $recipients = $recipients->merge($this->findBusinessHR($business)->pluck('email'));
+            $recipients = $recipients->merge($this->findHODApprovers($business)->pluck('email'));
+
+            // Send with 5-second delays between each email
+            foreach ($recipients->unique() as $index => $email) {
+                $delay = now()->addSeconds(($index + 1) * 5);
+                Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
+            }
+
+            // Notify employee of progress (immediate)
+            $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
+
+        } catch (\Exception $e) {
+            Log::error("Error sending next level notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send final approval notifications with delays to prevent rate limiting
+     */
+    protected function sendFinalApprovalNotificationsWithDelay(LeaveRequest $leaveRequest)
+    {
+        try {
+            $business = $leaveRequest->business;
+
+            // Employee notification (highest priority - immediate)
+            $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
+
+            // Collect all other recipients
+            $recipients = collect();
+            $recipients = $recipients->merge($this->findBusinessAdmins($business)->pluck('email'));
+            $recipients = $recipients->merge($this->findBusinessHeads($business)->pluck('email'));
+            $recipients = $recipients->merge($this->findHODApprovers($business)->pluck('email'));
+            $recipients = $recipients->merge($this->findBusinessHR($business)->pluck('email'));
+
+            // Send emails with 10-second delays to avoid rate limiting
+            foreach ($recipients->unique() as $index => $email) {
+                $delay = now()->addSeconds(($index + 1) * 10);
+                Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error sending final approval notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enhanced finalizeApproval with better error handling
+     */
+    protected function finalizeApprovalSafely(LeaveRequest $leaveRequest): void
+    {
+        try {
+            $approverId = auth()->id();
+            if (!$approverId) {
+                throw new \Exception('No authenticated user found for approval');
+            }
+
+            $leaveRequest->approved_by = $approverId;
+            $leaveRequest->approved_at = now();
+            $leaveRequest->is_tentative = false;
+            $leaveRequest->current_approval_level = max((int)$leaveRequest->current_approval_level, 1);
+            $leaveRequest->save();
+
+            // Handle entitlement deduction with better error handling
+            $this->deductLeaveEntitlementSafely($leaveRequest);
+
+        } catch (\Exception $e) {
+            Log::error("Error finalizing approval for leave {$leaveRequest->id}: " . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Safe entitlement deduction with better error handling
+     */
+    protected function deductLeaveEntitlementSafely(LeaveRequest $leaveRequest): void
+    {
+        try {
+            $entitlement = LeaveEntitlement::where('employee_id', $leaveRequest->employee_id)
+                ->where('leave_type_id', $leaveRequest->leave_type_id)
+                ->first();
+
+            if (!$entitlement) {
+                Log::warning("No entitlement found for employee {$leaveRequest->employee_id} leave_type {$leaveRequest->leave_type_id} when finalizing.");
+                return;
+            }
+
+            if (method_exists($entitlement, 'deductDays')) {
+                $entitlement->deductDays((float)$leaveRequest->total_days);
+            } elseif (!is_null($entitlement->getAttribute('used_days'))) {
+                $entitlement->used_days = (float)($entitlement->used_days ?? 0) + (float)$leaveRequest->total_days;
+                $entitlement->save();
+            } else {
+                // Use the getRemainingDays method which recalculates and saves
+                $entitlement->getRemainingDays();
+                Log::info("Entitlement updated using getRemainingDays for entitlement #{$entitlement->id}.");
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error deducting leave entitlement for leave {$leaveRequest->id}: " . $e->getMessage());
+            // Don't throw here - entitlement issues shouldn't block approval
+        }
+    }
+
+    /**
+     * Replace the old finalizeApproval method with this call
+     */
+    protected function finalizeApproval(LeaveRequest $leaveRequest): void
+    {
+        $this->finalizeApprovalSafely($leaveRequest);
+    }
+
+    /**
+     * Replace the old notification methods with delay versions
+     */
     protected function sendNextLevelNotifications(LeaveRequest $leaveRequest)
     {
-        $business = $leaveRequest->business;
-
-        // Notify HR
-        foreach ($this->findBusinessHR($business) as $hr) {
-            Mail::to($hr->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
-
-        // Notify ALL HODs too
-        foreach ($this->findHODApprovers($business) as $hod) {
-            Mail::to($hod->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
-
-        // Notify employee of progress
-        $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
+        $this->sendNextLevelNotificationsWithDelay($leaveRequest);
     }
 
     protected function sendFinalApprovalNotifications(LeaveRequest $leaveRequest)
     {
-        $business = $leaveRequest->business;
-
-        // Employee
-        $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
-
-        // Admins & Heads
-        foreach ($this->findBusinessAdmins($business) as $admin) {
-            Mail::to($admin->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
-        foreach ($this->findBusinessHeads($business) as $head) {
-            Mail::to($head->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
-
-        // ALL HODs should receive final email too
-        foreach ($this->findHODApprovers($business) as $hod) {
-            Mail::to($hod->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
-
-        // HR too
-        foreach ($this->findBusinessHR($business) as $hr) {
-            Mail::to($hr->email)->queue(new LeaveRequestSubmitted($leaveRequest));
-        }
+        $this->sendFinalApprovalNotificationsWithDelay($leaveRequest);
     }
 
+    /* =========================
+     * Other existing helpers
+     * ========================= */
 
     /**
      * View permission:
      * - Employee: own only
      * - Others (HOD/HR/Admin/Head): any request in same business
-
+     */
     protected function canUserViewLeaveRequest(User $user, LeaveRequest $leaveRequest)
     {
         $userEmployee = $user->employee;
+        $activeRole   = session('active_role');
 
-        if ($user->hasRole('business-employee') && $userEmployee) {
+        if ($activeRole === 'business-employee' && $userEmployee) {
             return (int)$leaveRequest->employee_id === (int)$userEmployee->id;
         }
 
-        // Others must belong to same business
-        if ($userEmployee) {
+        // HOD/HR/Admin/Head: view all requests in the business
+        if (in_array($activeRole, ['head-of-department','business-hr','business-admin','business-head'], true) && $userEmployee) {
             return (int)$leaveRequest->business_id === (int)$userEmployee->business_id;
         }
 
         return false;
-    }  */
+    }
 
     /**
      * Upload document (owner only).
@@ -504,45 +633,8 @@ class LeaveRequestController extends Controller
     }
 
     /* =========================
-     * Helpers
+     * Finders
      * ========================= */
-
-    protected function normalizeGender($value): string
-    {
-        $v = strtolower(trim((string)($value ?? '')));
-        if (in_array($v, ['m', 'male']))   return 'male';
-        if (in_array($v, ['f', 'female'])) return 'female';
-        return 'all';
-    }
-
-    /**
-     * Finalize approval + entitlement deduction (final level only).
-     */
-    protected function finalizeApproval(LeaveRequest $leaveRequest): void
-    {
-        $leaveRequest->approved_by            = auth()->id();
-        $leaveRequest->approved_at            = now();
-        $leaveRequest->is_tentative           = false;
-        $leaveRequest->current_approval_level = max((int)$leaveRequest->current_approval_level, 1);
-        $leaveRequest->save();
-
-        $entitlement = LeaveEntitlement::where('employee_id', $leaveRequest->employee_id)
-            ->where('leave_type_id', $leaveRequest->leave_type_id)
-            ->first();
-
-        if ($entitlement) {
-            if (method_exists($entitlement, 'deductDays')) {
-                $entitlement->deductDays((float)$leaveRequest->total_days);
-            } elseif (!is_null($entitlement->getAttribute('used_days'))) {
-                $entitlement->used_days = (float)($entitlement->used_days ?? 0) + (float)$leaveRequest->total_days;
-                $entitlement->save();
-            } else {
-                Log::warning("Entitlement deduction skipped (no method/field) for entitlement #{$entitlement->id}.");
-            }
-        } else {
-            Log::warning("No entitlement found for employee {$leaveRequest->employee_id} leave_type {$leaveRequest->leave_type_id} when finalizing.");
-        }
-    }
 
     /** All HODs for employee's department in this business. */
     protected function findHODApprovers(Business $business)
@@ -552,7 +644,6 @@ class LeaveRequestController extends Controller
                 $q->where('business_id', $business->id);
             })->get();
     }
-
 
     /** All HR users in this business. */
     protected function findBusinessHR(Business $business)
@@ -580,29 +671,10 @@ class LeaveRequestController extends Controller
                 $q->where('business_id', $business->id);
             })->get();
     }
-    protected function canUserViewLeaveRequest(User $user, LeaveRequest $leaveRequest)
-    {
-        $userEmployee = $user->employee;
-        $activeRole   = session('active_role');
 
-        if ($activeRole === 'business-employee' && $userEmployee) {
-            return (int)$leaveRequest->employee_id === (int)$userEmployee->id;
-        }
-
-        // HOD/HR/Admin/Head: view all requests in the business
-        if (in_array($activeRole, ['head-of-department','business-hr','business-admin','business-head'], true) && $userEmployee) {
-            return (int)$leaveRequest->business_id === (int)$userEmployee->business_id;
-        }
-
-        return false;
-    }
-
-
-
-
-// Add this temporary debugging method to your LeaveRequestController.php
-// Call this method in a test route to debug the issues
-
+    // --------------------------
+    // Debug helper (unchanged)
+    // --------------------------
     public function debugLeaveIssues($employeeId, $leaveTypeId, $startDate, $endDate)
     {
         $business = Business::findBySlug(session('active_business_slug'));
@@ -692,14 +764,4 @@ class LeaveRequestController extends Controller
 
         return response()->json($debugInfo, 200, [], JSON_PRETTY_PRINT);
     }
-
-    // Create a test route in your web.php:
-    /*
-    Route::get('/debug-leave/{employee}/{leaveType}/{startDate}/{endDate}', function($employee, $leaveType, $startDate, $endDate) {
-        $controller = new App\Http\Controllers\LeaveRequestController();
-        return $controller->debugLeaveIssues($employee, $leaveType, $startDate, $endDate);
-    })->middleware(['auth']);
-    */
-
-
 }

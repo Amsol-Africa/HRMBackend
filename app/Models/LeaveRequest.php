@@ -160,8 +160,6 @@ class LeaveRequest extends Model
         return $this->scopeStatus($query, $statusName);
     }
 
-
-
     /* ----------------
        Utilities
     -----------------*/
@@ -178,20 +176,25 @@ class LeaveRequest extends Model
         return $referenceNumber;
     }
 
-    public static function hasOverlap($employeeId, $startDate, $endDate, $excludeId = null, $businessId = null): bool
+    public static function hasOverlap($employeeId, $startDate, $endDate)
     {
-        $start = ($startDate instanceof \Carbon\Carbon ? $startDate : \Carbon\Carbon::parse($startDate))->toDateString();
-        $end   = ($endDate   instanceof \Carbon\Carbon ? $endDate   : \Carbon\Carbon::parse($endDate))->toDateString();
-
-        return self::query()
-            ->where('employee_id', $employeeId)
-            ->when($businessId, fn($q) => $q->where('business_id', $businessId))
-            // We only block overlap against non-rejected requests
-            ->whereNull('rejection_reason')
-            // overlap: start1 <= end2 AND end1 >= start2
-            ->whereDate('start_date', '<=', $end)
-            ->whereDate('end_date', '>=', $start)
-            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+        return self::where('employee_id', $employeeId)
+            // Only consider approved or pending (exclude rejected)
+            ->where(function ($q) {
+                $q->where(function ($q1) {
+                    // Approved
+                    $q1->whereNotNull('approved_by')
+                    ->whereNull('rejection_reason');
+                })
+                ->orWhere(function ($q2) {
+                    // Pending
+                    $q2->whereNull('approved_by')
+                    ->whereNull('rejection_reason');
+                });
+            })
+            // Overlap condition
+            ->where('start_date', '<=', $endDate)
+            ->where('end_date', '>=', $startDate)
             ->exists();
     }
 
