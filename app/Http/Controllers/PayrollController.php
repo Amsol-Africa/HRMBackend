@@ -3918,9 +3918,11 @@ public function sendPayslips(Request $request)
         $sentCount = 0;
 
         foreach ($employeePayrolls as $employeePayroll) {
-            $user = $employeePayroll->employee->user;
+            $employee = $employeePayroll->employee;
+            $user = $employee ? $employee->user : null;
+
             if (!$user || !$user->email) {
-                Log::warning("No email found for employee ID: {$employeePayroll->employee_id}, skipping payslip.");
+                Log::warning("No email found for employee payroll ID: {$employeePayroll->id}, skipping payslip.");
                 continue;
             }
 
@@ -3956,16 +3958,14 @@ public function sendPayslips(Request $request)
                 for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
                     $tplId = $fpdi->importPage($pageNo);
                     $size = $fpdi->getTemplateSize($tplId);
+
                     $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                    $fpdi->useTemplate($tplId);
+                    $fpdi->useTemplate($tplId, 0, 0, $size['width'], $size['height']); // ✅ safer
                 }
 
-                // 🔑 Protect using employee's national_id
-                $fpdi->SetProtection(
-                    ['print', 'copy'],
-                    $employeePayroll->employee->national_id, // password
-                    null
-                );
+                // 🔑 Protect using employee's national_id or fallback
+                $password = $employee->national_id ?? 'default123';
+                $fpdi->SetProtection(['print', 'copy'], $password);
 
                 $fpdi->Output($filePath, 'F');
             } catch (\Exception $e) {
