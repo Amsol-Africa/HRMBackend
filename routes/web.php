@@ -122,6 +122,7 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
 
                 // Helper endpoints within business scope (namespaced to avoid collision with AJAX routes)
                 Route::post('/leave-types/remaining-days', [LeaveTypeController::class, 'getRemainingDays'])->name('leave-types.remaining-days');
+                Route::post('/leave-types/update', [LeaveTypeController::class, 'update'])->name('leave-types.update');
 
                 // Approvals & document upload within business scope
                 Route::post('/upload-document', [LeaveRequestController::class, 'uploadDocument'])->name('upload-document');
