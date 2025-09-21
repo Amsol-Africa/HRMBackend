@@ -15,6 +15,17 @@ class LeaveEntitlementController extends Controller
 {
     use HandleTransactions;
 
+public function index()
+{
+    $business = Business::findBySlug(session('active_business_slug'));
+    if (!$business) {
+        return RequestResponse::badRequest('Business not found.', 404);
+    }
+
+    $leavePeriods = LeavePeriod::where('business_id', $business->id)->get();
+    return view('leave_entitlements.index', compact('leavePeriods'));
+}
+
     /**
      * Create or update leave entitlements for one or many employees over one or many leave types.
      * - If "employees" is omitted, all employees in the active business are targeted.
@@ -27,11 +38,11 @@ class LeaveEntitlementController extends Controller
         $validated = $request->validate([
             'leave_period_id'           => 'required|exists:leave_periods,id',
 
-            // Optional explicit list of employees (defaults to all in business)
+            //
             'employees'                 => 'nullable|array',
             'employees.*'               => 'nullable|integer|exists:employees,id',
 
-            // Parallel arrays (index aligned)
+
             'leave_type_ids'            => 'required|array|min:1',
             'leave_type_ids.*'          => 'required|integer|exists:leave_types,id',
 
@@ -54,10 +65,10 @@ class LeaveEntitlementController extends Controller
                 return RequestResponse::badRequest('Leave period not found.', 404);
             }
 
-            // If employees list is missing, target ALL employees in the business
+
             $employeeIds = $validated['employees'] ?? Employee::where('business_id', $business->id)->pluck('id')->toArray();
 
-            // Guard: ensure the arrays are aligned
+
             $typeIds = $validated['leave_type_ids'];
             $daysArr = $validated['entitled_days'];
             if (count($typeIds) !== count($daysArr)) {
@@ -71,7 +82,7 @@ class LeaveEntitlementController extends Controller
                 foreach ($typeIds as $idx => $leaveTypeId) {
                     $entitledDays = (float)($daysArr[$idx] ?? 0);
 
-                    // Check existing entitlement for same key (unique per employee/type/period)
+
                     $existing = LeaveEntitlement::where([
                         'business_id'    => $business->id,
                         'employee_id'    => $employeeId,
@@ -80,12 +91,12 @@ class LeaveEntitlementController extends Controller
                     ])->first();
 
                     if ($existing) {
-                        // Update: entitled/total reset to provided; days_remaining recomputed against days_taken
+
                         $existing->update([
                             'entitled_days'   => $entitledDays,
                             'total_days'      => $entitledDays + (float)($existing->accrued_days ?? 0),
                         ]);
-                        // recompute remaining using model method
+
                         $existing->calculateRemainingDays();
                     } else {
                         $bulkInsert[] = [
@@ -94,10 +105,9 @@ class LeaveEntitlementController extends Controller
                             'leave_type_id'   => $leaveTypeId,
                             'leave_period_id' => $leavePeriod->id,
                             'entitled_days'   => $entitledDays,
-                            'accrued_days'    => 0,              // start at 0; accrual can add later
-                            'total_days'      => $entitledDays,  // entitled + accrued
-                            'days_taken'      => 0,
-                            'days_remaining'  => $entitledDays,  // nothing used yet
+                            'accrued_days'    => 0,
+                            'total_days'      => $entitledDays,
+                            'days_remaining'  => $entitledDays,
                             'created_at'      => $now,
                             'updated_at'      => $now,
                         ];
@@ -110,7 +120,7 @@ class LeaveEntitlementController extends Controller
             }
 
             return RequestResponse::created('Leave entitlements assigned successfully.', [
-                'leave_period_slug' => $leavePeriod->slug, // Return slug for frontend consistency
+                'leave_period_slug' => $leavePeriod->slug,
             ]);
         });
     }
@@ -150,11 +160,176 @@ class LeaveEntitlementController extends Controller
             });
         }
 
-        // Eager-load nested user to avoid N+1 in the blade
         $leaveEntitlements = $query->with(['employee.user', 'leaveType', 'leavePeriod'])->get();
 
         $leaveEntitlementsTable = view('leave._leave_entitlements_table', compact('leaveEntitlements'))->render();
 
         return RequestResponse::ok('Leave entitlements fetched successfully.', $leaveEntitlementsTable);
     }
+
+
+public function show($slug)
+{
+    $business = Business::findBySlug(session('active_business_slug'));
+    if (!$business) {
+        return RequestResponse::badRequest('Business not found.', 404);
+    }
+
+    $decoded = base64_decode(strtr($slug, '-_', '+/'));
+    if (!$decoded || substr_count($decoded, ':') !== 3) {
+        return RequestResponse::badRequest('Invalid entitlement slug.', 422);
+    }
+
+    [$business_id, $employee_id, $leave_type_id, $leave_period_id] = explode(':', $decoded);
+
+    if ((int)$business_id !== $business->id) {
+        return RequestResponse::badRequest('Invalid business for this entitlement.', 403);
+    }
+
+    $entitlement = LeaveEntitlement::where([
+        'business_id' => (int)$business_id,
+        'employee_id' => (int)$employee_id,
+        'leave_type_id' => (int)$leave_type_id,
+        'leave_period_id' => (int)$leave_period_id,
+    ])->with(['employee.user', 'leaveType', 'leavePeriod'])->first();
+
+    if (!$entitlement) {
+        return RequestResponse::badRequest('Leave entitlement not found.', 404);
+    }
+
+    return view('leave_entitlements._details', compact('entitlement'));
+}
+
+/**
+ * Fetch a leave entitlement for editing by slug.
+ */
+public function edit(Request $request)
+{
+    $validated = $request->validate([
+        'slug' => 'required|string',
+    ]);
+
+    $business = Business::findBySlug(session('active_business_slug'));
+    if (!$business) {
+        return RequestResponse::badRequest('Business not found.', 404);
+    }
+
+    $decoded = base64_decode(strtr($validated['slug'], '-_', '+/'));
+    if (!$decoded || substr_count($decoded, ':') !== 3) {
+        return RequestResponse::badRequest('Invalid entitlement slug.', 422);
+    }
+
+    [$business_id, $employee_id, $leave_type_id, $leave_period_id] = explode(':', $decoded);
+
+    if ((int)$business_id !== $business->id) {
+        return RequestResponse::badRequest('Invalid business for this entitlement.', 403);
+    }
+
+    $entitlement = LeaveEntitlement::where([
+        'business_id' => (int)$business_id,
+        'employee_id' => (int)$employee_id,
+        'leave_type_id' => (int)$leave_type_id,
+        'leave_period_id' => (int)$leave_period_id,
+    ])->with(['employee.user', 'leaveType', 'leavePeriod'])->first();
+
+    if (!$entitlement) {
+        return RequestResponse::badRequest('Leave entitlement not found.', 404);
+    }
+
+    return view('leave._leave_entitlement_details', compact('entitlement'));
+}
+
+/**
+ * Delete a leave entitlement by slug.
+ */
+public function delete(Request $request)
+{
+    return $this->handleTransaction(function () use ($request) {
+        $validated = $request->validate([
+            'slug' => 'required|string',
+        ]);
+
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.', 404);
+        }
+
+        $decoded = base64_decode(strtr($validated['slug'], '-_', '+/'));
+        if (!$decoded || substr_count($decoded, ':') !== 3) {
+            return RequestResponse::badRequest('Invalid entitlement slug.', 422);
+        }
+
+        [$business_id, $employee_id, $leave_type_id, $leave_period_id] = explode(':', $decoded);
+
+        if ((int)$business_id !== $business->id) {
+            return RequestResponse::badRequest('Invalid business for this entitlement.', 403);
+        }
+
+        $entitlement = LeaveEntitlement::where([
+            'business_id' => (int)$business_id,
+            'employee_id' => (int)$employee_id,
+            'leave_type_id' => (int)$leave_type_id,
+            'leave_period_id' => (int)$leave_period_id,
+        ])->first();
+
+        if (!$entitlement) {
+            return RequestResponse::badRequest('Leave entitlement not found.', 404);
+        }
+
+        $entitlement->delete();
+
+        return RequestResponse::ok('Leave entitlement deleted successfully.');
+    });
+}
+
+/**
+ * Update a leave entitlement by slug.
+ */
+public function update(Request $request)
+{
+    return $this->handleTransaction(function () use ($request) {
+        $validated = $request->validate([
+            'slug' => 'required|string',
+            'entitled_days' => 'required|numeric|min:0',
+        ]);
+
+        $business = Business::findBySlug(session('active_business_slug'));
+        if (!$business) {
+            return RequestResponse::badRequest('Business not found.', 404);
+        }
+
+        $decoded = base64_decode(strtr($validated['slug'], '-_', '+/'));
+        if (!$decoded || substr_count($decoded, ':') !== 3) {
+            return RequestResponse::badRequest('Invalid entitlement slug.', 422);
+        }
+
+        [$business_id, $employee_id, $leave_type_id, $leave_period_id] = explode(':', $decoded);
+
+        if ((int)$business_id !== $business->id) {
+            return RequestResponse::badRequest('Invalid business for this entitlement.', 403);
+        }
+
+        $entitlement = LeaveEntitlement::where([
+            'business_id' => (int)$business_id,
+            'employee_id' => (int)$employee_id,
+            'leave_type_id' => (int)$leave_type_id,
+            'leave_period_id' => (int)$leave_period_id,
+        ])->first();
+
+        if (!$entitlement) {
+            return RequestResponse::badRequest('Leave entitlement not found.', 404);
+        }
+
+        $entitlement->update([
+            'entitled_days' => (float)$validated['entitled_days'],
+            'total_days' => (float)$validated['entitled_days'] + (float)($entitlement->accrued_days ?? 0),
+        ]);
+
+        $entitlement->calculateRemainingDays();
+
+        return RequestResponse::ok('Leave entitlement updated successfully.', [
+            'leave_period_slug' => $entitlement->leavePeriod->slug,
+        ]);
+    });
+}
 }
