@@ -1,10 +1,13 @@
 <?php
 namespace App\Libraries;
 
-use setasign\Fpdi\Fpdi;
-use FPDF_Protection;
+require_once __DIR__ . '/Fpdf/fpdf.php';
+require_once __DIR__ . '/Fpdf/fpdf_protection.php';
 
-class PdfWithProtection extends FPDF_Protection
+class PdfWithProtection extends \FPDF_Protection
 {
-    use \setasign\Fpdi\TraitFpdi;
+    public function __construct($orientation = 'P', $unit = 'mm', $size = 'A4')
+    {
+        parent::__construct($orientation, $unit, $size);
+    }
 }
