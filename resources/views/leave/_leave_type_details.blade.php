@@ -1,130 +1,124 @@
-<div class="row">
-    <div class="col-md-6">
-        <h6 class="mb-3">Basic Information</h6>
-        <table class="table table-bordered">
-            <tr>
-                <th>Name</th>
-                <td>{{ $leaveType->name }}</td>
-            </tr>
-            <tr>
-                <th>Description</th>
-                <td>{{ $leaveType->description ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Paid Leave</th>
-                <td>
-                    <span class="badge {{ $leaveType->is_paid ? 'bg-success' : 'bg-warning' }}">
-                        {!! $leaveType->is_paid ? '<i class="bi bi-check-circle"></i> Yes' : '<i class="bi bi-check-circle"></i> No' !!}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th>Requires Approval</th>
-                <td>
-                    <span class="badge {{ $leaveType->requires_approval ? 'bg-info' : 'bg-secondary' }}">
-                        {!! $leaveType->requires_approval ? '<i class="bi bi-check-circle"></i> Yes' : '<i class="bi bi-check-circle"></i> No' !!}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th>Allows Half Day</th>
-                <td>
-                    <span class="badge {{ $leaveType->allows_half_day ? 'bg-success' : 'bg-secondary' }}">
-                        {!! $leaveType->allows_half_day ? '<i class="bi bi-check-circle"></i> Yes' : '<i class="bi bi-check-circle"></i> No' !!}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th>Requires Attachment</th>
-                <td>
-                    <span class="badge {{ $leaveType->requires_attachment ? 'bg-info' : 'bg-secondary' }}">
-                        {!! $leaveType->requires_attachment ? '<i class="bi bi-check-circle"></i> Yes' : '<i class="bi bi-check-circle"></i> No' !!}
-                    </span>
-                </td>
-            </tr>
-            <tr>
-                <th>Max Continuous Days</th>
-                <td>{{ $leaveType->max_continuous_days.' Days' ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Min Notice Days</th>
-                <td>{{ $leaveType->min_notice_days. ' Days' }}</td>
-            </tr>
-        </table>
-    </div>
-    <div class="col-md-6">
-        <h6 class="mb-3">Policy Details</h6>
-        @if ($leaveType->leavePolicies->first())
-            @php
-                $policy = $leaveType->leavePolicies->first();
-            @endphp
-            <table class="table table-bordered">
-                <tr>
-                    <th>Department</th>
-                    <td>{{ $policy->department->name }}</td>
-                </tr>
-                <tr>
-                    <th>Job Category</th>
-                    <td>{{ $policy->jobCategory->name }}</td>
-                </tr>
-                <tr>
-                    <th>Gender Applicable</th>
-                    <td>{{ ucfirst($policy->gender_applicable) }}</td>
-                </tr>
-                <tr>
-                    <th>Default Days</th>
-                    <td>{{ $policy->default_days.' Days' }}</td>
-                </tr>
-                <tr>
-                    <th>Accrual Frequency</th>
-                    <td>{{ ucfirst($policy->accrual_frequency) }}</td>
-                </tr>
-                <tr>
-                    <th>Accrual Amount</th>
-                    <td>{{ $policy->accrual_amount }}</td>
-                </tr>
-                <tr>
-                    <th>Max Carryover Days</th>
-                    <td>{{ $policy->max_carryover_days.' Days' }}</td>
-                </tr>
-                <tr>
-                    <th>Min Service Days</th>
-                    <td>{{ $policy->minimum_service_days_required.' Days' }}</td>
-                </tr>
-                <tr>
-                    <th>Effective Date</th>
-                    <td>{{ $policy->effective_date->format('Y-m-d') }}</td>
-                </tr>
+@php
+    /** @var \App\Models\LeaveType $leaveType */
+    $lt = $leaveType;
+    $ex = is_array($lt->excluded_days) ? $lt->excluded_days : [];
 
-                <tr>
-                    <th>Stepwise Leave</th>
-                    <td>
-                        <span class="badge {{ $leaveType->is_stepwise ? 'bg-info' : 'bg-secondary' }}">
-                            {!! $leaveType->is_stepwise ? '<i class="bi bi-check-circle"></i> Enabled' : '<i class="bi bi-x-circle"></i> Disabled' !!}
-                        </span>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Stepwise Rules</th>
-                    <td>
-                        @if(!empty($leaveType->stepwise_rules))
-                            <ul>
-                                @foreach($leaveType->stepwise_rules as $rule)
-                                    <li>User ID: {{ $rule['id'] }}, Level: {{ $rule['level'] }}</li>
-                                @endforeach
-                            </ul>
-                        @else
-                            N/A
-                        @endif
-                    </td>
-                </tr>
-                <tr>
-                    <th>End Date</th>
-                    <td>{{ $policy->end_date ? $policy->end_date->format('Y-m-d') : 'N/A' }}</td>
-                </tr>
-            </table>
-        @else
-            <p class="text-muted">No policy details available</p>
+    // Freshness badge: "Updated just now" if within 2 minutes
+    $updatedAt = $lt->updated_at ?? null;
+    $isFresh = false;
+    $updatedText = '';
+    if ($updatedAt) {
+        $diffSeconds = now()->diffInSeconds($updatedAt);
+        $isFresh = $diffSeconds <= 120; // 2 minutes
+        $updatedText = $updatedAt->format('Y-m-d H:i');
+    }
+@endphp
+
+<div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">{{ $lt->name }}</h5>
+
+        @if($updatedAt)
+            @if($isFresh)
+                <span class="badge bg-success-subtle text-success border border-success">
+                    Updated just now
+                </span>
+            @else
+                <span class="badge bg-light text-muted border">
+                    Updated: {{ $updatedText }}
+                </span>
+            @endif
         @endif
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-2">General</h6>
+                    <dl class="row mb-0">
+                        <dt class="col-6">Description</dt>
+                        <dd class="col-6">{{ $lt->description ?: '—' }}</dd>
+
+                        <dt class="col-6">Requires Approval</dt>
+                        <dd class="col-6">{{ $lt->requires_approval ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Is Paid</dt>
+                        <dd class="col-6">{{ $lt->is_paid ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Allowance Accruable</dt>
+                        <dd class="col-6">{{ $lt->allowance_accruable ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Allows Half Day</dt>
+                        <dd class="col-6">{{ $lt->allows_half_day ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Requires Attachment</dt>
+                        <dd class="col-6">{{ $lt->requires_attachment ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Max Continuous Days</dt>
+                        <dd class="col-6">{{ $lt->max_continuous_days ?? '—' }}</dd>
+
+                        <dt class="col-6">Min Notice Days</dt>
+                        <dd class="col-6">{{ $lt->min_notice_days ?? '—' }}</dd>
+
+                        <dt class="col-6">Excluded Days</dt>
+                        <dd class="col-6">
+                            {{ empty($ex) ? '—' : implode(', ', array_map('ucfirst',$ex)) }}
+                        </dd>
+
+                        <dt class="col-6">Allows Backdating</dt>
+                        <dd class="col-6">{{ $lt->allows_backdating ? 'Yes' : 'No' }}</dd>
+
+                        <dt class="col-6">Approval Levels</dt>
+                        <dd class="col-6">{{ $lt->approval_levels ?? 0 }}</dd>
+
+                        <dt class="col-6">Stepwise</dt>
+                        <dd class="col-6">{{ $lt->is_stepwise ? 'Yes' : 'No' }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6 class="mb-2">Policies</h6>
+                    @if($lt->leavePolicies->isEmpty())
+                        <p class="text-muted mb-0">No policies defined.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>Job Category</th>
+                                        <th>Gender</th>
+                                        <th>Default Days</th>
+                                        <th>Accrual</th>
+                                        <th>Carryover</th>
+                                        <th>Effective</th>
+                                        <th>End</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach($lt->leavePolicies as $p)
+                                    <tr>
+                                        <td>{{ $p->department->name ?? 'All' }}</td>
+                                        <td>{{ $p->jobCategory->name ?? 'All' }}</td>
+                                        <td>{{ ucfirst($p->gender_applicable ?? 'all') }}</td>
+                                        <td>{{ $p->default_days }}</td>
+                                        <td>{{ $p->accrual_frequency }} ({{ $p->accrual_amount }})</td>
+                                        <td>{{ $p->max_carryover_days }}</td>
+                                        <td>{{ optional($p->effective_date)->format('Y-m-d') }}</td>
+                                        <td>{{ optional($p->end_date)->format('Y-m-d') ?: '—' }}</td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 </div>

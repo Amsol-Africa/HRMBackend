@@ -5,11 +5,12 @@
             <div class="card">
                 <div class="card-body">
                     <form action="" method="post" id="leaveTypeForm">
+                        @csrf
 
                         <div class="form-group mb-3">
                             <label for="name">Name</label>
                             <input type="text" name="name" id="name" placeholder="Leave Name"
-                                class="form-control">
+                                class="form-control" required>
                         </div>
 
                         <div class="form-group mb-3">
@@ -62,7 +63,7 @@
                             <div class="col-md-12">
                                 <label for="min_notice_days">Min notice days</label>
                                 <input type="number" name="min_notice_days" id="min_notice_days" 
-                                class="form-control" min="0" oninput="validity.valid||(value='');">
+                                class="form-control" min="0" oninput="validity.valid||(value='');" required>
                             </div>
                         </div>
 
@@ -108,7 +109,7 @@
                             <div class="col-md-4">
                                 <label for="default_days">Default days</label>
                                 <input type="number" name="default_days" id="default_days" 
-                                class="form-control" min="0" oninput="validity.valid||(value='');">
+                                class="form-control" min="0" oninput="validity.valid||(value='');" required>
                             </div>
 
                             <div class="col-md-4">
@@ -123,86 +124,82 @@
                             <div class="col-md-4">
                                 <label for="accrual_amount">Accrual amount</label>
                                 <input type="number" name="accrual_amount" id="accrual_amount"
-                                    class="form-control">
+                                    class="form-control" step="0.01" min="0" oninput="validity.valid||(value='');" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label for="max_carryover_days">Max carryover days</label>
                                 <input type="number" name="max_carryover_days" id="max_carryover_days"
-                                    class="form-control" min="0" oninput="validity.valid||(value='');">
+                                    class="form-control" min="0" oninput="validity.valid||(value='');" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label for="minimum_service_days_required">minimum service days required</label>
                                 <input type="number" name="minimum_service_days_required"
-                                    id="minimum_service_days_required" class="form-control" min="0" oninput="validity.valid||(value='');">
+                                    id="minimum_service_days_required" class="form-control" min="0" oninput="validity.valid||(value='');" required>
                             </div>
 
                             <div class="col-md-6">
                                 <label for="effective_date">Effective date</label>
                                 <input type="date" class="form-control datepicker" id="effective_date"
-                                    name="effective_date" required min="{{ date('Y-m-d') }}">
+                                    name="effective_date" required>
                             </div>
 
-                                <div class="col-md-6">
+                            <div class="col-md-6">
                                 <label for="end_date">End date</label>
-                                <input type="date" class="form-control datepicker" id="end_date" name="end_date"
-                                    required min="{{ date('Y-m-d') }}">
+                                <input type="date" class="form-control datepicker" id="end_date" name="end_date">
                             </div>
-                        
 
+                            <div class="col-md-12 mb-3">
+                                <label for="excluded_days">Excluded (Non-working) Days</label>
+                                <div class="d-flex flex-wrap">
+                                    @php
+                                        $daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                                    @endphp
+                                    @foreach ($daysOfWeek as $day)
+                                        <div class="form-check me-3">
+                                            <input class="form-check-input" type="checkbox" 
+                                                name="excluded_days[]" 
+                                                id="day_{{ $day }}" 
+                                                value="{{ $day }}">
+                                            <label class="form-check-label" for="day_{{ $day }}">
+                                                {{ ucfirst($day) }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
 
-                        <div class="col-md-12 mb-3">
-                            <label for="excluded_days">Excluded (Non-working) Days</label>
-                            <div class="d-flex flex-wrap">
-                                @php
-                                    $daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                                @endphp
-                                @foreach ($daysOfWeek as $day)
-                                    <div class="form-check me-3">
-                                        <input class="form-check-input" type="checkbox" 
-                                            name="excluded_days[]" 
-                                            id="day_{{ $day }}" 
-                                            value="{{ $day }}">
-                                        <label class="form-check-label" for="day_{{ $day }}">
-                                            {{ ucfirst($day) }}
-                                        </label>
-                                    </div>
-                                @endforeach
+                            <div class="col-md-4">
+                                <label for="approval_levels">Approval Levels</label>
+                                <select name="approval_levels" id="approval_levels" class="form-select">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                                </select>
+                            </div>  
+
+                            <div class="col-md-4">
+                                <label for="allows_backdating">Allows Backdating</label>
+                                <select name="allows_backdating" id="allows_backdating" class="form-select">
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="is_stepwise">Is Stepwise</label>
+                                <select name="is_stepwise" id="is_stepwise" class="form-select">
+                                    <option value="1">Yes</option>
+                                    <option value="0" selected>No</option>
+                                </select>
+                            </div>  
+
+                            <div class="col-md-12 mb-3">
+                                <label for="stepwise_rules">Stepwise Rules</label>
+                                <textarea name="stepwise_rules" id="stepwise_rules" class="form-control" rows="3"></textarea>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label for="approval_levels">Approval Levels</label>
-                            <select name="approval_levels" id="approval_levels" class="form-select">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>  
-
-                        <div class="col-md-4">
-                            <label for="allows_backdating">Allows Backdating</label>
-                            <select name="allows_backdating" id="allows_backdating" class="form-select">
-                                <option value="1">Yes</option>
-                                <option value="0" selected>No</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="is_stepwise">Is Stepwise</label>
-                            <select name="is_stepwise" id="is_stepwise" class="form-select">
-                                <option value="1">Yes</option>
-                                <option value="0" selected>No</option>
-                            </select>
-                        </div>  
-
-                        <div class="col-md-12 mb-3">
-                            <label for="stepwise_rules">Stepwise Rules</label>
-                            <textarea name="stepwise_rules" id="stepwise_rules" class="form-control" rows="3"></textarea>
-                        </div>
-                    </div>
-
-                        
 
                         <div class="row">
                             <div class="col-md-12">
@@ -210,7 +207,6 @@
                                     Save Leave Type </button>
                             </div>
                         </div>
-
 
                     </form>
                 </div>

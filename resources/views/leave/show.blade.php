@@ -11,13 +11,10 @@
             'rejected' => ['icon' => 'fa fa-times-circle',  'color' => '#dc3545', 'label' => 'Rejected'],
         ];
 
-        $isOwner    = optional(auth()->user()->employee)->id === (int) $leave->employee_id;
-
-        // Active role awareness (employee should never see approver buttons)
+        $isOwner        = optional(auth()->user()->employee)->id === (int) $leave->employee_id;
         $activeRole     = session('active_role');
         $isApproverRole = in_array($activeRole, ['head-of-department','business-hr','business-admin','business-head'], true);
 
-        // Ask the model; it already encodes the approver logic
         $canApprove = $isApproverRole && method_exists($leave, 'canUserApprove')
             ? $leave->canUserApprove(auth()->user())
             : false;
@@ -26,49 +23,46 @@
         $levelsCurrent = (int) ($leave->current_approval_level ?? 0);
         $progressPct   = $levelsTotal > 0 ? min(100, round(($levelsCurrent / $levelsTotal) * 100)) : ($statusName === 'approved' ? 100 : 0);
 
-        // Timeline
-        $timeline = [];
-        $timeline[] = [
-            'name'       => 'submitted',
-            'title'      => 'Leave Submitted',
-            'at'         => optional($leave->created_at)->format('Y-m-d H:i'),
-            'reason'     => null,
-            'icon'       => 'fa fa-paper-plane',
-            'colorClass' => 'text-primary',
+        // Back button fallbacks by role
+        // You can customize these to named routes if you have them.
+        $roleFallbacks = [
+            'head-of-department' => url('/dashboard'),         // HOD → dashboard
+            'business-hr'        => url('/dashboard'),         // HR  → dashboard
+            'business-admin'     => url('/dashboard'),         // Admin → dashboard
+            'business-head'      => url('/dashboard'),         // Head → dashboard
+            'business-employee'  => url('/leave/requests'),    // Employee → your "My Requests" list (adjust if you have a route)
         ];
-
-        foreach ((array) ($leave->approval_history ?? []) as $hist) {
-            $timeline[] = [
-                'name'       => 'approval_level_' . ($hist['level'] ?? '?'),
-                'title'      => 'Approval Level ' . ($hist['level'] ?? '?'),
-                'at'         => isset($hist['approved_at']) ? \Carbon\Carbon::parse($hist['approved_at'])->format('Y-m-d H:i') : null,
-                'reason'     => null,
-                'icon'       => 'fa fa-check',
-                'colorClass' => 'text-success',
-                'meta'       => 'Approver ID: ' . ($hist['approver_id'] ?? '—'),
-            ];
-        }
-
-        if ($statusName === 'rejected') {
-            $timeline[] = [
-                'name'       => 'rejected',
-                'title'      => 'Rejected',
-                'at'         => optional($leave->updated_at)->format('Y-m-d H:i'),
-                'reason'     => $leave->rejection_reason,
-                'icon'       => 'fa fa-times-circle',
-                'colorClass' => 'text-danger',
-            ];
-        } elseif ($statusName === 'approved') {
-            $timeline[] = [
-                'name'       => 'approved',
-                'title'      => 'Approved',
-                'at'         => optional($leave->approved_at)->format('Y-m-d H:i'),
-                'reason'     => null,
-                'icon'       => 'fa fa-check-circle',
-                'colorClass' => 'text-success',
-            ];
-        }
+        $fallbackBackUrl = $roleFallbacks[$activeRole] ?? url('/');
     @endphp
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary" id="smartBackBtn">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back
+            </button>
+            <span class="text-muted small">
+                @if($activeRole === 'head-of-department')
+                    Back takes you to your dashboard.
+                @elseif($activeRole === 'business-employee')
+                    Back takes you to your leave requests.
+                @endif
+            </span>
+        </div>
+
+        <div>
+            <span class="badge"
+                  style="background-color: {{ $statusColors[$statusName]['color'] ?? '#6c757d' }}">
+                <i class="{{ $statusColors[$statusName]['icon'] ?? 'fa fa-info-circle' }} me-1"></i>
+                {{ $statusColors[$statusName]['label'] ?? ucfirst($statusName) }}
+            </span>
+            @if($leave->is_tentative)
+                <span class="badge bg-secondary ms-1">Tentative</span>
+            @endif
+            @if($leave->requires_documentation && !$leave->attachment)
+                <span class="badge bg-warning text-dark ms-1">Documentation Required</span>
+            @endif
+        </div>
+    </div>
 
     <div class="row g-3">
         {{-- Approve / Reject only for approver roles AND when model says you can approve --}}
@@ -123,23 +117,12 @@
                         <div>
                             <h5 class="mb-1">Leave Request #{{ $leave->reference_number }}</h5>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="badge"
-                                      style="background-color: {{ $statusColors[$statusName]['color'] ?? '#6c757d' }}">
-                                    <i class="{{ $statusColors[$statusName]['icon'] ?? 'fa fa-info-circle' }} me-1"></i>
-                                    {{ $statusColors[$statusName]['label'] ?? ucfirst($statusName) }}
-                                </span>
-                                @if($leave->is_tentative)
-                                    <span class="badge bg-secondary">Tentative</span>
-                                @endif
-                                @if($leave->requires_documentation && !$leave->attachment)
-                                    <span class="badge bg-warning text-dark">Documentation Required</span>
-                                @endif
+                                <span class="text-muted">Created: {{ optional($leave->created_at)->format('Y-m-d H:i') }}</span>
+                                <span class="text-muted">•</span>
+                                <span class="text-muted">Updated: {{ optional($leave->updated_at)->format('Y-m-d H:i') }}</span>
                             </div>
                         </div>
-                        <div class="text-end">
-                            <small class="text-muted d-block">Created: {{ optional($leave->created_at)->format('Y-m-d H:i') }}</small>
-                            <small class="text-muted d-block">Updated: {{ optional($leave->updated_at)->format('Y-m-d H:i') }}</small>
-                        </div>
+                        <div class="text-end"></div>
                     </div>
 
                     <hr>
@@ -197,7 +180,8 @@
 
                                 {{-- Upload later (owner only) --}}
                                 @if($isOwner && $leave->requires_documentation && !$leave->attachment && $statusName !== 'rejected')
-                                    <form action="{{ route('leave.upload-document') }}"
+                                    <form id="inlineUploadForm"
+                                          action="{{ route('leave.upload-document') }}"
                                           method="post" enctype="multipart/form-data" class="mt-3">
                                         @csrf
                                         <input type="hidden" name="reference_number" value="{{ $leave->reference_number }}">
@@ -252,6 +236,48 @@
                     <h6 class="mb-0">Timeline</h6>
                 </div>
                 <div class="card-body">
+                    @php
+                        $timeline = [];
+                        $timeline[] = [
+                            'name'       => 'submitted',
+                            'title'      => 'Leave Submitted',
+                            'at'         => optional($leave->created_at)->format('Y-m-d H:i'),
+                            'reason'     => null,
+                            'icon'       => 'fa fa-paper-plane',
+                            'colorClass' => 'text-primary',
+                        ];
+                        foreach ((array) ($leave->approval_history ?? []) as $hist) {
+                            $timeline[] = [
+                                'name'       => 'approval_level_' . ($hist['level'] ?? '?'),
+                                'title'      => 'Approval Level ' . ($hist['level'] ?? '?'),
+                                'at'         => isset($hist['approved_at']) ? \Carbon\Carbon::parse($hist['approved_at'])->format('Y-m-d H:i') : null,
+                                'reason'     => null,
+                                'icon'       => 'fa fa-check',
+                                'colorClass' => 'text-success',
+                                'meta'       => 'Approver ID: ' . ($hist['approver_id'] ?? '—'),
+                            ];
+                        }
+                        if ($statusName === 'rejected') {
+                            $timeline[] = [
+                                'name'       => 'rejected',
+                                'title'      => 'Rejected',
+                                'at'         => optional($leave->updated_at)->format('Y-m-d H:i'),
+                                'reason'     => $leave->rejection_reason,
+                                'icon'       => 'fa fa-times-circle',
+                                'colorClass' => 'text-danger',
+                            ];
+                        } elseif ($statusName === 'approved') {
+                            $timeline[] = [
+                                'name'       => 'approved',
+                                'title'      => 'Approved',
+                                'at'         => optional($leave->approved_at)->format('Y-m-d H:i'),
+                                'reason'     => null,
+                                'icon'       => 'fa fa-check-circle',
+                                'colorClass' => 'text-success',
+                            ];
+                        }
+                    @endphp
+
                     @forelse($timeline as $item)
                         <div class="d-flex align-items-start mb-3">
                             <div class="me-3">
@@ -280,6 +306,61 @@
     </div>
 
     @push('scripts')
+        {{-- Your existing leave actions (approve/reject) --}}
         <script src="{{ asset('js/main/leave.js') }}" type="module"></script>
+
+        <script>
+        (function() {
+            // --- Smart Back: prefer browser history within same origin; fallback by role ---
+            const btn = document.getElementById('smartBackBtn');
+            const fallbackUrl = @json($fallbackBackUrl);
+            btn?.addEventListener('click', function() {
+                try {
+                    const ref = document.referrer || '';
+                    const sameOrigin = ref && new URL(ref).origin === window.location.origin;
+                    if (sameOrigin && window.history.length > 1) {
+                        window.history.back();
+                        return;
+                    }
+                } catch (e) {}
+                window.location.href = fallbackUrl;
+            });
+
+            // --- Inline upload: AJAX + SweetAlert, then refresh the page ---
+            const form = document.getElementById('inlineUploadForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const fd = new FormData(form);
+                    try {
+                        const res  = await fetch(form.getAttribute('action'), {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                            body: fd
+                        });
+                        const json = await res.json().catch(() => ({}));
+
+                        if (!res.ok || json?.status !== 'success') {
+                            throw new Error(json?.message || 'Upload failed.');
+                        }
+
+                        if (window.Swal) {
+                            await Swal.fire('Uploaded', 'Document uploaded successfully.', 'success');
+                        } else {
+                            alert('Document uploaded successfully.');
+                        }
+                        // Reload to reflect new attachment + state
+                        window.location.reload();
+                    } catch (err) {
+                        if (window.Swal) {
+                            Swal.fire('Error', err?.message || 'Failed to upload attachment.', 'error');
+                        } else {
+                            alert(err?.message || 'Failed to upload attachment.');
+                        }
+                    }
+                });
+            }
+        })();
+        </script>
     @endpush
 </x-app-layout>

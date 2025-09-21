@@ -104,10 +104,17 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/entitlements/set', [DashboardController::class, 'setLeaveEntitlements'])->name('entitlements.create');
             Route::get('/settings', [DashboardController::class, 'leaveSettings'])->name('settings');
 
-            Route::get('/leave-types/{slug}/edit', [\App\Http\Controllers\LeaveTypeController::class, 'edit'])->name('leave-types.edit');
-        });
+                // Leave types (page)
+                Route::get('/leave-types/{slug}/edit', [LeaveTypeController::class, 'edit'])->name('leave-types.edit');
+                Route::delete('/leave-types/delete', [LeaveTypeController::class, 'destroy'])->name('leave-types.delete');
 
+                // Helper endpoints within business scope (namespaced to avoid collision with AJAX routes)
+                Route::post('/leave-types/remaining-days', [LeaveTypeController::class, 'getRemainingDays'])->name('leave-types.remaining-days');
 
+                // Approvals & document upload within business scope
+                Route::post('/upload-document', [LeaveRequestController::class, 'uploadDocument'])->name('upload-document');
+                Route::post('/status', [LeaveRequestController::class, 'status'])->name('status');
+            });
 
         Route::prefix('leave-periods')->name('leave-periods.')->group(function () {
             Route::get('/fetch', [LeavePeriodController::class, 'fetch'])->name('fetch');
@@ -142,13 +149,42 @@ Route::middleware(['auth', \App\Http\Middleware\VerifyBusiness::class, \App\Http
             Route::get('/{applicant}/download-document/{mediaId}', [ApplicantController::class, 'downloadDocument'])->name('download-document');
         });
 
-        Route::prefix('performance')->name('performance.')->group(function () {
-            Route::prefix('tasks')->name('tasks.')->group(function () {
-                Route::get('/', [DashboardController::class, 'tasks'])->name('index');
-                Route::get('/create', [DashboardController::class, 'create'])->name('create');
-                Route::get('/progress/{task}', [DashboardController::class, 'progress'])->name('progress');
-                Route::get('/reports', [DashboardController::class, 'reports'])->name('reports');
-                Route::get('/{task}', [DashboardController::class, 'show'])->name('show');
+            Route::get('/payroll/download-p9/{year}/{format}', [PayrollController::class, 'downloadP9'])->name('payroll.download_p9');
+            Route::get('/payroll/download-bank-advice/{year}/{month}/{format}', [PayrollController::class, 'downloadBankAdvice'])->name('payroll.download_bank_advice');
+            Route::get('/payroll/p9/{employeeId}/{year}/{format}', [PayrollController::class, 'downloadSingleP9'])->name('payroll.download_single_p9');
+
+            Route::post('/payroll/send-payslips', [PayrollController::class, 'sendPayslips'])->name('payroll.send_payslips');
+
+            Route::get('reliefs', [DashboardController::class, 'reliefs'])->name('reliefs.index');
+            Route::get('employee-reliefs', [DashboardController::class, 'employeeReliefs'])->name('employee-reliefs.index');
+
+            Route::get('/allowances', [DashboardController::class, 'allowances'])->name('allowances.index');
+
+            Route::get('/advances', [DashboardController::class, 'advances'])->name('advances.index');
+            Route::get('/loans', [DashboardController::class, 'loans'])->name('loans.index');
+
+            // Leave area (business views + a few actions)
+            Route::prefix('leave')->name('leave.')->group(function () {
+                Route::get('/requests', [DashboardController::class, 'leaveApplications'])->name('index');
+                Route::get('/requests/create', [DashboardController::class, 'requestLeave'])->name('create');
+                Route::get('/view/{leave}', [DashboardController::class, 'leaveApplication'])->name('show');
+                Route::get('/types', [DashboardController::class, 'leaveTypes'])->name('types');
+                Route::get('/periods', [DashboardController::class, 'leavePeriods'])->name('periods');
+                Route::get('/entitlements', [DashboardController::class, 'leaveEntitlements'])->name('entitlements.index');
+                Route::get('/entitlements/set', [DashboardController::class, 'setLeaveEntitlements'])->name('entitlements.create');
+                Route::get('/settings', [DashboardController::class, 'leaveSettings'])->name('settings');
+
+                // Leave types (page)
+                Route::get('/leave-types/{slug}/edit', [LeaveTypeController::class, 'edit'])->name('leave-types.edit');
+                Route::delete('/leave-types/delete', [LeaveTypeController::class, 'destroy'])->name('leave-types.delete');
+
+                // Helper endpoints within business scope (namespaced to avoid collision with AJAX routes)
+                Route::post('/leave-types/remaining-days', [LeaveTypeController::class, 'getRemainingDays'])->name('leave-types.remaining-days');
+                Route::post('/leave-types/update', [LeaveTypeController::class, 'update'])->name('leave-types.update');
+
+                // Approvals & document upload within business scope
+                Route::post('/upload-document', [LeaveRequestController::class, 'uploadDocument'])->name('upload-document');
+                Route::post('/status', [LeaveRequestController::class, 'status'])->name('status');
             });
             Route::get('/reviews', [DashboardController::class, 'reviews'])->name('reviews');
             Route::prefix('kpis')->name('kpis.')->group(function () {

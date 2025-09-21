@@ -1,11 +1,19 @@
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Leave Requests</h5>
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="mb-0">Leave Requests</h5>
 
-        @php
-            $activeRole = session('active_role');
-            $isEmployee = $activeRole === 'business-employee';
-        @endphp
+            @php
+                $activeRole = session('active_role');
+                $isEmployee = $activeRole === 'business-employee';
+            @endphp
+
+            @if (in_array($activeRole, ['head-of-department','business-hr','business-admin','business-head'], true))
+                <a href="{{ url('/dashboard') }}" class="btn btn-outline-secondary btn-sm ms-2">
+                    <i class="fa-solid fa-arrow-left"></i> Back
+                </a>
+            @endif
+        </div>
 
         @if ($activeRole === 'business-admin')
             <a href="{{ route('business.leave.create', $currentBusiness->slug) }}" class="btn btn-primary btn-sm">
@@ -37,23 +45,19 @@
             <tbody>
             @foreach ($leaveRequests as $request)
                 @php
-                    // View URL by ACTIVE role (employees -> myaccount, others -> business)
                     $viewUrl = $isEmployee
                         ? route('myaccount.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number])
                         : route('business.leave.show', ['business' => $currentBusiness->slug, 'leave' => $request->reference_number]);
 
-                    // Progress
                     $requiredLevels     = (int) optional($request->leaveType)->approval_levels ?: 1;
                     $currentLevel       = (int) ($request->current_approval_level ?? 0);
                     $progressPercentage = $requiredLevels > 0 ? min(100, round(($currentLevel / $requiredLevels) * 100)) : 0;
                     if ($request->status === 'approved') { $progressPercentage = 100; }
 
-                    // Who can act (model decides)
                     $canApprove = $request->status === 'pending'
                         && method_exists($request, 'canUserApprove')
                         && $request->canUserApprove(auth()->user());
 
-                    // Owner (for “upload to complete” / delete)
                     $authEmpId = auth()->user()->employee->id ?? null;
                     $isOwner   = $authEmpId && ((int)$authEmpId === (int)$request->employee_id);
                 @endphp
@@ -249,22 +253,27 @@
         e.preventDefault();
         const fd = new FormData(form);
         try {
-            const res  = await fetch("{{ route('leave.upload-document') }}", {
+            const res  = await fetch(@json(route('leave.upload-document')), {
                 method: "POST",
-                headers: { "X-CSRF-TOKEN": "{{ csrf_token() }}" },
+                headers: { "X-CSRF-TOKEN": @json(csrf_token()) },
                 body: fd
             });
-            const json = await res.json();
+            const json = await res.json().catch(() => ({}));
             if (!res.ok || json?.status !== 'success') {
                 throw new Error(json?.message || 'Upload failed.');
             }
 
             if (typeof Swal !== 'undefined') {
-                Swal.fire('Uploaded', 'Document uploaded successfully.', 'success');
+                await Swal.fire('Uploaded', 'Document uploaded successfully.', 'success');
+            } else {
+                alert('Document uploaded successfully.');
             }
-            if (modal_{{ $status }}) modal_{{ $status }}.hide();
 
-            // Refresh this tab (or do a full reload)
+            // Close and reset the modal
+            if (modal_{{ $status }}) modal_{{ $status }}.hide();
+            form.reset();
+
+            // Refresh this tab (prefer function; fallback to reload)
             if (typeof getLeave === 'function') {
                 getLeave('{{ $status }}');
             } else {
@@ -272,16 +281,16 @@
             }
         } catch (err) {
             if (typeof Swal !== 'undefined') {
-                Swal.fire('Error', err.message || 'Failed to upload attachment.', 'error');
+                Swal.fire('Error', err?.message || 'Failed to upload attachment.', 'error');
             } else {
-                alert(err.message || 'Failed to upload attachment.');
+                alert(err?.message || 'Failed to upload attachment.');
             }
         }
     });
 
     // DataTable init (safe re-init)
     const tableId = '#{{ $status }}LeaveRequestsTable';
-    if ($(tableId).length > 0 && $.fn.DataTable) {
+    if (window.jQuery && $(tableId).length > 0 && $.fn.DataTable) {
         try {
             if ($.fn.dataTable.isDataTable(tableId)) {
                 $(tableId).DataTable().destroy();
