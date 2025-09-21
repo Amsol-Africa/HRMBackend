@@ -49,6 +49,7 @@ use App\Exports\BankAdviceExport;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfReader\PdfReaderException;
 use Illuminate\Support\Facades\File;
+use App\Libraries\PdfWithProtection;
 
 use function Illuminate\Log\log;
 
@@ -3871,10 +3872,6 @@ public function downloadColumn(Request $request, $payroll_id, $column, $format)
     }
 */
 
-use App\Libraries\PdfWithProtection;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 public function sendPayslips(Request $request)
 {
