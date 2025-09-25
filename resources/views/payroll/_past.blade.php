@@ -32,7 +32,7 @@
                             class="fa fa-envelope"></i></button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deletePayroll({{ $payroll->id }})"><i
                             class="fa fa-trash"></i></button>
-                    <button class="btn btn-sm btn-outline-dark" onclick="closeMonth({{ $payroll->id }})"><i
+                    <button class="btn btn-sm btn-outline-dark" onclick="closeMonth({{ $payroll->id }}, {{ $payroll->payrun_month }}, {{ $payroll->payrun_year }})"><i
                             class="fa fa-lock"></i></button>
                 </td>
             </tr>

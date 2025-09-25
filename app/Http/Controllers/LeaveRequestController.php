@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers;
+<?php namespace App\Http\Controllers;
 
 use App\Models\Business;
 use App\Models\LeaveType;
@@ -35,13 +33,12 @@ class LeaveRequestController extends Controller
         }
 
         $status = strtolower($request->get('status', 'pending'));
-
         $query = LeaveRequest::with(['employee.user', 'leaveType'])
             ->where('business_id', $business->id);
 
         // Scope by ACTIVE role (not just hasRole)
-        $user       = auth()->user();
-        $emp        = $user->employee;
+        $user = auth()->user();
+        $emp = $user->employee;
         $activeRole = session('active_role');
 
         if ($activeRole === 'business-employee' && $emp) {
@@ -53,7 +50,7 @@ class LeaveRequestController extends Controller
             $query->status($status);
         }
 
-        $leaveRequests   = $query->latest('id')->get();
+        $leaveRequests = $query->latest('id')->get();
         $currentBusiness = $business;
 
         $html = view('leave._leave_requests_table', compact('leaveRequests', 'currentBusiness'))
@@ -107,17 +104,16 @@ class LeaveRequestController extends Controller
 
         // 2) Full validation (attachment rules are permissive; business rules enforced in code below)
         $validated = $request->validate([
-            'employee_id'   => 'nullable|exists:employees,id',
+            'employee_id' => 'nullable|exists:employees,id',
             'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date'    => 'required|date',
-            'end_date'      => 'required|date|after_or_equal:start_date',
-            'reason'        => 'nullable|string',
-            'half_day'      => 'nullable|boolean',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'nullable|string',
+            'half_day' => 'nullable|boolean',
             'half_day_type' => 'nullable|string|in:morning,afternoon|required_if:half_day,1',
-
             // Files
-            'attachment'    => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:2048',
-            'attach_later'  => 'nullable|boolean',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:2048',
+            'attach_later' => 'nullable|boolean',
         ]);
 
         return $this->handleTransaction(function () use ($validated, $leaveType, $request) {
@@ -141,7 +137,7 @@ class LeaveRequestController extends Controller
                 return RequestResponse::badRequest('Selected employee does not belong to the current business.');
             }
 
-            // (Optional) If LeaveType is business-scoped, enforce it (safe even if column doesn’t exist/null)
+            // (Optional) If LeaveType is business-scoped, enforce it (safe even if column doesn't exist/null)
             if (property_exists($leaveType, 'business_id') && !is_null($leaveType->business_id)) {
                 if ((int)$leaveType->business_id !== (int)$business->id) {
                     return RequestResponse::badRequest('This leave type is not available in the current business.');
@@ -150,7 +146,7 @@ class LeaveRequestController extends Controller
 
             // --- Dates & guards ---
             $startDate = Carbon::parse($validated['start_date']);
-            $endDate   = Carbon::parse($validated['end_date']);
+            $endDate = Carbon::parse($validated['end_date']);
 
             if ($startDate->lt(today()) && empty($leaveType->allows_backdating)) {
                 return RequestResponse::badRequest('Backdating is not allowed for this leave type.');
@@ -168,7 +164,10 @@ class LeaveRequestController extends Controller
             }
 
             $totalDays = LeaveRequest::calculateTotalDays(
-                $startDate, $endDate, (bool)($validated['half_day'] ?? false), $leaveType
+                $startDate,
+                $endDate,
+                (bool)($validated['half_day'] ?? false),
+                $leaveType
             );
 
             if (!empty($leaveType->max_continuous_days) && $totalDays > (float)$leaveType->max_continuous_days) {
@@ -182,9 +181,9 @@ class LeaveRequestController extends Controller
             // --- END OVERLAP GUARD ---
 
             // --- Attachment handling ---
-            $attachmentPath        = null;
+            $attachmentPath = null;
             $requiresDocumentation = false;
-            $isTentative           = false;
+            $isTentative = false;
 
             if ($leaveType->requires_attachment) {
                 $attachLater = (bool)($validated['attach_later'] ?? false);
@@ -226,26 +225,87 @@ class LeaveRequestController extends Controller
 
             // --- Create request ---
             $leaveRequest = LeaveRequest::create([
-                'reference_number'       => LeaveRequest::generateUniqueReferenceNumber($business->id),
-                'employee_id'            => $employeeId,
-                'business_id'            => $business->id,
-                'leave_type_id'          => $validated['leave_type_id'],
-                'start_date'             => $startDate,
-                'end_date'               => $endDate,
-                'half_day'               => (bool)($validated['half_day'] ?? false),
-                'half_day_type'          => $validated['half_day_type'] ?? null,
-                'reason'                 => $validated['reason'] ?? null,
-                'attachment'             => $attachmentPath,
+                'reference_number' => LeaveRequest::generateUniqueReferenceNumber($business->id),
+                'employee_id' => $employeeId,
+                'business_id' => $business->id,
+                'leave_type_id' => $validated['leave_type_id'],
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'half_day' => (bool)($validated['half_day'] ?? false),
+                'half_day_type' => $validated['half_day_type'] ?? null,
+                'reason' => $validated['reason'] ?? null,
+                'attachment' => $attachmentPath,
                 'requires_documentation' => $requiresDocumentation,
-                'is_tentative'           => $isTentative,
+                'is_tentative' => $isTentative,
                 'current_approval_level' => 0,
             ]);
 
-            // --- Notifications / kick off approvals ---
-            $this->sendApplicationNotifications($leaveRequest);
+            // --- Handle approval process based on leave type settings ---
+            $this->handleLeaveApprovalProcess($leaveRequest);
 
             return RequestResponse::ok('Leave request created successfully.');
         });
+    }
+
+    /**
+     * Handle the approval process for a newly created leave request
+     */
+    protected function handleLeaveApprovalProcess(LeaveRequest $leaveRequest)
+    {
+        $leaveType = $leaveRequest->leaveType;
+        $approvalLevels = (int)($leaveType->approval_levels ?? 1);
+
+        // Check if this leave type requires approval
+        $requiresApproval = $leaveType->requires_approval ?? true;
+
+        // If leave type doesn't require approval, auto-approve it
+        if (!$requiresApproval) {
+            // Only auto-approve if documentation is not required OR documentation is already provided
+            if (!$leaveRequest->requires_documentation || $leaveRequest->attachment) {
+                $this->autoApproveLeave($leaveRequest);
+                return;
+            }
+            // If documentation is required but not provided, leave it pending until document is uploaded
+        }
+
+        // If approval is required, send notifications to approvers
+        // Leave will remain in pending status until someone approves it
+        $this->sendApplicationNotifications($leaveRequest);
+    }
+
+    /**
+     * Auto-approve a leave request (for leave types that don't require approval)
+     */
+    protected function autoApproveLeave(LeaveRequest $leaveRequest)
+    {
+        try {
+            // Set the system as the approver for auto-approved leaves
+            $leaveRequest->approved_by = auth()->id() ?? 1; // Use current user or system user
+            $leaveRequest->approved_at = now();
+            $leaveRequest->is_tentative = false;
+            $leaveRequest->current_approval_level = 1;
+
+            // Add to approval history
+            $history = [];
+            $history[] = [
+                'level' => 1,
+                'approver_id' => $leaveRequest->approved_by,
+                'approver_name' => 'System Auto-Approval',
+                'approved_at' => now()->toDateTimeString(),
+                'comments' => 'Auto-approved (no approval required for this leave type)',
+            ];
+            $leaveRequest->approval_history = $history;
+            $leaveRequest->save();
+
+            // Handle entitlement deduction
+            $this->deductLeaveEntitlementSafely($leaveRequest);
+
+            // Send auto-approval notifications
+            $this->sendFinalApprovalNotificationsWithDelay($leaveRequest);
+
+        } catch (\Exception $e) {
+            Log::error("Error auto-approving leave {$leaveRequest->id}: " . $e->getMessage());
+        }
     }
 
     /**
@@ -278,7 +338,6 @@ class LeaveRequestController extends Controller
                 }
 
                 return $this->processRejection($leaveRequest, $validated['rejection_reason'], $validated['comments'] ?? null);
-
             } catch (\Exception $e) {
                 Log::error("Error in leave status method: " . $e->getMessage());
                 return RequestResponse::badRequest('Failed to process leave request. Please try again.');
@@ -310,7 +369,6 @@ class LeaveRequestController extends Controller
 
             // Update level + history (partial approval)
             $leaveRequest->current_approval_level = $nextLevel;
-
             $history = $leaveRequest->approval_history ?? [];
             $history[] = [
                 'level' => $nextLevel,
@@ -319,7 +377,6 @@ class LeaveRequestController extends Controller
                 'approved_at' => now()->toDateTimeString(),
                 'comments' => $comments,
             ];
-            
             $leaveRequest->approval_history = $history;
             $leaveRequest->rejection_reason = null;
             $leaveRequest->save();
@@ -327,7 +384,6 @@ class LeaveRequestController extends Controller
             // More approvals needed?
             if ($leaveRequest->needsMoreApprovals()) {
                 $this->sendNextLevelNotificationsWithDelay($leaveRequest);
-
                 return RequestResponse::ok("Leave advanced to approval level {$nextLevel}. Waiting for final approval.", [
                     'new_status' => 'pending',
                 ]);
@@ -340,7 +396,6 @@ class LeaveRequestController extends Controller
             return RequestResponse::ok('Leave request approved successfully.', [
                 'new_status' => 'approved',
             ]);
-
         } catch (\Exception $e) {
             Log::error("Error processing leave approval for {$leaveRequest->reference_number}: " . $e->getMessage());
             return RequestResponse::badRequest('Failed to process approval. Please try again.');
@@ -349,12 +404,12 @@ class LeaveRequestController extends Controller
 
     protected function processRejection(LeaveRequest $leaveRequest, $rejectionReason, $comments = null)
     {
-        $leaveRequest->approved_by            = null;
-        $leaveRequest->approved_at            = null;
+        $leaveRequest->approved_by = null;
+        $leaveRequest->approved_at = null;
         $leaveRequest->current_approval_level = 0;
-        $leaveRequest->approval_history       = [];
-        $leaveRequest->rejection_reason       = $rejectionReason;
-        $leaveRequest->is_tentative           = false;
+        $leaveRequest->approval_history = [];
+        $leaveRequest->rejection_reason = $rejectionReason;
+        $leaveRequest->is_tentative = false;
         $leaveRequest->save();
 
         // Notify employee
@@ -367,36 +422,37 @@ class LeaveRequestController extends Controller
 
     /**
      * Send application notifications with delays to prevent rate limiting
+     * Modified to NOT auto-approve leaves that require approval
      */
     protected function sendApplicationNotifications(LeaveRequest $leaveRequest)
     {
         try {
-            $business  = $leaveRequest->business;
-            $employee  = $leaveRequest->employee;
+            $business = $leaveRequest->business;
+            $employee = $leaveRequest->employee;
             $leaveType = $leaveRequest->leaveType;
 
             // Always notify employee of submission (immediate)
             Mail::to($employee->user->email)->queue(new LeaveRequestSubmitted($leaveRequest));
 
-            $approvalLevels = (int)($leaveType->approval_levels ?? 0);
-            if (!$leaveType->requires_approval || $approvalLevels <= 0) {
-                if (!$leaveRequest->requires_documentation || $leaveRequest->attachment) {
-                    $this->finalizeApprovalSafely($leaveRequest);
-                    $this->sendFinalApprovalNotificationsWithDelay($leaveRequest);
+            $approvalLevels = (int)($leaveType->approval_levels ?? 1);
+
+            // If approval is required, notify approvers
+            // The leave will remain in pending status until manually approved
+            if ($leaveType->requires_approval && $approvalLevels > 0) {
+                // Collect all recipients and send with delays
+                $recipients = collect();
+                $recipients = $recipients->merge($this->findHODApprovers($business)->pluck('email'));
+                $recipients = $recipients->merge($this->findBusinessHR($business)->pluck('email'));
+
+                // Send emails with 5-second delays
+                foreach ($recipients->unique() as $index => $email) {
+                    $delay = now()->addSeconds(($index + 1) * 5);
+                    Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
                 }
-                return;
             }
 
-            // Collect all recipients and send with delays
-            $recipients = collect();
-            $recipients = $recipients->merge($this->findHODApprovers($business)->pluck('email'));
-            $recipients = $recipients->merge($this->findBusinessHR($business)->pluck('email'));
-
-            // Send emails with 5-second delays
-            foreach ($recipients->unique() as $index => $email) {
-                $delay = now()->addSeconds(($index + 1) * 5);
-                Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
-            }
+            // Note: We removed the auto-approval logic that was causing the issue
+            // Leaves that require approval will stay pending until someone approves them
 
         } catch (\Exception $e) {
             Log::error("Error sending application notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
@@ -424,7 +480,6 @@ class LeaveRequestController extends Controller
 
             // Notify employee of progress (immediate)
             $leaveRequest->employee->user->notify(new LeaveStatusNotification($leaveRequest));
-
         } catch (\Exception $e) {
             Log::error("Error sending next level notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
         }
@@ -453,7 +508,6 @@ class LeaveRequestController extends Controller
                 $delay = now()->addSeconds(($index + 1) * 10);
                 Mail::to($email)->later($delay, new LeaveRequestSubmitted($leaveRequest));
             }
-
         } catch (\Exception $e) {
             Log::error("Error sending final approval notifications for {$leaveRequest->reference_number}: " . $e->getMessage());
         }
@@ -478,7 +532,6 @@ class LeaveRequestController extends Controller
 
             // Handle entitlement deduction with better error handling
             $this->deductLeaveEntitlementSafely($leaveRequest);
-
         } catch (\Exception $e) {
             Log::error("Error finalizing approval for leave {$leaveRequest->id}: " . $e->getMessage());
             throw $e;
@@ -510,7 +563,6 @@ class LeaveRequestController extends Controller
                 $entitlement->getRemainingDays();
                 Log::info("Entitlement updated using getRemainingDays for entitlement #{$entitlement->id}.");
             }
-
         } catch (\Exception $e) {
             Log::error("Error deducting leave entitlement for leave {$leaveRequest->id}: " . $e->getMessage());
             // Don't throw here - entitlement issues shouldn't block approval
@@ -540,7 +592,8 @@ class LeaveRequestController extends Controller
 
     /* =========================
      * Other existing helpers
-     * ========================= */
+     * =========================
+     */
 
     /**
      * View permission:
@@ -550,7 +603,7 @@ class LeaveRequestController extends Controller
     protected function canUserViewLeaveRequest(User $user, LeaveRequest $leaveRequest)
     {
         $userEmployee = $user->employee;
-        $activeRole   = session('active_role');
+        $activeRole = session('active_role');
 
         if ($activeRole === 'business-employee' && $userEmployee) {
             return (int)$leaveRequest->employee_id === (int)$userEmployee->id;
@@ -571,7 +624,7 @@ class LeaveRequestController extends Controller
     {
         $validated = $request->validate([
             'reference_number' => 'required|exists:leave_requests,reference_number',
-            'attachment'       => 'required|file|mimes:pdf,jpg,png,doc,docx|max:2048',
+            'attachment' => 'required|file|mimes:pdf,jpg,png,doc,docx|max:2048',
         ]);
 
         $leaveRequest = LeaveRequest::where('reference_number', $validated['reference_number'])->firstOrFail();
@@ -589,9 +642,9 @@ class LeaveRequestController extends Controller
             return RequestResponse::badRequest('Failed to upload attachment. Please try again.');
         }
 
-        $leaveRequest->attachment             = $path;
+        $leaveRequest->attachment = $path;
         $leaveRequest->requires_documentation = false;
-        $leaveRequest->is_tentative           = false;
+        $leaveRequest->is_tentative = false;
         $leaveRequest->save();
 
         // If pending and approvals remain, notify next approvers
@@ -620,19 +673,22 @@ class LeaveRequestController extends Controller
             if ($leaveRequest->status !== 'pending') {
                 return RequestResponse::badRequest('Cannot delete approved or rejected requests.');
             }
+
             $authEmployeeId = auth()->user()->employee->id ?? null;
             if (!$authEmployeeId || $authEmployeeId !== (int)$leaveRequest->employee_id) {
                 return RequestResponse::badRequest('You can only delete your own leave requests.');
             }
 
             $leaveRequest->delete();
+
             return RequestResponse::ok('Leave request deleted successfully.');
         });
     }
 
     /* =========================
      * Finders
-     * ========================= */
+     * =========================
+     */
 
     /** All HODs for employee's department in this business. */
     protected function findHODApprovers(Business $business)
@@ -719,6 +775,7 @@ class LeaveRequestController extends Controller
             ->where('end_date', '>=', Carbon::parse($startDate)->toDateString());
 
         $overlappingRequests = $overlapQuery->get(['id', 'reference_number', 'start_date', 'end_date', 'approved_by', 'rejection_reason']);
+
         $debugInfo['overlapping_requests'] = $overlappingRequests->toArray();
         $debugInfo['has_overlap'] = $overlappingRequests->count() > 0;
 
@@ -734,7 +791,7 @@ class LeaveRequestController extends Controller
         if ($employee->department_id) {
             $policyQuery->where(function ($q) use ($employee) {
                 $q->where('department_id', $employee->department_id)
-                ->orWhereNull('department_id');
+                    ->orWhereNull('department_id');
             });
         } else {
             $policyQuery->whereNull('department_id');
@@ -743,7 +800,7 @@ class LeaveRequestController extends Controller
         if ($employee->job_category_id) {
             $policyQuery->where(function ($q) use ($employee) {
                 $q->where('job_category_id', $employee->job_category_id)
-                ->orWhereNull('job_category_id');
+                    ->orWhereNull('job_category_id');
             });
         } else {
             $policyQuery->whereNull('job_category_id');
@@ -751,15 +808,34 @@ class LeaveRequestController extends Controller
 
         $policyQuery->where(function ($q) use ($empGender) {
             $q->where('gender_applicable', 'all')
-            ->orWhere('gender_applicable', $empGender)
-            ->orWhereNull('gender_applicable');
+                ->orWhere('gender_applicable', $empGender)
+                ->orWhereNull('gender_applicable');
         });
 
         $matchingPolicies = $policyQuery->get();
+
         $debugInfo['matching_policies'] = $matchingPolicies->toArray();
         $debugInfo['policy_exists'] = $matchingPolicies->count() > 0;
         $debugInfo['normalized_gender'] = $empGender;
 
         return response()->json($debugInfo, 200, [], JSON_PRETTY_PRINT);
+    }
+
+    /**
+     * Helper method to normalize gender values
+     */
+    protected function normalizeGender($gender)
+    {
+        if (!$gender) return 'all';
+
+        $gender = strtolower(trim($gender));
+
+        if (in_array($gender, ['male', 'm'])) {
+            return 'male';
+        } elseif (in_array($gender, ['female', 'f'])) {
+            return 'female';
+        }
+
+        return 'all';
     }
 }

@@ -83,7 +83,7 @@ const deletePayroll = async function (id = null) {
     });
 };
 
-const closeMonth = async function (id = null) {
+const closeMonth = async function (id = null, month = null, year = null) {
     if (!id && selectedPayrolls.length === 0) {
         Swal.fire('Error!', 'Please select at least one payroll to close/open.', 'error');
         return;
@@ -92,17 +92,77 @@ const closeMonth = async function (id = null) {
     const payrollIds = id ? [id] : selectedPayrolls;
     try {
         for (const payrollId of payrollIds) {
-            const response = await requestClient.post(`/payroll/${payrollId}/close`, {});
+            const response = await requestClient.post(`/payroll/${payrollId}/close`, {
+                month: parseInt(month),
+                year: parseInt(year),
+            });
+
             const row = document.querySelector(`.payrollCheckbox[value="${payrollId}"]`).closest('tr');
             const statusCell = row.querySelector('td:nth-child(4)');
-            statusCell.textContent = response.data.status === 'closed' ? 'closed' : 'open';
+            const status = response?.data?.status;
+
+if (statusCell && status) {
+  statusCell.textContent = status === 'closed' ? 'closed' : 'open';
+} else {
+  console.warn("Status not found in response:", response);
+}
+
+
         }
-        Swal.fire('Success!', payrollIds.length > 1 ? 'Payroll months updated successfully.' : 'Payroll month updated successfully.', 'success');
+
+        Swal.fire(
+          'Success!',
+          payrollIds.length > 1
+            ? 'Payroll months updated successfully.'
+            : 'Payroll month updated successfully.',
+          'success'
+        );
+
         filterPayrolls();
     } catch (error) {
-        Swal.fire('Error!', error.response?.data?.message || 'Failed to update payroll status.', 'error');
+        console.log('Full error object:', error);
+        console.log('Error response:', error.response);
+        console.log('Error response data:', error.response?.data);
+
+        Swal.fire(
+          'Error!',
+          error.response?.data?.message || 'Failed to update payroll status.',
+          'error'
+        );
     }
 };
+
+
+
+// const closeMonth = async function (id = null) {
+//     if (!id && selectedPayrolls.length === 0) {
+//         Swal.fire('Error!', 'Please select at least one payroll to close/open.', 'error');
+//         return;
+//     }
+
+//     const payrollIds = id ? [id] : selectedPayrolls;
+//     try {
+//         for (const payrollId of payrollIds) {
+//             const response = await requestClient.post(`/payroll/${payrollId}/close`, {month: parseInt(month),
+//     year: parseInt(year),});
+//             const row = document.querySelector(`.payrollCheckbox[value="${payrollId}"]`).closest('tr');
+//             const statusCell = row.querySelector('td:nth-child(4)');
+//             statusCell.textContent = response.data.data.status === 'closed' ? 'closed' : 'open';
+//         }
+//         Swal.fire('Success!', payrollIds.length > 1 ? 'Payroll months updated successfully.' : 'Payroll month updated successfully.', 'success');
+//         filterPayrolls();
+//     } catch (error) {
+//   console.log('Full error object:', error);
+//   console.log('Error response:', error.response);
+//   console.log('Error response data:', error.response?.data);
+
+//   Swal.fire(
+//     'Error!',
+//     error.response?.data?.message || 'Failed to update payroll status.',
+//     'error'
+//   );
+// }
+// };
 
 const emailPayslips = async function (id = null) {
     if (!id && selectedPayrolls.length !== 1) {

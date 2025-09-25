@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Payroll extends Model
 {
-    use HasStatuses, LogsActivity;
+    use  LogsActivity;
 
     protected $fillable = [
         'business_id',
@@ -19,6 +19,8 @@ class Payroll extends Model
         'payrun_year',
         'payrun_month',
         'status',
+        'emailed',
+    'third_rule',
     ];
 
     public function business()
