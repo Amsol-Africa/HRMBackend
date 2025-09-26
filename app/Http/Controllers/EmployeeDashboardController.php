@@ -51,13 +51,13 @@ $rejected_leaves = LeaveRequest::where('employee_id', $employeeId)
     ->whereNotNull('rejection_reason')
     ->count();
 
-    // Days worked
+
     $work_days = Attendance::where('employee_id', $employeeId)->count();
 
-    // Payslips
+
     $payslips = EmployeePayroll::where('employee_id', $employeeId)->count();
 
-    // Leave balances per type
+
     $leave_balances = \App\Models\LeaveEntitlement::with('leaveType')
         ->where('employee_id', $employeeId)
         ->get()
