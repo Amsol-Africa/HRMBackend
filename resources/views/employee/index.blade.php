@@ -33,6 +33,31 @@
                 </div>
             </div>
         </div>
+        <!-- Leave Balance -->
+<div class="row g-4 mt-4">
+    <h3 class="fw-bold mb-3">Leave Balance</h3>
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm rounded-3 p-3">
+            <div class="form-group mb-3">
+                <label for="leaveTypeSelect" class="fw-semibold">Select Leave Type</label>
+                <select id="leaveTypeSelect" class="form-select">
+                    <option value="">-- Select Leave Type --</option>
+                    @foreach($leave_balances as $index => $balance)
+                        <option value="{{ $index }}">{{ $balance['leave_type'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="leaveBalanceDetails" class="mt-3 d-none">
+                <h6 class="fw-bold" id="leaveTypeName"></h6>
+                <p>Entitled Days: <span id="entitledDays"></span></p>
+                <p>Days Taken: <span id="daysTaken"></span></p>
+                <p>Days Remaining: <span id="daysRemaining"></span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
 
         <!-- Quick Actions -->
         <div class="row g-4 mt-4">
@@ -72,3 +97,30 @@
         </div>
     </div>
 </x-app-layout>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const leaveBalances = @json($leave_balances);
+    const select = document.getElementById('leaveTypeSelect');
+    const details = document.getElementById('leaveBalanceDetails');
+    const typeName = document.getElementById('leaveTypeName');
+    const entitled = document.getElementById('entitledDays');
+    const taken = document.getElementById('daysTaken');
+    const remaining = document.getElementById('daysRemaining');
+
+    select.addEventListener('change', function () {
+        const index = this.value;
+        if (index !== '') {
+            const balance = leaveBalances[index];
+            typeName.textContent = balance.leave_type;
+            entitled.textContent = balance.entitled_days;
+            taken.textContent = balance.days_taken;
+            remaining.textContent = balance.days_remaining;
+            details.classList.remove('d-none');
+        } else {
+            details.classList.add('d-none');
+        }
+    });
+});
+</script>
+

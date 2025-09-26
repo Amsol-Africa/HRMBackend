@@ -20,14 +20,75 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class EmployeeDashboardController extends Controller
 {
     // Dashboard Overview
-    public function index(Request $request)
-    {
-        $page = "Dashboard";
-        $employee = Auth::user();
-        $leave_count = LeaveRequest::where('employee_id', $employee->id)->count();
-        $pending_leaves = LeaveRequest::where('employee_id', $employee->id)->where('approved_by', 'pending')->count();
-        return view('employee.index', compact('page', 'leave_count', 'pending_leaves'));
+public function index(Request $request)
+{
+    $page = "Dashboard";
+    $user = Auth::user();
+    $employeeId = optional($user->employee)->id;
+
+    if (!$employeeId) {
+        return view('employee.index', compact('page'))
+            ->with('error', 'Employee record not found.');
     }
+
+    // Total leaves requested
+    $leave_count = LeaveRequest::where('employee_id', $employeeId)->count();
+
+ // Pending
+$pending_leaves = LeaveRequest::where('employee_id', $employeeId)
+    ->whereNull('approved_by')
+    ->whereNull('rejection_reason')
+    ->count();
+
+// Approved
+$approved_leaves = LeaveRequest::where('employee_id', $employeeId)
+    ->whereNotNull('approved_by')
+    ->whereNull('rejection_reason')
+    ->count();
+
+// Rejected
+$rejected_leaves = LeaveRequest::where('employee_id', $employeeId)
+    ->whereNotNull('rejection_reason')
+    ->count();
+
+    // Days worked
+    $work_days = Attendance::where('employee_id', $employeeId)->count();
+
+    // Payslips
+    $payslips = EmployeePayroll::where('employee_id', $employeeId)->count();
+
+    // Leave balances per type
+    $leave_balances = \App\Models\LeaveEntitlement::with('leaveType')
+        ->where('employee_id', $employeeId)
+        ->get()
+        ->map(function ($entitlement) {
+            return [
+                'leave_type' => $entitlement->leaveType->name ?? 'Unknown',
+                'entitled_days' => $entitlement->entitled_days,
+                'days_taken' => $entitlement->days_taken,
+                'days_remaining' => $entitlement->days_remaining,
+            ];
+        });
+
+    return view('employee.index', compact(
+        'page',
+        'leave_count',
+        'pending_leaves',
+        'work_days',
+        'payslips',
+        'leave_balances'
+    ));
+}
+
+
+    // public function index(Request $request)
+    // {
+    //     $page = "Dashboard";
+    //     $employee = Auth::user();
+    //     $leave_count = LeaveRequest::where('employee_id', $employee->id)->count();
+    //     $pending_leaves = LeaveRequest::where('employee_id', $employee->id)->where('approved_by', 'pending')->count();
+    //     return view('employee.index', compact('page', 'leave_count', 'pending_leaves'));
+    // }
 
     // Leave Requests
     public function requestLeave()

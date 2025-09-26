@@ -1641,39 +1641,23 @@ class PayrollController extends Controller
         });
     }
 
-    // public function closeMonth(Request $request, $id)
-    // {
-    //     return $this->handleTransaction(function () use ($id) {
-    //         $business = Business::findBySlug(session('active_business_slug'));
-    //         if (!$business) {
-    //             return RequestResponse::badRequest('Business not found.');
-    //         }
 
-    //         $payroll = Payroll::where('business_id', $business->id)->where('id', $id)->firstOrFail();
-    //         $newStatus = $payroll->status === 'closed' ? 'open' : 'closed';
-    //         $payroll->update(['status' => $newStatus]);
-
-    //         return RequestResponse::ok("Payroll month " . ($newStatus === 'closed' ? 'closed' : 'opened') . " successfully.", [
-    //             'status' => $newStatus,
-    //         ]);
-    //     });
-    // }
 public function closeMonth(Request $request, $payrollId)
 {
     return $this->handleTransaction(function () use ($payrollId) {
-        // Find payroll by ID
+
         $payroll = Payroll::find($payrollId);
         if (!$payroll) {
             return RequestResponse::badRequest('Payroll not found.');
         }
 
-        // Find business
+
         $business = Business::find($payroll->business_id);
         if (!$business) {
             return RequestResponse::badRequest('Business not found.');
         }
 
-        // Find all payrolls for same business, payrun_month, payrun_year
+
         $payrolls = Payroll::where('business_id', $business->id)
             ->where('payrun_month', $payroll->payrun_month)
             ->where('payrun_year', $payroll->payrun_year)
@@ -1683,7 +1667,6 @@ public function closeMonth(Request $request, $payrollId)
             return RequestResponse::badRequest('No payrolls found for this period.');
         }
 
-        // Update status to 'closed' for all matching payrolls
         $updatedCount = 0;
         foreach ($payrolls as $p) {
             if ($p->status !== 'closed') {
@@ -1692,7 +1675,6 @@ public function closeMonth(Request $request, $payrollId)
             }
         }
 
-        // Re-render updated payroll list (must pass business too)
         $html = view('payroll._past', [
             'payrolls' => $payrolls,
             'business' => $business
@@ -1707,55 +1689,6 @@ public function closeMonth(Request $request, $payrollId)
         );
     });
 }
-
-
-// public function closeMonth(Request $request, $payrollId)
-// {
-//     return $this->handleTransaction(function () use ($payrollId) {
-//         // Find payroll by ID
-//         $payroll = Payroll::find($payrollId);
-//         if (!$payroll) {
-//             return RequestResponse::badRequest('Payroll not found.');
-//         }
-
-//         // Find business
-//         $business = Business::find($payroll->business_id);
-//         if (!$business) {
-//             return RequestResponse::badRequest('Business not found.');
-//         }
-
-//         // Find all payrolls for same business, payrun_month, payrun_year
-//         $payrolls = Payroll::where('business_id', $business->id)
-//             ->where('payrun_month', $payroll->payrun_month)
-//             ->where('payrun_year', $payroll->payrun_year)
-//             ->get();
-
-//         if ($payrolls->isEmpty()) {
-//             return RequestResponse::badRequest('No payrolls found for this period.');
-//         }
-
-//         // Update status to 'closed' for all matching payrolls
-//         $updatedCount = 0;
-//         foreach ($payrolls as $p) {
-//             if ($p->status !== 'closed') {
-//                 $p->update(['status' => 'closed']);
-//                 $updatedCount++;
-//             }
-//         }
-
-//         // Re-render updated payroll list
-//         $html = view('payroll._past', compact('payrolls'))->render();
-
-//         return RequestResponse::ok(
-//             "Closed $updatedCount payroll(s) successfully.",
-//             [
-//                 'status' => 'closed',
-//                 'html'   => $html
-//             ]
-//         );
-//     });
-// }
-
 
 
 public function emailP9(Request $request, $id)

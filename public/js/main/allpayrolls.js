@@ -107,7 +107,6 @@ if (statusCell && status) {
   console.warn("Status not found in response:", response);
 }
 
-
         }
 
         Swal.fire(
